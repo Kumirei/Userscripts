@@ -307,3 +307,7 @@ a#heatmap .minimap {
 #heatmap .years[day-labels="false"] .day-labels {
 	display: none;
 }
+
+#heatmap .day .hover-wrapper {
+	white-space: pre-line;
+}
