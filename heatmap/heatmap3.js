@@ -447,13 +447,14 @@
     function get_forecast_and_lessons() {
         return wkof.ItemData.get_items('assignments').then(data=>{
             let forecast = [], lessons = [];
+            let vacation_offset = Date.now()-new Date(wkof.user.current_vacation_started_at || Date.now());
             for (let item of data) {
                 if (item.assignments && item.assignments.started_at !== null) {
                     // If the assignment has been started add a lesson containing staring date, id, level, and unlock date
                     lessons.push([Date.parse(item.assignments.started_at), item.id, item.data.level, Date.parse(item.assignments.unlocked_at)]);
                     if (Date.parse(item.assignments.available_at) > Date.now()) {
                         // If the assignment is scheduled add a forecast item ready for sending to the heatmap module
-                        let forecast_item = [Date.parse(item.assignments.available_at), {forecast: 1,}, {'forecast-ids': item.id}];
+                        let forecast_item = [Date.parse(item.assignments.available_at)+vacation_offset, {forecast: 1,}, {'forecast-ids': item.id}];
                         forecast_item[1]["forecast-srs1-"+item.assignments.srs_stage] = 1;
                         forecast.push(forecast_item);
                     }
