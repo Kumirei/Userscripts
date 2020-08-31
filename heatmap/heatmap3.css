@@ -177,7 +177,7 @@ a#heatmap .minimap {
 	font-weight: bold;
 }
 
-#heatmap #popper .srs .hover-wrapper tr:not(:first-child) th::before {
+#heatmap #popper .srs .hover-wrapper tr:not(:first-child):not(:last-child) th::before {
 	content: 'SRS ';
 }
 
