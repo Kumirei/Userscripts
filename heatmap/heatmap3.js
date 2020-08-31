@@ -374,6 +374,7 @@
             target.append(up, down);
         }
         if (wkof.settings[script_id].other[type+'_last_visible_year']) heatmap.maps[wkof.settings[script_id].other[type+'_last_visible_year']].classList.add('last');
+        else heatmap.maps[Math.min(...Object.keys(heatmap.maps))].classList.add('last');
     }
 
     // Create the header and footer stats for a view
