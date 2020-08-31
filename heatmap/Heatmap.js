@@ -72,8 +72,8 @@
                 if (year < dates.first_year || (year === dates.first_year && (month < dates.first_month || (month === dates.first_month && day < dates.first_day)))) continue;
                 let parsed_day = parsed_data[year][month][day];
                 for (let [key, value] of Object.entries(counts)) {
-                    if (!parsed_day.counts[key]) parsed_day.counts[key] = value;
-                    else parsed_day.counts[key] += value;
+                    if (!parsed_day.counts[key]) parsed_day.counts[key] = value || 0;
+                    else parsed_day.counts[key] += value || 0;
                     if (!parsed_day.hours[hour].counts[key]) parsed_day.hours[hour].counts[key] = value;
                     else parsed_day.hours[hour].counts[key] += value;
                 }
