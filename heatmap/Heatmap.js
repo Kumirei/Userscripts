@@ -170,7 +170,7 @@
         }
         _get_dates() {
             let [first_year, first_month, first_day] = this._get_ymdh(this.config.first_date);
-            let [last_year, last_month, last_day] = this._get_ymdh(Date.now());
+            let [last_year, last_month, last_day] = this._get_ymdh(this.config.last_date || Date.now());
             return {first_year, first_month, first_day,
                     last_year, last_month, last_day,
                    };
