@@ -30,7 +30,7 @@
     async function initiate() {
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
-        let stats = {reviews: calculate_stats(reviews), lessons: calculate_stats(lessons)};
+        let stats = {reviews: calculate_stats("reviews", reviews), lessons: calculate_stats("lessons", lessons)};
         install_heatmap(reviews, forecast, lessons, stats);
     }
 
@@ -60,6 +60,7 @@
                 gradient: true,
                 auto_range: false,
                 colors: [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],],
+                count_zeros: true,
             },
             forecast: {
                 gradient: false,
@@ -283,14 +284,14 @@
     function cook_data(type, data) {
         if (type === "reviews") {
             return data.map(item=>{
-                let cooked = [item[0], {reviews: 1, pass: (item[3]+item[4]==0?1:0), incorrect: item[3]+item[4]}, {'reviews-ids': item[1]}];
+                let cooked = [item[0], {reviews: 1, pass: (item[3]+item[4]==0?1:0), incorrect: item[3]+item[4], streak: item[5]}, {'reviews-ids': item[1]}];
                 cooked[1][type+'-srs1-'+item[2]] = 1;
                 let new_srs = item[2]-((item[3]+item[4])*(item[2]<5?1:2))+((item[3]+item[4])==0?1:0);
                 cooked[1][type+'-srs2-'+(new_srs<1?1:new_srs)] = 1;
                 return cooked;
             });
         }
-        else if (type === "lessons") return data.map(item=>[item[0], {lessons: 1,}, {'lessons-ids': item[1]}]);
+        else if (type === "lessons") return data.map(item=>[item[0], {lessons: 1, streak: item[4]}, {'lessons-ids': item[1]}]);
         else if (type === "forecast") return data;
     }
 
@@ -320,24 +321,31 @@
             segment_years: settings.general.segment_years,
             zero_gap: settings.general.zero_gap,
             markings: [[Date.now(), "today"], ...level_ups],
-            day_hover_callback: (date, data)=>[`${data.counts.reviews||0} ${type} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}`],
-            color_callback: (date, data)=>{
+            day_hover_callback: (date, day_data)=>{
+                let type2 = type;
+                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && day_data.counts.forecast) type2 = "forecast";
+                let string = `${day_data.counts[type2]||0} ${type} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}
+                Streak ${stats[type].streaks[new Date(date.join('-')).toDateString()]}
+                Day ${Math.round((Date.parse(date.join('-'))-Date.parse(new Date(data[0][0]).toDateString()))/(24*60*60*1000))+1}`;
+                return [string];
+            },
+            color_callback: (date, day_data)=>{
                 date[2]++;
                 let type2 = type;
-                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && data.counts.forecast) type2 = "forecast";
+                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && day_data.counts.forecast) type2 = "forecast";
                 let colors = settings[type2].colors.slice().reverse();
                 if (!settings[type2].gradient) {
                     for (let [count, color] of colors) {
-                        if (data.counts[type2] >= count) {
+                        if (day_data.counts[type2] >= count) {
                             return color;
                             break;
                         }
                     }
                 } else {
-                    if (data.counts[type2] >= colors[0][0]) return colors[0][1];
+                    if (day_data.counts[type2] >= colors[0][0]) return colors[0][1];
                     for (let i=0; i<colors.length; i++) {
-                        if (data.counts[type2] >= colors[i][0]) {
-                            let percentage = (data.counts[type2]-colors[i][0])/(colors[i-1][0]-colors[i][0]);
+                        if (day_data.counts[type2] >= colors[i][0]) {
+                            let percentage = (day_data.counts[type2]-colors[i][0])/(colors[i-1][0]-colors[i][0]);
                             return interpolate_color(colors[i][1], colors[i-1][1], percentage);
                             break;
                         }
@@ -448,7 +456,7 @@
                         forecast.push(forecast_item);
                     }
                 }
-            }thttps://trello.com/b/m4Y9Kdqj/heatmapy
+            }
             // Sort lessons by started_at for easy extraction of chronological info
             lessons.sort((a,b)=>a[0]<b[0]?-1:1);
             return [forecast, lessons];
@@ -475,18 +483,51 @@
         return levels;
     }
 
+    // Finds streaks
+    function get_streaks(type, data) {
+        let day_start_adjust = 60*60*1000*wkof.settings[script_id].general.day_start;
+        let streaks = {}, zeros = {};
+        for (let day = new Date(data[0][0]-day_start_adjust); day <= new Date(); day.setDate(day.getDate()+1)) {
+            streaks[day.toDateString()] = 0;
+            zeros[day.toDateString()] = true;
+        }
+        for (let [date] of data) streaks[new Date(date-day_start_adjust).toDateString()] = 1;
+        if (type === "lessons") {
+            for (let [started_at, id, level, unlocked_at] of data) {
+                for (let day = new Date(unlocked_at-day_start_adjust); day <= new Date(started_at-day_start_adjust); day.setDate(day.getDate()+1)) {
+                    delete zeros[day.toDateString()];
+                }
+            }
+            for (let date of Object.keys(zeros)) streaks[date] = 1;
+        }
+        let streak = 0;
+        for (let day = new Date(data[0][0]-day_start_adjust); day <= new Date(); day.setDate(day.getDate()+1)) {
+            if (streaks[day.toDateString()] === 1) streak++;
+            else streak = 0;
+            streaks[day.toDateString()] = streak;
+        }
+        return streaks;
+    }
+
     // Calculate overall stats for lessons and reviews
-    function calculate_stats(data) {
+    function calculate_stats(type, data) {
+        let settings = wkof.settings[script_id];
+        let streaks = get_streaks(type, data);
+        let longest_streak = Math.max(...Object.values(streaks));
+        let current_streak = streaks[new Date(Date.now()-60*60*1000*settings.general.day_start).toDateString()];
+        console.log(streaks);
+        console.log(longest_streak, current_streak);
         let ms_day = 24*60*60*1000;
         let stats = {
             total: [0, 0, 0, 0, 0], // [total, year, month, week, day]
             days_studied: [0, 0],   // [days studied, percentage]
             average: [0, 0],        // [average, per studied]
-            streak: [0, 0],         // [longest, current]
+            streak: [longest_streak, current_streak],
             sessions: 0,            // Number of sessions
             time: [0, 0, 0, 0, 0],  // [total, year, month, week, day]
             days: 0,                // Number of days since first review
             max_done: 0,            // Max done in one day
+            streaks,
         };
         let last_day = new Date(0);
         let today = new Date();
@@ -502,11 +543,6 @@
             if (last_day.toDateString() != day.toDateString()) {
                 stats.days_studied[0]++;
                 done_day = 0;
-                if (last_day.toDateString() != new Date(Date.parse(day.toDateString())-0.5*ms_day).toDateString()) {
-                    stats.streak[1] = 0;
-                }
-                stats.streak[1]++;
-                if (stats.streak[1] > stats.streak[0]) stats.streak[0] = stats.streak[1];
             }
             done_day++;
             if (done_day > stats.max_done) stats.max_done = done_day;
