@@ -1,0 +1,309 @@
+#heatmap {
+	--background-color: #232629;
+    --day-size: 10px;
+    --day-gap: 2px;
+    --day-hover-outline: 1px;
+    --day-hover-outline-color: black;
+	--zero-day-color: #636363;
+	--text-color: #eee;
+	--hover-background-color: #424242;
+	--year-label-size: 20px;
+    background-color: var(--background-color);
+    border-radius: 3px;
+	padding: 10px 0;
+    color: var(--text-color);
+}
+
+#heatmap .stats {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+#heatmap .head-stats {
+    font-size: 16px;
+}
+
+#heatmap .stats .stat-label {
+    margin-right: 5px;
+    font-weight: bold;
+}
+
+#heatmap .stats .stat-label::after {
+    content: ':';
+}
+
+#heatmap .buttons {
+	padding: 0px 5px;
+	display: flex;
+	justify-content: space-between;
+	height: 0;
+	transform: translateY(-5px);
+}
+
+#heatmap .buttons button {
+	height: 30px;
+	width: 30px;
+	border-color: transparent;
+	background-color: transparent;
+	color: var(--text-color);
+	outline: none;
+}
+
+#heatmap .title {
+	text-align: center;
+	font-size: 18px;
+	margin-bottom: 10px;
+}
+
+#heatmap .day.today,
+#heatmap .hour.today {
+	border-color: red;
+}
+
+#heatmap .day.level-up {
+	border-color: blue;
+}
+
+#heatmap #popper {
+	background-color: rgba(0,0,0, 0.7);
+	width: fit-content;
+	border-radius: 3px;
+}
+
+#heatmap #popper .header {
+	text-align: center;
+	padding: 5px;
+}
+
+#heatmap #popper .date {
+	font-weight: bold;
+	font-size: 16px;
+}
+
+#heatmap #popper.reviews .count::after {
+	content: ' reviews';
+}
+
+#heatmap #popper.forecast .count::after {
+	content: ' upcoming reviews';
+}
+
+#heatmap #popper.lessons .count::after {
+	content: ' lessons';
+}
+
+#heatmap #popper.forecast .summary,
+#heatmap #popper.forecast .answers,
+#heatmap #popper.lessons .srs,
+#heatmap #popper.lessons .summary,
+#heatmap #popper.lessons .answers {
+	display: none;
+}
+
+a#heatmap .minimap {
+	display: block;
+	width: 43px;
+	height: 94px;
+	margin: 10px;
+	background-color: pink;
+	margin-top: 15px;
+}
+
+#heatmap #popper .stats {
+	display: flex;
+	vertical-align: top;
+}
+
+#heatmap #popper .stats  table {
+	display: inline-block;
+	padding: 0 10px;
+}
+
+#heatmap #popper .stats  table th {
+	font-weight: bold;
+}
+
+#heatmap #popper .stats  table tr {
+	display: flex;
+	justify-content: space-between;
+}
+
+#heatmap #popper .stats table tr:first-child th {
+	width: 100%;
+}
+
+#heatmap #popper .stats {
+	text-align: center;
+}
+
+#heatmap #popper .stats tr > :not(:last-child) {
+	padding-right: 5px;
+}
+
+#heatmap #popper .srs th {
+	width: 14px;
+	text-align: left;
+}
+
+#heatmap #popper .answers th {
+	width: 50px;
+	text-align: left;
+}
+
+#heatmap #popper .srs tr:first-of-type th,
+#heatmap #popper .answers tr:first-child th {
+	width: 100%;
+	text-align: center;
+}
+
+#heatmap #popper .summary tr:last-child td::after,
+#heatmap #popper .answers tr:last-child td::after {
+	content: '%';
+}
+
+#heatmap #popper .srs .hover-wrapper tr :not(.hover-wrapper) {
+	width: 35px;
+}
+
+#heatmap #popper .levels .hover-wrapper th::before {
+	content: 'Level ';
+}
+
+#heatmap #popper .levels .hover-wrapper th::after {
+	content: ':';
+}
+
+#heatmap #popper .srs .hover-wrapper tr:first-child {
+	font-weight: bold;
+}
+
+#heatmap #popper .srs .hover-wrapper tr:not(:first-child) th::before {
+	content: 'SRS ';
+}
+
+#heatmap #popper .stats > * > * > td {
+	min-width: 25px;
+}
+
+#heatmap .years {
+	margin: auto;
+	width: fit-content;
+}
+
+#heatmap #popper .items {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	flex-direction: row;
+	justify-content: space-between;
+	padding: 10px;
+	max-width: 500px;
+}
+
+#heatmap #popper .item {
+	display: inline-block;
+	padding: 0 4px;
+	margin: 1.5px;
+	border-radius: 3px;
+	position: relative;
+	color: black !important;
+}
+
+#heatmap #popper .items .radical {
+	background-color: #3daee9;
+	order: 0;
+}
+
+#heatmap #popper .items .kanji {
+	background-color: #fdbc4b;
+	order: 1;
+}
+
+#heatmap #popper .items .vocabulary {
+	background-color: #2ecc71;
+	order: 2;
+}
+
+#heatmap #popper .item .hover-wrapper .characters {
+	font-size: 74px;
+	line-height: 74px;
+	padding: 5px;
+	border-radius: 3px;
+	display: inline-block;
+	text-align: center;
+	color: black !important;
+}
+
+#heatmap #popper .item .hover-wrapper .info {
+	display: inline-block;
+}
+
+#heatmap #popper .item.vocabulary .hover-wrapper .info {
+	display: block;
+}
+
+#heatmap #popper .items .radical .hover-wrapper .characters {
+	background-color: #3daee9;
+}
+
+#heatmap #popper .items .kanji .hover-wrapper .characters {
+	background-color: #fdbc4b;
+}
+
+#heatmap #popper .items .vocabulary .hover-wrapper .characters {
+	background-color: #2ecc71;
+}
+
+#heatmap .day.selected {
+	border-color: green;
+}
+
+#heatmap .years[month-labels="top"] .year:not(:first-child) .month-label,
+#heatmap .years[month-labels="none"] .month-label {
+	display: none;
+}
+
+#heatmap .years[month-labels="top"] .year:not(:first-child) .year-label,
+#heatmap .years[month-labels="top"] .year:not(:first-child) .day-labels,
+#heatmap .years[month-labels="none"] .year .day-labels,
+#heatmap .years[month-labels="none"] .year .day-labels {
+	margin-top: 0px;
+}
+
+#heatmap .year-labels {
+	position: relative;
+}
+
+#heatmap .year-labels .toggle-year {
+	position: absolute;
+	margin-left: 4px;
+	z-index: 1000;
+}
+
+#heatmap .year-labels .toggle-year.down {
+	bottom: 0;
+}
+
+#heatmap .year.hidden {
+	display: none;
+}
+
+#heatmap .year:first-child .toggle-year.up,
+#heatmap .year:last-child .toggle-year.down,
+#heatmap .year:not(.last) .toggle-year {
+	display: none;
+}
+
+#heatmap .year.last ~ .year {
+	display: none;
+}
+
+#heatmap .years.reverse {
+	display: flex;
+	flex-direction: column-reverse;
+}
+
+#heatmap .years[day-labels="false"] .day-labels {
+	display: none;
+}
