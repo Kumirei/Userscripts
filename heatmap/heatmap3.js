@@ -515,8 +515,6 @@
         let streaks = get_streaks(type, data);
         let longest_streak = Math.max(...Object.values(streaks));
         let current_streak = streaks[new Date(Date.now()-60*60*1000*settings.general.day_start).toDateString()];
-        console.log(streaks);
-        console.log(longest_streak, current_streak);
         let ms_day = 24*60*60*1000;
         let stats = {
             total: [0, 0, 0, 0, 0], // [total, year, month, week, day]
