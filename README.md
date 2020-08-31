@@ -1,2 +1,2 @@
-# wk
+# Wanikani Scripts
 Wanikani Scripts
