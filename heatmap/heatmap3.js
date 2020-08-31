@@ -66,6 +66,7 @@
                 gradient: false,
                 auto_range: false,
                 colors: [[0, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],],
+                next_year_months: 3,
             },
             indicators: {
                 now: true,
@@ -317,6 +318,7 @@
             week_start: settings.general.week_start,
             day_start: settings.general.day_start,
             first_date: Math.max(Date.parse(settings.general.start_date), first_date),
+            last_date: new Date().setMonth(new Date().getMonth()+(type==="reviews"?settings.forecast.next_year_months:0)),
             segment_years: settings.general.segment_years,
             zero_gap: settings.general.zero_gap,
             markings: [[Date.now(), "today"], ...level_ups],
