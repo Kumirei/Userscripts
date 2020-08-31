@@ -1,0 +1,2 @@
+# wk
+Wanikani Scripts
