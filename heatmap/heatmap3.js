@@ -57,7 +57,7 @@
                 colors: [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],],
             },
             lessons: {
-                gradient: false,
+                gradient: true,
                 auto_range: false,
                 colors: [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],],
             },
@@ -225,318 +225,347 @@
 
     function create_minimap(type, data) {
         return new Heatmap({type: "day",
-                            id: 'minimap',
-                            first_date: Date.now(),
-                            day_start: wkof.settings[script_id].general.day_start,
-                            day_hover_callback: (date, counts)=>[`${counts.reviews||0} ${type} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}`],
-                            color_callback: (date, counts)=>{
-                                date[2]++;
-                                if (type === "reviews") return Date.parse(date.join('-'))>Date.now()&&counts.forecast?"lightgrey":counts.reviews?"pink":"";
-                                else if (type === "lessons") return counts.lessons?"pink":"";
-                            },
-                           },
-                           data);
-    }
+        id: 'minimap',
+        first_date: Date.now(),
+        day_start: wkof.settings[script_id].general.day_start,
+        day_hover_callback: (date, counts)=>[`${counts.reviews||0} ${type} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}`],
+        color_callback: (date, counts)=>{
+            date[2]++;
+            if (type === "reviews") return Date.parse(date.join('-'))>Date.now()&&counts.forecast?"lightgrey":counts.reviews?"pink":"";
+            else if (type === "lessons") return counts.lessons?"pink":"";
+        },
+    },
+    data);
+}
 
-    function create_popper(data) {
-        // Create layout
-        let popper = create_elem({type: 'div', id: 'popper'});
-        let header = create_elem({type: 'div', class: 'header'});
-        let minimap = create_elem({type: 'div', class: 'minimap'});
-        let stats = create_elem({type: 'div', class: 'stats'});
-        let items = create_elem({type: 'div', class: 'items'});
-        popper.append(header, minimap, stats, items);
-        // Create header
-        header.append(create_elem({type: 'div', class: 'date', child: "Jul 25 2020 (土)"}), create_elem({type: 'div', class: 'count', child: 100}));
-        // Create minimap and stats
-        stats.append(create_table('left', [["Levels"], [" 1-10", 0], ["11-20", 0], ["21-30", 0], ["31-40", 0], ["41-50", 0], ["51-60", 0]], {class: 'levels'}, true),
-                     create_table('left', [["SRS"], ["A", 0, 0], ["G", 0, 0], ["M", 0, 0], ["E", 0, 0], ["B", 0, 0]], {class: 'srs hover-wrapper-target', child: create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'table'})})}),
-                     create_table('left', [["Type"], ["Rad", 0], ["Kan", 0], ["Voc", 0]], {class: 'type'}),
-                     create_table('left', [["Summary"], ["Pass", 0], ["Fail", 0], ["Acc", 0]], {class: 'summary'}),
-                     create_table('left', [["Answers"], ["Right", 0], ["Wrong", 0], ["Acc", 0]], {class: 'answers'}),
-                    );
-        return popper;
-    }
+function create_popper(data) {
+    // Create layout
+    let popper = create_elem({type: 'div', id: 'popper'});
+    let header = create_elem({type: 'div', class: 'header'});
+    let minimap = create_elem({type: 'div', class: 'minimap'});
+    let stats = create_elem({type: 'div', class: 'stats'});
+    let items = create_elem({type: 'div', class: 'items'});
+    popper.append(header, minimap, stats, items);
+    // Create header
+    header.append(create_elem({type: 'div', class: 'date', child: "Jul 25 2020 (土)"}), create_elem({type: 'div', class: 'count', child: 100}));
+    // Create minimap and stats
+    stats.append(create_table('left', [["Levels"], [" 1-10", 0], ["11-20", 0], ["21-30", 0], ["31-40", 0], ["41-50", 0], ["51-60", 0]], {class: 'levels'}, true),
+    create_table('left', [["SRS"], ["A", 0, 0], ["G", 0, 0], ["M", 0, 0], ["E", 0, 0], ["B", 0, 0]], {class: 'srs hover-wrapper-target', child: create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'table'})})}),
+    create_table('left', [["Type"], ["Rad", 0], ["Kan", 0], ["Voc", 0]], {class: 'type'}),
+    create_table('left', [["Summary"], ["Pass", 0], ["Fail", 0], ["Acc", 0]], {class: 'summary'}),
+    create_table('left', [["Answers"], ["Right", 0], ["Wrong", 0], ["Acc", 0]], {class: 'answers'}),
+);
+return popper;
+}
 
-    // Create and install the heatmap
-    function install_heatmap(reviews, forecast, lessons, stats) {
-        // Create elements
-        let heatmap = create_elem({type: 'section', id: 'heatmap', class: 'heatmap'});
-        let buttons = create_buttons();
-        let views = create_elem({type: 'div', class: 'views'});
-        heatmap.append(buttons, views);
-        heatmap.onclick = heatmap.onmousedown = heatmap.onmouseup = heatmap.onmouseover = get_event_handler({reviews, forecast, lessons});
-        // Create heatmaps
-        let cooked_reviews = cook_data("reviews", reviews);
-        let cooked_lessons = cook_data("lessons", lessons)
-        let level_ups = get_level_ups(lessons).map(date=>[date, 'level-up']);
-        let reviews_view = create_view('reviews', stats, level_ups, reviews[0][0], cooked_reviews.concat(forecast));
-        let lessons_view = create_view('lessons', stats, level_ups, lessons[0][0], cooked_lessons);
-        let popper = create_popper({reviews: cooked_reviews, forecast, lessons: cooked_lessons});
-        views.append(reviews_view, lessons_view, popper);
-        // Install
-        $('.progress-and-forecast').after(heatmap);
-    }
+// Create and install the heatmap
+function install_heatmap(reviews, forecast, lessons, stats) {
+    // Create elements
+    let heatmap = create_elem({type: 'section', id: 'heatmap', class: 'heatmap'});
+    let buttons = create_buttons();
+    let views = create_elem({type: 'div', class: 'views'});
+    heatmap.append(buttons, views);
+    heatmap.onclick = heatmap.onmousedown = heatmap.onmouseup = heatmap.onmouseover = get_event_handler({reviews, forecast, lessons});
+    // Create heatmaps
+    let cooked_reviews = cook_data("reviews", reviews);
+    let cooked_lessons = cook_data("lessons", lessons)
+    let level_ups = get_level_ups(lessons).map(date=>[date, 'level-up']);
+    let reviews_view = create_view('reviews', stats, level_ups, reviews[0][0], cooked_reviews.concat(forecast));
+    let lessons_view = create_view('lessons', stats, level_ups, lessons[0][0], cooked_lessons);
+    let popper = create_popper({reviews: cooked_reviews, forecast, lessons: cooked_lessons});
+    views.append(reviews_view, lessons_view, popper);
+    // Install
+    $('.progress-and-forecast').after(heatmap);
+}
 
-    function cook_data(type, data) {
-        if (type === "reviews") {
-            return data.map(item=>{
-                let cooked = [item[0], {reviews: 1, pass: (item[3]+item[4]==0?1:0), incorrect: item[3]+item[4]}, {'reviews-ids': item[1]}];
-                cooked[1][type+'-srs1-'+item[2]] = 1;
-                let new_srs = item[2]-((item[3]+item[4])*(item[2]<5?1:2))+((item[3]+item[4])==0?1:0);
-                cooked[1][type+'-srs2-'+(new_srs<1?1:new_srs)] = 1;
-                return cooked;
-            });
-        }
-        else if (type === "lessons") return data.map(item=>[item[0], {lessons: 1,}, {'lessons-ids': item[1]}]);
-        else if (type === "forecast") return data;
-    }
-
-    // Creates the buttons at the top of the heatmap
-    function create_buttons() {
-        let buttons = create_elem({type: 'div', class: 'buttons'});
-        // Creates a button element with an icon and a hover element
-        let create_button = (cls, icon, tooltip)=>create_elem({type: 'button', class: cls+'-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: tooltip}),
-                                                                                                                                     create_elem({type: 'i', class: 'icon-'+icon})]});
-        // Create button elements
-        let settings_button = create_button('settings', 'gear', 'Settings');
-        let toggle_button = create_button('toggle', 'inbox', 'Toggle Reviews/Lessons');
-        buttons.append(settings_button, toggle_button);
-        return buttons;
-    }
-
-    // Create heatmaps together with peripherals such as stats
-    function create_view(type, stats, level_ups, first_date, data) {
-        let settings = wkof.settings[script_id];
-        // New heatmap instance
-        let heatmap = new Heatmap({type: "year",
-                                   id: type,
-                                   week_start: settings.general.week_start,
-                                   day_start: settings.general.day_start,
-                                   first_date: Math.max(Date.parse(settings.general.start_date), first_date),
-                                   segment_years: settings.general.segment_years,
-                                   zero_gap: settings.general.zero_gap,
-                                   markings: [[Date.now(), "today"], ...level_ups],
-                                   day_hover_callback: (date, data)=>[`${data.counts.reviews||0} ${type} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}`],
-                                   color_callback: (date, data)=>{
-                                       date[2]++;
-                                       let type2 = type;
-                                       if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && data.counts.forecast) type2 = "forecast";
-                                       for (let [count, color] of Object.values(settings[type2].colors)) {
-                                           if (data.counts[type2] < count) {
-                                               return color;
-                                               break;
-                                           }
-                                       }
-                                   },
-                                  },
-                                  data);
-        modify_heatmap(type, heatmap);
-        // Create layout
-        let view = create_elem({type: 'div', class: type+' view'});
-        let title = create_elem({type: 'div', class: 'title', child: type.toProper()});
-        let [head_stats, foot_stats] = create_stats_elements(type, stats[type]);
-        let years = create_elem({type: 'div', class: 'years'+(settings.general.reverse_years?' reverse':'')});
-        years.setAttribute('month-labels', settings.general.month_labels);
-        years.setAttribute('day-labels', settings.general.day_labels);
-        for (let year of Object.values(heatmap.maps).reverse()) years.append(year);
-        view.append(title, head_stats, years, foot_stats);
-        return view;
-    }
-
-    function modify_heatmap(type, heatmap) {
-        for (let [year, map] of Object.entries(heatmap.maps)) {
-            let target = map.querySelector('.year-labels');
-            let up = create_elem({type: 'a', class: 'toggle-year up hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Click to hide this year'}), create_elem({type: 'i', class: 'icon-chevron-up'})]});
-            let down = create_elem({type: 'a', class: 'toggle-year down hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper below', child: 'Click to show next year'}), create_elem({type: 'i', class: 'icon-chevron-down'})]});
-            target.append(up, down);
-        }
-        if (wkof.settings[script_id].other[type+'_last_visible_year']) heatmap.maps[wkof.settings[script_id].other[type+'_last_visible_year']].classList.add('last');
-    }
-
-    // Create the header and footer stats for a view
-    function create_stats_elements(type, stats) {
-        let head_stats = create_elem({type: 'div', class: 'head-stats stats', children: [
-            create_stat_element('Days Studied', stats.days_studied[1]+'%', stats.days_studied[0]+' out of '+stats.days),
-            create_stat_element('Done Daily', stats.average[0], `${stats.average[1]} per day ${type==="reviews"?"review":"learn"}ed`),
-            create_stat_element('Streak', stats.streak[1]+' / '+stats.streak[0], 'Nothing here yet'),
-        ]})
-        let foot_stats = create_elem({type: 'div', class: 'foot-stats stats', children: [
-            create_stat_element('Sessions', stats.sessions, Math.floor(stats.total[0]/stats.sessions)+' per session'),
-            create_stat_element(type.toProper(), stats.total[0].toSeparated(), create_table("left", [['This Year', stats.total[1].toSeparated()],
-                                                                                                     ['This Month', stats.total[2].toSeparated()],
-                                                                                                     ['This Week', stats.total[3].toSeparated()],
-                                                                                                     ['Today', stats.total[4].toSeparated()]
-                                                                                                    ])),
-            create_stat_element('Time', m_to_hm(stats.time[0]), create_table("left", [['This Year', m_to_hm(stats.time[1])],
-                                                                                      ['This Month', m_to_hm(stats.time[2])],
-                                                                                      ['This Week', m_to_hm(stats.time[3])],
-                                                                                      ['Today', m_to_hm(stats.time[4])]
-                                                                                     ])),
-        ]})
-        return [head_stats, foot_stats];
-    }
-
-    // Create an single stat element complete with hover info
-    function create_stat_element(label, value, hover) {
-        return create_elem({type: 'div', class: 'stat hover-wrapper-target', children: [
-            create_elem({type: 'div', class: 'hover-wrapper above', child: hover}),
-            create_elem({type: 'span', class: 'stat-label', child: label}),
-            create_elem({type: 'span', class: 'value', child: value}),
-        ]})
-    }
-
-    // Creates a table from a matrix
-    function create_table(header, data, table_attr, tr_hover) {
-        let table = create_elem(Object.assign({type: 'table'}, table_attr));
-        for (let [i, row] of Object.entries(data)) {
-            let tr_config = {type: 'tr'};
-            if (tr_hover) {tr_config.class = 'hover-wrapper-target'; tr_config.child = create_elem({type: 'div', class: 'hover-wrapper above'});}
-            let tr = create_elem(tr_config);
-            for (let [j, cell] of Object.entries(row)) {
-                let cell_type = (header=="top"&&i==0)||(header=="left"&&j==0)?"th":"td";
-                tr.append(create_elem({type: cell_type, child: cell}));
-            }
-            table.append(tr);
-        }
-        return table;
-    }
-
-    // Shorthand for creating new elements. All keys/value pairs will be added to the new element as attributes
-    // unless they are of the exeptions "type" (type of element), "child" (adds one child), or "children" (adds multiple children)
-    function create_elem(config) {
-        let div = document.createElement(config.type);
-        for (let [attr, value] of Object.entries(config)) {
-            if (attr === "type") continue;
-            else if (attr === "child") div.append(value);
-            else if (attr === "children") div.append(...value);
-            else div.setAttribute(attr, value);
-        }
-        return div;
-    }
-
-    /*-------------------------------------------------------------------------------------------------------------------------------*/
-
-    // Extract upcoming reviews and completed lessons from the WKOF cache
-    function get_forecast_and_lessons() {
-        return wkof.ItemData.get_items('assignments').then(data=>{
-            let forecast = [], lessons = [];
-            for (let item of data) {
-                if (item.assignments && item.assignments.started_at !== null) {
-                    // If the assignment has been started add a lesson containing staring date, id, level, and unlock date
-                    lessons.push([Date.parse(item.assignments.started_at), item.id, item.data.level, Date.parse(item.assignments.unlocked_at)]);
-                    if (Date.parse(item.assignments.available_at) > Date.now()) {
-                        // If the assignment is scheduled add a forecast item ready for sending to the heatmap module
-                        let forecast_item = [Date.parse(item.assignments.available_at), {forecast: 1,}, {'forecast-ids': item.id}];
-                        forecast_item[1]["forecast-srs1-"+item.assignments.srs_stage] = 1;
-                        forecast.push(forecast_item);
-                    }
-                }
-            }thttps://trello.com/b/m4Y9Kdqj/heatmapy
-            // Sort lessons by started_at for easy extraction of chronological info
-            lessons.sort((a,b)=>a[0]<b[0]?-1:1);
-            return [forecast, lessons];
+function cook_data(type, data) {
+    if (type === "reviews") {
+        return data.map(item=>{
+            let cooked = [item[0], {reviews: 1, pass: (item[3]+item[4]==0?1:0), incorrect: item[3]+item[4]}, {'reviews-ids': item[1]}];
+            cooked[1][type+'-srs1-'+item[2]] = 1;
+            let new_srs = item[2]-((item[3]+item[4])*(item[2]<5?1:2))+((item[3]+item[4])==0?1:0);
+            cooked[1][type+'-srs2-'+(new_srs<1?1:new_srs)] = 1;
+            return cooked;
         });
     }
+    else if (type === "lessons") return data.map(item=>[item[0], {lessons: 1,}, {'lessons-ids': item[1]}]);
+    else if (type === "forecast") return data;
+}
 
-    // Find implicit level up dates by looking at when items were unlocked
-    function get_level_ups(lessons) {
-        // Prepare level array
-        let levels = new Array(61).fill(null).map(_=>{return {}});
-        // Group unlocked items within each level by unlock date
-        for (let [start, id, level, unlock] of lessons) {
-            let date_string = new Date(unlock).toDateString();
-            if (!levels[level][date_string]) levels[level][date_string] = 0;
-            levels[level][date_string]++;
-        }
-        // Discard dates with fewer than 20 unlocked items, then pick the earliest date remaining
-        for (let [level, dates] of Object.entries(levels)) {
-            for (let [date, count] of Object.entries(dates)) if (count < 20) delete levels[level][date];
-            levels[level] = Math.min(...Object.keys(dates).map(date=>Date.parse(date)));
-        }
-        // Remove the 0th level entry
-        levels.shift(1);
-        return levels;
-    }
+// Creates the buttons at the top of the heatmap
+function create_buttons() {
+    let buttons = create_elem({type: 'div', class: 'buttons'});
+    // Creates a button element with an icon and a hover element
+    let create_button = (cls, icon, tooltip)=>create_elem({type: 'button', class: cls+'-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: tooltip}),
+    create_elem({type: 'i', class: 'icon-'+icon})]});
+    // Create button elements
+    let settings_button = create_button('settings', 'gear', 'Settings');
+    let toggle_button = create_button('toggle', 'inbox', 'Toggle Reviews/Lessons');
+    buttons.append(settings_button, toggle_button);
+    return buttons;
+}
 
-    // Calculate overall stats for lessons and reviews
-    function calculate_stats(data) {
-        let ms_day = 24*60*60*1000;
-        let stats = {
-            total: [0, 0, 0, 0, 0], // [total, year, month, week, day]
-            days_studied: [0, 0],   // [days studied, percentage]
-            average: [0, 0],        // [average, per studied]
-            streak: [0, 0],         // [longest, current]
-            sessions: 0,            // Number of sessions
-            time: [0, 0, 0, 0, 0],  // [total, year, month, week, day]
-            days: 0,                // Number of days since first review
-            max_done: 0,            // Max done in one day
-        };
-        let last_day = new Date(0);
-        let today = new Date();
-        let week = new Date(new Date(Date.parse(new Date().toDateString())-(new Date().getDay()+6)%7*ms_day+ms_day/2).toDateString());
-        let month = new Date(today.getFullYear()+'-'+(today.getMonth()+1)+'-01');
-        let year = new Date('Jan ' + today.getFullYear());
-        let last_time = 0;
-        let done_day = 0;
-        let start_date = new Date(wkof.settings[script_id].general.start_date);
-        for (let item of data) {
-            let day = new Date(item[0]-ms_day/24*wkof.settings[script_id].general.day_start);
-            if (day < start_date) continue;
-            if (last_day.toDateString() != day.toDateString()) {
-                stats.days_studied[0]++;
-                done_day = 0;
-                if (last_day.toDateString() != new Date(Date.parse(day.toDateString())-0.5*ms_day).toDateString()) {
-                    stats.streak[1] = 0;
+// Create heatmaps together with peripherals such as stats
+function create_view(type, stats, level_ups, first_date, data) {
+    let settings = wkof.settings[script_id];
+    // New heatmap instance
+    let heatmap = new Heatmap({
+        type: "year",
+        id: type,
+        week_start: settings.general.week_start,
+        day_start: settings.general.day_start,
+        first_date: Math.max(Date.parse(settings.general.start_date), first_date),
+        segment_years: settings.general.segment_years,
+        zero_gap: settings.general.zero_gap,
+        markings: [[Date.now(), "today"], ...level_ups],
+        day_hover_callback: (date, data)=>[`${data.counts.reviews||0} ${type} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}`],
+        color_callback: (date, data)=>{
+            date[2]++;
+            let type2 = type;
+            if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && data.counts.forecast) type2 = "forecast";
+            let colors = settings[type2].colors.slice().reverse();
+            if (!settings[type2].gradient) {
+                for (let [count, color] of colors) {
+                    if (data.counts[type2] >= count) {
+                        return color;
+                        break;
+                    }
                 }
-                stats.streak[1]++;
-                if (stats.streak[1] > stats.streak[0]) stats.streak[0] = stats.streak[1];
+            } else {
+                if (data.counts[type2] >= colors[0][0]) return colors[0][1];
+                for (let i=0; i<colors.length; i++) {
+                    if (data.counts[type2] >= colors[i][0]) {
+                        let percentage = (data.counts[type2]-colors[i][0])/(colors[i-1][0]-colors[i][0]);
+                        return interpolate_color(colors[i][1], colors[i-1][1], percentage);
+                        break;
+                    }
+                }
             }
-            done_day++;
-            if (done_day > stats.max_done) stats.max_done = done_day;
-            let minutes = (item[0]-last_time)/60000;
-            if (minutes > 10) {
-                stats.sessions++;
-                minutes = 0;
-            }
-            stats.total[0]++;
-            stats.time[0] += minutes;
-            if (year < day) {
-                stats.total[1]++;
-                stats.time[1] += minutes;
-            }
-            if (month < day) {
-                stats.total[2]++;
-                stats.time[2] += minutes;
-            }
-            if (week < day) {
-                stats.total[3]++;
-                stats.time[3] += minutes;
-            }
-            if (today.toDateString() == day.toDateString()) {
-                stats.total[4]++;
-                stats.time[4] += minutes;
-            }
-            last_day = day;
-            last_time = item[0];
-        }
-        stats.days = Math.floor((today.getTime()-data[0][0])/ms_day)+1;
-        stats.days_studied[1] = Math.round(stats.days_studied[0]/stats.days*100);
-        stats.average[0] = Math.round(stats.total[0]/stats.days);
-        stats.average[1] = Math.round(stats.total[0]/stats.days_studied[0]);
-        return stats;
+        },
+    }, data);
+    modify_heatmap(type, heatmap);
+    // Create layout
+    let view = create_elem({type: 'div', class: type+' view'});
+    let title = create_elem({type: 'div', class: 'title', child: type.toProper()});
+    let [head_stats, foot_stats] = create_stats_elements(type, stats[type]);
+    let years = create_elem({type: 'div', class: 'years'+(settings.general.reverse_years?' reverse':'')});
+    years.setAttribute('month-labels', settings.general.month_labels);
+    years.setAttribute('day-labels', settings.general.day_labels);
+    for (let year of Object.values(heatmap.maps).reverse()) years.append(year);
+    view.append(title, head_stats, years, foot_stats);
+    return view;
+}
+
+function modify_heatmap(type, heatmap) {
+    for (let [year, map] of Object.entries(heatmap.maps)) {
+        let target = map.querySelector('.year-labels');
+        let up = create_elem({type: 'a', class: 'toggle-year up hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Click to hide this year'}), create_elem({type: 'i', class: 'icon-chevron-up'})]});
+        let down = create_elem({type: 'a', class: 'toggle-year down hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper below', child: 'Click to show next year'}), create_elem({type: 'i', class: 'icon-chevron-down'})]});
+        target.append(up, down);
     }
+    if (wkof.settings[script_id].other[type+'_last_visible_year']) heatmap.maps[wkof.settings[script_id].other[type+'_last_visible_year']].classList.add('last');
+}
 
-    /*-------------------------------------------------------------------------------------------------------------------------------*/
+// Create the header and footer stats for a view
+function create_stats_elements(type, stats) {
+    let head_stats = create_elem({type: 'div', class: 'head-stats stats', children: [
+        create_stat_element('Days Studied', stats.days_studied[1]+'%', stats.days_studied[0]+' out of '+stats.days),
+        create_stat_element('Done Daily', stats.average[0], `${stats.average[1]} per day ${type==="reviews"?"review":"learn"}ed`),
+        create_stat_element('Streak', stats.streak[1]+' / '+stats.streak[0], 'Nothing here yet'),
+    ]})
+    let foot_stats = create_elem({type: 'div', class: 'foot-stats stats', children: [
+        create_stat_element('Sessions', stats.sessions, Math.floor(stats.total[0]/stats.sessions)+' per session'),
+        create_stat_element(type.toProper(), stats.total[0].toSeparated(), create_table("left", [['This Year', stats.total[1].toSeparated()],
+        ['This Month', stats.total[2].toSeparated()],
+        ['This Week', stats.total[3].toSeparated()],
+        ['Today', stats.total[4].toSeparated()]
+    ])),
+    create_stat_element('Time', m_to_hm(stats.time[0]), create_table("left", [['This Year', m_to_hm(stats.time[1])],
+    ['This Month', m_to_hm(stats.time[2])],
+    ['This Week', m_to_hm(stats.time[3])],
+    ['Today', m_to_hm(stats.time[4])]
+])),
+]})
+return [head_stats, foot_stats];
+}
 
-    // Returns the kanij for the day
-    function kanji_day(day) {return ['日', '月', '火', '水', '木', '金', '土'][day]};
-    // Filter for WKOF's get_items()
-    wkof.wait_state('wkof.ItemData.registry', 'ready').then(()=>{wkof.ItemData.registry.sources.wk_items.filters.subject_ids = {filter_func: (ids, item)=>ids.includes(item.id)};});
-    // Converts minutes to a timestamp string "#h #m"
-    function m_to_hm(minutes) {return Math.floor(minutes/60)+'h '+Math.floor(minutes%60)+'m';}
-    // Adds thousand separators to numbers. 1000000 → "1,000,000"
-    Number.prototype.toSeparated = function(separator=",") {return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator)}
-    // Capitalizes the first character in a string. "proper" → "Proper"
-    String.prototype.toProper = function() {return this.slice(0,1).toUpperCase()+this.slice(1)}
+// Create an single stat element complete with hover info
+function create_stat_element(label, value, hover) {
+    return create_elem({type: 'div', class: 'stat hover-wrapper-target', children: [
+        create_elem({type: 'div', class: 'hover-wrapper above', child: hover}),
+        create_elem({type: 'span', class: 'stat-label', child: label}),
+        create_elem({type: 'span', class: 'value', child: value}),
+    ]})
+}
+
+// Creates a table from a matrix
+function create_table(header, data, table_attr, tr_hover) {
+    let table = create_elem(Object.assign({type: 'table'}, table_attr));
+    for (let [i, row] of Object.entries(data)) {
+        let tr_config = {type: 'tr'};
+        if (tr_hover) {tr_config.class = 'hover-wrapper-target'; tr_config.child = create_elem({type: 'div', class: 'hover-wrapper above'});}
+        let tr = create_elem(tr_config);
+        for (let [j, cell] of Object.entries(row)) {
+            let cell_type = (header=="top"&&i==0)||(header=="left"&&j==0)?"th":"td";
+            tr.append(create_elem({type: cell_type, child: cell}));
+        }
+        table.append(tr);
+    }
+    return table;
+}
+
+// Shorthand for creating new elements. All keys/value pairs will be added to the new element as attributes
+// unless they are of the exeptions "type" (type of element), "child" (adds one child), or "children" (adds multiple children)
+function create_elem(config) {
+    let div = document.createElement(config.type);
+    for (let [attr, value] of Object.entries(config)) {
+        if (attr === "type") continue;
+        else if (attr === "child") div.append(value);
+        else if (attr === "children") div.append(...value);
+        else div.setAttribute(attr, value);
+    }
+    return div;
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------------*/
+
+// Extract upcoming reviews and completed lessons from the WKOF cache
+function get_forecast_and_lessons() {
+    return wkof.ItemData.get_items('assignments').then(data=>{
+        let forecast = [], lessons = [];
+        for (let item of data) {
+            if (item.assignments && item.assignments.started_at !== null) {
+                // If the assignment has been started add a lesson containing staring date, id, level, and unlock date
+                lessons.push([Date.parse(item.assignments.started_at), item.id, item.data.level, Date.parse(item.assignments.unlocked_at)]);
+                if (Date.parse(item.assignments.available_at) > Date.now()) {
+                    // If the assignment is scheduled add a forecast item ready for sending to the heatmap module
+                    let forecast_item = [Date.parse(item.assignments.available_at), {forecast: 1,}, {'forecast-ids': item.id}];
+                    forecast_item[1]["forecast-srs1-"+item.assignments.srs_stage] = 1;
+                    forecast.push(forecast_item);
+                }
+            }
+        }thttps://trello.com/b/m4Y9Kdqj/heatmapy
+        // Sort lessons by started_at for easy extraction of chronological info
+        lessons.sort((a,b)=>a[0]<b[0]?-1:1);
+        return [forecast, lessons];
+    });
+}
+
+// Find implicit level up dates by looking at when items were unlocked
+function get_level_ups(lessons) {
+    // Prepare level array
+    let levels = new Array(61).fill(null).map(_=>{return {}});
+    // Group unlocked items within each level by unlock date
+    for (let [start, id, level, unlock] of lessons) {
+        let date_string = new Date(unlock).toDateString();
+        if (!levels[level][date_string]) levels[level][date_string] = 0;
+        levels[level][date_string]++;
+    }
+    // Discard dates with fewer than 20 unlocked items, then pick the earliest date remaining
+    for (let [level, dates] of Object.entries(levels)) {
+        for (let [date, count] of Object.entries(dates)) if (count < 20) delete levels[level][date];
+        levels[level] = Math.min(...Object.keys(dates).map(date=>Date.parse(date)));
+    }
+    // Remove the 0th level entry
+    levels.shift(1);
+    return levels;
+}
+
+// Calculate overall stats for lessons and reviews
+function calculate_stats(data) {
+    let ms_day = 24*60*60*1000;
+    let stats = {
+        total: [0, 0, 0, 0, 0], // [total, year, month, week, day]
+        days_studied: [0, 0],   // [days studied, percentage]
+        average: [0, 0],        // [average, per studied]
+        streak: [0, 0],         // [longest, current]
+        sessions: 0,            // Number of sessions
+        time: [0, 0, 0, 0, 0],  // [total, year, month, week, day]
+        days: 0,                // Number of days since first review
+        max_done: 0,            // Max done in one day
+    };
+    let last_day = new Date(0);
+    let today = new Date();
+    let week = new Date(new Date(Date.parse(new Date().toDateString())-(new Date().getDay()+6)%7*ms_day+ms_day/2).toDateString());
+    let month = new Date(today.getFullYear()+'-'+(today.getMonth()+1)+'-01');
+    let year = new Date('Jan ' + today.getFullYear());
+    let last_time = 0;
+    let done_day = 0;
+    let start_date = new Date(wkof.settings[script_id].general.start_date);
+    for (let item of data) {
+        let day = new Date(item[0]-ms_day/24*wkof.settings[script_id].general.day_start);
+        if (day < start_date) continue;
+        if (last_day.toDateString() != day.toDateString()) {
+            stats.days_studied[0]++;
+            done_day = 0;
+            if (last_day.toDateString() != new Date(Date.parse(day.toDateString())-0.5*ms_day).toDateString()) {
+                stats.streak[1] = 0;
+            }
+            stats.streak[1]++;
+            if (stats.streak[1] > stats.streak[0]) stats.streak[0] = stats.streak[1];
+        }
+        done_day++;
+        if (done_day > stats.max_done) stats.max_done = done_day;
+        let minutes = (item[0]-last_time)/60000;
+        if (minutes > 10) {
+            stats.sessions++;
+            minutes = 0;
+        }
+        stats.total[0]++;
+        stats.time[0] += minutes;
+        if (year < day) {
+            stats.total[1]++;
+            stats.time[1] += minutes;
+        }
+        if (month < day) {
+            stats.total[2]++;
+            stats.time[2] += minutes;
+        }
+        if (week < day) {
+            stats.total[3]++;
+            stats.time[3] += minutes;
+        }
+        if (today.toDateString() == day.toDateString()) {
+            stats.total[4]++;
+            stats.time[4] += minutes;
+        }
+        last_day = day;
+        last_time = item[0];
+    }
+    stats.days = Math.floor((today.getTime()-data[0][0])/ms_day)+1;
+    stats.days_studied[1] = Math.round(stats.days_studied[0]/stats.days*100);
+    stats.average[0] = Math.round(stats.total[0]/stats.days);
+    stats.average[1] = Math.round(stats.total[0]/stats.days_studied[0]);
+    return stats;
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------------*/
+
+// Returns the kanij for the day
+function kanji_day(day) {return ['日', '月', '火', '水', '木', '金', '土'][day]};
+// Filter for WKOF's get_items()
+wkof.wait_state('wkof.ItemData.registry', 'ready').then(()=>{wkof.ItemData.registry.sources.wk_items.filters.subject_ids = {filter_func: (ids, item)=>ids.includes(item.id)};});
+// Converts minutes to a timestamp string "#h #m"
+function m_to_hm(minutes) {return Math.floor(minutes/60)+'h '+Math.floor(minutes%60)+'m';}
+// Adds thousand separators to numbers. 1000000 → "1,000,000"
+Number.prototype.toSeparated = function(separator=",") {return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator)}
+// Capitalizes the first character in a string. "proper" → "Proper"
+String.prototype.toProper = function() {return this.slice(0,1).toUpperCase()+this.slice(1)}
+// Returns a hex color between the left and right hex colors
+function interpolate_color(left, right, index) {
+    left = hex_to_rgb(left); right = hex_to_rgb(right);
+    let result = [0, 0, 0];
+    for (let i = 0; i < 3; i++) result[i] = Math.round(left[i] + index * (right[i] - left[i]));
+    return rgb_to_hex(result);
+};
+// Converts a hex color to rgb
+function hex_to_rgb(hex) {
+    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)];
+}
+// Converts an rgb color to hex
+function rgb_to_hex(cols) {
+   let rgb = cols[2] | (cols[1] << 8) | (cols[0] << 16);
+   return '#' + (0x1000000 + rgb).toString(16).slice(1)
+}
 })(window.jQuery, window.wkof, window.review_cache, window.Heatmap);
