@@ -195,8 +195,8 @@
         let srs_counter = (index, start, end)=>srs.map((a, i)=>(i>=start?i<=end?a[index]:0:0)).reduce((a,b)=>a+b);
         srs[0] = [[srs_counter(0, 1, 4), srs_counter(1, 1, 4)], [srs_counter(0, 5, 6), srs_counter(1, 5, 6)], srs[7], srs[8], srs[9]];
         let srs_diff = Object.entries(srs.slice(1)).reduce((a,b)=>a+b[0]*(b[1][1]-b[1][0]), 0);
-        let pass = [info.counts.pass, info.counts.reviews-info.counts.pass, Math.floor(info.counts.pass/info.counts.reviews*1000)/10];
-        let answers = [info.counts.reviews*2-item_types.rad, info.counts.incorrect, Math.floor((info.counts.reviews*2-item_types.rad)/(info.counts.incorrect+info.counts.reviews*2-item_types.rad)*1000)/10];
+        let pass = [info.counts.pass, info.counts.reviews-info.counts.pass, Math.floor(info.counts.pass/info.counts.reviews*100)];
+        let answers = [info.counts.reviews*2-item_types.rad, info.counts.incorrect, Math.floor((info.counts.reviews*2-item_types.rad)/(info.counts.incorrect+info.counts.reviews*2-item_types.rad)*100)];
         let item_elems = [];
         for (let item of items) {
             item_elems.push(create_elem({type: 'a', class: 'item '+item.object+' hover-wrapper-target', href: item.data.document_url, children: [
