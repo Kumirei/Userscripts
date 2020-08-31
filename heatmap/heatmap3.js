@@ -74,10 +74,8 @@
                 color_level: 'blue',
             },
             other: {
-                reviews_last_visible_year: 0,
-                lessons_last_visible_year: 0,
-                //reviews_last_visible_year: null,
-                //lessons_last_visible_year: null,
+                reviews_last_visible_year: null,
+                lessons_last_visible_year: null,
             }
         };
         return wkof.Settings.load(script_id, defaults);
@@ -196,6 +194,7 @@
         }
         let srs_counter = (index, start, end)=>srs.map((a, i)=>(i>=start?i<=end?a[index]:0:0)).reduce((a,b)=>a+b);
         srs[0] = [[srs_counter(0, 1, 4), srs_counter(1, 1, 4)], [srs_counter(0, 5, 6), srs_counter(1, 5, 6)], srs[7], srs[8], srs[9]];
+        let srs_diff = Object.entries(srs.slice(1)).reduce((a,b)=>a+b[0]*(b[1][1]-b[1][0]), 0);
         let pass = [info.counts.pass, info.counts.reviews-info.counts.pass, Math.floor(info.counts.pass/info.counts.reviews*1000)/10];
         let answers = [info.counts.reviews*2-item_types.rad, info.counts.incorrect, Math.floor((info.counts.reviews*2-item_types.rad)/(info.counts.incorrect+info.counts.reviews*2-item_types.rad)*1000)/10];
         let item_elems = [];
@@ -215,7 +214,7 @@
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
         popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i]; e.parentElement.children[0].append(create_table('left', levels.map((a,j)=>[j, a]).slice(1).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
         popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2]});
-        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['', 'Start', 'End'], ...srs.slice(1).map((a, i)=>[i+1, ...a])]));
+        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['', 'Start', 'End'], ...srs.slice(1).map((a, i)=>[i+1, ...a]), ['Diff', '', (srs_diff<0?'':'+')+srs_diff]]));
         popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]]});
         popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = pass[i]});
         popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = answers[i]});
