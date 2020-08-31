@@ -54,17 +54,17 @@
             reviews: {
                 gradient: false,
                 auto_range: false,
-                colors: [],
+                colors: [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],],
             },
             lessons: {
                 gradient: false,
                 auto_range: false,
-                colors: [],
+                colors: [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],],
             },
             forecast: {
                 gradient: false,
                 auto_range: false,
-                colors: [],
+                colors: [[0, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],],
             },
             indicators: {
                 now: true,
@@ -317,11 +317,17 @@
                                    segment_years: settings.general.segment_years,
                                    zero_gap: settings.general.zero_gap,
                                    markings: [[Date.now(), "today"], ...level_ups],
-                                   day_hover_callback: (date, counts)=>[`${counts.reviews||0} ${type} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}`],
-                                   color_callback: (date, counts)=>{
+                                   day_hover_callback: (date, data)=>[`${data.counts.reviews||0} ${type} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}`],
+                                   color_callback: (date, data)=>{
                                        date[2]++;
-                                       if (type === "reviews") return Date.parse(date.join('-'))>Date.now()&&counts.forecast?"lightgrey":counts.reviews?"pink":"";
-                                       else if (type === "lessons") return counts.lessons?"pink":"";
+                                       let type2 = type;
+                                       if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && data.counts.forecast) type2 = "forecast";
+                                       for (let [count, color] of Object.values(settings[type2].colors)) {
+                                           if (data.counts[type2] < count) {
+                                               return color;
+                                               break;
+                                           }
+                                       }
                                    },
                                   },
                                   data);

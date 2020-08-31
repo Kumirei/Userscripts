@@ -121,14 +121,14 @@
         }
 
         _init_day(year, month, day, data, dates) {
-            let counts = data[year][month][day].counts;
+            let day_data = data[year][month][day];
             let day_elem = this._create_elem({type: 'div',
                                               class: 'day hover-wrapper-target',
-                                              info: {counts: counts, lists: data[year][month][day].lists},
-                                              child: this._create_elem({type: 'div', class: 'hover-wrapper', child: this.config.day_hover_callback([year, month, day], counts)})});
+                                              info: {counts: day_data.counts, lists: day_data.lists},
+                                              child: this._create_elem({type: 'div', class: 'hover-wrapper', child: this.config.day_hover_callback([year, month, day], day_data)})});
             day_elem.setAttribute('data-date', `${year}-${month}-${day}`);
             if (year===dates.first_year && month===dates.first_month && day<dates.first_day) day_elem.classList.add('no-data');
-            day_elem.style.setProperty('background-color', this.config.color_callback([year, month, day], counts));
+            day_elem.style.setProperty('background-color', this.config.color_callback([year, month, day], day_data));
             return day_elem;
         }
 
