@@ -139,9 +139,9 @@
             for (let i=0; i<24; i++) {
                 let j = (i+this.config.day_start)%24;
                 let hour = this._create_elem({type: 'div', class: 'hour hover-wrapper-target'+(j===current_hour?' today marked':''), info: {counts: hour_data[i].counts, lists: hour_data[i].lists}});
-                let hover = this._create_elem({type: 'div', class: 'hover-wrapper', child: this.config.day_hover_callback([dates.first_year, dates.first_month, dates.first_day, j], hour_data[i].counts)});
+                let hover = this._create_elem({type: 'div', class: 'hover-wrapper', child: this.config.day_hover_callback([dates.first_year, dates.first_month, dates.first_day, j], hour_data[i])});
                 hour.append(hover);
-                hour.style.setProperty('background-color', this.config.color_callback([dates.first_year, dates.first_month, dates.first_day, j], hour_data[i].counts));
+                hour.style.setProperty('background-color', this.config.color_callback([dates.first_year, dates.first_month, dates.first_day, j], hour_data[i]));
                 day.append(hour);
             }
             day.instance = this;

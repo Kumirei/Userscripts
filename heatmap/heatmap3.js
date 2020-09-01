@@ -247,19 +247,38 @@
     }
 
     function create_minimap(type, data) {
+        let settings = wkof.settings[script_id];
+        let multiplier = 6;
         return new Heatmap({
             type: "day",
             id: 'minimap',
             first_date: Date.now(),
-            day_start: wkof.settings[script_id].general.day_start,
+            day_start: settings.general.day_start,
             day_hover_callback: (date, counts)=>[`${counts.reviews||0} ${type} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}`],
-            color_callback: (date, counts)=>{
+            color_callback: (date, day_data)=>{
                 date[2]++;
-                if (type === "reviews") return Date.parse(date.join('-'))>Date.now()&&counts.forecast?"lightgrey":counts.reviews?"pink":"";
-                else if (type === "lessons") return counts.lessons?"pink":"";
+                let type2 = type;
+                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && day_data.counts.forecast) type2 = "forecast";
+                let colors = settings[type2].colors.slice().reverse();
+                if (!settings[type2].gradient) {
+                    for (let [count, color] of colors) {
+                        if (day_data.counts[type2]*multiplier >= count) {
+                            return color;
+                            break;
+                        }
+                    }
+                } else {
+                    if (day_data.counts[type2]*multiplier >= colors[0][0]) return colors[0][1];
+                    for (let i=0; i<colors.length; i++) {
+                        if (day_data.counts[type2]*multiplier >= colors[i][0]) {
+                            let percentage = (day_data.counts[type2]*multiplier-colors[i][0])/(colors[i-1][0]-colors[i][0]);
+                            return interpolate_color(colors[i][1], colors[i-1][1], percentage);
+                            break;
+                        }
+                    }
+                }
             },
-        },
-        data);
+        }, data);
     }
 
     function create_popper(data) {
@@ -353,7 +372,6 @@
                 return [string];
             },
             color_callback: (date, day_data)=>{
-                date[2]++;
                 let type2 = type;
                 if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && day_data.counts.forecast) type2 = "forecast";
                 let colors = settings[type2].colors.slice().reverse();
