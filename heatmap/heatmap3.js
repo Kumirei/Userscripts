@@ -30,16 +30,38 @@
     async function initiate() {
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
-        let stats = {reviews: calculate_stats("reviews", reviews), lessons: calculate_stats("lessons", lessons)};
+        let stats = {
+            reviews: calculate_stats("reviews", reviews),
+            lessons: calculate_stats("lessons", lessons),
+        };
+        auto_range(stats, forecast);
         install_heatmap(reviews, forecast, lessons, stats);
     }
 
 
     /*-------------------------------------------------------------------------------------------------------------------------------*/
 
-    function load_settings() {
-        delete wkof.settings[script_id];
+    function auto_range(stats, forecast_items) {
+        let settings = wkof.settings[script_id];
+        let forecast_days = {};
+        for (let [date] of Object.values(forecast_items)) {
+            let string = new Date(date).toDateString();
+            if (!forecast_days[string]) forecast_days[string] = 1;
+            else forecast_days[string]++;
+        }
+        let foreacast_average = forecast_items.length/Object.keys(forecast_days).length;
+        let forecast_sd = Math.sqrt(1/(forecast_items.length/foreacast_average)*Object.values(forecast_days).map(x=>Math.pow(x-foreacast_average, 2)).reduce((a,b)=>a+b));
+        let forecast = Array(settings.forecast.colors.length-1).fill(null).map((_, i)=>Math.round(icdf((i+1)/settings.forecast.colors.length, foreacast_average, forecast_sd)));
+        let reviews = Array(settings.reviews.colors.length-1).fill(null).map((_, i)=>Math.round(icdf((i+1)/settings.reviews.colors.length, stats.reviews.average[1], stats.reviews.average[2])));
+        let lessons = Array(settings.lessons.colors.length-1).fill(null).map((_, i)=>Math.round(icdf((i+1)/settings.lessons.colors.length, stats.lessons.average[1], stats.lessons.average[2])));
+        if (settings.reviews.auto_range) for (let i=1; i<settings.reviews.colors.length; i++) settings.reviews.colors[i][0] = reviews[i-1];
+        if (settings.lessons.auto_range) for (let i=1; i<settings.lessons.colors.length; i++) settings.lessons.colors[i][0] = lessons[i-1];
+        if (settings.forecast.auto_range) for (let i=1; i<settings.forecast.colors.length; i++) settings.forecast.colors[i][0] = forecast[i-1];
         wkof.Settings.save(script_id);
+    }
+
+    function load_settings() {
+        wkof.file_cache.delete('wkof.settings.'+script_id); // temporary
         let defaults = {
             general: {
                 start_date: 0,
@@ -53,18 +75,18 @@
             },
             reviews: {
                 gradient: false,
-                auto_range: false,
+                auto_range: true,
                 colors: [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],],
             },
             lessons: {
                 gradient: true,
-                auto_range: false,
+                auto_range: true,
                 colors: [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],],
                 count_zeros: true,
             },
             forecast: {
                 gradient: false,
-                auto_range: false,
+                auto_range: true,
                 colors: [[0, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],],
                 next_year_months: 3,
             },
@@ -522,7 +544,7 @@
         let stats = {
             total: [0, 0, 0, 0, 0], // [total, year, month, week, day]
             days_studied: [0, 0],   // [days studied, percentage]
-            average: [0, 0],        // [average, per studied]
+            average: [0, 0, 0],     // [average, per studied, standard deviation]
             streak: [longest_streak, current_streak],
             sessions: 0,            // Number of sessions
             time: [0, 0, 0, 0, 0],  // [total, year, month, week, day]
@@ -537,12 +559,14 @@
         let year = new Date('Jan ' + today.getFullYear());
         let last_time = 0;
         let done_day = 0;
+        let done_days = [];
         let start_date = new Date(wkof.settings[script_id].general.start_date);
         for (let item of data) {
             let day = new Date(item[0]-ms_day/24*wkof.settings[script_id].general.day_start);
             if (day < start_date) continue;
             if (last_day.toDateString() != day.toDateString()) {
                 stats.days_studied[0]++;
+                done_days.push(done_day);
                 done_day = 0;
             }
             done_day++;
@@ -573,10 +597,12 @@
             last_day = day;
             last_time = item[0];
         }
+        done_days.push(done_day); // Assumes users has done reviews today
         stats.days = Math.floor((today.getTime()-data[0][0])/ms_day)+1;
         stats.days_studied[1] = Math.round(stats.days_studied[0]/stats.days*100);
         stats.average[0] = Math.round(stats.total[0]/stats.days);
         stats.average[1] = Math.round(stats.total[0]/stats.days_studied[0]);
+        stats.average[2] = Math.sqrt(1/stats.days_studied[0]*done_days.map(x=>Math.pow(x-stats.average[1], 2)).reduce((a,b)=>a+b));
         return stats;
     }
 
@@ -608,5 +634,17 @@
     function rgb_to_hex(cols) {
         let rgb = cols[2] | (cols[1] << 8) | (cols[0] << 16);
         return '#' + (0x1000000 + rgb).toString(16).slice(1)
+    }
+    // Inverse cumulative distribution function
+    function icdf(p, mean, sd) {
+        // Inverse error function
+        function inverf(x) {
+            let sign = (x >= 0) ? 1 : -1;
+            let a = ((8*(Math.PI - 3)) / ((3*Math.PI)*(4 - Math.PI)));
+            let b  = Math.log(1-x*x);
+            let c = Math.sqrt(Math.sqrt(Math.pow(((2 / Math.PI / a) + (b / 2)), 2) - b / a) - (2 / Math.PI / a) - (b / 2) );
+            return sign * c ;
+        }
+        return Math.sqrt(2)*inverf(2*p-1)*sd+mean;
     }
 })(window.jQuery, window.wkof, window.review_cache, window.Heatmap);
