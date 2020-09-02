@@ -60,8 +60,10 @@
 	display: flex;
 }
 
-.heatmap .day .hover-wrapper {
+.heatmap .day .hover-wrapper,
+.heatmap .hour .hover-wrapper {
     transform: translate(15px, 15px);
+	white-space: pre-line;
 }
 
 .heatmap .hover-wrapper {

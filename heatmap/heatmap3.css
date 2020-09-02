@@ -73,6 +73,16 @@
 #heatmap #popper .header {
 	text-align: center;
 	padding: 5px;
+	position: relative;
+}
+
+#heatmap #popper .header .score {
+	position: absolute;
+	top: 0;
+	right: 0;
+	margin: 10px;
+	font-weight: bold;
+	font-size: 16px;
 }
 
 #heatmap #popper .date {
@@ -141,7 +151,7 @@ a#heatmap .minimap {
 }
 
 #heatmap #popper .srs th {
-	width: 14px;
+	width: 28px;
 	text-align: left;
 }
 
@@ -177,7 +187,7 @@ a#heatmap .minimap {
 	font-weight: bold;
 }
 
-#heatmap #popper .srs .hover-wrapper tr:not(:first-child):not(:last-child) th::before {
+#heatmap #popper .srs .hover-wrapper tr:not(:first-child) th::before {
 	content: 'SRS ';
 }
 
@@ -306,8 +316,4 @@ a#heatmap .minimap {
 
 #heatmap .years[day-labels="false"] .day-labels {
 	display: none;
-}
-
-#heatmap .day .hover-wrapper {
-	white-space: pre-line;
 }
