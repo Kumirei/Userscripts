@@ -292,7 +292,11 @@ a#heatmap .minimap {
 }
 
 #heatmap .year-labels .toggle-year.down {
-	bottom: 0;
+	bottom: 3px;
+}
+
+#heatmap .year-labels .toggle-year.up {
+	top: 14px;
 }
 
 #heatmap .year.hidden {

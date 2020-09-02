@@ -289,7 +289,7 @@
     }
 
     function load_settings() {
-        wkof.file_cache.delete('wkof.settings.'+script_id); // temporary
+        //wkof.file_cache.delete('wkof.settings.'+script_id); // temporary
         let defaults = {
             general: {
                 start_date: 0,
@@ -299,10 +299,10 @@
                 segment_years: true,
                 zero_gap: false,
                 month_labels: 'all',
-                day_labels: false,
+                day_labels: true,
             },
             reviews: {
-                gradient: false,
+                gradient: true,
                 auto_range: true,
                 colors: [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],],
             },
@@ -313,7 +313,7 @@
                 count_zeros: true,
             },
             forecast: {
-                gradient: false,
+                gradient: true,
                 auto_range: true,
                 colors: [[0, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],],
                 next_year_months: 3,
@@ -415,6 +415,7 @@
                         year_elem.classList.remove('last');
                         wkof.settings[script_id].other[type+'_last_visible_year'] = year-1;
                     }
+                    wkof.Settings.save(script_id);
                 }
             }
             if (event.type === "click") {
@@ -469,7 +470,7 @@
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
         popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i]; e.parentElement.children[0].append(create_table('left', levels.map((a,j)=>[j, a]).slice(1).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
         popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2]});
-        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['', 'Start', 'End'], ...srs.slice(1).map((a, i)=>[i+1, ...a])]));
+        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['', 'Before', 'After'], ...srs.slice(1).map((a, i)=>[i+1, ...a])]));
         popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]]});
         popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = pass[i]});
         popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = answers[i]});
@@ -603,7 +604,7 @@
                 let type2 = type;
                 if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && day_data.counts.forecast) type2 = "forecast";
                 let string = `${day_data.counts[type2]||0} ${type} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}
-                Streak ${stats[type].streaks[new Date(date.join('-')).toDateString()]}
+                Streak ${stats[type].streaks[new Date(date.join('-')).toDateString()] || 0}
                 Day ${Math.round((Date.parse(date.join('-'))-Date.parse(new Date(data[0][0]).toDateString()))/(24*60*60*1000))+1}`;
                 return [string];
             },
@@ -766,7 +767,7 @@
     function get_streaks(type, data) {
         let day_start_adjust = 60*60*1000*wkof.settings[script_id].general.day_start;
         let streaks = {}, zeros = {};
-        for (let day = new Date(data[0][0]-day_start_adjust); day <= new Date(); day.setDate(day.getDate()+1)) {
+        for (let day = new Date(data[0][0]-day_start_adjust); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
             streaks[day.toDateString()] = 0;
             zeros[day.toDateString()] = true;
         }
@@ -780,7 +781,7 @@
             for (let date of Object.keys(zeros)) streaks[date] = 1;
         }
         let streak = 0;
-        for (let day = new Date(data[0][0]-day_start_adjust); day <= new Date(); day.setDate(day.getDate()+1)) {
+        for (let day = new Date(data[0][0]-day_start_adjust); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
             if (streaks[day.toDateString()] === 1) streak++;
             else streak = 0;
             streaks[day.toDateString()] = streak;
