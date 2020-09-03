@@ -29,16 +29,22 @@
         .then(install_menu)
         .then(initiate);
 
+    let reload; // Function to reload the heatmap
+
     // Fetch necessary data then install the heatmap
     async function initiate() {
+        let t = Date.now();
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
         let stats = {
             reviews: calculate_stats("reviews", reviews),
             lessons: calculate_stats("lessons", lessons),
         };
-        auto_range(stats, forecast);
-        install_heatmap(reviews, forecast, lessons, stats);
+        reload = function() {
+            auto_range(stats, forecast);
+            install_heatmap(reviews, forecast, lessons, stats);
+        }
+        reload();
     }
 
 
@@ -78,6 +84,10 @@
        var config = {
            script_id: script_id,
            title: 'Heatmap',
+           on_save: reload,
+           on_cancel: reload,
+           on_close: reload,
+           on_change: reload,
            content: {
                tabs: {
                    type: 'tabset',
@@ -94,7 +104,7 @@
                                        start_date: {
                                            type: 'text',
                                            label: 'Start date (YYYY-MM-DD)',
-                                           default: '1970-01-01',
+                                           default: '',
                                            hover_tip: 'All data before this date will be ignored',
                                            path: '@general.start_date',
                                            validate: validate_start_date,
@@ -138,14 +148,14 @@
                                        zero_gap: {
                                            type: 'checkbox',
                                            label: 'No gap',
-                                           default: true,
+                                           default: false,
                                            hover_tip: `Don't display any gap between days`,
                                            path: '@general.zero_gap'
                                        },
                                        month_labels: {
                                            type: 'dropdown',
                                            label: 'Month labels',
-                                           default: "top",
+                                           default: "all",
                                            hover_tip: 'Display labels for the months above the maps',
                                            content: {"all": "All", "top": "Only at the top", "none": "None"},
                                            path: '@general.month_labels'
@@ -153,7 +163,7 @@
                                        day_labels: {
                                            type: 'checkbox',
                                            label: 'Day of week labels',
-                                           default: false,
+                                           default: true,
                                            hover_tip: 'Adds letters to the left of the heatmaps indicating which row represents which weekday',
                                            path: '@general.day_labels'
                                        },
@@ -166,21 +176,21 @@
                            label: 'Reviews',
                            hover_tip: 'Settings pertaining to the review heatmaps',
                            content: {
-                               gradient: {
+                               reviews_gradient: {
                                    type: 'checkbox',
                                    label: 'Gradients',
                                    default: true,
                                    hover_tip: 'Let any colors between the chosen ones be used',
                                    path: '@reviews.gradient'
                                },
-                               auto_range: {
+                               reviews_auto_range: {
                                    type: 'checkbox',
                                    label: 'Auto range',
                                    default: true,
                                    hover_tip: 'Automatically decide what the intervals should be',
                                    path: '@reviews.auto_range'
                                },
-                               colors: {
+                               reviews_colors: {
                                },
                            },
                        },
@@ -189,23 +199,23 @@
                            label: 'Lessons',
                            hover_tip: 'Settings pertaining to the lesson heatmaps',
                            content: {
-                               gradient: {
+                               lessons_gradient: {
                                    type: 'checkbox',
                                    label: 'Gradients',
                                    default: true,
                                    hover_tip: 'Let any colors between the chosen ones be used',
                                    path: '@lessons.gradient'
                                },
-                               auto_range: {
+                               lessons_auto_range: {
                                    type: 'checkbox',
                                    label: 'Auto range',
                                    default: true,
                                    hover_tip: 'Automatically decide what the intervals should be',
                                    path: '@lessons.auto_range'
                                },
-                               colors: {
+                               lessons_colors: {
                                },
-                               count_zeros: {
+                               lessons_count_zeros: {
                                    type: 'checkbox',
                                    label: 'Include zeros in streak',
                                    default: true,
@@ -219,29 +229,29 @@
                            label: 'Forecast',
                            hover_tip: 'Settings pertaining to the forecast',
                            content: {
-                               gradient: {
+                               forecast_gradient: {
                                    type: 'checkbox',
                                    label: 'Gradients',
                                    default: true,
                                    hover_tip: 'Let any colors between the chosen ones be used',
                                    path: '@forecast.gradient'
                                },
-                               auto_range: {
+                               forecast_auto_range: {
                                    type: 'checkbox',
                                    label: 'Auto range',
                                    default: true,
                                    hover_tip: 'Automatically decide what the intervals should be',
                                    path: '@forecast.auto_range'
                                },
-                               colors: {
+                               forecast_colors: {
                                },
-                               next_year_months: {
-                                   type: 'number',
-                                   label: 'Forecast at least (months)',
-                                   default: 3,
-                                   placeholder: 'months',
-                                   hover_tip: 'Will display the new year if there is x number of months or less until then',
-                                   path: '@general.next_year_months',
+                               forecast_show_next_year: {
+                                   type: 'dropdown',
+                                   label: 'Show next year in',
+                                   default: 12,
+                                   hover_tip: 'Start showing the next year\'s heatmap this month',
+                                   content: {9: 'September', 10: 'October', 11: 'November', 12: 'December'},
+                                   path: '@forecast.show_next_year',
                                },
                            },
                        },
@@ -294,7 +304,7 @@
             general: {
                 start_date: 0,
                 week_start: 0,
-                day_start: 4,
+                day_start: 0,
                 reverse_years: false,
                 segment_years: true,
                 zero_gap: false,
@@ -316,13 +326,13 @@
                 gradient: true,
                 auto_range: true,
                 colors: [[0, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],],
-                next_year_months: 3,
+                show_next_year: 12,
             },
             indicators: {
                 now: true,
-                color_now: 'red',
+                color_now: '#ff0000',
                 level: true,
-                color_level: 'blue',
+                color_level: '#ff0000',
             },
             other: {
                 reviews_last_visible_year: null,
@@ -419,7 +429,7 @@
                 }
             }
             if (event.type === "click") {
-                if (event.target.classList.contains('settings-button')) open_settings();
+                if (event.path.slice(0, 2).find(e=>e.classList.contains('settings-button'))) open_settings();
             }
             if (event.type === "mouseup") {
                 down = false;
@@ -487,7 +497,7 @@
             id: 'minimap',
             first_date: Date.now(),
             day_start: settings.general.day_start,
-            day_hover_callback: (date, day_data)=>{console.log(date); return[`${day_data.counts.reviews||0} ${type} at ${date[3]}:00`]},
+            day_hover_callback: (date, day_data)=>[`${day_data.counts.reviews||0} ${type} at ${date[3]}:00`],
             color_callback: (date, day_data)=>{
                 date[2]++;
                 let type2 = type;
@@ -547,6 +557,8 @@
         let views = create_elem({type: 'div', class: 'views'});
         heatmap.append(buttons, views);
         heatmap.onclick = heatmap.onmousedown = heatmap.onmouseup = heatmap.onmouseover = get_event_handler({reviews, forecast, lessons});
+        heatmap.style.setProperty('--color-now', wkof.settings[script_id].indicators.color_now);
+        heatmap.style.setProperty('--color-level', wkof.settings[script_id].indicators.color_level);
         // Create heatmaps
         let cooked_reviews = cook_data("reviews", reviews);
         let cooked_lessons = cook_data("lessons", lessons)
@@ -556,7 +568,10 @@
         let popper = create_popper({reviews: cooked_reviews, forecast, lessons: cooked_lessons});
         views.append(reviews_view, lessons_view, popper);
         // Install
-        $('.progress-and-forecast').after(heatmap);
+        let elem = document.getElementById('heatmap');
+        if (elem) elem.replaceWith(heatmap);
+        else document.getElementsByClassName('progress-and-forecast')[0].insertAdjacentElement('afterend', heatmap);
+        //$('.progress-and-forecast').after(heatmap);
     }
 
     function cook_data(type, data) {
@@ -596,21 +611,21 @@
             week_start: settings.general.week_start,
             day_start: settings.general.day_start,
             first_date: Math.max(Date.parse(settings.general.start_date), first_date),
-            last_date: new Date().setMonth(new Date().getMonth()+(type==="reviews"?settings.forecast.next_year_months:0)),
+            last_date: new Date(String(new Date().getFullYear()+(new Date().getMonth()-settings.forecast.show_next_year+1 >= 0 ? 2 : 1))).setHours(0)-1,
             segment_years: settings.general.segment_years,
             zero_gap: settings.general.zero_gap,
-            markings: [[Date.now(), "today"], ...level_ups],
+            markings: [[new Date(Date.now()-60*60*1000*settings.general.day_start), "today"], ...level_ups],
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
-                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && day_data.counts.forecast) type2 = "forecast";
-                let string = `${day_data.counts[type2]||0} ${type} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}
+                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
+                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":type2} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}
                 Streak ${stats[type].streaks[new Date(date.join('-')).toDateString()] || 0}
                 Day ${Math.round((Date.parse(date.join('-'))-Date.parse(new Date(data[0][0]).toDateString()))/(24*60*60*1000))+1}`;
                 return [string];
             },
             color_callback: (date, day_data)=>{
                 let type2 = type;
-                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && day_data.counts.forecast) type2 = "forecast";
+                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
                 let colors = settings[type2].colors.slice().reverse();
                 if (!settings[type2].gradient) {
                     for (let [count, color] of colors) {
@@ -772,6 +787,7 @@
             zeros[day.toDateString()] = true;
         }
         for (let [date] of data) streaks[new Date(date-day_start_adjust).toDateString()] = 1;
+        streaks[new Date(Date.now()-day_start_adjust).toDateString()] = 1;
         if (type === "lessons") {
             for (let [started_at, id, level, unlocked_at] of data) {
                 for (let day = new Date(unlocked_at-day_start_adjust); day <= new Date(started_at-day_start_adjust); day.setDate(day.getDate()+1)) {

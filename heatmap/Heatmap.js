@@ -69,7 +69,7 @@
             }
             for (let [date, counts, lists] of data) {
                 let [year, month, day, hour] = this._get_ymdh(date-1000*60*60*this.config.day_start);
-                if (year < dates.first_year || (year === dates.first_year && (month < dates.first_month || (month === dates.first_month && day < dates.first_day)))) continue;
+                if (date-1000*60*60*this.config.day_start < Date.parse(this.config.first_date) || date-1000*60*60*this.config.day_start > new Date(this.config.last_date || date+1).getTime()) continue;
                 let parsed_day = parsed_data[year][month][day];
                 for (let [key, value] of Object.entries(counts)) {
                     if (!parsed_day.counts[key]) parsed_day.counts[key] = value || 0;
