@@ -63,7 +63,6 @@
 .heatmap .day .hover-wrapper,
 .heatmap .hour .hover-wrapper {
     transform: translate(15px, 15px);
-	white-space: pre-line;
 }
 
 .heatmap .hover-wrapper {
@@ -79,6 +78,7 @@
     transition: opacity 0s;
     text-align: left;
 	height: fit-content;
+	white-space: pre-line;
 }
 
 .heatmap .hover-wrapper-target:hover .hover-wrapper {

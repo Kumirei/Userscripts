@@ -83,9 +83,22 @@
     }
 
     function modify_settings(dialog) {
+        // Add apply button
         let apply = create_elem({type: 'button', class: 'ui-button ui-corner-all ui-widget', child: 'Apply'});
         apply.onclick = reload;
         dialog[0].nextElementSibling.getElementsByClassName('ui-dialog-buttonset')[0].insertAdjacentElement('afterbegin', apply);
+        // Add color color labels
+        let update_label = function(input) {
+            if (!input.nextElementSibling) input.insertAdjacentElement('afterend', create_elem({type: 'div', class: 'color-label', child: input.value}));
+            else input.nextElementSibling.value = input.value;
+            if (!Math.round(hex_to_rgb(input.value).reduce((a,b)=>a+b/3, 0)/255-0.15)) input.nextElementSibling.classList.remove('light-color');
+            else input.nextElementSibling.classList.add('light-color');
+        }
+        dialog[0].querySelectorAll('input[type="color"]').forEach(input=>{
+            input.addEventListener('change', ()=>update_label(input));
+            update_label(input);
+        });
+
     }
 
     function open_settings() {
@@ -95,7 +108,6 @@
            on_save: reload,
            on_cancel: reload,
            on_close: reload,
-           pre_open: modify_settings,
            content: {
                tabs: {
                    type: 'tabset',
@@ -314,6 +326,7 @@
            },
        };
        let dialog = new wkof.Settings(config);
+       config.pre_open = (elem)=>{dialog.refresh(); modify_settings(elem);};
        dialog.open();
     }
 
@@ -373,7 +386,7 @@
                     let title = `${date.toDateString().slice(4)} ${kanji_day(date.getDay())}`;
                     let today = new Date(new Date().toDateString()).getTime();
                     let minimap_data = cook_data(type, data[type].filter(a=>a[0]>date.getTime()&&a[0]<date.getTime()+1000*60*60*24).map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
-                    update_popper(type, title, elem.info, minimap_data);
+                    update_popper(event, type, title, elem.info, minimap_data);
                 }
                 if (event.type === "mousedown") {
                     event.preventDefault();
@@ -403,7 +416,7 @@
                                 popper_info.lists[key].push(value);
                             }
                         }
-                        update_popper(type, title, popper_info, minimap_data);
+                        update_popper(event, type, title, popper_info, minimap_data);
                     }
                 }
                 if (event.type === "mouseover" && down) {
@@ -446,9 +459,6 @@
                     wkof.Settings.save(script_id);
                 }
             }
-            if (event.type === "click") {
-                if (event.path.slice(0, 2).find(e=>e.classList.contains('settings-button'))) open_settings();
-            }
             if (event.type === "mouseup") {
                 down = false;
                 for (let m of marked) {
@@ -459,7 +469,7 @@
         }
     }
 
-    async function update_popper(type, title, info, minimap_data) {
+    async function update_popper(event, type, title, info, minimap_data) {
         let items = await wkof.ItemData.get_items({wk_items: {options: {assignments: true}, filters: {subject_ids: info.lists[type+'-ids']}}});
         let popper = document.getElementById('popper');
         let levels = new Array(61).fill(0);
@@ -504,7 +514,8 @@
         popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = answers[i]});
         popper.querySelector('.items').replaceWith(create_elem({type: 'div', class: 'items', children: item_elems}));
         popper.querySelector('.minimap').replaceWith(create_minimap(type, minimap_data).maps.day);
-
+        popper.style.top = event.pageY+50+'px';
+        popper.classList.add('popped');
     }
 
     function create_minimap(type, data) {
@@ -556,6 +567,7 @@
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);
+        document.addEventListener('click', (event)=>{if (!event.path.find((a)=>a===popper) && !event.target.classList.contains('day')) popper.classList.remove('popped')});
         // Create header
         header.append(
             create_elem({type: 'div', class: 'date'}),
@@ -577,7 +589,7 @@
     function install_heatmap(reviews, forecast, lessons, stats) {
         let settings = wkof.settings[script_id];
         // Create elements
-        let heatmap = create_elem({type: 'section', id: 'heatmap', class: 'heatmap'});
+        let heatmap = create_elem({type: 'section', id: 'heatmap', class: 'heatmap '+(settings.other.visible_map === "reviews" ? "reviews" : "")});
         let buttons = create_buttons();
         let views = create_elem({type: 'div', class: 'views'});
         heatmap.append(buttons, views);
@@ -597,7 +609,6 @@
         let elem = document.getElementById('heatmap');
         if (elem) elem.replaceWith(heatmap);
         else document.getElementsByClassName('progress-and-forecast')[0].insertAdjacentElement('afterend', heatmap);
-        //$('.progress-and-forecast').after(heatmap);
     }
 
     function cook_data(type, data) {
@@ -622,9 +633,18 @@
         create_elem({type: 'i', class: 'icon-'+icon})]});
         // Create button elements
         let settings_button = create_button('settings', 'gear', 'Settings');
+        settings_button.onclick = open_settings;
         let toggle_button = create_button('toggle', 'inbox', 'Toggle Reviews/Lessons');
+        toggle_button.onclick = toggle_visible_map;
         buttons.append(settings_button, toggle_button);
         return buttons;
+    }
+
+    function toggle_visible_map() {
+        let heatmap = document.getElementById('heatmap');
+        heatmap.classList.toggle('reviews');
+        wkof.settings[script_id].other.visible_map = heatmap.classList.contains('reviews') ? 'reviews' : 'lessons';
+        wkof.Settings.save(script_id);
     }
 
     // Create heatmaps together with peripherals such as stats
@@ -704,9 +724,9 @@
     // Create the header and footer stats for a view
     function create_stats_elements(type, stats) {
         let head_stats = create_elem({type: 'div', class: 'head-stats stats', children: [
-            create_stat_element('Days Studied', stats.days_studied[1]+'%', stats.days_studied[0]+' out of '+stats.days),
-            create_stat_element('Done Daily', stats.average[0], `${stats.average[1]} per day ${type==="reviews"?"review":"learn"}ed`),
-            create_stat_element('Streak', stats.streak[1]+' / '+stats.streak[0], 'Nothing here yet'),
+            create_stat_element('Days Studied', stats.days_studied[1]+'%', stats.days_studied[0].toSeparated()+' out of '+stats.days.toSeparated()),
+            create_stat_element('Done Daily', stats.average[0]+' / '+stats.average[1], 'Per Day / Day studied\nMax: '+stats.max_done.toSeparated()),
+            create_stat_element('Streak', stats.streak[1]+' / '+stats.streak[0], 'Current / Longest'),
         ]})
         let foot_stats = create_elem({type: 'div', class: 'foot-stats stats', children: [
             create_stat_element('Sessions', stats.sessions, Math.floor(stats.total[0]/stats.sessions)+' per session'),
