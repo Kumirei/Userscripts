@@ -84,7 +84,7 @@
     opacity: 1;
 	visibility: visible;
     transition-delay: 0.5s;
-	z-index: 10;
+	z-index: 1001;
 }
 
 .heatmap .hover-wrapper-target {

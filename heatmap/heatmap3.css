@@ -322,7 +322,6 @@ a#heatmap .minimap {
 #heatmap .year-labels .toggle-year {
 	position: absolute;
 	margin-left: 4px;
-	z-index: 1000;
 	color: var(--color);
 }
 
@@ -419,10 +418,6 @@ a#heatmap .minimap {
 
 #heatmap .years.reverse[month-labels="top"] .year:not(.last) .month-label {
 	display: none;
-}
-
-#heatmap .year-labels .hover-wrapper {
-	z-index: 10000;
 }
 
 @media (max-width: 767px) {
