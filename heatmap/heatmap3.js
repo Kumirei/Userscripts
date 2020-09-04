@@ -33,6 +33,7 @@
 
     // Fetch necessary data then install the heatmap
     async function initiate() {
+    console.log(wkof.settings[script_id].reviews.colors.slice().reverse());
         let t = Date.now();
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
@@ -185,7 +186,7 @@
                                            label: 'Month labels',
                                            default: "all",
                                            hover_tip: 'Display labels for the months above the maps',
-                                           content: {"all": "All", "top": "Only at the top", "none": "None"},
+                                           content: {all: "All", top: "Only at the top", none: "None"},
                                            path: '@general.month_labels'
                                        },
                                        day_labels: {
@@ -368,6 +369,7 @@
             other: {
                 reviews_last_visible_year: null,
                 lessons_last_visible_year: null,
+                visible_map: "reviews",
             }
         };
         return wkof.Settings.load(script_id, defaults);
@@ -651,6 +653,7 @@
     function create_view(type, stats, level_ups, first_date, data) {
         let settings = wkof.settings[script_id];
         // New heatmap instance
+        console.log(settings.reviews.colors.slice().reverse());
         let heatmap = new Heatmap({
             type: "year",
             id: type,
@@ -687,7 +690,7 @@
                     }
                 } else {
                     if (day_data.counts[type2] >= colors[0][0]) return colors[0][1];
-                    for (let i=0; i<colors.length; i++) {
+                    for (let i=1; i<colors.length; i++) {
                         if (day_data.counts[type2] >= colors[i][0]) {
                             let percentage = (day_data.counts[type2]-colors[i][0])/(colors[i-1][0]-colors[i][0]);
                             return interpolate_color(colors[i][1], colors[i-1][1], percentage);

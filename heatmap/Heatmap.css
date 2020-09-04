@@ -2,9 +2,7 @@
     --day-size: 10px;
     --day-gap: 2px;
 	--year-label-size: 20px;
-	--background-color: #232629;
 	--hover-background-color: #424242;
-    background-color: var(--background-color);
 }
 
 .heatmap.year {
@@ -70,6 +68,7 @@
     visibility: hidden;
     position: absolute;
     background-color: var(--hover-background-color);
+	color: rgb(240, 240, 240) !important;
     padding: 5px;
     border-radius: 3px;
     font-size: 12px;
@@ -133,14 +132,15 @@
 }
 
 .heatmap .day.marked,
-.heatmap .hour.marked {
-	height: calc(var(--day-size) - 2px);
-	width: calc(var(--day-size) - 2px);
+.heatmap .single-day .hour.marked {
+	height: var(--day-size);
+	width: var(--day-size);
 	margin-right: calc(0px - 2*var(--day-gap));
 	border-width: 1px;
 	border-style: solid;
 	border-color: white;
-	border-radius: calc(2px);
+	border-radius: 2px;
+	box-sizing: border-box;
 }
 
 .heatmap .day.marked:hover {
