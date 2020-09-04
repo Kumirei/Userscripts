@@ -57,11 +57,15 @@
 
 #heatmap .day.today,
 #heatmap .hour.today {
-	border-color: red;
+	border-color: var(--color-now);
 }
 
 #heatmap .day.level-up {
-	border-color: blue;
+	border-color: var(--color-level);
+}
+
+#heatmap .day.level-up.level-60 {
+	border-color: gold;
 }
 
 #heatmap #popper {
@@ -72,7 +76,7 @@
 
 #heatmap #popper .header {
 	text-align: center;
-	padding: 5px;
+	padding: 10px;
 	position: relative;
 }
 
@@ -104,9 +108,11 @@
 
 #heatmap #popper.forecast .summary,
 #heatmap #popper.forecast .answers,
+#heatmap #popper.forecast .score,
 #heatmap #popper.lessons .srs,
 #heatmap #popper.lessons .summary,
-#heatmap #popper.lessons .answers {
+#heatmap #popper.lessons .answers,
+#heatmap #popper.lessons .score {
 	display: none;
 }
 
@@ -296,7 +302,7 @@ a#heatmap .minimap {
 }
 
 #heatmap .year-labels .toggle-year.up {
-	top: 14px;
+	top: 2px;
 }
 
 #heatmap .year.hidden {
@@ -320,4 +326,34 @@ a#heatmap .minimap {
 
 #heatmap .years[day-labels="false"] .day-labels {
 	display: none;
+}
+
+#heatmap .years.reverse .toggle-year.up {
+	bottom: 3px;
+	top: unset;
+}
+
+#heatmap .years.reverse .toggle-year.down {
+	bottom: unset;
+	top: 2px;
+}
+
+#heatmap .years.reverse .toggle-year.up,
+#heatmap .years.reverse .toggle-year.down,
+#heatmap .years.reverse .toggle-year .hover-wrapper div {
+	transform: rotate(180deg);
+}
+
+#heatmap .years .toggle-year:hover {
+	text-decoration: none;
+	cursor: pointer;
+}
+
+#heatmap .years .toggle-year {
+	margin-top: 14px;
+}
+
+#heatmap .years[month-labels="top"] .year:not(:first-child) .toggle-year,
+#heatmap .years[month-labels="none"] .toggle-year {
+	margin-top: 0px;
 }

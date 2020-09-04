@@ -69,7 +69,7 @@
             }
             for (let [date, counts, lists] of data) {
                 let [year, month, day, hour] = this._get_ymdh(date-1000*60*60*this.config.day_start);
-                if (date-1000*60*60*this.config.day_start < Date.parse(this.config.first_date) || date-1000*60*60*this.config.day_start > new Date(this.config.last_date || date+1).getTime()) continue;
+                if (date-1000*60*60*this.config.day_start < new Date(this.config.first_date).getTime() || date-1000*60*60*this.config.day_start > new Date(this.config.last_date || date+1).getTime()) continue;
                 let parsed_day = parsed_data[year][month][day];
                 for (let [key, value] of Object.entries(counts)) {
                     if (!parsed_day.counts[key]) parsed_day.counts[key] = value || 0;
@@ -151,7 +151,7 @@
         _add_markings(markings, years) {
             for (let [date, mark] of markings) {
                 let [year, month, day] = this._get_ymdh(date);
-                if (years[year]) years[year].querySelector(`.day[data-date="${year}-${month}-${day}"]`).classList.add(mark, 'marked');
+                if (years[year]) years[year].querySelector(`.day[data-date="${year}-${month}-${day}"]`).classList.add(...mark.split(' '), 'marked');
             }
         }
 

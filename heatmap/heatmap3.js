@@ -36,13 +36,15 @@
         let t = Date.now();
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
-        let stats = {
-            reviews: calculate_stats("reviews", reviews),
-            lessons: calculate_stats("lessons", lessons),
-        };
         reload = function() {
-            auto_range(stats, forecast);
-            install_heatmap(reviews, forecast, lessons, stats);
+            setTimeout(()=>{// make settings dialog respond immediately
+                let stats = {
+                    reviews: calculate_stats("reviews", reviews),
+                    lessons: calculate_stats("lessons", lessons),
+                };
+                auto_range(stats, forecast);
+                install_heatmap(reviews, forecast, lessons, stats);
+            }, 1);
         }
         reload();
     }
@@ -80,6 +82,12 @@
         wkof.Settings.save(script_id);
     }
 
+    function modify_settings(dialog) {
+        let apply = create_elem({type: 'button', class: 'ui-button ui-corner-all ui-widget', child: 'Apply'});
+        apply.onclick = reload;
+        dialog[0].nextElementSibling.getElementsByClassName('ui-dialog-buttonset')[0].insertAdjacentElement('afterbegin', apply);
+    }
+
     function open_settings() {
        var config = {
            script_id: script_id,
@@ -87,7 +95,7 @@
            on_save: reload,
            on_cancel: reload,
            on_close: reload,
-           on_change: reload,
+           pre_open: modify_settings,
            content: {
                tabs: {
                    type: 'tabset',
@@ -124,6 +132,14 @@
                                            placeholder: '(hours after midnight)',
                                            hover_tip: 'Offset for those who tend to stay up after midnight. If you want the new day to start at 4 AM, input 4.',
                                            path: '@general.day_start',
+                                       },
+                                       session_limit: {
+                                           type: 'number',
+                                           label: 'Session time limit (minutes)',
+                                           default: 10,
+                                           placeholder: '(minutes)',
+                                           hover_tip: 'Max number of minutes between review answers to still count within the same session',
+                                           path: '@general.session_limit',
                                        },
                                    },
                                },
@@ -167,6 +183,37 @@
                                            hover_tip: 'Adds letters to the left of the heatmaps indicating which row represents which weekday',
                                            path: '@general.day_labels'
                                        },
+                                       divider_id: {
+                                            type: 'divider'
+                                        },
+                                       now_indicator: {
+                                           type: 'checkbox',
+                                           label: 'Show current day indicator',
+                                           default: true,
+                                           hover_tip: 'Puts borders around the current day',
+                                           path: '@general.now_indicator'
+                                       },
+                                       color_now_indicator: {
+                                           type: 'color',
+                                           label: 'Color for current day',
+                                           hover_tip: 'The borders around today will have this color.',
+                                           default: '#ff0000',
+                                           path: '@general.color_now_indicator',
+                                       },
+                                       level_indicator: {
+                                           type: 'checkbox',
+                                           label: 'Show level-up indicators',
+                                           default: true,
+                                           hover_tip: 'Puts borders around the days you leveled up',
+                                           path: '@general.level_indicator'
+                                       },
+                                       color_level_indicator: {
+                                           type: 'color',
+                                           label: 'Color for level-ups',
+                                           hover_tip: 'The borders around level-ups will have this color.',
+                                           default: '#ff0000',
+                                           path: '@general.color_level_indicator',
+                                       },
                                    },
                                },
                            },
@@ -191,6 +238,13 @@
                                    path: '@reviews.auto_range'
                                },
                                reviews_colors: {
+                               },
+                               button_id: {
+                                   type: 'button',
+                                   label: 'Reload review data',
+                                   text: 'Reload',
+                                   hover_tip: 'Deletes review cache and starts new fetch. Data from before resets will be lost permanently',
+                                   on_click: ()=>review_cache.reload(),
                                },
                            },
                        },
@@ -255,41 +309,6 @@
                                },
                            },
                        },
-                       indicators: {
-                           type: 'page',
-                           label: 'Indicators',
-                           hover_tip: 'Settings pertaining to the indicators',
-                           content: {
-                               now: {
-                                   type: 'checkbox',
-                                   label: 'Show current day indicator',
-                                   default: true,
-                                   hover_tip: 'Puts borders around the current day',
-                                   path: '@indicators.now'
-                               },
-                               color_now: {
-                                   type: 'color',
-                                   label: 'Color for current day',
-                                   hover_tip: 'The borders around today will have this color.',
-                                   default: '#ff0000',
-                                   path: '@indicators.color_now',
-                               },
-                               level: {
-                                   type: 'checkbox',
-                                   label: 'Show level-up indicators',
-                                   default: true,
-                                   hover_tip: 'Puts borders around the days you leveled up',
-                                   path: '@indicators.level'
-                               },
-                               color_level: {
-                                   type: 'color',
-                                   label: 'Color for level-ups',
-                                   hover_tip: 'The borders around level-ups will have this color.',
-                                   default: '#ff0000',
-                                   path: '@indicators.color_level',
-                               },
-                           },
-                       },
                    },
                },
            },
@@ -310,6 +329,11 @@
                 zero_gap: false,
                 month_labels: 'all',
                 day_labels: true,
+                session_limit: 10,
+                now_indicator: true,
+                color_now_indicator: '#ff0000',
+                level_indicator: true,
+                color_level_indicator: '#ff0000',
             },
             reviews: {
                 gradient: true,
@@ -327,12 +351,6 @@
                 auto_range: true,
                 colors: [[0, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],],
                 show_next_year: 12,
-            },
-            indicators: {
-                now: true,
-                color_now: '#ff0000',
-                level: true,
-                color_level: '#ff0000',
             },
             other: {
                 reviews_last_visible_year: null,
@@ -366,7 +384,7 @@
                 }
                 if (event.type === "mouseup") {
                     console.log('up');
-                    if (!first_day === elem) {
+                    if (first_day !== elem) {
                         let second_date = new Date(elem.getAttribute('data-date'));
                         let start_date = first_date<second_date?first_date:second_date;
                         let end_date = first_date<second_date?second_date:first_date;
@@ -389,7 +407,7 @@
                     }
                 }
                 if (event.type === "mouseover" && down) {
-                    console.log(down);
+                    console.log('down');
                     let view = document.querySelector('#heatmap .'+type);
                     if (!view) return;
                     for (let m of marked) {
@@ -497,7 +515,13 @@
             id: 'minimap',
             first_date: Date.now(),
             day_start: settings.general.day_start,
-            day_hover_callback: (date, day_data)=>[`${day_data.counts.reviews||0} ${type} at ${date[3]}:00`],
+            day_hover_callback: (date, day_data)=>{
+                let type2 = type;
+                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && day_data.counts.forecast) type2 = "forecast";
+                let string = [`${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} at ${date[3]}:00`];
+                if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
+                return string;
+            },
             color_callback: (date, day_data)=>{
                 date[2]++;
                 let type2 = type;
@@ -551,18 +575,20 @@
 
     // Create and install the heatmap
     function install_heatmap(reviews, forecast, lessons, stats) {
+        let settings = wkof.settings[script_id];
         // Create elements
         let heatmap = create_elem({type: 'section', id: 'heatmap', class: 'heatmap'});
         let buttons = create_buttons();
         let views = create_elem({type: 'div', class: 'views'});
         heatmap.append(buttons, views);
         heatmap.onclick = heatmap.onmousedown = heatmap.onmouseup = heatmap.onmouseover = get_event_handler({reviews, forecast, lessons});
-        heatmap.style.setProperty('--color-now', wkof.settings[script_id].indicators.color_now);
-        heatmap.style.setProperty('--color-level', wkof.settings[script_id].indicators.color_level);
+        heatmap.style.setProperty('--color-now', settings.general.now_indicator?settings.general.color_now_indicator:'transparent');
+        heatmap.style.setProperty('--color-level', settings.general.level_indicator?settings.general.color_level_indicator:'transparent');
         // Create heatmaps
         let cooked_reviews = cook_data("reviews", reviews);
         let cooked_lessons = cook_data("lessons", lessons)
         let level_ups = get_level_ups(lessons).map(date=>[date, 'level-up']);
+        if (level_ups.length === 60) level_ups[59][1] += ' level-60';
         let reviews_view = create_view('reviews', stats, level_ups, reviews[0][0], cooked_reviews.concat(forecast));
         let lessons_view = create_view('lessons', stats, level_ups, lessons[0][0], cooked_lessons);
         let popper = create_popper({reviews: cooked_reviews, forecast, lessons: cooked_lessons});
@@ -617,10 +643,15 @@
             markings: [[new Date(Date.now()-60*60*1000*settings.general.day_start), "today"], ...level_ups],
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
-                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":type2} on ${new Date(date.join('-')).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}
-                Streak ${stats[type].streaks[new Date(date.join('-')).toDateString()] || 0}
-                Day ${Math.round((Date.parse(date.join('-'))-Date.parse(new Date(data[0][0]).toDateString()))/(24*60*60*1000))+1}`;
+                let time = Date.parse(date.join('-')+' ');
+                if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
+                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}
+                Day ${Math.round((time-Date.parse(new Date(data[0][0]).toDateString()))/(24*60*60*1000))+1}`;
+                if (time < Date.now()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
+                string += '\n';
+                if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
+                let level = level_ups.findIndex(level_up=>level_up[0]===time)+1
+                if (level) string += '\nYou reached level '+level+'!';
                 return [string];
             },
             color_callback: (date, day_data)=>{
@@ -662,8 +693,8 @@
     function modify_heatmap(type, heatmap) {
         for (let [year, map] of Object.entries(heatmap.maps)) {
             let target = map.querySelector('.year-labels');
-            let up = create_elem({type: 'a', class: 'toggle-year up hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Click to hide this year'}), create_elem({type: 'i', class: 'icon-chevron-up'})]});
-            let down = create_elem({type: 'a', class: 'toggle-year down hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper below', child: 'Click to show next year'}), create_elem({type: 'i', class: 'icon-chevron-down'})]});
+            let up = create_elem({type: 'a', class: 'toggle-year up hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: create_elem({type: 'div', child: 'Click to hide this year'})}), create_elem({type: 'i', class: 'icon-chevron-up'})]});
+            let down = create_elem({type: 'a', class: 'toggle-year down hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'div', child: 'Click to show next year'})}), create_elem({type: 'i', class: 'icon-chevron-down'})]});
             target.append(up, down);
         }
         if (wkof.settings[script_id].other[type+'_last_visible_year']) heatmap.maps[wkof.settings[script_id].other[type+'_last_visible_year']].classList.add('last');
@@ -788,7 +819,7 @@
         }
         for (let [date] of data) streaks[new Date(date-day_start_adjust).toDateString()] = 1;
         streaks[new Date(Date.now()-day_start_adjust).toDateString()] = 1;
-        if (type === "lessons") {
+        if (type === "lessons" && wkof.settings[script_id].lessons.count_zeros) {
             for (let [started_at, id, level, unlocked_at] of data) {
                 for (let day = new Date(unlocked_at-day_start_adjust); day <= new Date(started_at-day_start_adjust); day.setDate(day.getDate()+1)) {
                     delete zeros[day.toDateString()];
@@ -843,7 +874,7 @@
             done_day++;
             if (done_day > stats.max_done) stats.max_done = done_day;
             let minutes = (item[0]-last_time)/60000;
-            if (minutes > 10) {
+            if (minutes > settings.general.session_limit) {
                 stats.sessions++;
                 minutes = 0;
             }

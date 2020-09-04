@@ -134,13 +134,13 @@
 
 .heatmap .day.marked,
 .heatmap .hour.marked {
-	height: 7px;
-	width: 7px;
-	transform: translate(-1px, -1px);
-	margin-right: -2px;
-	border-width: 2px;
+	height: calc(var(--day-size) - 2px);
+	width: calc(var(--day-size) - 2px);
+	margin-right: calc(0px - 2*var(--day-gap));
+	border-width: 1px;
 	border-style: solid;
 	border-color: white;
+	border-radius: calc(2px);
 }
 
 .heatmap .day.marked:hover {
