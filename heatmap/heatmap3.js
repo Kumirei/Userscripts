@@ -25,15 +25,14 @@
     // Wait untile modues are ready then initiate script
     wkof.include('Menu,Settings,ItemData,Apiv2');
     wkof.ready('Menu,Settings,ItemData,Apiv2')
-        .then(load_settings)
-        .then(install_menu)
-        .then(initiate);
+    .then(load_settings)
+    .then(install_menu)
+    .then(initiate);
 
     let reload; // Function to reload the heatmap
 
     // Fetch necessary data then install the heatmap
     async function initiate() {
-    console.log(wkof.settings[script_id].reviews.colors.slice().reverse());
         let t = Date.now();
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
@@ -60,7 +59,7 @@
             submenu: 'Settings',
             title: 'Heatmap3',
             on_click: open_settings
-            };
+        };
         wkof.Menu.insert_script_link(config);
     }
 
@@ -74,24 +73,48 @@
         }
         let foreacast_average = forecast_items.length/Object.keys(forecast_days).length;
         let forecast_sd = Math.sqrt(1/(forecast_items.length/foreacast_average)*Object.values(forecast_days).map(x=>Math.pow(x-foreacast_average, 2)).reduce((a,b)=>a+b));
-        let forecast = Array(settings.forecast.colors.length-1).fill(null).map((_, i)=>Math.round(icdf((i+1)/settings.forecast.colors.length, foreacast_average, forecast_sd)));
-        let reviews = Array(settings.reviews.colors.length-1).fill(null).map((_, i)=>Math.round(icdf((i+1)/settings.reviews.colors.length, stats.reviews.average[1], stats.reviews.average[2])));
-        let lessons = Array(settings.lessons.colors.length-1).fill(null).map((_, i)=>Math.round(icdf((i+1)/settings.lessons.colors.length, stats.lessons.average[1], stats.lessons.average[2])));
+        let forecast = Array(settings.forecast.colors.length-1).fill(null).map((_, i)=>Math.round(icdf(((settings.forecast.gradient?0.9:1)*(i+1))/(settings.forecast.colors.length-(settings.forecast.gradient?1:0)), foreacast_average, forecast_sd)));
+        let reviews = Array(settings.reviews.colors.length-1).fill(null).map((_, i)=>Math.round(icdf(((settings.reviews.gradient?0.9:1)*(i+1))/(settings.reviews.colors.length-(settings.reviews.gradient?1:0)), stats.reviews.average[1], stats.reviews.average[2])));
+        let lessons = Array(settings.lessons.colors.length-1).fill(null).map((_, i)=>Math.round(icdf(((settings.lessons.gradient?0.9:1)*(i+1))/(settings.lessons.colors.length-(settings.lessons.gradient?1:0)), stats.lessons.average[1], stats.lessons.average[2])));
         if (settings.reviews.auto_range) for (let i=1; i<settings.reviews.colors.length; i++) settings.reviews.colors[i][0] = reviews[i-1];
         if (settings.lessons.auto_range) for (let i=1; i<settings.lessons.colors.length; i++) settings.lessons.colors[i][0] = lessons[i-1];
         if (settings.forecast.auto_range) for (let i=1; i<settings.forecast.colors.length; i++) settings.forecast.colors[i][0] = forecast[i-1];
         wkof.Settings.save(script_id);
     }
 
+    let applied;
     function modify_settings(dialog) {
         // Add apply button
         let apply = create_elem({type: 'button', class: 'ui-button ui-corner-all ui-widget', child: 'Apply'});
-        apply.onclick = reload;
+        applied = false;
+        apply.onclick = e=>{applied = true; reload()};
         dialog[0].nextElementSibling.getElementsByClassName('ui-dialog-buttonset')[0].insertAdjacentElement('afterbegin', apply);
+        // Add color settings
+        dialog[0].querySelectorAll('#heatmap3_general ~ div hr:first-of-type').forEach((elem, i) => {
+            let type = ["reviews", "lessons", "forecast"][i];
+            let update_color_settings = _=>{
+                wkof.settings[script_id][type].colors = [];
+                elem.previousElementSibling.children[1].children.forEach((child, i) => {
+                    wkof.settings[script_id][type].colors.push([child.children[0].children[0].value, child.children[1].children[0].value]);
+                });
+            };
+            let panel = create_elem({type: 'div', class: "right", children: [
+                create_elem({type: 'button', class: "adder", onclick: e=>{e.target.nextElementSibling.append(create_row(0, '#ffffff')); update_color_settings();}, child: 'Add interval'}),
+                create_elem({type: 'div', class: "row panel"}),
+            ]});
+            panel.addEventListener('change', update_color_settings);
+            let create_row = (value, color)=>create_elem({type: 'div', class: 'row', children: [
+                create_elem({type: 'div', class: 'text', child: create_elem({type: 'input', input: 'number', value: value})}),
+                create_elem({type: 'div', class: 'color', child: create_elem({type: 'input', input: 'color', value: color})}),
+                create_elem({type: 'div', class: 'delete', child: create_elem({type: 'button', onclick: e=>{e.target.closest('.row').remove(); update_color_settings();}, child: create_elem({type: 'i', class: 'icon-trash'})})}),
+            ]});
+            for (let [value, color] of wkof.settings[script_id][type].colors) panel.children[1].append(create_row(value, color));
+            elem.insertAdjacentElement('beforebegin', panel);
+        });
         // Add color color labels
         let update_label = function(input) {
             if (!input.nextElementSibling) input.insertAdjacentElement('afterend', create_elem({type: 'div', class: 'color-label', child: input.value}));
-            else input.nextElementSibling.value = input.value;
+            else input.nextElementSibling.innerText = input.value;
             if (!Math.round(hex_to_rgb(input.value).reduce((a,b)=>a+b/3, 0)/255-0.15)) input.nextElementSibling.classList.remove('light-color');
             else input.nextElementSibling.classList.add('light-color');
         }
@@ -99,236 +122,241 @@
             input.addEventListener('change', ()=>update_label(input));
             update_label(input);
         });
+    }
 
+    function reload_on_change(settings) {
+        if (applied) reload(settings);
     }
 
     function open_settings() {
-       var config = {
-           script_id: script_id,
-           title: 'Heatmap',
-           on_save: reload,
-           on_cancel: reload,
-           on_close: reload,
-           content: {
-               tabs: {
-                   type: 'tabset',
-                   content: {
-                       general: {
-                           type: 'page',
-                           label: 'General',
-                           hover_tip: 'Settings pertaining to the general functions of the script',
-                           content: {
-                               function: {
-                                   type: 'group',
-                                   label: 'Function',
-                                   content: {
-                                       start_date: {
-                                           type: 'text',
-                                           label: 'Start date (YYYY-MM-DD)',
-                                           default: '',
-                                           hover_tip: 'All data before this date will be ignored',
-                                           path: '@general.start_date',
-                                           validate: validate_start_date,
-                                       },
-                                       week_start: {
-                                           type: 'dropdown',
-                                           label: 'First day of the week',
-                                           default: 0,
-                                           hover_tip: 'Start the week on the selected day.',
-                                           content: {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"},
-                                           path: '@general.week_start'
-                                       },
-                                       day_start: {
-                                           type: 'number',
-                                           label: 'New day starts at',
-                                           default: 0,
-                                           placeholder: '(hours after midnight)',
-                                           hover_tip: 'Offset for those who tend to stay up after midnight. If you want the new day to start at 4 AM, input 4.',
-                                           path: '@general.day_start',
-                                       },
-                                       session_limit: {
-                                           type: 'number',
-                                           label: 'Session time limit (minutes)',
-                                           default: 10,
-                                           placeholder: '(minutes)',
-                                           hover_tip: 'Max number of minutes between review answers to still count within the same session',
-                                           path: '@general.session_limit',
-                                       },
-                                   },
-                               },
-                               look: {
-                                   type: 'group',
-                                   label: 'Look',
-                                   content: {
-                                       reverse_years: {
-                                           type: 'checkbox',
-                                           label: 'Reverse year order',
-                                           default: false,
-                                           hover_tip: 'Puts the most recent years on the bottom instead of the top.',
-                                           path: '@general.reverse_years'
-                                       },
-                                       segment_years: {
-                                           type: 'checkbox',
-                                           label: 'Segment year',
-                                           default: true,
-                                           hover_tip: 'If this is checked then months will display as segments.',
-                                           path: '@general.segment_years'
-                                       },
-                                       zero_gap: {
-                                           type: 'checkbox',
-                                           label: 'No gap',
-                                           default: false,
-                                           hover_tip: `Don't display any gap between days`,
-                                           path: '@general.zero_gap'
-                                       },
-                                       month_labels: {
-                                           type: 'dropdown',
-                                           label: 'Month labels',
-                                           default: "all",
-                                           hover_tip: 'Display labels for the months above the maps',
-                                           content: {all: "All", top: "Only at the top", none: "None"},
-                                           path: '@general.month_labels'
-                                       },
-                                       day_labels: {
-                                           type: 'checkbox',
-                                           label: 'Day of week labels',
-                                           default: true,
-                                           hover_tip: 'Adds letters to the left of the heatmaps indicating which row represents which weekday',
-                                           path: '@general.day_labels'
-                                       },
-                                       divider_id: {
+        var config = {
+            script_id: script_id,
+            title: 'Heatmap',
+            on_save: _=>applied = true,
+            on_close: reload_on_change,
+            content: {
+                tabs: {
+                    type: 'tabset',
+                    content: {
+                        general: {
+                            type: 'page',
+                            label: 'General',
+                            hover_tip: 'Settings pertaining to the general functions of the script',
+                            content: {
+                                function: {
+                                    type: 'group',
+                                    label: 'Function',
+                                    content: {
+                                        start_date: {
+                                            type: 'text',
+                                            label: 'Start date (YYYY-MM-DD)',
+                                            default: '',
+                                            hover_tip: 'All data before this date will be ignored',
+                                            path: '@general.start_date',
+                                            validate: validate_start_date,
+                                        },
+                                        week_start: {
+                                            type: 'dropdown',
+                                            label: 'First day of the week',
+                                            default: 0,
+                                            hover_tip: 'Start the week on the selected day.',
+                                            content: {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"},
+                                            path: '@general.week_start'
+                                        },
+                                        day_start: {
+                                            type: 'number',
+                                            label: 'New day starts at',
+                                            default: 0,
+                                            placeholder: '(hours after midnight)',
+                                            hover_tip: 'Offset for those who tend to stay up after midnight. If you want the new day to start at 4 AM, input 4.',
+                                            path: '@general.day_start',
+                                        },
+                                        session_limit: {
+                                            type: 'number',
+                                            label: 'Session time limit (minutes)',
+                                            default: 10,
+                                            placeholder: '(minutes)',
+                                            hover_tip: 'Max number of minutes between review answers to still count within the same session',
+                                            path: '@general.session_limit',
+                                        },
+                                    },
+                                },
+                                look: {
+                                    type: 'group',
+                                    label: 'Look',
+                                    content: {
+                                        reverse_years: {
+                                            type: 'checkbox',
+                                            label: 'Reverse year order',
+                                            default: false,
+                                            hover_tip: 'Puts the most recent years on the bottom instead of the top.',
+                                            path: '@general.reverse_years'
+                                        },
+                                        segment_years: {
+                                            type: 'checkbox',
+                                            label: 'Segment year',
+                                            default: true,
+                                            hover_tip: 'If this is checked then months will display as segments.',
+                                            path: '@general.segment_years'
+                                        },
+                                        day_labels: {
+                                            type: 'checkbox',
+                                            label: 'Day of week labels',
+                                            default: true,
+                                            hover_tip: 'Adds letters to the left of the heatmaps indicating which row represents which weekday',
+                                            path: '@general.day_labels'
+                                        },
+                                        zero_gap: {
+                                            type: 'checkbox',
+                                            label: 'No gap',
+                                            default: false,
+                                            hover_tip: `Don't display any gap between days`,
+                                            path: '@general.zero_gap'
+                                        },
+                                        month_labels: {
+                                            type: 'dropdown',
+                                            label: 'Month labels',
+                                            default: "all",
+                                            hover_tip: 'Display labels for the months above the maps',
+                                            content: {all: "All", top: "Only at the top", none: "None"},
+                                            path: '@general.month_labels'
+                                        },
+                                        divider: {
                                             type: 'divider'
                                         },
-                                       now_indicator: {
-                                           type: 'checkbox',
-                                           label: 'Show current day indicator',
-                                           default: true,
-                                           hover_tip: 'Puts borders around the current day',
-                                           path: '@general.now_indicator'
-                                       },
-                                       color_now_indicator: {
-                                           type: 'color',
-                                           label: 'Color for current day',
-                                           hover_tip: 'The borders around today will have this color.',
-                                           default: '#ff0000',
-                                           path: '@general.color_now_indicator',
-                                       },
-                                       level_indicator: {
-                                           type: 'checkbox',
-                                           label: 'Show level-up indicators',
-                                           default: true,
-                                           hover_tip: 'Puts borders around the days you leveled up',
-                                           path: '@general.level_indicator'
-                                       },
-                                       color_level_indicator: {
-                                           type: 'color',
-                                           label: 'Color for level-ups',
-                                           hover_tip: 'The borders around level-ups will have this color.',
-                                           default: '#ff0000',
-                                           path: '@general.color_level_indicator',
-                                       },
-                                   },
-                               },
-                           },
-                       },
-                       reviews: {
-                           type: 'page',
-                           label: 'Reviews',
-                           hover_tip: 'Settings pertaining to the review heatmaps',
-                           content: {
-                               reviews_gradient: {
-                                   type: 'checkbox',
-                                   label: 'Gradients',
-                                   default: true,
-                                   hover_tip: 'Let any colors between the chosen ones be used',
-                                   path: '@reviews.gradient'
-                               },
-                               reviews_auto_range: {
-                                   type: 'checkbox',
-                                   label: 'Auto range',
-                                   default: true,
-                                   hover_tip: 'Automatically decide what the intervals should be',
-                                   path: '@reviews.auto_range'
-                               },
-                               reviews_colors: {
-                               },
-                               button_id: {
-                                   type: 'button',
-                                   label: 'Reload review data',
-                                   text: 'Reload',
-                                   hover_tip: 'Deletes review cache and starts new fetch. Data from before resets will be lost permanently',
-                                   on_click: ()=>review_cache.reload(),
-                               },
-                           },
-                       },
-                       lessons: {
-                           type: 'page',
-                           label: 'Lessons',
-                           hover_tip: 'Settings pertaining to the lesson heatmaps',
-                           content: {
-                               lessons_gradient: {
-                                   type: 'checkbox',
-                                   label: 'Gradients',
-                                   default: true,
-                                   hover_tip: 'Let any colors between the chosen ones be used',
-                                   path: '@lessons.gradient'
-                               },
-                               lessons_auto_range: {
-                                   type: 'checkbox',
-                                   label: 'Auto range',
-                                   default: true,
-                                   hover_tip: 'Automatically decide what the intervals should be',
-                                   path: '@lessons.auto_range'
-                               },
-                               lessons_colors: {
-                               },
-                               lessons_count_zeros: {
-                                   type: 'checkbox',
-                                   label: 'Include zeros in streak',
-                                   default: true,
-                                   hover_tip: 'Counts days with no lessons available towards the streak',
-                                   path: '@lessons.count_zeros'
-                               },
-                           },
-                       },
-                       forecast: {
-                           type: 'page',
-                           label: 'Forecast',
-                           hover_tip: 'Settings pertaining to the forecast',
-                           content: {
-                               forecast_gradient: {
-                                   type: 'checkbox',
-                                   label: 'Gradients',
-                                   default: true,
-                                   hover_tip: 'Let any colors between the chosen ones be used',
-                                   path: '@forecast.gradient'
-                               },
-                               forecast_auto_range: {
-                                   type: 'checkbox',
-                                   label: 'Auto range',
-                                   default: true,
-                                   hover_tip: 'Automatically decide what the intervals should be',
-                                   path: '@forecast.auto_range'
-                               },
-                               forecast_colors: {
-                               },
-                               forecast_show_next_year: {
-                                   type: 'dropdown',
-                                   label: 'Show next year in',
-                                   default: 12,
-                                   hover_tip: 'Start showing the next year\'s heatmap this month',
-                                   content: {9: 'September', 10: 'October', 11: 'November', 12: 'December'},
-                                   path: '@forecast.show_next_year',
-                               },
-                           },
-                       },
-                   },
-               },
-           },
-       };
-       let dialog = new wkof.Settings(config);
-       config.pre_open = (elem)=>{dialog.refresh(); modify_settings(elem);};
-       dialog.open();
+                                        now_indicator: {
+                                            type: 'checkbox',
+                                            label: 'Current day indicator',
+                                            default: true,
+                                            hover_tip: 'Puts borders around the current day',
+                                            path: '@general.now_indicator'
+                                        },
+                                        level_indicator: {
+                                            type: 'checkbox',
+                                            label: 'Level-up indicators',
+                                            default: true,
+                                            hover_tip: 'Puts borders around the days you leveled up',
+                                            path: '@general.level_indicator'
+                                        },
+                                        color_now_indicator: {
+                                            type: 'color',
+                                            label: 'Color for current day',
+                                            hover_tip: 'The borders around today will have this color.',
+                                            default: '#ffffff',
+                                            path: '@general.color_now_indicator',
+                                        },
+                                        color_level_indicator: {
+                                            type: 'color',
+                                            label: 'Color for level-ups',
+                                            hover_tip: 'The borders around level-ups will have this color.',
+                                            default: '#ffffff',
+                                            path: '@general.color_level_indicator',
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        reviews: {
+                            type: 'page',
+                            label: 'Reviews',
+                            hover_tip: 'Settings pertaining to the review heatmaps',
+                            content: {
+                                divider: {
+                                    type: 'divider'
+                                },
+                                reviews_gradient: {
+                                    type: 'checkbox',
+                                    label: 'Gradients',
+                                    default: true,
+                                    hover_tip: 'Let any colors between the chosen ones be used',
+                                    path: '@reviews.gradient'
+                                },
+                                reviews_auto_range: {
+                                    type: 'checkbox',
+                                    label: 'Auto range',
+                                    default: true,
+                                    hover_tip: 'Automatically decide what the intervals should be',
+                                    path: '@reviews.auto_range'
+                                },
+                                reload_button: {
+                                    type: 'button',
+                                    label: 'Reload review data',
+                                    text: 'Reload',
+                                    hover_tip: 'Deletes review cache and starts new fetch. Data from before resets will be lost permanently',
+                                    on_click: ()=>review_cache.reload(),
+                                },
+                            },
+                        },
+                        lessons: {
+                            type: 'page',
+                            label: 'Lessons',
+                            hover_tip: 'Settings pertaining to the lesson heatmaps',
+                            content: {
+                                divider: {
+                                    type: 'divider'
+                                },
+                                lessons_gradient: {
+                                    type: 'checkbox',
+                                    label: 'Gradients',
+                                    default: true,
+                                    hover_tip: 'Let any colors between the chosen ones be used',
+                                    path: '@lessons.gradient'
+                                },
+                                lessons_auto_range: {
+                                    type: 'checkbox',
+                                    label: 'Auto range',
+                                    default: true,
+                                    hover_tip: 'Automatically decide what the intervals should be',
+                                    path: '@lessons.auto_range'
+                                },
+                                lessons_count_zeros: {
+                                    type: 'checkbox',
+                                    label: 'Include zeros in streak',
+                                    default: true,
+                                    hover_tip: 'Counts days with no lessons available towards the streak',
+                                    path: '@lessons.count_zeros'
+                                },
+                            },
+                        },
+                        forecast: {
+                            type: 'page',
+                            label: 'Forecast',
+                            hover_tip: 'Settings pertaining to the forecast',
+                            content: {
+                                divider: {
+                                    type: 'divider'
+                                },
+                                forecast_gradient: {
+                                    type: 'checkbox',
+                                    label: 'Gradients',
+                                    default: true,
+                                    hover_tip: 'Let any colors between the chosen ones be used',
+                                    path: '@forecast.gradient'
+                                },
+                                forecast_auto_range: {
+                                    type: 'checkbox',
+                                    label: 'Auto range',
+                                    default: true,
+                                    hover_tip: 'Automatically decide what the intervals should be',
+                                    path: '@forecast.auto_range'
+                                },
+                                forecast_show_next_year: {
+                                    type: 'dropdown',
+                                    label: 'Show next year in',
+                                    default: 12,
+                                    hover_tip: 'Start showing the next year\'s heatmap this month',
+                                    content: {9: 'September', 10: 'October', 11: 'November', 12: 'December', 13: 'January'},
+                                    path: '@forecast.show_next_year',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        };
+        let dialog = new wkof.Settings(config);
+        config.pre_open = (elem)=>{dialog.refresh(); modify_settings(elem);};
+        dialog.open();
     }
 
     function load_settings() {
@@ -345,25 +373,22 @@
                 day_labels: true,
                 session_limit: 10,
                 now_indicator: true,
-                color_now_indicator: '#ff0000',
+                color_now_indicator: '#ffffff',
                 level_indicator: true,
-                color_level_indicator: '#ff0000',
+                color_level_indicator: '#ffffff',
             },
             reviews: {
                 gradient: true,
                 auto_range: true,
-                colors: [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],],
             },
             lessons: {
                 gradient: true,
                 auto_range: true,
-                colors: [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],],
                 count_zeros: true,
             },
             forecast: {
                 gradient: true,
                 auto_range: true,
-                colors: [[0, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],],
                 show_next_year: 12,
             },
             other: {
@@ -372,7 +397,14 @@
                 visible_map: "reviews",
             }
         };
-        return wkof.Settings.load(script_id, defaults);
+        return wkof.Settings.load(script_id, defaults).then(settings=>{
+            // Default workaround
+            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
+            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
+            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],];
+            wkof.Settings.save(script_id);
+            return settings;
+        });
     }
 
     function get_event_handler(data) {
@@ -384,7 +416,6 @@
                 let date = new Date(elem.getAttribute('data-date'));
                 let type = elem.closest('.view').classList.contains('reviews')?date<new Date()?'reviews':'forecast':'lessons';
                 if (event.type === "click" && Object.keys(elem.info.lists).length) {
-                    console.log('click');
                     let title = `${date.toDateString().slice(4)} ${kanji_day(date.getDay())}`;
                     let today = new Date(new Date().toDateString()).getTime();
                     let minimap_data = cook_data(type, data[type].filter(a=>a[0]>date.getTime()&&a[0]<date.getTime()+1000*60*60*24).map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
@@ -392,13 +423,11 @@
                 }
                 if (event.type === "mousedown") {
                     event.preventDefault();
-                    console.log('down');
                     down = true;
                     first_day = elem;
                     first_date = new Date(elem.getAttribute('data-date'))
                 }
                 if (event.type === "mouseup") {
-                    console.log('up');
                     if (first_day !== elem) {
                         let second_date = new Date(elem.getAttribute('data-date'));
                         let start_date = first_date<second_date?first_date:second_date;
@@ -422,7 +451,6 @@
                     }
                 }
                 if (event.type === "mouseover" && down) {
-                    console.log('down');
                     let view = document.querySelector('#heatmap .'+type);
                     if (!view) return;
                     for (let m of marked) {
@@ -653,7 +681,6 @@
     function create_view(type, stats, level_ups, first_date, data) {
         let settings = wkof.settings[script_id];
         // New heatmap instance
-        console.log(settings.reviews.colors.slice().reverse());
         let heatmap = new Heatmap({
             type: "year",
             id: type,
@@ -782,6 +809,9 @@
             if (attr === "type") continue;
             else if (attr === "child") div.append(value);
             else if (attr === "children") div.append(...value);
+            else if (attr === "value") div.value = value;
+            else if (attr === "input") div.setAttribute("type", value);
+            else if (attr === "onclick") div.onclick = value;
             else div.setAttribute(attr, value);
         }
         return div;

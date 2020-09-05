@@ -30,8 +30,8 @@
 }
 
 .heatmap .day-label {
-	font-size: 8px;
-	line-height: 10px;
+	font-size: calc(var(--day-size));
+	line-height: calc(var(--day-size) + var(--day-gap));
 	text-align: center;
 }
 

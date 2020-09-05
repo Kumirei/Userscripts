@@ -458,3 +458,58 @@ a#heatmap .minimap {
 		bottom: -5px;
 	}
 }
+
+#heatmap3_tabs div[role="tabpanel"] .panel {
+	margin-top: 8px;
+}
+
+#heatmap3_tabs div[role="tabpanel"] .panel .row {
+	display: flex;
+	justify-content: space-around;
+}
+
+#heatmap3_tabs div[role="tabpanel"] .panel .color {
+	position: relative;
+}
+
+#heatmap3_tabs div[role="tabpanel"] .panel .delete button {
+	height: 30px;
+	line-height: 24px;
+	font-size: 18px;
+	background-color: transparent;
+	border-color: transparent;
+}
+
+#heatmap3_general ~ div[role="tabpanel"] hr ~ .row,
+#heatmap3_tabs #heatmap3_look .row {
+	display: inline-block;
+	width: 50%;
+	margin-top: -10px;
+	justify-content: top;
+	min-width: fit-content;
+}
+
+#heatmap3_general ~ div[role="tabpanel"] hr ~ .row > div,
+#heatmap3_tabs #heatmap3_look .row > div {
+	width: fit-content;
+	float: unset;
+	display: inline-block;
+	margin: 0 10px;
+	vertical-align: middle;
+}
+
+#heatmap3_general ~ div[role="tabpanel"] hr ~ .row > .right,
+#heatmap3_tabs #heatmap3_look .row .right {
+	float: right;
+}
+
+#heatmap3_tabs #heatmap3_forecast hr ~ .row:nth-child(5),
+#heatmap3_tabs #heatmap3_look .row:nth-child(6),
+#heatmap3_tabs #heatmap3_look .row:nth-child(n+10) {
+	width: 100%;
+}
+#heatmap3_tabs #heatmap3_forecast hr ~ .row:nth-child(5) .right,
+#heatmap3_tabs #heatmap3_look .row:nth-child(6) .right,
+#heatmap3_tabs #heatmap3_look .row:nth-child(n+10) .right {
+	width: 50%;
+}
