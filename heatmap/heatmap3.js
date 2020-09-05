@@ -179,6 +179,14 @@
                                             hover_tip: 'Max number of minutes between review answers to still count within the same session',
                                             path: '@general.session_limit',
                                         },
+                                        position: {
+                                            type: 'dropdown',
+                                            label: 'Position',
+                                            default: 2,
+                                            hover_tip: 'Where on the dashboard to install the heatmap',
+                                            content: {0: "Top", 1: "Below forecast", 2: "Below SRS", 3: "Below panels", 4: "Bottom"},
+                                            path: '@general.week_start'
+                                        },
                                     },
                                 },
                                 look: {
@@ -376,6 +384,7 @@
                 color_now_indicator: '#ffffff',
                 level_indicator: true,
                 color_level_indicator: '#ffffff',
+                position: 2,
             },
             reviews: {
                 gradient: true,
@@ -637,8 +646,9 @@
         views.append(reviews_view, lessons_view, popper);
         // Install
         let elem = document.getElementById('heatmap');
+        let position = [[".progress-and-forecast", 'beforebegin'], ['.progress-and-forecast', 'afterend'], ['.srs-progress', 'afterend'], ['.span12 .row', 'afterend'], ['.span12 .row:last-child', 'afterend']][settings.general.position];
         if (elem) elem.replaceWith(heatmap);
-        else document.getElementsByClassName('progress-and-forecast')[0].insertAdjacentElement('afterend', heatmap);
+        else document.querySelector(position[0]).insertAdjacentElement(position[1], heatmap);
     }
 
     function cook_data(type, data) {
