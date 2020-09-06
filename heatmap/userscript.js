@@ -188,7 +188,7 @@
                                             default: 2,
                                             hover_tip: 'Where on the dashboard to install the heatmap',
                                             content: {0: "Top", 1: "Below forecast", 2: "Below SRS", 3: "Below panels", 4: "Bottom"},
-                                            path: '@general.week_start'
+                                            path: '@general.position'
                                         },
                                     },
                                 },
@@ -649,9 +649,9 @@
         views.append(reviews_view, lessons_view, popper);
         // Install
         let elem = document.getElementById('heatmap');
+        if (elem) elem.remove();
         let position = [[".progress-and-forecast", 'beforebegin'], ['.progress-and-forecast', 'afterend'], ['.srs-progress', 'afterend'], ['.span12 .row', 'afterend'], ['.span12 .row:last-child', 'afterend']][settings.general.position];
-        if (elem) elem.replaceWith(heatmap);
-        else document.querySelector(position[0]).insertAdjacentElement(position[1], heatmap);
+        document.querySelector(position[0]).insertAdjacentElement(position[1], heatmap);
     }
 
     function cook_data(type, data) {
