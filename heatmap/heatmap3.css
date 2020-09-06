@@ -513,3 +513,12 @@ a#heatmap .minimap {
 #heatmap3_tabs #heatmap3_look .row:nth-child(n+10) .right {
 	width: 50%;
 }
+
+#heatmap #popper .items .radical-svg {
+	width: 14px;
+	filter: invert(1);
+}
+
+#heatmap #popper .items .hover-wrapper .radical-svg {
+	width: 74px;
+}

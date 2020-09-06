@@ -22,6 +22,7 @@
 
     /*-------------------------------------------------------------------------------------------------------------------------------*/
 
+    let reload; // Function to reload the heatmap
     // Wait untile modues are ready then initiate script
     wkof.include('Menu,Settings,ItemData,Apiv2');
     wkof.ready('Menu,Settings,ItemData,Apiv2')
@@ -29,7 +30,6 @@
     .then(install_menu)
     .then(initiate);
 
-    let reload; // Function to reload the heatmap
 
     // Fetch necessary data then install the heatmap
     async function initiate() {
@@ -533,10 +533,10 @@
         for (let item of items) {
             item_elems.push(create_elem({type: 'a', class: 'item '+item.object+' hover-wrapper-target', href: item.data.document_url, children: [
                 create_elem({type: "div", class: "hover-wrapper above", children: [
-                    create_elem({type: "a", class: "characters", href: item.data.document_url, child: item.data.characters}),
+                    create_elem({type: "a", class: "characters", href: item.data.document_url, child: item.data.characters || create_elem({type: 'img', class: 'radical-svg', src: item.data.character_images.find(a=>a.content_type=="image/svg+xml"&&a.metadata.inline_styles).url})}),
                     create_table("left", [["Meanings", item.data.meanings.map(i=>i.meaning).join(', ')], ["Readings", item.data.readings?item.data.readings.map(i=>i.reading).join('、 '):"-"],["Level", item.data.level]], {class: 'info'})
                 ]}),
-                create_elem({type: 'a', class: "characters", child: item.data.characters})
+                create_elem({type: 'a', class: "characters", child: item.data.characters || create_elem({type: 'img', class: 'radical-svg', src: item.data.character_images.find(a=>a.content_type=="image/svg+xml"&&a.metadata.inline_styles).url})})
             ]}));
         }
         // Populate popper
@@ -563,7 +563,7 @@
         return new Heatmap({
             type: "day",
             id: 'minimap',
-            first_date: Date.now(),
+            first_date: Date.parse(new Date().toISOString().slice(0,10)),
             day_start: settings.general.day_start,
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
