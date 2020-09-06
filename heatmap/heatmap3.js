@@ -705,7 +705,7 @@
                 let type2 = type;
                 let time = Date.parse(date.join('-')+' ');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/(?<=\d)(?=(\s))/, ',')}
+                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ 2/, ', 2')}
                 Day ${Math.round((time-Date.parse(new Date(data[0][0]).toDateString()))/(24*60*60*1000))+1}`;
                 if (time < Date.now()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
