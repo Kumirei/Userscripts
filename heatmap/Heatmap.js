@@ -9,30 +9,7 @@
 // ==/UserScript==
 
 (function($) {
-    /* eslint no-multi-spaces: off */
-
     class Heatmap {
-        /*
-        config
-        {
-        id/name,
-        start_of_week,
-        start_of_day,
-        segment_years,
-        year_labels,
-        month_labels,
-        day_labels,
-        legend,
-        day_hover_callback,
-        color_callback,
-        markings,
-        }
-        data
-        [
-        [date, counts],
-        ...
-        ]
-        */
         constructor(config, data) {
             this.maps = {};
             this.config = config;
