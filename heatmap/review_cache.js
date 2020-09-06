@@ -63,7 +63,7 @@
     async function update_data(data) {
         let new_reviews = await fetch_new_reviews();
         if (new_reviews) {
-            data.push(...new_reviews);
+            for (let new_review of new_reviews) data.push(new_review);
             data.sort((a,b)=>a[0]<b[0]?-1:1);
         }
         return save(data);
