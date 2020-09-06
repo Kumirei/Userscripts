@@ -696,7 +696,7 @@
             id: type,
             week_start: settings.general.week_start,
             day_start: settings.general.day_start,
-            first_date: Math.max(Date.parse(settings.general.start_date), first_date),
+            first_date: Math.max(new Date(settings.general.start_date).getTime(), first_date),
             last_date: new Date(String(new Date().getFullYear()+(new Date().getMonth()-settings.forecast.show_next_year+1 >= 0 ? 2 : 1))).setHours(0)-1,
             segment_years: settings.general.segment_years,
             zero_gap: settings.general.zero_gap,
