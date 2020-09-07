@@ -1,14 +1,13 @@
 // ==UserScript==
 // @name         Wanikani Heatmap 3.0.0 BETA
 // @namespace    http://tampermonkey.net/
-// @version      3.0.0
+// @version      3.0.4
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=845130
 // @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=845109
 // @grant        none
-// ==/UserScript==
 
 (function($, wkof, review_cache, Heatmap) {
     /* eslint no-multi-spaces: off */
@@ -30,7 +29,6 @@
     wkof.ready('Menu,Settings,ItemData,Apiv2')
     .then(load_settings)
     .then(install_menu)
-    .then(install_css)
     .then(initiate);
 
 
@@ -39,7 +37,8 @@
         let t = Date.now();
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
-        reload = function() {
+        reload = function(new_reviews=false) {
+            if (new_reviews !== false) reviews = new_reviews;
             setTimeout(()=>{// make settings dialog respond immediately
                 let stats = {
                     reviews: calculate_stats("reviews", reviews),
@@ -93,6 +92,12 @@
         apply.onclick = e=>{applied = true; reload()};
         dialog[0].nextElementSibling.getElementsByClassName('ui-dialog-buttonset')[0].insertAdjacentElement('afterbegin', apply);
         // Add color settings
+        let update_label = function(input) {
+            if (!input.nextElementSibling) input.insertAdjacentElement('afterend', create_elem({type: 'div', class: 'color-label', child: input.value}));
+            else input.nextElementSibling.innerText = input.value;
+            if (!Math.round(hex_to_rgb(input.value).reduce((a,b)=>a+b/3, 0)/255-0.15)) input.nextElementSibling.classList.remove('light-color');
+            else input.nextElementSibling.classList.add('light-color');
+        }
         dialog[0].querySelectorAll('#heatmap3_general ~ div hr:first-of-type').forEach((elem, i) => {
             let type = ["reviews", "lessons", "forecast"][i];
             let update_color_settings = _=>{
@@ -101,27 +106,20 @@
                     wkof.settings[script_id][type].colors.push([child.children[0].children[0].value, child.children[1].children[0].value]);
                 });
             };
+            let create_row = (value, color)=>create_elem({type: 'div', class: 'row', children: [
+                create_elem({type: 'div', class: 'text', child: create_elem({type: 'input', input: 'number', value: value})}),
+                create_elem({type: 'div', class: 'color', child: create_elem({type: 'input', input: 'color', value: color, callback: e=>e.addEventListener('change', _=>update_label(e))}), callback: e=>update_label(e.children[0])}),
+                create_elem({type: 'div', class: 'delete', child: create_elem({type: 'button', onclick: e=>{e.target.closest('.row').remove(); update_color_settings();}, child: create_elem({type: 'i', class: 'icon-trash'})})}),
+            ]});
             let panel = create_elem({type: 'div', class: "right", children: [
                 create_elem({type: 'button', class: "adder", onclick: e=>{e.target.nextElementSibling.append(create_row(0, '#ffffff')); update_color_settings();}, child: 'Add interval'}),
                 create_elem({type: 'div', class: "row panel"}),
             ]});
             panel.addEventListener('change', update_color_settings);
-            let create_row = (value, color)=>create_elem({type: 'div', class: 'row', children: [
-                create_elem({type: 'div', class: 'text', child: create_elem({type: 'input', input: 'number', value: value})}),
-                create_elem({type: 'div', class: 'color', child: create_elem({type: 'input', input: 'color', value: color})}),
-                create_elem({type: 'div', class: 'delete', child: create_elem({type: 'button', onclick: e=>{e.target.closest('.row').remove(); update_color_settings();}, child: create_elem({type: 'i', class: 'icon-trash'})})}),
-            ]});
             for (let [value, color] of wkof.settings[script_id][type].colors) panel.children[1].append(create_row(value, color));
             elem.insertAdjacentElement('beforebegin', panel);
         });
-        // Add color color labels
-        let update_label = function(input) {
-            if (!input.nextElementSibling) input.insertAdjacentElement('afterend', create_elem({type: 'div', class: 'color-label', child: input.value}));
-            else input.nextElementSibling.innerText = input.value;
-            if (!Math.round(hex_to_rgb(input.value).reduce((a,b)=>a+b/3, 0)/255-0.15)) input.nextElementSibling.classList.remove('light-color');
-            else input.nextElementSibling.classList.add('light-color');
-        }
-        dialog[0].querySelectorAll('input[type="color"]').forEach(input=>{
+        dialog[0].querySelectorAll('#heatmap3_general input[type="color"]').forEach(input=>{
             input.addEventListener('change', ()=>update_label(input));
             update_label(input);
         });
@@ -294,7 +292,7 @@
                                     label: 'Reload review data',
                                     text: 'Reload',
                                     hover_tip: 'Deletes review cache and starts new fetch. Data from before resets will be lost permanently',
-                                    on_click: ()=>review_cache.reload(),
+                                    on_click: ()=>review_cache.reload().then(reviews=>reload(reviews)),
                                 },
                             },
                         },
@@ -331,7 +329,7 @@
                         },
                         forecast: {
                             type: 'page',
-                            label: 'Forecast',
+                            label: 'Review Forecast',
                             hover_tip: 'Settings pertaining to the forecast',
                             content: {
                                 divider: {
@@ -404,8 +402,8 @@
                 show_next_year: 12,
             },
             other: {
-                reviews_last_visible_year: null,
-                lessons_last_visible_year: null,
+                reviews_last_visible_year: 0,
+                lessons_last_visible_year: 0,
                 visible_map: "reviews",
             }
         };
@@ -430,7 +428,8 @@
                 if (event.type === "click" && Object.keys(elem.info.lists).length) {
                     let title = `${date.toDateString().slice(4)} ${kanji_day(date.getDay())}`;
                     let today = new Date(new Date().toDateString()).getTime();
-                    let minimap_data = cook_data(type, data[type].filter(a=>a[0]>date.getTime()&&a[0]<date.getTime()+1000*60*60*24).map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
+                    let offset = wkof.settings[script_id].general.day_start*60*60*1000;
+                    let minimap_data = cook_data(type, data[type].filter(a=>a[0]>date.getTime()+offset&&a[0]<date.getTime()+1000*60*60*24+offset));//.map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
                     update_popper(event, type, title, elem.info, minimap_data);
                 }
                 if (event.type === "mousedown") {
@@ -447,7 +446,8 @@
                         type = elem.closest('.view').classList.contains('reviews')?start_date<new Date()?'reviews':'forecast':'lessons';
                         let title = `${start_date.toDateString().slice(4)} ${kanji_day(start_date.getDay())} - ${end_date.toDateString().slice(4)} ${kanji_day(end_date.getDay())}`;
                         let today = new Date(new Date().toDateString()).getTime();
-                        let minimap_data = cook_data(type, data[type].filter(a=>a[0]>start_date.getTime()&&a[0]<end_date.getTime()+1000*60*60*24).map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
+                        let offset = wkof.settings[script_id].general.day_start*60*60*1000;
+                        let minimap_data = cook_data(type, data[type].filter(a=>a[0]>start_date.getTime()+offset&&a[0]<end_date.getTime()+1000*60*60*24+offset).map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
                         let popper_info = {counts: {}, lists: {}};
                         for (let item of minimap_data) {
                             for (let [key, value] of Object.entries(item[1])) {
@@ -550,12 +550,12 @@
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
         popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i]; e.parentElement.children[0].append(create_table('left', levels.map((a,j)=>[j, a]).slice(1).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
         popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2]});
-        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['', 'Before', 'After'], ...srs.slice(1).map((a, i)=>[i+1, ...a])]));
+        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['SRS'], ['Before / After'], ...srs.slice(1).map((a, i)=>[i+1, ...a])]));
         popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]]});
         popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = pass[i]});
         popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = answers[i]});
         popper.querySelector('.items').replaceWith(create_elem({type: 'div', class: 'items', children: item_elems}));
-        popper.querySelector('.minimap').replaceWith(create_minimap(type, minimap_data).maps.day);
+        popper.querySelector('.minimap > .hours-map').replaceWith(create_minimap(type, minimap_data).maps.day);
         popper.style.top = event.pageY+50+'px';
         popper.classList.add('popped');
     }
@@ -565,8 +565,8 @@
         let multiplier = 6;
         return new Heatmap({
             type: "day",
-            id: 'minimap',
-            first_date: Date.parse(new Date().toISOString().slice(0,10)),
+            id: 'hours-map',
+            first_date: Date.parse(new Date(data[0][0]-settings.general.day_start*60*60*1000).toDateString()),
             day_start: settings.general.day_start,
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
@@ -605,11 +605,11 @@
         // Create layout
         let popper = create_elem({type: 'div', id: 'popper'});
         let header = create_elem({type: 'div', class: 'header'});
-        let minimap = create_elem({type: 'div', class: 'minimap'});
+        let minimap = create_elem({type: 'div', class: 'minimap', children: [create_elem({type: 'span', class: 'minimap-label', child: 'Hours minimap'}), create_elem({type: 'div'})]});
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);
-        document.addEventListener('click', (event)=>{if (!event.path.find((a)=>a===popper) && !event.target.classList.contains('day')) popper.classList.remove('popped')});
+        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper) && !event.target.classList.contains('day')) popper.classList.remove('popped')});
         // Create header
         header.append(
             create_elem({type: 'div', class: 'date'}),
@@ -619,7 +619,7 @@
         // Create minimap and stats
         stats.append(
             create_table('left', [["Levels"], [" 1-10", 0], ["11-20", 0], ["21-30", 0], ["31-40", 0], ["41-50", 0], ["51-60", 0]], {class: 'levels'}, true),
-            create_table('left', [["SRS"], ["App", 0, 0], ["Gur", 0, 0], ["Mas", 0, 0], ["Enl", 0, 0], ["Bur", 0, 0]], {class: 'srs hover-wrapper-target', child: create_elem({type: 'div', class: 'hover-wrapper above', child: create_elem({type: 'table'})})}),
+            create_table('left', [["SRS"], ['Before / After'], ["App", 0, 0], ["Gur", 0, 0], ["Mas", 0, 0], ["Enl", 0, 0], ["Bur", 0, 0]], {class: 'srs hover-wrapper-target', child: create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'table'})})}),
             create_table('left', [["Type"], ["Rad", 0], ["Kan", 0], ["Voc", 0]], {class: 'type'}),
             create_table('left', [["Summary"], ["Pass", 0], ["Fail", 0], ["Acc", 0]], {class: 'summary'}),
             create_table('left', [["Answers"], ["Right", 0], ["Wrong", 0], ["Acc", 0]], {class: 'answers'}),
@@ -708,8 +708,8 @@
                 let type2 = type;
                 let time = Date.parse(date.join('-')+' ');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ 2/, ', 2')}
-                Day ${Math.round((time-Date.parse(new Date(data[0][0]).toDateString()))/(24*60*60*1000))+1}`;
+                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}
+                Day ${Math.round((time-Math.max(data[0][0], Date.parse(settings.general.start_date)))/(24*60*60*1000))+1}`;
                 if (time < Date.now()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
@@ -760,29 +760,30 @@
             let down = create_elem({type: 'a', class: 'toggle-year down hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'div', child: 'Click to show next year'})}), create_elem({type: 'i', class: 'icon-chevron-down'})]});
             target.append(up, down);
         }
-        if (wkof.settings[script_id].other[type+'_last_visible_year']) heatmap.maps[wkof.settings[script_id].other[type+'_last_visible_year']].classList.add('last');
-        else heatmap.maps[Math.min(...Object.keys(heatmap.maps))].classList.add('last');
+        let last_year = Math.max(Math.min(...Object.keys(heatmap.maps)), wkof.settings[script_id].other[type+'_last_visible_year'] || 0);
+        wkof.settings[script_id].other[type+'_last_visible_year'] = last_year;
+        heatmap.maps[last_year].classList.add('last');
     }
 
     // Create the header and footer stats for a view
     function create_stats_elements(type, stats) {
         let head_stats = create_elem({type: 'div', class: 'head-stats stats', children: [
             create_stat_element('Days Studied', stats.days_studied[1]+'%', stats.days_studied[0].toSeparated()+' out of '+stats.days.toSeparated()),
-            create_stat_element('Done Daily', stats.average[0]+' / '+stats.average[1], 'Per Day / Day studied\nMax: '+stats.max_done.toSeparated()),
+            create_stat_element('Done Daily', stats.average[0]+' / '+stats.average[1], 'Per Day / Day studied\nMax: '+stats.max_done[0].toSeparated()+' on '+stats.max_done[1]),
             create_stat_element('Streak', stats.streak[1]+' / '+stats.streak[0], 'Current / Longest'),
         ]})
         let foot_stats = create_elem({type: 'div', class: 'foot-stats stats', children: [
-            create_stat_element('Sessions', stats.sessions, Math.floor(stats.total[0]/stats.sessions)+' per session'),
+            create_stat_element('Sessions', stats.sessions.toSeparated(), Math.floor(stats.total[0]/stats.sessions)+' per session'),
             create_stat_element(type.toProper(), stats.total[0].toSeparated(), create_table("left", [
-                ['This Year', stats.total[1].toSeparated()],
-                ['This Month', stats.total[2].toSeparated()],
-                ['This Week', stats.total[3].toSeparated()],
+                ['Year', stats.total[1].toSeparated()],
+                ['Month', stats.total[2].toSeparated()],
+                ['Week', stats.total[3].toSeparated()],
                 ['Today', stats.total[4].toSeparated()]
             ])),
             create_stat_element('Time', m_to_hm(stats.time[0]), create_table("left", [
-                ['This Year', m_to_hm(stats.time[1])],
-                ['This Month', m_to_hm(stats.time[2])],
-                ['This Week', m_to_hm(stats.time[3])],
+                ['Year', m_to_hm(stats.time[1])],
+                ['Month', m_to_hm(stats.time[2])],
+                ['Week', m_to_hm(stats.time[3])],
                 ['Today', m_to_hm(stats.time[4])]
             ])),
         ]})
@@ -825,8 +826,10 @@
             else if (attr === "value") div.value = value;
             else if (attr === "input") div.setAttribute("type", value);
             else if (attr === "onclick") div.onclick = value;
+            else if (attr === "callback") continue;
             else div.setAttribute(attr, value);
         }
+        if (config.callback) config.callback(div);
         return div;
     }
 
@@ -884,7 +887,6 @@
             zeros[day.toDateString()] = true;
         }
         for (let [date] of data) streaks[new Date(date-day_start_adjust).toDateString()] = 1;
-        streaks[new Date(Date.now()-day_start_adjust).toDateString()] = 1;
         if (type === "lessons" && wkof.settings[script_id].lessons.count_zeros) {
             for (let [started_at, id, level, unlocked_at] of data) {
                 for (let day = new Date(unlocked_at-day_start_adjust); day <= new Date(started_at-day_start_adjust); day.setDate(day.getDate()+1)) {
@@ -917,12 +919,12 @@
             sessions: 0,            // Number of sessions
             time: [0, 0, 0, 0, 0],  // [total, year, month, week, day]
             days: 0,                // Number of days since first review
-            max_done: 0,            // Max done in one day
+            max_done: [0, 0],       // Max done in one day [count, date]
             streaks,
         };
         let last_day = new Date(0);
         let today = new Date();
-        let week = new Date(new Date(Date.parse(new Date().toDateString())-(new Date().getDay()+6)%7*ms_day+ms_day/2).toDateString());
+        let week = new Date(new Date(Date.parse(new Date().toDateString())-(new Date().getDay()+6-settings.general.week_start)%7*ms_day+ms_day/2).toDateString());
         let month = new Date(today.getFullYear()+'-'+(today.getMonth()+1)+'-01');
         let year = new Date('Jan ' + today.getFullYear());
         let last_time = 0;
@@ -938,7 +940,7 @@
                 done_day = 0;
             }
             done_day++;
-            if (done_day > stats.max_done) stats.max_done = done_day;
+            if (done_day > stats.max_done[0]) stats.max_done = [done_day, day.toDateString().replace(/... /, '')];
             let minutes = (item[0]-last_time)/60000;
             if (minutes > settings.general.session_limit) {
                 stats.sessions++;
