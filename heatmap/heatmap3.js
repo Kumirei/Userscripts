@@ -90,6 +90,12 @@
         apply.onclick = e=>{applied = true; reload()};
         dialog[0].nextElementSibling.getElementsByClassName('ui-dialog-buttonset')[0].insertAdjacentElement('afterbegin', apply);
         // Add color settings
+        let update_label = function(input) {
+            if (!input.nextElementSibling) input.insertAdjacentElement('afterend', create_elem({type: 'div', class: 'color-label', child: input.value}));
+            else input.nextElementSibling.innerText = input.value;
+            if (!Math.round(hex_to_rgb(input.value).reduce((a,b)=>a+b/3, 0)/255-0.15)) input.nextElementSibling.classList.remove('light-color');
+            else input.nextElementSibling.classList.add('light-color');
+        }
         dialog[0].querySelectorAll('#heatmap3_general ~ div hr:first-of-type').forEach((elem, i) => {
             let type = ["reviews", "lessons", "forecast"][i];
             let update_color_settings = _=>{
@@ -98,27 +104,20 @@
                     wkof.settings[script_id][type].colors.push([child.children[0].children[0].value, child.children[1].children[0].value]);
                 });
             };
+            let create_row = (value, color)=>create_elem({type: 'div', class: 'row', children: [
+                create_elem({type: 'div', class: 'text', child: create_elem({type: 'input', input: 'number', value: value})}),
+                create_elem({type: 'div', class: 'color', child: create_elem({type: 'input', input: 'color', value: color, callback: e=>e.addEventListener('change', _=>update_label(e))}), callback: e=>update_label(e.children[0])}),
+                create_elem({type: 'div', class: 'delete', child: create_elem({type: 'button', onclick: e=>{e.target.closest('.row').remove(); update_color_settings();}, child: create_elem({type: 'i', class: 'icon-trash'})})}),
+            ]});
             let panel = create_elem({type: 'div', class: "right", children: [
                 create_elem({type: 'button', class: "adder", onclick: e=>{e.target.nextElementSibling.append(create_row(0, '#ffffff')); update_color_settings();}, child: 'Add interval'}),
                 create_elem({type: 'div', class: "row panel"}),
             ]});
             panel.addEventListener('change', update_color_settings);
-            let create_row = (value, color)=>create_elem({type: 'div', class: 'row', children: [
-                create_elem({type: 'div', class: 'text', child: create_elem({type: 'input', input: 'number', value: value})}),
-                create_elem({type: 'div', class: 'color', child: create_elem({type: 'input', input: 'color', value: color})}),
-                create_elem({type: 'div', class: 'delete', child: create_elem({type: 'button', onclick: e=>{e.target.closest('.row').remove(); update_color_settings();}, child: create_elem({type: 'i', class: 'icon-trash'})})}),
-            ]});
             for (let [value, color] of wkof.settings[script_id][type].colors) panel.children[1].append(create_row(value, color));
             elem.insertAdjacentElement('beforebegin', panel);
         });
-        // Add color color labels
-        let update_label = function(input) {
-            if (!input.nextElementSibling) input.insertAdjacentElement('afterend', create_elem({type: 'div', class: 'color-label', child: input.value}));
-            else input.nextElementSibling.innerText = input.value;
-            if (!Math.round(hex_to_rgb(input.value).reduce((a,b)=>a+b/3, 0)/255-0.15)) input.nextElementSibling.classList.remove('light-color');
-            else input.nextElementSibling.classList.add('light-color');
-        }
-        dialog[0].querySelectorAll('input[type="color"]').forEach(input=>{
+        dialog[0].querySelectorAll('#heatmap3_general input[type="color"]').forEach(input=>{
             input.addEventListener('change', ()=>update_label(input));
             update_label(input);
         });
@@ -824,8 +823,10 @@
             else if (attr === "value") div.value = value;
             else if (attr === "input") div.setAttribute("type", value);
             else if (attr === "onclick") div.onclick = value;
+            else if (attr === "callback") continue;
             else div.setAttribute(attr, value);
         }
+        if (config.callback) config.callback(div);
         return div;
     }
 
