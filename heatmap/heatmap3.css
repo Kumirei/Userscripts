@@ -83,6 +83,7 @@
 #heatmap #popper .header {
 	text-align: center;
 	padding: 10px;
+	padding-bottom: 0;
 	position: relative;
 }
 
@@ -122,14 +123,6 @@
 	display: none;
 }
 
-a#heatmap .minimap {
-	display: block;
-	width: 43px;
-	height: 94px;
-	margin: 10px;
-	background-color: pink;
-	margin-top: 15px;
-}
 
 #heatmap #popper .stats {
 	display: flex;
@@ -532,4 +525,18 @@ a#heatmap .minimap {
 
 #heatmap .head-stats .stat .hover-wrapper.above {
 	text-align: center;
+}
+
+#heatmap #popper .minimap {
+	text-align: center;
+	margin-bottom: 10px;
+}
+
+#heatmap #popper .minimap > span {
+	margin-right: 10px;
+	font-weight: bold;
+}
+
+#heatmap #popper .minimap > div {
+	display: inline-grid;
 }
