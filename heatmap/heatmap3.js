@@ -328,7 +328,7 @@
                         },
                         forecast: {
                             type: 'page',
-                            label: 'Forecast',
+                            label: 'Review Forecast',
                             hover_tip: 'Settings pertaining to the forecast',
                             content: {
                                 divider: {
