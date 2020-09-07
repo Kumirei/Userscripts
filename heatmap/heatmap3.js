@@ -400,8 +400,8 @@
                 show_next_year: 12,
             },
             other: {
-                reviews_last_visible_year: null,
-                lessons_last_visible_year: null,
+                reviews_last_visible_year: 0,
+                lessons_last_visible_year: 0,
                 visible_map: "reviews",
             }
         };
@@ -758,8 +758,9 @@
             let down = create_elem({type: 'a', class: 'toggle-year down hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'div', child: 'Click to show next year'})}), create_elem({type: 'i', class: 'icon-chevron-down'})]});
             target.append(up, down);
         }
-        if (wkof.settings[script_id].other[type+'_last_visible_year']) heatmap.maps[wkof.settings[script_id].other[type+'_last_visible_year']].classList.add('last');
-        else heatmap.maps[Math.min(...Object.keys(heatmap.maps))].classList.add('last');
+        let last_year = Math.max(Math.min(...Object.keys(heatmap.maps)), wkof.settings[script_id].other[type+'_last_visible_year']);
+        wkof.settings[script_id].other[type+'_last_visible_year'] = last_year;
+        heatmap.maps[last_year].classList.add('last');
     }
 
     // Create the header and footer stats for a view
