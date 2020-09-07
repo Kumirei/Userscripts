@@ -428,10 +428,7 @@
                     let title = `${date.toDateString().slice(4)} ${kanji_day(date.getDay())}`;
                     let today = new Date(new Date().toDateString()).getTime();
                     let offset = wkof.settings[script_id].general.day_start*60*60*1000;
-                    console.log('raw', new Date(data[type][0][0]));
-                    console.log('filtered', new Date(data[type].filter(a=>a[0]>date.getTime()+offset&&a[0]<date.getTime()+1000*60*60*24+offset)[0][0]));
                     let minimap_data = cook_data(type, data[type].filter(a=>a[0]>date.getTime()+offset&&a[0]<date.getTime()+1000*60*60*24+offset));//.map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
-                    console.log('cooked', new Date(minimap_data[0][0]));
                     update_popper(event, type, title, elem.info, minimap_data);
                 }
                 if (event.type === "mousedown") {

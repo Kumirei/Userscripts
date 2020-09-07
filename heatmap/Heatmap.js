@@ -44,10 +44,8 @@
                     }
                 }
             }
-            if (this.config.type === "day") console.log(dates, data);
             for (let [date, counts, lists] of data) {
                 let [year, month, day, hour] = this._get_ymdh(date-1000*60*60*this.config.day_start);
-                //if (this.config.type === "day") console.log(date-1000*60*60*this.config.day_start < new Date(this.config.first_date).getTime(), new Date(date-1000*60*60*this.config.day_start), new Date(this.config.first_date));
                 if (date-1000*60*60*this.config.day_start < new Date(this.config.first_date).getTime() || date-1000*60*60*this.config.day_start > new Date(this.config.last_date || date+1).getTime()) continue;
                 let parsed_day = parsed_data[year][month][day];
                 for (let [key, value] of Object.entries(counts)) {
