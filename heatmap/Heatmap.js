@@ -86,7 +86,7 @@
         }
 
         _init_month(year, month, data, dates) {
-            let offset = (new Date(year+'-'+month+'-01').getDay()+6-this.config.week_start)%7;
+            let offset = (new Date(year+'-'+month+'-01 0:0').getDay()+6-this.config.week_start)%7;
             let month_elem = this._create_elem({type: 'div', class: 'month offset-'+offset});
             if (year===dates.first_year && month<dates.first_month) month_elem.classList.add('no-data');
             let label = this._create_elem({type: 'div', class: 'month-label', child: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month-1]});
