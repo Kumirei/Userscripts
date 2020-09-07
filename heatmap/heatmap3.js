@@ -917,12 +917,12 @@
             sessions: 0,            // Number of sessions
             time: [0, 0, 0, 0, 0],  // [total, year, month, week, day]
             days: 0,                // Number of days since first review
-            max_done: [0, 0],            // Max done in one day
+            max_done: [0, 0],       // Max done in one day [count, date]
             streaks,
         };
         let last_day = new Date(0);
         let today = new Date();
-        let week = new Date(new Date(Date.parse(new Date().toDateString())-(new Date().getDay()+6)%7*ms_day+ms_day/2).toDateString());
+        let week = new Date(new Date(Date.parse(new Date().toDateString())-(new Date().getDay()+6-settings.general.week_start)%7*ms_day+ms_day/2).toDateString());
         let month = new Date(today.getFullYear()+'-'+(today.getMonth()+1)+'-01');
         let year = new Date('Jan ' + today.getFullYear());
         let last_time = 0;
