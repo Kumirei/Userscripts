@@ -769,7 +769,7 @@
             create_stat_element('Streak', stats.streak[1]+' / '+stats.streak[0], 'Current / Longest'),
         ]})
         let foot_stats = create_elem({type: 'div', class: 'foot-stats stats', children: [
-            create_stat_element('Sessions', stats.sessions, Math.floor(stats.total[0]/stats.sessions)+' per session'),
+            create_stat_element('Sessions', stats.sessions.toSeparated(), Math.floor(stats.total[0]/stats.sessions)+' per session'),
             create_stat_element(type.toProper(), stats.total[0].toSeparated(), create_table("left", [
                 ['This Year', stats.total[1].toSeparated()],
                 ['This Month', stats.total[2].toSeparated()],
