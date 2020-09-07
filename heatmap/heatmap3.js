@@ -427,7 +427,11 @@
                 if (event.type === "click" && Object.keys(elem.info.lists).length) {
                     let title = `${date.toDateString().slice(4)} ${kanji_day(date.getDay())}`;
                     let today = new Date(new Date().toDateString()).getTime();
-                    let minimap_data = cook_data(type, data[type].filter(a=>a[0]>date.getTime()&&a[0]<date.getTime()+1000*60*60*24).map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
+                    let offset = wkof.settings[script_id].general.day_start*60*60*1000;
+                    console.log('raw', new Date(data[type][0][0]));
+                    console.log('filtered', new Date(data[type].filter(a=>a[0]>date.getTime()+offset&&a[0]<date.getTime()+1000*60*60*24+offset)[0][0]));
+                    let minimap_data = cook_data(type, data[type].filter(a=>a[0]>date.getTime()+offset&&a[0]<date.getTime()+1000*60*60*24+offset));//.map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
+                    console.log('cooked', new Date(minimap_data[0][0]));
                     update_popper(event, type, title, elem.info, minimap_data);
                 }
                 if (event.type === "mousedown") {
@@ -444,7 +448,8 @@
                         type = elem.closest('.view').classList.contains('reviews')?start_date<new Date()?'reviews':'forecast':'lessons';
                         let title = `${start_date.toDateString().slice(4)} ${kanji_day(start_date.getDay())} - ${end_date.toDateString().slice(4)} ${kanji_day(end_date.getDay())}`;
                         let today = new Date(new Date().toDateString()).getTime();
-                        let minimap_data = cook_data(type, data[type].filter(a=>a[0]>start_date.getTime()&&a[0]<end_date.getTime()+1000*60*60*24).map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
+                        let offset = wkof.settings[script_id].general.day_start*60*60*1000;
+                        let minimap_data = cook_data(type, data[type].filter(a=>a[0]>start_date.getTime()+offset&&a[0]<end_date.getTime()+1000*60*60*24+offset).map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
                         let popper_info = {counts: {}, lists: {}};
                         for (let item of minimap_data) {
                             for (let [key, value] of Object.entries(item[1])) {
@@ -547,7 +552,7 @@
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
         popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i]; e.parentElement.children[0].append(create_table('left', levels.map((a,j)=>[j, a]).slice(1).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
         popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2]});
-        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['', 'Before', 'After'], ...srs.slice(1).map((a, i)=>[i+1, ...a])]));
+        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['SRS'], ['Before / After'], ...srs.slice(1).map((a, i)=>[i+1, ...a])]));
         popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]]});
         popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = pass[i]});
         popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = answers[i]});
@@ -563,7 +568,7 @@
         return new Heatmap({
             type: "day",
             id: 'minimap',
-            first_date: Date.parse(new Date().toISOString().slice(0,10)),
+            first_date: Date.parse(new Date(data[0][0]-settings.general.day_start*60*60*1000).toDateString()),
             day_start: settings.general.day_start,
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
@@ -606,7 +611,7 @@
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);
-        document.addEventListener('click', (event)=>{if (!event.path.find((a)=>a===popper) && !event.target.classList.contains('day')) popper.classList.remove('popped')});
+        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper) && !event.target.classList.contains('day')) popper.classList.remove('popped')});
         // Create header
         header.append(
             create_elem({type: 'div', class: 'date'}),
@@ -616,7 +621,7 @@
         // Create minimap and stats
         stats.append(
             create_table('left', [["Levels"], [" 1-10", 0], ["11-20", 0], ["21-30", 0], ["31-40", 0], ["41-50", 0], ["51-60", 0]], {class: 'levels'}, true),
-            create_table('left', [["SRS"], ["App", 0, 0], ["Gur", 0, 0], ["Mas", 0, 0], ["Enl", 0, 0], ["Bur", 0, 0]], {class: 'srs hover-wrapper-target', child: create_elem({type: 'div', class: 'hover-wrapper above', child: create_elem({type: 'table'})})}),
+            create_table('left', [["SRS"], ['Before / After'], ["App", 0, 0], ["Gur", 0, 0], ["Mas", 0, 0], ["Enl", 0, 0], ["Bur", 0, 0]], {class: 'srs hover-wrapper-target', child: create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'table'})})}),
             create_table('left', [["Type"], ["Rad", 0], ["Kan", 0], ["Voc", 0]], {class: 'type'}),
             create_table('left', [["Summary"], ["Pass", 0], ["Fail", 0], ["Acc", 0]], {class: 'summary'}),
             create_table('left', [["Answers"], ["Right", 0], ["Wrong", 0], ["Acc", 0]], {class: 'answers'}),
@@ -705,7 +710,7 @@
                 let type2 = type;
                 let time = Date.parse(date.join('-')+' ');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ 2/, ', 2')}
+                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}
                 Day ${Math.round((time-Date.parse(new Date(data[0][0]).toDateString()))/(24*60*60*1000))+1}`;
                 if (time < Date.now()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
@@ -765,21 +770,21 @@
     function create_stats_elements(type, stats) {
         let head_stats = create_elem({type: 'div', class: 'head-stats stats', children: [
             create_stat_element('Days Studied', stats.days_studied[1]+'%', stats.days_studied[0].toSeparated()+' out of '+stats.days.toSeparated()),
-            create_stat_element('Done Daily', stats.average[0]+' / '+stats.average[1], 'Per Day / Day studied\nMax: '+stats.max_done.toSeparated()),
+            create_stat_element('Done Daily', stats.average[0]+' / '+stats.average[1], 'Per Day / Day studied\nMax: '+stats.max_done[0].toSeparated()+' on '+stats.max_done[1]),
             create_stat_element('Streak', stats.streak[1]+' / '+stats.streak[0], 'Current / Longest'),
         ]})
         let foot_stats = create_elem({type: 'div', class: 'foot-stats stats', children: [
             create_stat_element('Sessions', stats.sessions.toSeparated(), Math.floor(stats.total[0]/stats.sessions)+' per session'),
             create_stat_element(type.toProper(), stats.total[0].toSeparated(), create_table("left", [
-                ['This Year', stats.total[1].toSeparated()],
-                ['This Month', stats.total[2].toSeparated()],
-                ['This Week', stats.total[3].toSeparated()],
+                ['Year', stats.total[1].toSeparated()],
+                ['Month', stats.total[2].toSeparated()],
+                ['Week', stats.total[3].toSeparated()],
                 ['Today', stats.total[4].toSeparated()]
             ])),
             create_stat_element('Time', m_to_hm(stats.time[0]), create_table("left", [
-                ['This Year', m_to_hm(stats.time[1])],
-                ['This Month', m_to_hm(stats.time[2])],
-                ['This Week', m_to_hm(stats.time[3])],
+                ['Year', m_to_hm(stats.time[1])],
+                ['Month', m_to_hm(stats.time[2])],
+                ['Week', m_to_hm(stats.time[3])],
                 ['Today', m_to_hm(stats.time[4])]
             ])),
         ]})
@@ -914,7 +919,7 @@
             sessions: 0,            // Number of sessions
             time: [0, 0, 0, 0, 0],  // [total, year, month, week, day]
             days: 0,                // Number of days since first review
-            max_done: 0,            // Max done in one day
+            max_done: [0, 0],            // Max done in one day
             streaks,
         };
         let last_day = new Date(0);
@@ -935,7 +940,7 @@
                 done_day = 0;
             }
             done_day++;
-            if (done_day > stats.max_done) stats.max_done = done_day;
+            if (done_day > stats.max_done[0]) stats.max_done = [done_day, day.toDateString().replace(/... /, '')];
             let minutes = (item[0]-last_time)/60000;
             if (minutes > settings.general.session_limit) {
                 stats.sessions++;

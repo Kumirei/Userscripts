@@ -122,7 +122,8 @@
 
 .heatmap .hover-wrapper.below {
 	left: 50%;
-	transform: translate(-50%, 100%)
+	transform: translate(-50%, 100%);
+	bottom: -5px;
 }
 
 .heatmap .hover-wrapper-target:hover .hover-wrapper.above::after,

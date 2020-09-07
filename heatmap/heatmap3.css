@@ -150,8 +150,17 @@ a#heatmap .minimap {
 	justify-content: space-between;
 }
 
-#heatmap #popper .stats table tr:first-child th {
+#heatmap #popper .stats table > tr:first-child th,
+#heatmap #popper .stats table.srs > tr:nth-of-type(2) th,
+#heatmap #popper .stats table.srs .hover-wrapper tr:first-of-type th,
+#heatmap #popper .stats table.srs .hover-wrapper tr:nth-of-type(2) th {
+	text-align: center;
 	width: 100%;
+}
+
+#heatmap #popper .stats table.srs > tr:nth-of-type(2) th,
+#heatmap #popper .stats table.srs .hover-wrapper tr:nth-of-type(2) th {
+	font-weight: normal;
 }
 
 #heatmap #popper .stats {
@@ -199,7 +208,7 @@ a#heatmap .minimap {
 	font-weight: bold;
 }
 
-#heatmap #popper .srs .hover-wrapper tr:not(:first-child) th::before {
+#heatmap #popper .srs .hover-wrapper tr:nth-child(n+3) th::before {
 	content: 'SRS ';
 }
 
@@ -321,8 +330,9 @@ a#heatmap .minimap {
 
 #heatmap .year-labels .toggle-year {
 	position: absolute;
-	margin-left: 4px;
 	color: var(--color);
+	width: calc(100% - 20px);
+	text-align: center;
 }
 
 #heatmap .year-labels .toggle-year.down {
@@ -429,14 +439,12 @@ a#heatmap .minimap {
 @media (max-width: 700px) {
 	#heatmap .year-labels .toggle-year {
 		font-size: 10px;
-		margin-left: 3px;
 	}
 }
 
 @media (max-width: 600px) {
 	#heatmap .year-labels .toggle-year {
 		font-size: 8px;
-		margin-left: 3px;
 	}
 	#heatmap .year-labels .toggle-year.up {
 		top: -2px;
@@ -449,7 +457,6 @@ a#heatmap .minimap {
 @media (max-width: 500px) {
 	#heatmap .year-labels .toggle-year {
 		font-size: 6px;
-		margin-left: 4px;
 	}
 	#heatmap .year-labels .toggle-year.up {
 		top: -5px;
@@ -521,4 +528,8 @@ a#heatmap .minimap {
 
 #heatmap #popper .items .hover-wrapper .radical-svg {
 	width: 74px;
+}
+
+#heatmap .head-stats .stat .hover-wrapper.above {
+	text-align: center;
 }
