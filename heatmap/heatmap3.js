@@ -707,7 +707,7 @@
                 let time = Date.parse(date.join('-')+' ');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
                 let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}
-                Day ${Math.round((time-Date.parse(new Date(data[0][0]).toDateString()))/(24*60*60*1000))+1}`;
+                Day ${Math.round((time-Math.max(data[0][0], Date.parse(settings.general.start_date)))/(24*60*60*1000))+1}`;
                 if (time < Date.now()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
