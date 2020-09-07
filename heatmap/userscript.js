@@ -8,6 +8,7 @@
 // @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=845130
 // @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=845109
 // @grant        none
+// ==UserScript==
 
 (function($, wkof, review_cache, Heatmap) {
     /* eslint no-multi-spaces: off */
@@ -29,8 +30,13 @@
     wkof.ready('Menu,Settings,ItemData,Apiv2')
     .then(load_settings)
     .then(install_menu)
+    .then(install_css)
     .then(initiate);
 
+    function install_css() {
+        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/Heatmap.css', false);
+        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/heatmap3.css', false);
+    }
 
     // Fetch necessary data then install the heatmap
     async function initiate() {
@@ -126,7 +132,7 @@
     }
 
     function reload_on_change(settings) {
-        if (applied) reload(settings);
+        if (applied) reload();
     }
 
     function open_settings() {
@@ -251,7 +257,7 @@
                                             type: 'color',
                                             label: 'Color for current day',
                                             hover_tip: 'The borders around today will have this color.',
-                                            default: '#ffffff',
+                                            default: '#ff0000',
                                             path: '@general.color_now_indicator',
                                         },
                                         color_level_indicator: {
@@ -382,7 +388,7 @@
                 day_labels: true,
                 session_limit: 10,
                 now_indicator: true,
-                color_now_indicator: '#ffffff',
+                color_now_indicator: '#ff0000',
                 level_indicator: true,
                 color_level_indicator: '#ffffff',
                 position: 2,
@@ -605,7 +611,7 @@
         // Create layout
         let popper = create_elem({type: 'div', id: 'popper'});
         let header = create_elem({type: 'div', class: 'header'});
-        let minimap = create_elem({type: 'div', class: 'minimap', children: [create_elem({type: 'span', class: 'minimap-label', child: 'Hours minimap'}), create_elem({type: 'div'})]});
+        let minimap = create_elem({type: 'div', class: 'minimap', children: [create_elem({type: 'span', class: 'minimap-label', child: 'Hours minimap'}), create_elem({type: 'div', class: 'hours-map'})]});
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);
@@ -706,7 +712,7 @@
             markings: [[new Date(Date.now()-60*60*1000*settings.general.day_start), "today"], ...level_ups],
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
-                let time = Date.parse(date.join('-')+' ');
+                let time = Date.parse(date.join('-')+' 0:0');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
                 let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}
                 Day ${Math.round((time-Math.max(data[0][0], Date.parse(settings.general.start_date)))/(24*60*60*1000))+1}`;
@@ -1018,10 +1024,5 @@
         return Math.sqrt(2)*inverf(2*p-1)*sd+mean;
     }
     function validate_start_date(date) {return new Date(date) !== "Invalid Date"}
-
-    function install_css() {
-        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/Heatmap.css', false);
-        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/heatmap3.css', false);
-    }
 
 })(window.jQuery, window.wkof, window.review_cache, window.Heatmap);
