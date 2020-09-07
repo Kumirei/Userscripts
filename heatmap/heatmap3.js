@@ -885,7 +885,6 @@
             zeros[day.toDateString()] = true;
         }
         for (let [date] of data) streaks[new Date(date-day_start_adjust).toDateString()] = 1;
-        streaks[new Date(Date.now()-day_start_adjust).toDateString()] = 1;
         if (type === "lessons" && wkof.settings[script_id].lessons.count_zeros) {
             for (let [started_at, id, level, unlocked_at] of data) {
                 for (let day = new Date(unlocked_at-day_start_adjust); day <= new Date(started_at-day_start_adjust); day.setDate(day.getDate()+1)) {
