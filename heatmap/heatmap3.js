@@ -604,7 +604,7 @@
         // Create layout
         let popper = create_elem({type: 'div', id: 'popper'});
         let header = create_elem({type: 'div', class: 'header'});
-        let minimap = create_elem({type: 'div', class: 'minimap', children: [create_elem({type: 'span', class: 'minimap-label', child: 'Hours minimap'}), create_elem({type: 'div'})]});
+        let minimap = create_elem({type: 'div', class: 'minimap', children: [create_elem({type: 'span', class: 'minimap-label', child: 'Hours minimap'}), create_elem({type: 'div', class: 'hours-map'})]});
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);

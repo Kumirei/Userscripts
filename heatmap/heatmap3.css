@@ -211,14 +211,13 @@
 
 #heatmap .years {
 	margin: auto;
-	width: fit-content;
+	display: table;
 }
 
 #heatmap #popper .items {
 	position: relative;
 	display: flex;
 	flex-wrap: wrap;
-	justify-content: center;
 	flex-direction: row;
 	justify-content: space-between;
 	padding: 10px;
@@ -398,7 +397,8 @@
 	top: 50%;
 	left: 50%;
 	transform: translatex(-50%);
-	width: fit-content;
+	display: table;
+	width: auto;
 	color: white !important;
 	text-transform: uppercase;
 	pointer-events: none;
@@ -485,14 +485,12 @@
 	display: inline-block;
 	width: 50%;
 	margin-top: -10px;
-	justify-content: top;
 	min-width: fit-content;
 }
 
 #heatmap3_general ~ div[role="tabpanel"] hr ~ .row > div,
 #heatmap3_tabs #heatmap3_look .row > div {
-	width: fit-content;
-	float: unset;
+	width: auto;
 	display: inline-block;
 	margin: 0 10px;
 	vertical-align: middle;
