@@ -36,7 +36,8 @@
         let t = Date.now();
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
-        reload = function() {
+        reload = function(new_reviews=false) {
+            if (new_reviews !== false) reviews = new_reviews;
             setTimeout(()=>{// make settings dialog respond immediately
                 let stats = {
                     reviews: calculate_stats("reviews", reviews),
@@ -290,7 +291,7 @@
                                     label: 'Reload review data',
                                     text: 'Reload',
                                     hover_tip: 'Deletes review cache and starts new fetch. Data from before resets will be lost permanently',
-                                    on_click: ()=>review_cache.reload(),
+                                    on_click: ()=>review_cache.reload().then(reviews=>reload(reviews)),
                                 },
                             },
                         },
@@ -553,7 +554,7 @@
         popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = pass[i]});
         popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = answers[i]});
         popper.querySelector('.items').replaceWith(create_elem({type: 'div', class: 'items', children: item_elems}));
-        popper.querySelector('.minimap').replaceWith(create_minimap(type, minimap_data).maps.day);
+        popper.querySelector('.minimap > .hours-map').replaceWith(create_minimap(type, minimap_data).maps.day);
         popper.style.top = event.pageY+50+'px';
         popper.classList.add('popped');
     }
@@ -563,7 +564,7 @@
         let multiplier = 6;
         return new Heatmap({
             type: "day",
-            id: 'minimap',
+            id: 'hours-map',
             first_date: Date.parse(new Date(data[0][0]-settings.general.day_start*60*60*1000).toDateString()),
             day_start: settings.general.day_start,
             day_hover_callback: (date, day_data)=>{
@@ -603,7 +604,7 @@
         // Create layout
         let popper = create_elem({type: 'div', id: 'popper'});
         let header = create_elem({type: 'div', class: 'header'});
-        let minimap = create_elem({type: 'div', class: 'minimap'});
+        let minimap = create_elem({type: 'div', class: 'minimap', children: [create_elem({type: 'span', class: 'minimap-label', child: 'Hours minimap'}), create_elem({type: 'div'})]});
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);
