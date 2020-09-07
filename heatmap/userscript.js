@@ -6,7 +6,7 @@
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=845130
-// @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=845109
+// @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=845491
 // @grant        none
 // ==UserScript==
 
