@@ -705,7 +705,7 @@
             markings: [[new Date(Date.now()-60*60*1000*settings.general.day_start), "today"], ...level_ups],
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
-                let time = Date.parse(date.join('-')+' ');
+                let time = Date.parse(date.join('-')+' 0:0');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
                 let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}
                 Day ${Math.round((time-Math.max(data[0][0], Date.parse(settings.general.start_date)))/(24*60*60*1000))+1}`;
