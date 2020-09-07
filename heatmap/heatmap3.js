@@ -125,7 +125,7 @@
     }
 
     function reload_on_change(settings) {
-        if (applied) reload(settings);
+        if (applied) reload();
     }
 
     function open_settings() {
@@ -250,7 +250,7 @@
                                             type: 'color',
                                             label: 'Color for current day',
                                             hover_tip: 'The borders around today will have this color.',
-                                            default: '#ffffff',
+                                            default: '#ff0000',
                                             path: '@general.color_now_indicator',
                                         },
                                         color_level_indicator: {
@@ -381,7 +381,7 @@
                 day_labels: true,
                 session_limit: 10,
                 now_indicator: true,
-                color_now_indicator: '#ffffff',
+                color_now_indicator: '#ff0000',
                 level_indicator: true,
                 color_level_indicator: '#ffffff',
                 position: 2,
