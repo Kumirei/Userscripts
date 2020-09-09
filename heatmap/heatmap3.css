@@ -74,6 +74,7 @@
 	left: 50vw;
 	transform: translate(-50%, 0);
 	z-index: 1000;
+	padding: 10px;
 }
 
 #heatmap #popper.popped {
@@ -82,7 +83,6 @@
 
 #heatmap #popper .header {
 	text-align: center;
-	padding: 10px;
 	padding-bottom: 0;
 	position: relative;
 }
@@ -186,7 +186,11 @@
 }
 
 #heatmap #popper .srs .hover-wrapper tr :not(.hover-wrapper) {
-	width: 35px;
+	min-width: 30px;
+}
+
+#heatmap #popper .srs .hover-wrapper tr > th{
+	min-width: 38px !important;
 }
 
 #heatmap #popper .levels .hover-wrapper th::before {
@@ -220,7 +224,7 @@
 	flex-wrap: wrap;
 	flex-direction: row;
 	justify-content: space-between;
-	padding: 10px;
+	padding-top: 10px;
 	max-width: 500px;
 }
 
