@@ -486,6 +486,7 @@
 	width: 50%;
 	margin-top: -10px;
 	min-width: fit-content;
+	padding-bottom: 5px;
 }
 
 #heatmap3_general ~ div[role="tabpanel"] hr ~ .row > div,
@@ -537,4 +538,16 @@
 
 #heatmap #popper .minimap > div {
 	display: inline-grid;
+}
+
+#heatmap3_tabs .row:last-child {
+	margin-bottom: 5px !important;
+}
+
+#heatmap3_tabs #heatmap3_look {
+	padding-top: 12px;
+}
+
+#heatmap3_tabs #heatmap3_look hr {
+	margin-bottom: 26px;
 }
