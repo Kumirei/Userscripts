@@ -290,7 +290,7 @@
                                     type: 'button',
                                     label: 'Reload review data',
                                     text: 'Reload',
-                                    hover_tip: 'Deletes review cache and starts new fetch. Data from before resets will be lost permanently',
+                                    hover_tip: 'Deletes review cache and starts new fetch.',
                                     on_click: ()=>review_cache.reload().then(reviews=>reload(reviews)),
                                 },
                             },
