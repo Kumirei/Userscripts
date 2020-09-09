@@ -967,7 +967,7 @@
             last_time = item[0];
         }
         done_days.push(done_day); // Assumes users has done reviews today
-        stats.days = Math.floor((today.getTime()-data[0][0])/ms_day)+1;
+        stats.days = Math.round((new Date(new Date(data[0][0]).toDateString()).getTime() - new Date(new Date().toDateString()).getTime())/ms_day)+1;
         stats.days_studied[1] = Math.round(stats.days_studied[0]/stats.days*100);
         stats.average[0] = Math.round(stats.total[0]/stats.days);
         stats.average[1] = Math.round(stats.total[0]/stats.days_studied[0]);
