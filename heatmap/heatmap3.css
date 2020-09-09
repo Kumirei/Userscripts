@@ -162,6 +162,7 @@
 
 #heatmap #popper .stats tr > :not(:last-child) {
 	padding-right: 5px;
+	box-sizing: initial;
 }
 
 #heatmap #popper .srs th {
