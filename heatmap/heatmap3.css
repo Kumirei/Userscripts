@@ -189,8 +189,8 @@
 	min-width: 30px;
 }
 
-#heatmap #popper .srs .hover-wrapper tr > th{
-	min-width: 38px !important;
+#heatmap #popper .srs .hover-wrapper tr > th {
+	min-width: 42px !important;
 }
 
 #heatmap #popper .levels .hover-wrapper th::before {
@@ -203,10 +203,6 @@
 
 #heatmap #popper .srs .hover-wrapper tr:first-child {
 	font-weight: bold;
-}
-
-#heatmap #popper .srs .hover-wrapper tr:nth-child(n+3) th::before {
-	content: 'SRS ';
 }
 
 #heatmap #popper .stats > * > * > td {
