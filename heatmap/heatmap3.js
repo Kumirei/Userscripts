@@ -879,14 +879,15 @@
 
     // Finds streaks
     function get_streaks(type, data) {
-        let day_start_adjust = 60*60*1000*wkof.settings[script_id].general.day_start;
+        let settings = wkof.settings[script_id];
+        let day_start_adjust = 60*60*1000*settings.general.day_start;
         let streaks = {}, zeros = {};
-        for (let day = new Date(data[0][0]-day_start_adjust); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
+        for (let day = new Date(Math.max(data[0][0], Date.parse(settings.general.start_date))-day_start_adjust); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
             streaks[day.toDateString()] = 0;
             zeros[day.toDateString()] = true;
         }
         for (let [date] of data) streaks[new Date(date-day_start_adjust).toDateString()] = 1;
-        if (type === "lessons" && wkof.settings[script_id].lessons.count_zeros) {
+        if (type === "lessons" && settings.lessons.count_zeros) {
             for (let [started_at, id, level, unlocked_at] of data) {
                 for (let day = new Date(unlocked_at-day_start_adjust); day <= new Date(started_at-day_start_adjust); day.setDate(day.getDate()+1)) {
                     delete zeros[day.toDateString()];
@@ -895,7 +896,7 @@
             for (let date of Object.keys(zeros)) streaks[date] = 1;
         }
         let streak = 0;
-        for (let day = new Date(data[0][0]-day_start_adjust); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
+        for (let day = new Date(Math.max(data[0][0], Date.parse(settings.general.start_date))-day_start_adjust); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
             if (streaks[day.toDateString()] === 1) streak++;
             else streak = 0;
             streaks[day.toDateString()] = streak;
