@@ -930,9 +930,9 @@
         let last_time = 0;
         let done_day = 0;
         let done_days = [];
-        let start_date = new Date(wkof.settings[script_id].general.start_date);
+        let start_date = new Date(settings.general.start_date);
         for (let item of data) {
-            let day = new Date(item[0]-ms_day/24*wkof.settings[script_id].general.day_start);
+            let day = new Date(item[0]-ms_day/24*settings.general.day_start);
             if (day < start_date) continue;
             if (last_day.toDateString() != day.toDateString()) {
                 stats.days_studied[0]++;
@@ -968,7 +968,7 @@
             last_time = item[0];
         }
         done_days.push(done_day); // Assumes users has done reviews today
-        stats.days = Math.round((Date.parse(new Date().toDateString())-Date.parse(new Date(data[0][0]).toDateString()))/ms_day)+1;
+        stats.days = Math.round((Date.parse(new Date().toDateString())-Math.max(Date.parse(new Date(data[0][0]).toDateString()), Date.parse(settings.general.start_date)))/ms_day)+1;
         stats.days_studied[1] = Math.round(stats.days_studied[0]/stats.days*100);
         stats.average[0] = Math.round(stats.total[0]/stats.days);
         stats.average[1] = Math.round(stats.total[0]/stats.days_studied[0]);
