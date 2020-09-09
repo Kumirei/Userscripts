@@ -117,7 +117,7 @@
             let current_hour = new Date().getHours();
             for (let i=0; i<24; i++) {
                 let j = (i+this.config.day_start)%24;
-                let hour = this._create_elem({type: 'div', class: 'hour hover-wrapper-target'+(j===current_hour?' today marked':''), info: {counts: hour_data[i].counts, lists: hour_data[i].lists}});
+                let hour = this._create_elem({type: 'div', class: 'hour hover-wrapper-target'+(j===current_hour&&Date.parse(new Date().toDateString())==this.config.first_date?' today marked':''), info: {counts: hour_data[i].counts, lists: hour_data[i].lists}});
                 let hover = this._create_elem({type: 'div', class: 'hover-wrapper', child: this.config.day_hover_callback([dates.first_year, dates.first_month, dates.first_day, j], hour_data[i])});
                 hour.append(hover);
                 hour.style.setProperty('background-color', this.config.color_callback([dates.first_year, dates.first_month, dates.first_day, j], hour_data[i]));
