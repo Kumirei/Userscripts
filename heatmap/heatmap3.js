@@ -548,7 +548,7 @@
         popper.querySelector('.count').innerText = info.lists[type+'-ids'].length;
         popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff;
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
-        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i]; e.parentElement.children[0].append(create_table('left', levels.map((a,j)=>[j, a]).slice(1).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
+        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i]; e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.map((a,j)=>[j, a]).slice(1).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
         popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2]});
         popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['SRS'], ['Before / After'], ...srs.slice(1).map((a, i)=>[i+1, ...a])]));
         popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]]});
@@ -807,7 +807,7 @@
         let table = create_elem(Object.assign({type: 'table'}, table_attr));
         for (let [i, row] of Object.entries(data)) {
             let tr_config = {type: 'tr'};
-            if (tr_hover) {tr_config.class = 'hover-wrapper-target'; tr_config.child = create_elem({type: 'div', class: 'hover-wrapper above'});}
+            if (tr_hover) {tr_config.class = 'hover-wrapper-target'; tr_config.child = create_elem({type: 'div', class: 'hover-wrapper below'});}
             let tr = create_elem(tr_config);
             for (let [j, cell] of Object.entries(row)) {
                 let cell_type = (header=="top"&&i==0)||(header=="left"&&j==0)?"th":"td";

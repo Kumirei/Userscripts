@@ -551,3 +551,7 @@
 #heatmap3_tabs #heatmap3_look hr {
 	margin-bottom: 26px;
 }
+
+#heatmap #popper .levels tr[data-count="0"] .hover-wrapper {
+	display: none;
+}
