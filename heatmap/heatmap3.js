@@ -404,6 +404,7 @@
                 reviews_last_visible_year: 0,
                 lessons_last_visible_year: 0,
                 visible_map: "reviews",
+                times_popped: 0,
             }
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
@@ -557,6 +558,8 @@
         popper.querySelector('.minimap > .hours-map').replaceWith(create_minimap(type, minimap_data).maps.day);
         popper.style.top = event.pageY+50+'px';
         popper.classList.add('popped');
+        wkof.settings[script_id].other.times_popped++;
+        wkof.Settings.save(script_id);
     }
 
     function create_minimap(type, data) {
@@ -714,6 +717,7 @@
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
                 let level = level_ups.findIndex(level_up=>level_up[0]===time)+1
                 if (level) string += '\nYou reached level '+level+'!';
+                if (wkof.settings[script_id].other.times_popped < 5) string += '\nClick for details!';
                 return [string];
             },
             color_callback: (date, day_data)=>{
