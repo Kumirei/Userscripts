@@ -77,7 +77,7 @@
         }
 
         _get_year_labels(year) {
-            let year_label = this._create_elem({type: 'div', class: 'year-label hover-wrapper-target', children: [String(year), this._create_elem({type: 'div', class: 'hover-wrapper above', child: year})]});
+            let year_label = this._create_elem({type: 'div', class: 'year-label hover-wrapper-target', child: String(year)});
             let day_labels = this._create_elem({type: 'div', class: 'day-labels'});
             for (let day=0; day<7; day++) {
                 day_labels.append(this._create_elem({type: 'div', class: 'day-label', child: ['M','T','W','T','F','S','S'][(day+Number(this.config.week_start))%7]}));
