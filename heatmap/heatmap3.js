@@ -710,9 +710,9 @@
                 let type2 = type;
                 let time = Date.parse(date.join('-')+' 0:0');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}
-                Day ${(Math.round((time-Date.parse(new Date(Math.max(data[0][0], Date.parse(settings.general.start_date))).toDateString()))/(24*60*60*1000))+1).toSeparated()}`;
-                if (time < Date.now()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
+                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}`;
+                if (time >= new Date(settings.general.start_date).getTime()) string += `\nDay ${(Math.round((time-Date.parse(new Date(Math.max(data[0][0], Date.parse(settings.general.start_date))).toDateString()))/(24*60*60*1000))+1).toSeparated()}`;
+                if (time < Date.now() && time >= new Date(settings.general.start_date).getTime()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
                 let level = level_ups.findIndex(level_up=>level_up[0]===time)+1
@@ -772,7 +772,7 @@
     function create_stats_elements(type, stats) {
         let head_stats = create_elem({type: 'div', class: 'head-stats stats', children: [
             create_stat_element('Days Studied', stats.days_studied[1]+'%', stats.days_studied[0].toSeparated()+' out of '+stats.days.toSeparated()),
-            create_stat_element('Done Daily', stats.average[0]+' / '+stats.average[1], 'Per Day / Day studied\nMax: '+stats.max_done[0].toSeparated()+' on '+stats.max_done[1]),
+            create_stat_element('Done Daily', stats.average[0]+' / '+(stats.average[1] || 0), 'Per Day / Day studied\nMax: '+stats.max_done[0].toSeparated()+' on '+stats.max_done[1]),
             create_stat_element('Streak', stats.streak[1]+' / '+stats.streak[0], 'Current / Longest'),
         ]})
         let foot_stats = create_elem({type: 'div', class: 'foot-stats stats', children: [
@@ -886,11 +886,11 @@
         let settings = wkof.settings[script_id];
         let day_start_adjust = 60*60*1000*settings.general.day_start;
         let streaks = {}, zeros = {};
-        for (let day = new Date(Math.max(data[0][0], Date.parse(settings.general.start_date))-day_start_adjust); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
+        for (let day = new Date(Math.max(data[0][0]-day_start_adjust, Date.parse(settings.general.start_date))); day <= new Date(); day.setDate(day.getDate()+1)) {
             streaks[day.toDateString()] = 0;
             zeros[day.toDateString()] = true;
         }
-        for (let [date] of data) streaks[new Date(date-day_start_adjust).toDateString()] = 1;
+        for (let [date] of data) if (new Date(date)>new Date(settings.general.start_date)) streaks[new Date(date-day_start_adjust).toDateString()] = 1;
         if (type === "lessons" && settings.lessons.count_zeros) {
             for (let [started_at, id, level, unlocked_at] of data) {
                 for (let day = new Date(unlocked_at-day_start_adjust); day <= new Date(started_at-day_start_adjust); day.setDate(day.getDate()+1)) {
@@ -900,11 +900,12 @@
             for (let date of Object.keys(zeros)) streaks[date] = 1;
         }
         let streak = 0;
-        for (let day = new Date(Math.max(data[0][0], Date.parse(settings.general.start_date))-day_start_adjust); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
+        for (let day = new Date(Math.max(data[0][0]-day_start_adjust, Date.parse(settings.general.start_date))); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
             if (streaks[day.toDateString()] === 1) streak++;
             else streak = 0;
             streaks[day.toDateString()] = streak;
         }
+        if (streaks[new Date().toDateString()] == 0) streaks[new Date().toDateString()] = streaks[new Date(new Date().setHours(-12)).toDateString()] || 0;
         return streaks;
     }
 
