@@ -44,6 +44,7 @@
                     }
                 }
             }
+            console.log(parsed_data, dates);
             for (let [date, counts, lists] of data) {
                 let [year, month, day, hour] = this._get_ymdh(date-1000*60*60*this.config.day_start);
                 if (date-1000*60*60*this.config.day_start < new Date(this.config.first_date).getTime() || date-1000*60*60*this.config.day_start > new Date(this.config.last_date || date+1).getTime()) continue;

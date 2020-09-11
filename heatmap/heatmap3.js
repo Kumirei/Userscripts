@@ -484,13 +484,11 @@
 
     function toggle_year(event) {
         let visible_years = wkof.settings[script_id].other.visible_years;
-        console.log(event);
         let year_elem = event.target.closest('.year');
         let up = event.target.closest('.toggle-year').classList.contains('up');
         let year = Number(year_elem.getAttribute('data-year'));
         let future = year > new Date().getFullYear();
         let type = year_elem.classList.contains('reviews')?'reviews':'lessons';
-        console.log(up, year, future, type);
         if (up || (!up && future)) {
             if (year == new Date().getFullYear()) {
                 visible_years[type][year+1] = true;
@@ -505,6 +503,7 @@
             visible_years[type][year-1] = true;
             year_elem.previousElementSibling.classList.remove('hidden');
         }
+        wkof.Settings.save(script_id);
     }
 
     async function update_popper(event, type, title, info, minimap_data) {
@@ -560,11 +559,12 @@
 
     function create_minimap(type, data) {
         let settings = wkof.settings[script_id];
-        let multiplier = 6;
+        let multiplier = 12;
         return new Heatmap({
             type: "day",
             id: 'hours-map',
             first_date: Date.parse(new Date(data[0][0]-settings.general.day_start*60*60*1000).toDateString()),
+            last_date: data.reduce((max,a)=>max<a[0]?a[0]:max, 0),
             day_start: settings.general.day_start,
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
