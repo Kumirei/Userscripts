@@ -865,6 +865,7 @@
         let levels = new Array(61).fill(null).map(_=>{return {}});
         // Group unlocked items within each level by unlock date
         for (let [start, id, level, unlock] of lessons) {
+            if (new Date(unlock) < new Date(wkof.settings[script_id].general.start_date)) continue;
             let date_string = new Date(unlock).toDateString();
             if (!levels[level][date_string]) levels[level][date_string] = 0;
             levels[level][date_string]++;
