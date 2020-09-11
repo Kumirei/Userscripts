@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap 3.0.0 BETA
 // @namespace    http://tampermonkey.net/
-// @version      3.0.5
+// @version      3.0.8
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
