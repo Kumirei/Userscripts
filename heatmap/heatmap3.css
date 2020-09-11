@@ -346,7 +346,8 @@
 	display: none;
 }
 
-#heatmap .years .year:last-child .toggle-year.up {
+#heatmap .years .year:last-child .toggle-year.up,
+#heatmap .years.visible-future .year.current .toggle-year.up {
 	display: none !important;
 }
 
