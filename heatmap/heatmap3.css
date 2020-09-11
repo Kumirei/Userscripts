@@ -311,15 +311,20 @@
 	display: none;
 }
 
-#heatmap .years[month-labels="top"].visible-future .year.future .month-label,
-#heatmap .years[month-labels="top"]:not(.visible-future) .year.current .month-label {
+#heatmap .years[month-labels="top"]:not(.reverse).visible-future .year.future .month-label,
+#heatmap .years[month-labels="top"]:not(.reverse):not(.visible-future) .year.current .month-label {
 	display: block;
 }
 
+#heatmap .years[month-labels="top"].reverse .year:first-child .month-label,
+#heatmap .years[month-labels="top"].reverse .year.hidden + .year .month-label {
+	display: block;
+}
 
-#heatmap .years[month-labels="top"].visible-future .year.future .year-labels,
-#heatmap .years[month-labels="top"].visible-future .year.future .year-labels,
-#heatmap .years[month-labels="top"]:not(.visible-future) .year.current .year-labels {
+#heatmap .years[month-labels="top"].reverse .year:first-child .year-labels,
+#heatmap .years[month-labels="top"].reverse .year.hidden + .year .year-labels,
+#heatmap .years[month-labels="top"]:not(.reverse).visible-future .year.future .year-labels,
+#heatmap .years[month-labels="top"]:not(.reverse):not(.visible-future) .year.current .year-labels {
 	margin-top: 14px !important;
 }
 
@@ -368,6 +373,7 @@
 
 #heatmap .years.reverse {
 	display: flex;
+	flex-direction: column;
 }
 
 #heatmap .years[day-labels="false"] .day-labels {
@@ -384,10 +390,10 @@
 	top: 2px;
 }
 
-#heatmap .years.reverse .toggle-year.up,
-#heatmap .years.reverse .toggle-year.down,
+#heatmap .years.reverse .toggle-year,
 #heatmap .years.reverse .toggle-year .hover-wrapper div {
 	transform: rotate(180deg);
+	z-index: 1;
 }
 
 #heatmap .years .toggle-year:hover {
