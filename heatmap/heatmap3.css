@@ -416,9 +416,14 @@
 	color: black !important;
 }
 
+#heatmap .view {
+	display: flex;
+	flex-direction: column;
+}
+
 #heatmap.reviews .view.lessons,
 #heatmap:not(.reviews) .view.reviews {
-	display: none;
+	display: none !important;
 }
 
 #heatmap .zero_gap .day-label {
