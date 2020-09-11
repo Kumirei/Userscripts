@@ -408,6 +408,8 @@
             }
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
+            // Ensure that start date is valid
+            if (new Date(settings.general.start_date) == "Invalid Date") settings.general.start_date = 0;
             // Default workaround
             if (!settings.reviews.colors) settings.reviews.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
             if (!settings.lessons.colors) settings.lessons.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
@@ -1022,5 +1024,5 @@
         }
         return Math.sqrt(2)*inverf(2*p-1)*sd+mean;
     }
-    function validate_start_date(date) {return new Date(date) !== "Invalid Date"}
+    function validate_start_date(date) {return new Date(date) !== "Invalid Date"?true:"Invalid date"}
 })(window.jQuery, window.wkof, window.review_cache, window.Heatmap);
