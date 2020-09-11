@@ -306,15 +306,23 @@
 	border-color: green;
 }
 
-#heatmap .years:not(.reverse)[month-labels="top"] .year:not(:first-child) .month-label,
-#heatmap .years[month-labels="none"] .month-label {
+#heatmap .years[month-labels="top"] .year .month-label,
+#heatmap .years[month-labels="none"] .year .month-label {
 	display: none;
 }
 
-#heatmap .years[month-labels="top"] .year:not(:first-child) .year-label,
-#heatmap .years[month-labels="top"] .year:not(:first-child) .day-labels,
-#heatmap .years[month-labels="none"] .year .day-labels,
-#heatmap .years[month-labels="none"] .year .day-labels {
+#heatmap .years[month-labels="top"].visible-future .year.future .month-label,
+#heatmap .years[month-labels="top"]:not(.visible-future) .year.current .month-label {
+	display: block;
+}
+
+
+#heatmap .years[month-labels="top"].visible-future .year.future .year-labels,
+#heatmap .years[month-labels="top"].visible-future .year.future .year-labels {
+	margin-top: 14px !important;
+}
+
+#heatmap .year .year-labels {
 	margin-top: 0px;
 }
 
@@ -390,11 +398,6 @@
 	margin-top: 14px;
 }
 
-#heatmap .years[month-labels="top"] .year:not(:first-child) .toggle-year,
-#heatmap .years[month-labels="none"] .toggle-year {
-	margin-top: 0px;
-}
-
 #wkofs_heatmap3 .right {
 	position: relative;
 }
@@ -429,10 +432,6 @@
 #heatmap .zero_gap .day-label {
 	line-height: var(--day-size);
 	font-size: calc(var(--day-size) - 2px);
-}
-
-#heatmap .years.reverse[month-labels="top"] .year:not(.last) .month-label {
-	display: none;
 }
 
 @media (max-width: 767px) {

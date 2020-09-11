@@ -15,7 +15,6 @@
 	margin-right: 10px;
 	display: flex;
 	align-items: center;
-	margin-top: 14px;
 }
 
 .heatmap .months {
@@ -25,7 +24,6 @@
 }
 
 .heatmap .day-labels {
-	margin-top: 14px;
 	margin-right: 4px;
 }
 
@@ -56,6 +54,7 @@
 
 .heatmap .year-labels {
 	display: flex;
+	margin-top: 14px;
 }
 
 .heatmap .day .hover-wrapper,
