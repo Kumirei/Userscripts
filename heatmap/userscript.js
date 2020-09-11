@@ -38,17 +38,6 @@
         wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/heatmap3.css', false);
     }
 
-    /*-------------------------------------------------------------------------------------------------------------------------------*/
-
-    let reload; // Function to reload the heatmap
-    // Wait untile modues are ready then initiate script
-    wkof.include('Menu,Settings,ItemData,Apiv2');
-    wkof.ready('Menu,Settings,ItemData,Apiv2')
-    .then(load_settings)
-    .then(install_menu)
-    .then(initiate);
-
-
     // Fetch necessary data then install the heatmap
     async function initiate() {
         let t = Date.now();

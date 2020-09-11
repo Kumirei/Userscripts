@@ -559,7 +559,7 @@
 
     function create_minimap(type, data) {
         let settings = wkof.settings[script_id];
-        let multiplier = 12;
+        let multiplier = 1/6;
         return new Heatmap({
             type: "day",
             id: 'hours-map',
@@ -707,7 +707,6 @@
                 let time = Date.parse(date.join('-')+' 0:0');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
                 let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}`;
-                console.log(new Date(time), new Date(settings.general.start_day));
                 if (time >= new Date(settings.general.start_day).getTime()) string += `\nDay ${(Math.round((time-Date.parse(new Date(Math.max(data[0][0], new Date(settings.general.start_day).getTime())).toDateString()))/(24*60*60*1000))+1).toSeparated()}`;
                 if (time < Date.now() && time >= new Date(settings.general.start_day).getTime()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
@@ -747,7 +746,7 @@
         let [head_stats, foot_stats] = create_stats_elements(type, stats[type]);
         let years = create_elem({type: 'div', class: 'years'+(settings.general.reverse_years?' reverse':'')});
         if (Math.max(...Object.keys(heatmap.maps)) > new Date().getFullYear()) {
-            if (settings.other.visible_years[new Date().getFullYear()+1] !== false) years.classList.add('visible-future');
+            if (settings.other.visible_years[type][new Date().getFullYear()+1] !== false) years.classList.add('visible-future');
             years.classList.add('has-future');
         }
         years.setAttribute('month-labels', settings.general.month_labels);
@@ -973,7 +972,6 @@
             last_time = item[0];
         }
         done_days.push(done_day); // Assumes users has done reviews today
-        console.log()
         stats.days = Math.round((Date.parse(new Date().toDateString())-Math.max(Date.parse(new Date(data[0][0]).toDateString()), new Date(settings.general.start_day).getTime()))/ms_day)+1;
         stats.days_studied[1] = Math.round(stats.days_studied[0]/stats.days*100);
         stats.average[0] = Math.round(stats.total[0]/stats.days);
