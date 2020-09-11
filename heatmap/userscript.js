@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Wanikani Heatmap 3.0.0 BETA
 // @namespace    http://tampermonkey.net/
-// @version      3.0.4
+// @version      3.0.5
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=845130
-// @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=845506
+// @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=846871
 // @grant        none
 // ==UserScript==
 
@@ -297,7 +297,7 @@
                                     type: 'button',
                                     label: 'Reload review data',
                                     text: 'Reload',
-                                    hover_tip: 'Deletes review cache and starts new fetch. Data from before resets will be lost permanently',
+                                    hover_tip: 'Deletes review cache and starts new fetch.',
                                     on_click: ()=>review_cache.reload().then(reviews=>reload(reviews)),
                                 },
                             },
@@ -411,6 +411,7 @@
                 reviews_last_visible_year: 0,
                 lessons_last_visible_year: 0,
                 visible_map: "reviews",
+                times_popped: 0,
             }
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
@@ -554,9 +555,9 @@
         popper.querySelector('.count').innerText = info.lists[type+'-ids'].length;
         popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff;
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
-        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i]; e.parentElement.children[0].append(create_table('left', levels.map((a,j)=>[j, a]).slice(1).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
+        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i]; e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.map((a,j)=>[j, a]).slice(1).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
         popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2]});
-        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['SRS'], ['Before / After'], ...srs.slice(1).map((a, i)=>[i+1, ...a])]));
+        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['SRS'], ['Before / After'], ...srs.slice(1).map((a, i)=>[['App 1', 'App 2', 'App 3', 'App 4', 'Gur 1', 'Gur 2', 'Mas', 'Enl', 'Bur'][i], ...a])]));
         popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]]});
         popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = pass[i]});
         popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = answers[i]});
@@ -564,6 +565,8 @@
         popper.querySelector('.minimap > .hours-map').replaceWith(create_minimap(type, minimap_data).maps.day);
         popper.style.top = event.pageY+50+'px';
         popper.classList.add('popped');
+        wkof.settings[script_id].other.times_popped++;
+        wkof.Settings.save(script_id);
     }
 
     function create_minimap(type, data) {
@@ -577,7 +580,7 @@
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
                 if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && day_data.counts.forecast) type2 = "forecast";
-                let string = [`${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} at ${date[3]}:00`];
+                let string = [`${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upcoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} at ${date[3]}:00`];
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
                 return string;
             },
@@ -637,10 +640,9 @@
     function install_heatmap(reviews, forecast, lessons, stats) {
         let settings = wkof.settings[script_id];
         // Create elements
-        let heatmap = create_elem({type: 'section', id: 'heatmap', class: 'heatmap '+(settings.other.visible_map === "reviews" ? "reviews" : "")});
+        let heatmap = document.getElementById('heatmap') || create_elem({type: 'section', id: 'heatmap', class: 'heatmap '+(settings.other.visible_map === "reviews" ? "reviews" : ""), position: settings.general.position});
         let buttons = create_buttons();
         let views = create_elem({type: 'div', class: 'views'});
-        heatmap.append(buttons, views);
         heatmap.onclick = heatmap.onmousedown = heatmap.onmouseup = heatmap.onmouseover = get_event_handler({reviews, forecast, lessons});
         heatmap.style.setProperty('--color-now', settings.general.now_indicator?settings.general.color_now_indicator:'transparent');
         heatmap.style.setProperty('--color-level', settings.general.level_indicator?settings.general.color_level_indicator:'transparent');
@@ -654,10 +656,11 @@
         let popper = create_popper({reviews: cooked_reviews, forecast, lessons: cooked_lessons});
         views.append(reviews_view, lessons_view, popper);
         // Install
-        let elem = document.getElementById('heatmap');
-        if (elem) elem.remove();
-        let position = [[".progress-and-forecast", 'beforebegin'], ['.progress-and-forecast', 'afterend'], ['.srs-progress', 'afterend'], ['.span12 .row', 'afterend'], ['.span12 .row:last-child', 'afterend']][settings.general.position];
-        document.querySelector(position[0]).insertAdjacentElement(position[1], heatmap);
+        heatmap.innerHTML = "";
+        heatmap.append(buttons, views);
+        let position = [[".progress-and-forecast", 'beforebegin'], ['.progress-and-forecast', 'afterend'], ['.srs-progress', 'afterend'], ['.span12 .row:not(#leaderboard)', 'afterend'], ['.span12 .row:last-of-type', 'afterend']][settings.general.position];
+        if (!document.getElementById('heatmap') || heatmap.getAttribute('position') != settings.general.position) document.querySelector(position[0]).insertAdjacentElement(position[1], heatmap);
+        heatmap.setAttribute('position', settings.general.position);
     }
 
     function cook_data(type, data) {
@@ -714,13 +717,14 @@
                 let type2 = type;
                 let time = Date.parse(date.join('-')+' 0:0');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}
-                Day ${Math.round((time-Math.max(data[0][0], Date.parse(settings.general.start_date)))/(24*60*60*1000))+1}`;
-                if (time < Date.now()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
+                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}`;
+                if (time >= new Date(settings.general.start_date).getTime()) string += `\nDay ${(Math.round((time-Date.parse(new Date(Math.max(data[0][0], Date.parse(settings.general.start_date))).toDateString()))/(24*60*60*1000))+1).toSeparated()}`;
+                if (time < Date.now() && time >= new Date(settings.general.start_date).getTime()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
                 let level = level_ups.findIndex(level_up=>level_up[0]===time)+1
                 if (level) string += '\nYou reached level '+level+'!';
+                if (wkof.settings[script_id].other.times_popped < 5) string += '\nClick for details!';
                 return [string];
             },
             color_callback: (date, day_data)=>{
@@ -775,11 +779,11 @@
     function create_stats_elements(type, stats) {
         let head_stats = create_elem({type: 'div', class: 'head-stats stats', children: [
             create_stat_element('Days Studied', stats.days_studied[1]+'%', stats.days_studied[0].toSeparated()+' out of '+stats.days.toSeparated()),
-            create_stat_element('Done Daily', stats.average[0]+' / '+stats.average[1], 'Per Day / Day studied\nMax: '+stats.max_done[0].toSeparated()+' on '+stats.max_done[1]),
+            create_stat_element('Done Daily', stats.average[0]+' / '+(stats.average[1] || 0), 'Per Day / Day studied\nMax: '+stats.max_done[0].toSeparated()+' on '+stats.max_done[1]),
             create_stat_element('Streak', stats.streak[1]+' / '+stats.streak[0], 'Current / Longest'),
         ]})
         let foot_stats = create_elem({type: 'div', class: 'foot-stats stats', children: [
-            create_stat_element('Sessions', stats.sessions.toSeparated(), Math.floor(stats.total[0]/stats.sessions)+' per session'),
+            create_stat_element('Sessions', stats.sessions.toSeparated(), (Math.floor(stats.total[0]/stats.sessions) || 0)+' per session'),
             create_stat_element(type.toProper(), stats.total[0].toSeparated(), create_table("left", [
                 ['Year', stats.total[1].toSeparated()],
                 ['Month', stats.total[2].toSeparated()],
@@ -810,7 +814,7 @@
         let table = create_elem(Object.assign({type: 'table'}, table_attr));
         for (let [i, row] of Object.entries(data)) {
             let tr_config = {type: 'tr'};
-            if (tr_hover) {tr_config.class = 'hover-wrapper-target'; tr_config.child = create_elem({type: 'div', class: 'hover-wrapper above'});}
+            if (tr_hover) {tr_config.class = 'hover-wrapper-target'; tr_config.child = create_elem({type: 'div', class: 'hover-wrapper below'});}
             let tr = create_elem(tr_config);
             for (let [j, cell] of Object.entries(row)) {
                 let cell_type = (header=="top"&&i==0)||(header=="left"&&j==0)?"th":"td";
@@ -886,14 +890,15 @@
 
     // Finds streaks
     function get_streaks(type, data) {
-        let day_start_adjust = 60*60*1000*wkof.settings[script_id].general.day_start;
+        let settings = wkof.settings[script_id];
+        let day_start_adjust = 60*60*1000*settings.general.day_start;
         let streaks = {}, zeros = {};
-        for (let day = new Date(data[0][0]-day_start_adjust); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
+        for (let day = new Date(Math.max(data[0][0]-day_start_adjust, Date.parse(settings.general.start_date))); day <= new Date(); day.setDate(day.getDate()+1)) {
             streaks[day.toDateString()] = 0;
             zeros[day.toDateString()] = true;
         }
-        for (let [date] of data) streaks[new Date(date-day_start_adjust).toDateString()] = 1;
-        if (type === "lessons" && wkof.settings[script_id].lessons.count_zeros) {
+        for (let [date] of data) if (new Date(date)>new Date(settings.general.start_date)) streaks[new Date(date-day_start_adjust).toDateString()] = 1;
+        if (type === "lessons" && settings.lessons.count_zeros) {
             for (let [started_at, id, level, unlocked_at] of data) {
                 for (let day = new Date(unlocked_at-day_start_adjust); day <= new Date(started_at-day_start_adjust); day.setDate(day.getDate()+1)) {
                     delete zeros[day.toDateString()];
@@ -902,11 +907,12 @@
             for (let date of Object.keys(zeros)) streaks[date] = 1;
         }
         let streak = 0;
-        for (let day = new Date(data[0][0]-day_start_adjust); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
+        for (let day = new Date(Math.max(data[0][0]-day_start_adjust, Date.parse(settings.general.start_date))); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
             if (streaks[day.toDateString()] === 1) streak++;
             else streak = 0;
             streaks[day.toDateString()] = streak;
         }
+        if (streaks[new Date().toDateString()] == 0) streaks[new Date().toDateString()] = streaks[new Date(new Date().setHours(-12)).toDateString()] || 0;
         return streaks;
     }
 
@@ -936,9 +942,9 @@
         let last_time = 0;
         let done_day = 0;
         let done_days = [];
-        let start_date = new Date(wkof.settings[script_id].general.start_date);
+        let start_date = new Date(settings.general.start_date);
         for (let item of data) {
-            let day = new Date(item[0]-ms_day/24*wkof.settings[script_id].general.day_start);
+            let day = new Date(item[0]-ms_day/24*settings.general.day_start);
             if (day < start_date) continue;
             if (last_day.toDateString() != day.toDateString()) {
                 stats.days_studied[0]++;
@@ -974,7 +980,7 @@
             last_time = item[0];
         }
         done_days.push(done_day); // Assumes users has done reviews today
-        stats.days = Math.floor((today.getTime()-data[0][0])/ms_day)+1;
+        stats.days = Math.round((Date.parse(new Date().toDateString())-Math.max(Date.parse(new Date(data[0][0]).toDateString()), Date.parse(settings.general.start_date)))/ms_day)+1;
         stats.days_studied[1] = Math.round(stats.days_studied[0]/stats.days*100);
         stats.average[0] = Math.round(stats.total[0]/stats.days);
         stats.average[1] = Math.round(stats.total[0]/stats.days_studied[0]);
@@ -1024,5 +1030,4 @@
         return Math.sqrt(2)*inverf(2*p-1)*sd+mean;
     }
     function validate_start_date(date) {return new Date(date) !== "Invalid Date"}
-
 })(window.jQuery, window.wkof, window.review_cache, window.Heatmap);
