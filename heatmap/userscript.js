@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Wanikani Heatmap 3.0.0 BETA
 // @namespace    http://tampermonkey.net/
-// @version      3.0.8
+// @version      3.0.9
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
-// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=845130
+// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=846923
 // @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=846871
 // @grant        none
 // ==UserScript==
@@ -37,6 +37,7 @@
         wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/Heatmap.css', false);
         wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/heatmap3.css', false);
     }
+
 
     // Fetch necessary data then install the heatmap
     async function initiate() {
@@ -355,14 +356,6 @@
                                     hover_tip: 'Automatically decide what the intervals should be',
                                     path: '@forecast.auto_range'
                                 },
-                                forecast_show_next_year: {
-                                    type: 'dropdown',
-                                    label: 'Show next year in',
-                                    default: 12,
-                                    hover_tip: 'Start showing the next year\'s heatmap this month',
-                                    content: {9: 'September', 10: 'October', 11: 'November', 12: 'December', 13: 'January'},
-                                    path: '@forecast.show_next_year',
-                                },
                             },
                         },
                     },
@@ -405,16 +398,16 @@
             forecast: {
                 gradient: true,
                 auto_range: true,
-                show_next_year: 12,
             },
             other: {
-                reviews_last_visible_year: 0,
-                lessons_last_visible_year: 0,
+                visible_years: {reviews: {}, lessons: {},},
                 visible_map: "reviews",
                 times_popped: 0,
             }
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
+            // Ensure that start date is valid
+            if (new Date(settings.general.start_date) == "Invalid Date") settings.general.start_date = 0;
             // Default workaround
             if (!settings.reviews.colors) settings.reviews.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
             if (!settings.lessons.colors) settings.lessons.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
@@ -487,27 +480,6 @@
                     }
                 }
             }
-            if (event.type === "click") {
-                let parent = elem.parentElement;
-                if (parent.classList.contains('toggle-year')) {
-                    let type = elem.closest('.view').classList.contains('reviews')?'reviews':'lessons';
-                    let up = parent.classList.contains('up');
-                    //let year = Number('20'+parent.parentElement.querySelector('.year-label').innerText);
-                    let year_elem = parent.closest('.year');
-                    let year = Number(year_elem.getAttribute('data-year'));
-                    if (up) {
-                        year_elem.classList.add('hidden');
-                        year_elem.previousElementSibling.classList.add('last');
-                        wkof.settings[script_id].other[type+'_last_visible_year'] = year+1;
-                    } else {
-                        year_elem.nextElementSibling.classList.remove('hidden');
-                        year_elem.nextElementSibling.classList.add('last');
-                        year_elem.classList.remove('last');
-                        wkof.settings[script_id].other[type+'_last_visible_year'] = year-1;
-                    }
-                    wkof.Settings.save(script_id);
-                }
-            }
             if (event.type === "mouseup") {
                 down = false;
                 for (let m of marked) {
@@ -516,6 +488,30 @@
                 marked = [];
             }
         }
+    }
+
+    function toggle_year(event) {
+        let visible_years = wkof.settings[script_id].other.visible_years;
+        let year_elem = event.target.closest('.year');
+        let up = event.target.closest('.toggle-year').classList.contains('up');
+        let year = Number(year_elem.getAttribute('data-year'));
+        let future = year > new Date().getFullYear();
+        let type = year_elem.classList.contains('reviews')?'reviews':'lessons';
+        if (up || (!up && future)) {
+            if (year == new Date().getFullYear()) {
+                visible_years[type][year+1] = true;
+                year_elem.nextElementSibling.classList.remove('hidden');
+                year_elem.parentElement.classList.add('visible-future');
+            } else {
+                visible_years[type][year] = false;
+                year_elem.classList.add('hidden');
+                if (!up && future) year_elem.parentElement.classList.remove('visible-future');
+            }
+        } else {
+            visible_years[type][year-1] = true;
+            year_elem.previousElementSibling.classList.remove('hidden');
+        }
+        wkof.Settings.save(script_id);
     }
 
     async function update_popper(event, type, title, info, minimap_data) {
@@ -571,11 +567,12 @@
 
     function create_minimap(type, data) {
         let settings = wkof.settings[script_id];
-        let multiplier = 6;
+        let multiplier = 12;
         return new Heatmap({
             type: "day",
             id: 'hours-map',
             first_date: Date.parse(new Date(data[0][0]-settings.general.day_start*60*60*1000).toDateString()),
+            last_date: data.reduce((max,a)=>max<a[0]?a[0]:max, 0),
             day_start: settings.general.day_start,
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
@@ -651,8 +648,8 @@
         let cooked_lessons = cook_data("lessons", lessons)
         let level_ups = get_level_ups(lessons).map(date=>[date, 'level-up']);
         if (level_ups.length === 60) level_ups[59][1] += ' level-60';
-        let reviews_view = create_view('reviews', stats, level_ups, reviews[0][0], cooked_reviews.concat(forecast));
-        let lessons_view = create_view('lessons', stats, level_ups, lessons[0][0], cooked_lessons);
+        let reviews_view = create_view('reviews', stats, level_ups, reviews[0][0], forecast.reduce((max,a)=>max>a[0]?max:a[0]), cooked_reviews.concat(forecast));
+        let lessons_view = create_view('lessons', stats, level_ups, lessons[0][0], lessons.reduce((max,a)=>max>a[0]?max:a[0]), cooked_lessons);
         let popper = create_popper({reviews: cooked_reviews, forecast, lessons: cooked_lessons});
         views.append(reviews_view, lessons_view, popper);
         // Install
@@ -700,7 +697,7 @@
     }
 
     // Create heatmaps together with peripherals such as stats
-    function create_view(type, stats, level_ups, first_date, data) {
+    function create_view(type, stats, level_ups, first_date, last_date, data) {
         let settings = wkof.settings[script_id];
         // New heatmap instance
         let heatmap = new Heatmap({
@@ -709,7 +706,7 @@
             week_start: settings.general.week_start,
             day_start: settings.general.day_start,
             first_date: Math.max(new Date(settings.general.start_date).getTime(), first_date),
-            last_date: new Date(String(new Date().getFullYear()+(new Date().getMonth()-settings.forecast.show_next_year+1 >= 0 ? 2 : 1))).setHours(0)-1,
+            last_date: last_date,
             segment_years: settings.general.segment_years,
             zero_gap: settings.general.zero_gap,
             markings: [[new Date(Date.now()-60*60*1000*settings.general.day_start), "today"], ...level_ups],
@@ -756,9 +753,13 @@
         let title = create_elem({type: 'div', class: 'title', child: type.toProper()});
         let [head_stats, foot_stats] = create_stats_elements(type, stats[type]);
         let years = create_elem({type: 'div', class: 'years'+(settings.general.reverse_years?' reverse':'')});
+        if (Math.max(...Object.keys(heatmap.maps)) > new Date().getFullYear()) {
+            if (settings.other.visible_years[new Date().getFullYear()+1] !== false) years.classList.add('visible-future');
+            years.classList.add('has-future');
+        }
         years.setAttribute('month-labels', settings.general.month_labels);
         years.setAttribute('day-labels', settings.general.day_labels);
-        for (let year of Object.values(heatmap.maps).reverse()) years.append(year);
+        for (let year of Object.values(heatmap.maps).reverse()) years.prepend(year);
         view.append(title, head_stats, years, foot_stats);
         return view;
     }
@@ -766,13 +767,11 @@
     function modify_heatmap(type, heatmap) {
         for (let [year, map] of Object.entries(heatmap.maps)) {
             let target = map.querySelector('.year-labels');
-            let up = create_elem({type: 'a', class: 'toggle-year up hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: create_elem({type: 'div', child: 'Click to hide this year'})}), create_elem({type: 'i', class: 'icon-chevron-up'})]});
-            let down = create_elem({type: 'a', class: 'toggle-year down hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'div', child: 'Click to show next year'})}), create_elem({type: 'i', class: 'icon-chevron-down'})]});
+            let up = create_elem({type: 'a', class: 'toggle-year up hover-wrapper-target', onclick: toggle_year, children: [create_elem({type: 'div', class: 'hover-wrapper above', child: create_elem({type: 'div', child: 'Click to '+(year==new Date().getFullYear()?'show next':'hide this')+' year'})}), create_elem({type: 'i', class: 'icon-chevron-up'})]});
+            let down = create_elem({type: 'a', class: 'toggle-year down hover-wrapper-target', onclick: toggle_year, children: [create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'div', child: 'Click to '+(year<=new Date().getFullYear()?'show previous':'hide this')+' year'})}), create_elem({type: 'i', class: 'icon-chevron-down'})]});
             target.append(up, down);
+            if (wkof.settings[script_id].other.visible_years[type][year] === false) map.classList.add('hidden')
         }
-        let last_year = Math.max(Math.min(...Object.keys(heatmap.maps)), wkof.settings[script_id].other[type+'_last_visible_year'] || 0);
-        wkof.settings[script_id].other[type+'_last_visible_year'] = last_year;
-        heatmap.maps[last_year].classList.add('last');
     }
 
     // Create the header and footer stats for a view
@@ -1029,5 +1028,5 @@
         }
         return Math.sqrt(2)*inverf(2*p-1)*sd+mean;
     }
-    function validate_start_date(date) {return new Date(date) !== "Invalid Date"}
+    function validate_start_date(date) {return new Date(date) !== "Invalid Date"?true:"Invalid date"}
 })(window.jQuery, window.wkof, window.review_cache, window.Heatmap);
