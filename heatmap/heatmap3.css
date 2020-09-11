@@ -212,7 +212,8 @@
 
 #heatmap .years {
 	margin: auto;
-	display: table;
+	display: flex;
+	flex-direction: column-reverse;
 }
 
 #heatmap #popper .items {
@@ -340,19 +341,23 @@
 	display: none;
 }
 
-#heatmap .year:first-child .toggle-year.up,
-#heatmap .year:last-child .toggle-year.down,
-#heatmap .year:not(.last) .toggle-year {
+#heatmap .year:first-child .toggle-year.down,
+#heatmap .year:first-child ~ .year:not(.hidden) .toggle-year {
 	display: none;
 }
 
-#heatmap .year.last ~ .year {
-	display: none;
+#heatmap .years .year:last-child .toggle-year.up {
+	display: none !important;
+}
+
+#heatmap .years.has-future:not(.visible-future) .year.current .toggle-year.up,
+#heatmap .year.future .toggle-year.down,
+#heatmap .year.hidden + .year .toggle-year {
+	display: block !important;
 }
 
 #heatmap .years.reverse {
 	display: flex;
-	flex-direction: column-reverse;
 }
 
 #heatmap .years[day-labels="false"] .day-labels {
@@ -549,8 +554,8 @@
 	padding-top: 12px;
 }
 
-#heatmap3_tabs #heatmap3_look hr {
-	margin-bottom: 26px;
+#wkofs_heatmap3 #heatmap3_tabs hr {
+	margin-bottom: 20px;
 }
 
 #heatmap #popper .levels tr[data-count="0"] .hover-wrapper {
