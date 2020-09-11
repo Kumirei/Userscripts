@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap 3.0.0 BETA
 // @namespace    http://tampermonkey.net/
-// @version      3.0.12
+// @version      3.0.13
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -37,6 +37,16 @@
         wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/Heatmap.css', false);
         wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/heatmap3.css', false);
     }
+
+    /*-------------------------------------------------------------------------------------------------------------------------------*/
+
+    let reload; // Function to reload the heatmap
+    // Wait untile modues are ready then initiate script
+    wkof.include('Menu,Settings,ItemData,Apiv2');
+    wkof.ready('Menu,Settings,ItemData,Apiv2')
+    .then(load_settings)
+    .then(install_menu)
+    .then(initiate);
 
 
     // Fetch necessary data then install the heatmap
@@ -407,7 +417,7 @@
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
             // Ensure that start date is valid
-            if (new Date(settings.general.start_date) == "Invalid Date") settings.general.start_date = 0;
+            settings.general.start_day = new Date(settings.general.start_date) == "Invalid Date" ? 0 : Date.parse(new Date(settings.general.start_date).toDateString())
             // Default workaround
             if (!settings.reviews.colors) settings.reviews.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
             if (!settings.lessons.colors) settings.lessons.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
@@ -705,7 +715,7 @@
             id: type,
             week_start: settings.general.week_start,
             day_start: settings.general.day_start,
-            first_date: Math.max(new Date(settings.general.start_date).getTime(), first_date),
+            first_date: Math.max(new Date(settings.general.start_day).getTime(), first_date),
             last_date: last_date,
             segment_years: settings.general.segment_years,
             zero_gap: settings.general.zero_gap,
@@ -715,8 +725,9 @@
                 let time = Date.parse(date.join('-')+' 0:0');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
                 let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}`;
-                if (time >= new Date(settings.general.start_date).getTime()) string += `\nDay ${(Math.round((time-Date.parse(new Date(Math.max(data[0][0], Date.parse(settings.general.start_date))).toDateString()))/(24*60*60*1000))+1).toSeparated()}`;
-                if (time < Date.now() && time >= new Date(settings.general.start_date).getTime()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
+                console.log(new Date(time), new Date(settings.general.start_day));
+                if (time >= new Date(settings.general.start_day).getTime()) string += `\nDay ${(Math.round((time-Date.parse(new Date(Math.max(data[0][0], new Date(settings.general.start_day).getTime())).toDateString()))/(24*60*60*1000))+1).toSeparated()}`;
+                if (time < Date.now() && time >= new Date(settings.general.start_day).getTime()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
                 let level = level_ups.findIndex(level_up=>level_up[0]===time)+1
@@ -873,6 +884,7 @@
         let levels = new Array(61).fill(null).map(_=>{return {}});
         // Group unlocked items within each level by unlock date
         for (let [start, id, level, unlock] of lessons) {
+            if (new Date(unlock) < new Date(wkof.settings[script_id].general.start_day)) continue;
             let date_string = new Date(unlock).toDateString();
             if (!levels[level][date_string]) levels[level][date_string] = 0;
             levels[level][date_string]++;
@@ -892,11 +904,11 @@
         let settings = wkof.settings[script_id];
         let day_start_adjust = 60*60*1000*settings.general.day_start;
         let streaks = {}, zeros = {};
-        for (let day = new Date(Math.max(data[0][0]-day_start_adjust, Date.parse(settings.general.start_date))); day <= new Date(); day.setDate(day.getDate()+1)) {
+        for (let day = new Date(Math.max(data[0][0]-day_start_adjust, new Date(settings.general.start_day).getTime())); day <= new Date(); day.setDate(day.getDate()+1)) {
             streaks[day.toDateString()] = 0;
             zeros[day.toDateString()] = true;
         }
-        for (let [date] of data) if (new Date(date)>new Date(settings.general.start_date)) streaks[new Date(date-day_start_adjust).toDateString()] = 1;
+        for (let [date] of data) if (new Date(date)>new Date(settings.general.start_day)) streaks[new Date(date-day_start_adjust).toDateString()] = 1;
         if (type === "lessons" && settings.lessons.count_zeros) {
             for (let [started_at, id, level, unlocked_at] of data) {
                 for (let day = new Date(unlocked_at-day_start_adjust); day <= new Date(started_at-day_start_adjust); day.setDate(day.getDate()+1)) {
@@ -906,7 +918,7 @@
             for (let date of Object.keys(zeros)) streaks[date] = 1;
         }
         let streak = 0;
-        for (let day = new Date(Math.max(data[0][0]-day_start_adjust, Date.parse(settings.general.start_date))); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
+        for (let day = new Date(Math.max(data[0][0]-day_start_adjust, new Date(settings.general.start_day).getTime())); day <= new Date().setHours(24); day.setDate(day.getDate()+1)) {
             if (streaks[day.toDateString()] === 1) streak++;
             else streak = 0;
             streaks[day.toDateString()] = streak;
@@ -941,7 +953,7 @@
         let last_time = 0;
         let done_day = 0;
         let done_days = [];
-        let start_date = new Date(settings.general.start_date);
+        let start_date = new Date(settings.general.start_day);
         for (let item of data) {
             let day = new Date(item[0]-ms_day/24*settings.general.day_start);
             if (day < start_date) continue;
@@ -979,7 +991,8 @@
             last_time = item[0];
         }
         done_days.push(done_day); // Assumes users has done reviews today
-        stats.days = Math.round((Date.parse(new Date().toDateString())-Math.max(Date.parse(new Date(data[0][0]).toDateString()), Date.parse(settings.general.start_date)))/ms_day)+1;
+        console.log()
+        stats.days = Math.round((Date.parse(new Date().toDateString())-Math.max(Date.parse(new Date(data[0][0]).toDateString()), new Date(settings.general.start_day).getTime()))/ms_day)+1;
         stats.days_studied[1] = Math.round(stats.days_studied[0]/stats.days*100);
         stats.average[0] = Math.round(stats.total[0]/stats.days);
         stats.average[1] = Math.round(stats.total[0]/stats.days_studied[0]);
