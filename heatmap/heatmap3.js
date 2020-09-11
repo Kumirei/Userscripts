@@ -633,10 +633,9 @@
     function install_heatmap(reviews, forecast, lessons, stats) {
         let settings = wkof.settings[script_id];
         // Create elements
-        let heatmap = create_elem({type: 'section', id: 'heatmap', class: 'heatmap '+(settings.other.visible_map === "reviews" ? "reviews" : "")});
+        let heatmap = document.getElementById('heatmap') || create_elem({type: 'section', id: 'heatmap', class: 'heatmap '+(settings.other.visible_map === "reviews" ? "reviews" : ""), position: settings.general.position});
         let buttons = create_buttons();
         let views = create_elem({type: 'div', class: 'views'});
-        heatmap.append(buttons, views);
         heatmap.onclick = heatmap.onmousedown = heatmap.onmouseup = heatmap.onmouseover = get_event_handler({reviews, forecast, lessons});
         heatmap.style.setProperty('--color-now', settings.general.now_indicator?settings.general.color_now_indicator:'transparent');
         heatmap.style.setProperty('--color-level', settings.general.level_indicator?settings.general.color_level_indicator:'transparent');
@@ -650,10 +649,11 @@
         let popper = create_popper({reviews: cooked_reviews, forecast, lessons: cooked_lessons});
         views.append(reviews_view, lessons_view, popper);
         // Install
-        let elem = document.getElementById('heatmap');
-        if (elem) elem.remove();
-        let position = [[".progress-and-forecast", 'beforebegin'], ['.progress-and-forecast', 'afterend'], ['.srs-progress', 'afterend'], ['.span12 .row', 'afterend'], ['.span12 .row:last-child', 'afterend']][settings.general.position];
-        document.querySelector(position[0]).insertAdjacentElement(position[1], heatmap);
+        heatmap.innerHTML = "";
+        heatmap.append(buttons, views);
+        let position = [[".progress-and-forecast", 'beforebegin'], ['.progress-and-forecast', 'afterend'], ['.srs-progress', 'afterend'], ['.span12 .row:not(#leaderboard)', 'afterend'], ['.span12 .row:last-of-type', 'afterend']][settings.general.position];
+        if (!document.getElementById('heatmap') || heatmap.getAttribute('position') != settings.general.position) document.querySelector(position[0]).insertAdjacentElement(position[1], heatmap);
+        heatmap.setAttribute('position', settings.general.position);
     }
 
     function cook_data(type, data) {
