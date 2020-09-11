@@ -29,6 +29,8 @@
     }
 
     function reload() {
+        wkof.settings["review_cache"].last_fetch = "1970-01-01T00:00:00.000Z";
+        wkof.Settings.save("review_cache");
         return wkof.file_cache.delete('review_cache').then(get_reviews);
     }
 
