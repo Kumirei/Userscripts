@@ -22,8 +22,6 @@
     let last_fetch;
 
     function get_reviews() {
-        let cache = wkof.file_cache.dir.review_cache;
-        last_fetch = cache ? cache.last_loaded : "1970-01-01T00:00:00.000Z";
         wkof.include('Apiv2');
         return wkof.ready('Apiv2')
             .then(load_data)
@@ -70,8 +68,13 @@
     }
 
     async function fetch_new_reviews() {
-        let updated_reviews = await wkof.Apiv2.fetch_endpoint('reviews', {filters: {updated_after: last_fetch}});
+        wkof.include('Settings');
+        await wkof.ready('Settings');
+        let settings = await wkof.Settings.load("review_cache", {last_fetch: "1970-01-01T00:00:00.000Z"})
+        let updated_reviews = await wkof.Apiv2.fetch_endpoint('reviews', {filters: {updated_after: settings.last_fetch}});
         if (updated_reviews.total_count == 0) return;
+        settings.last_fetch = updated_reviews.data_updated_at;
+        wkof.Settings.save("review_cache");
         updated_reviews.data.sort((a,b)=>Date.parse(a.data.created_at)<Date.parse(b.data.created_at)?-1:1);
         let last_fetch_date = Date.parse(last_fetch);
         let new_reviews = updated_reviews.data.filter(item=>last_fetch_date < Date.parse(item.data.created_at));
