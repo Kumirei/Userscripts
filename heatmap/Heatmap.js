@@ -65,7 +65,8 @@
         }
 
         _init_year(year, data, dates) {
-            let year_elem = this._create_elem({type: 'div', class: 'year heatmap '+this.config.id+(this.config.segment_years?' segment_years':'')+(this.config.zero_gap?' zero_gap':'')});
+            let cls = 'year heatmap ' + this.config.id + (this.config.segment_years?' segment_years':'') + (this.config.zero_gap?' zero_gap':'') + (year>new Date().getFullYear()?' future':'') + (year==new Date().getFullYear()?' current':'');
+            let year_elem = this._create_elem({type: 'div', class: cls,});
             year_elem.setAttribute('data-year', year);
             let labels = this._create_elem({type: 'div', class: 'year-labels', children: this._get_year_labels(year)});
             let months = this._create_elem({type: 'div', class: 'months'});
