@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap 3.0.0 BETA
 // @namespace    http://tampermonkey.net/
-// @version      3.0.13
+// @version      3.0.14
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -29,14 +29,18 @@
     wkof.include('Menu,Settings,ItemData,Apiv2');
     wkof.ready('Menu,Settings,ItemData,Apiv2')
     .then(load_settings)
+    .then(load_css)
     .then(install_menu)
-    .then(install_css)
     .then(initiate);
 
-    function install_css() {
+    function load_css() {
+        // For jQuery Datepicker
+        wkof.load_css('//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');
+        // Heatmap CSS
         wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/Heatmap.css', false);
         wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/heatmap3.css', false);
     }
+
 
     // Fetch necessary data then install the heatmap
     async function initiate() {
@@ -44,6 +48,7 @@
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
         reload = function(new_reviews=false) {
+            wkof.settings[script_id].general.start_day = Date.parse(new Date(wkof.settings[script_id].general.start_date).toDateString());
             if (new_reviews !== false) reviews = new_reviews;
             setTimeout(()=>{// make settings dialog respond immediately
                 let stats = {
@@ -92,6 +97,8 @@
 
     let applied;
     function modify_settings(dialog) {
+        // Make start-date a jQuery datepicker
+        window.jQuery(dialog[0].querySelector('#heatmap3_start_date')).datepicker({dateFormat: "yy-mm-dd",changeYear: true,yearRange: "2012:+0"});
         // Add apply button
         let apply = create_elem({type: 'button', class: 'ui-button ui-corner-all ui-widget', child: 'Apply'});
         applied = false;
@@ -156,11 +163,10 @@
                                     content: {
                                         start_date: {
                                             type: 'text',
-                                            label: 'Start date (YYYY-MM-DD)',
-                                            default: '',
+                                            label: 'Start date',
+                                            default: '2012-01-01',
                                             hover_tip: 'All data before this date will be ignored',
                                             path: '@general.start_date',
-                                            validate: validate_start_date,
                                         },
                                         week_start: {
                                             type: 'dropdown',
@@ -370,7 +376,7 @@
         //wkof.file_cache.delete('wkof.settings.'+script_id); // temporary
         let defaults = {
             general: {
-                start_date: 0,
+                start_date: "2012-01-01",
                 week_start: 0,
                 day_start: 0,
                 reverse_years: false,
@@ -405,8 +411,6 @@
             }
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
-            // Ensure that start date is valid
-            settings.general.start_day = new Date(settings.general.start_date) == "Invalid Date" ? 0 : Date.parse(new Date(settings.general.start_date).toDateString())
             // Default workaround
             if (!settings.reviews.colors) settings.reviews.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
             if (!settings.lessons.colors) settings.lessons.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
@@ -566,7 +570,7 @@
 
     function create_minimap(type, data) {
         let settings = wkof.settings[script_id];
-        let multiplier = 12;
+        let multiplier = 1/6;
         return new Heatmap({
             type: "day",
             id: 'hours-map',
@@ -714,7 +718,6 @@
                 let time = Date.parse(date.join('-')+' 0:0');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
                 let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}`;
-                console.log(new Date(time), new Date(settings.general.start_day));
                 if (time >= new Date(settings.general.start_day).getTime()) string += `\nDay ${(Math.round((time-Date.parse(new Date(Math.max(data[0][0], new Date(settings.general.start_day).getTime())).toDateString()))/(24*60*60*1000))+1).toSeparated()}`;
                 if (time < Date.now() && time >= new Date(settings.general.start_day).getTime()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
@@ -754,7 +757,7 @@
         let [head_stats, foot_stats] = create_stats_elements(type, stats[type]);
         let years = create_elem({type: 'div', class: 'years'+(settings.general.reverse_years?' reverse':'')});
         if (Math.max(...Object.keys(heatmap.maps)) > new Date().getFullYear()) {
-            if (settings.other.visible_years[new Date().getFullYear()+1] !== false) years.classList.add('visible-future');
+            if (settings.other.visible_years[type][new Date().getFullYear()+1] !== false) years.classList.add('visible-future');
             years.classList.add('has-future');
         }
         years.setAttribute('month-labels', settings.general.month_labels);
@@ -980,7 +983,6 @@
             last_time = item[0];
         }
         done_days.push(done_day); // Assumes users has done reviews today
-        console.log()
         stats.days = Math.round((Date.parse(new Date().toDateString())-Math.max(Date.parse(new Date(data[0][0]).toDateString()), new Date(settings.general.start_day).getTime()))/ms_day)+1;
         stats.days_studied[1] = Math.round(stats.days_studied[0]/stats.days*100);
         stats.average[0] = Math.round(stats.total[0]/stats.days);
