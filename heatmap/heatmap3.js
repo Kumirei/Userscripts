@@ -27,8 +27,17 @@
     wkof.include('Menu,Settings,ItemData,Apiv2');
     wkof.ready('Menu,Settings,ItemData,Apiv2')
     .then(load_settings)
+    .then(load_css)
     .then(install_menu)
     .then(initiate);
+
+    function load_css() {
+        // For jQuery Datepicker
+        wkof.load_css('//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');
+        // Heatmap CSS
+        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/Heatmap.css', false);
+        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/heatmap3.css', false);
+    }
 
 
     // Fetch necessary data then install the heatmap
@@ -37,6 +46,7 @@
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
         reload = function(new_reviews=false) {
+            wkof.settings[script_id].general.start_day = Date.parse(new Date(wkof.settings[script_id].general.start_date).toDateString());
             if (new_reviews !== false) reviews = new_reviews;
             setTimeout(()=>{// make settings dialog respond immediately
                 let stats = {
@@ -85,6 +95,8 @@
 
     let applied;
     function modify_settings(dialog) {
+        // Make start-date a jQuery datepicker
+        window.jQuery(dialog[0].querySelector('#heatmap3_start_date')).datepicker({dateFormat: "yy-mm-dd",changeYear: true,yearRange: "2012:+0"});
         // Add apply button
         let apply = create_elem({type: 'button', class: 'ui-button ui-corner-all ui-widget', child: 'Apply'});
         applied = false;
@@ -149,11 +161,10 @@
                                     content: {
                                         start_date: {
                                             type: 'text',
-                                            label: 'Start date (YYYY-MM-DD)',
-                                            default: '',
+                                            label: 'Start date',
+                                            default: '2012-01-01',
                                             hover_tip: 'All data before this date will be ignored',
                                             path: '@general.start_date',
-                                            validate: validate_start_date,
                                         },
                                         week_start: {
                                             type: 'dropdown',
@@ -363,7 +374,7 @@
         //wkof.file_cache.delete('wkof.settings.'+script_id); // temporary
         let defaults = {
             general: {
-                start_date: 0,
+                start_date: "2012-01-01",
                 week_start: 0,
                 day_start: 0,
                 reverse_years: false,
@@ -398,8 +409,6 @@
             }
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
-            // Ensure that start date is valid
-            settings.general.start_day = new Date(settings.general.start_date) == "Invalid Date" ? 0 : Date.parse(new Date(settings.general.start_date).toDateString())
             // Default workaround
             if (!settings.reviews.colors) settings.reviews.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
             if (!settings.lessons.colors) settings.lessons.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];

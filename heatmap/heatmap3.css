@@ -569,3 +569,21 @@
 #heatmap #popper .levels tr[data-count="0"] .hover-wrapper {
 	display: none;
 }
+
+/* jQuery UI CSS */
+.ui-datepicker .ui-widget-header .ui-icon {
+	background-image: url('https://code.jquery.com/ui/1.12.1/themes/base/images/ui-icons_444444_256x240.png');
+}
+
+.ui-datepicker .ui-datepicker-prev,
+.ui-datepicker .ui-datepicker-next {
+	cursor: pointer;
+	height: calc(100% - 3px);
+    width: 34px;
+}
+
+.ui-datepicker * {
+	box-shadow: none;
+	text-align: center !important;
+}
+/* end jQuery UI CSS */
