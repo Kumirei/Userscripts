@@ -302,10 +302,6 @@
 	background-color: #9800e8;
 }
 
-#heatmap .day.selected {
-	border-color: green;
-}
-
 #heatmap .years[month-labels="top"] .year .month-label,
 #heatmap .years[month-labels="none"] .year .month-label {
 	display: none;

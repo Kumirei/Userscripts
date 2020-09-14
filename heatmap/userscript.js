@@ -1,12 +1,10 @@
 // ==UserScript==
-// @name         Wanikani Heatmap 3.0.0 BETA
+// @name         Wanikani Heatmap 3.0.0
 // @namespace    http://tampermonkey.net/
-// @version      3.0.14
+// @version      3.0.15
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
-// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=846955
-// @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=846941
 // @grant        none
 // ==/UserScript==
 
@@ -48,8 +46,8 @@
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
         reload = function(new_reviews=false) {
-            wkof.settings[script_id].general.start_day = Date.parse(new Date(wkof.settings[script_id].general.start_date).toDateString());
-            if (new_reviews !== false) reviews = new_reviews;
+            if (isNaN(Date.parse(wkof.settings[script_id].general.start_date))) wkof.settings[script_id].general.start_date = "2012-01-01";
+            wkof.settings[script_id].general.start_day = new Date(wkof.settings[script_id].general.start_date)-(-new Date(wkof.settings[script_id].general.start_date).getTimezoneOffset()*60*1000);
             setTimeout(()=>{// make settings dialog respond immediately
                 let stats = {
                     reviews: calculate_stats("reviews", reviews),
@@ -466,7 +464,7 @@
                     }
                 }
                 if (event.type === "mouseover" && down) {
-                    let view = document.querySelector('#heatmap .'+type);
+                    let view = document.querySelector('#heatmap .view.'+type);
                     if (!view) return;
                     for (let m of marked) {
                         m.classList.remove('selected', 'marked');
@@ -551,8 +549,8 @@
         // Populate popper
         popper.className = type;
         popper.querySelector('.date').innerText = title;
-        popper.querySelector('.count').innerText = info.lists[type+'-ids'].length;
-        popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff;
+        popper.querySelector('.count').innerText = info.lists[type+'-ids'].length.toSeparated();
+        popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff.toSeparated();
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
         popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i]; e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.map((a,j)=>[j, a]).slice(1).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
         popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2]});
@@ -717,14 +715,14 @@
                 let type2 = type;
                 let time = Date.parse(date.join('-')+' 0:0');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/ /, ', ')}`;
+                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/... /, '')+' '+kanji_day(new Date(time).getDay())}`;
                 if (time >= new Date(settings.general.start_day).getTime()) string += `\nDay ${(Math.round((time-Date.parse(new Date(Math.max(data[0][0], new Date(settings.general.start_day).getTime())).toDateString()))/(24*60*60*1000))+1).toSeparated()}`;
                 if (time < Date.now() && time >= new Date(settings.general.start_day).getTime()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
                 let level = level_ups.findIndex(level_up=>level_up[0]===time)+1
                 if (level) string += '\nYou reached level '+level+'!';
-                if (wkof.settings[script_id].other.times_popped < 5) string += '\nClick for details!';
+                if (wkof.settings[script_id].other.times_popped < 5 && Object.keys(day_data.counts).length !== 0) string += '\nClick for details!';
                 return [string];
             },
             color_callback: (date, day_data)=>{

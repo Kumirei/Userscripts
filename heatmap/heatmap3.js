@@ -35,8 +35,8 @@
         // For jQuery Datepicker
         wkof.load_css('//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');
         // Heatmap CSS
-        //wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/Heatmap.css', false);
-        //wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/heatmap3.css', false);
+        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/Heatmap.css', false);
+        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/heatmap3.css', false);
     }
 
 
@@ -47,7 +47,7 @@
         let [forecast, lessons] = await get_forecast_and_lessons();
         reload = function(new_reviews=false) {
             if (isNaN(Date.parse(wkof.settings[script_id].general.start_date))) wkof.settings[script_id].general.start_date = "2012-01-01";
-            wkof.settings[script_id].general.start_day = Date.parse(new Date(wkof.settings[script_id].general.start_date).toDateString());
+            wkof.settings[script_id].general.start_day = new Date(wkof.settings[script_id].general.start_date)-(-new Date(wkof.settings[script_id].general.start_date).getTimezoneOffset()*60*1000);
             setTimeout(()=>{// make settings dialog respond immediately
                 let stats = {
                     reviews: calculate_stats("reviews", reviews),
@@ -464,7 +464,7 @@
                     }
                 }
                 if (event.type === "mouseover" && down) {
-                    let view = document.querySelector('#heatmap .'+type);
+                    let view = document.querySelector('#heatmap .view.'+type);
                     if (!view) return;
                     for (let m of marked) {
                         m.classList.remove('selected', 'marked');
@@ -549,8 +549,8 @@
         // Populate popper
         popper.className = type;
         popper.querySelector('.date').innerText = title;
-        popper.querySelector('.count').innerText = info.lists[type+'-ids'].length;
-        popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff;
+        popper.querySelector('.count').innerText = info.lists[type+'-ids'].length.toSeparated();
+        popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff.toSeparated();
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
         popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i]; e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.map((a,j)=>[j, a]).slice(1).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
         popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2]});
