@@ -464,7 +464,8 @@
                     }
                 }
                 if (event.type === "mouseover" && down) {
-                    let view = document.querySelector('#heatmap .view.'+type);
+                    let view = document.querySelector('#heatmap .view.'+(type==="forecast"?"reviews":"lessons"));
+                    console.log(view);
                     if (!view) return;
                     for (let m of marked) {
                         m.classList.remove('selected', 'marked');
@@ -484,7 +485,7 @@
             if (event.type === "mouseup") {
                 down = false;
                 for (let m of marked) {
-                    m.classList.remove('selected', 'marked');
+                    //m.classList.remove('selected', 'marked');
                 }
                 marked = [];
             }

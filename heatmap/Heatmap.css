@@ -135,7 +135,6 @@
 .heatmap .single-day .hour.marked {
 	height: var(--day-size);
 	width: var(--day-size);
-	/*margin-right: calc(0px - 2*var(--day-gap));*/
 	border-width: 1px;
 	border-style: solid;
 	border-color: white;
