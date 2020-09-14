@@ -46,8 +46,11 @@
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
         reload = function(new_reviews=false) {
-            if (isNaN(wkof.settings[script_id].general.start_date)) wkof.settings[script_id].general.start_date = "2012-01-01";
+            console.log(new Date(wkof.settings[script_id].general.start_date))
+            console.log();
+            if (isNaN(Date.parse(wkof.settings[script_id].general.start_date))) wkof.settings[script_id].general.start_date = "2012-01-01";
             wkof.settings[script_id].general.start_day = Date.parse(new Date(wkof.settings[script_id].general.start_date).toDateString());
+            console.log(new Date(wkof.settings[script_id].general.start_date), new Date(wkof.settings[script_id].general.start_day))
             if (new_reviews !== false) reviews = new_reviews;
             setTimeout(()=>{// make settings dialog respond immediately
                 let stats = {
