@@ -406,6 +406,7 @@
                 visible_years: {reviews: {}, lessons: {},},
                 visible_map: "reviews",
                 times_popped: 0,
+                times_dragged: 0,
             }
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
@@ -461,6 +462,7 @@
                             }
                         }
                         update_popper(event, type, title, popper_info, minimap_data);
+                        wkof.settings[script_id].other.times_dragged++;
                     }
                 }
                 if (event.type === "mouseover" && down) {
@@ -723,6 +725,7 @@
                 let level = level_ups.findIndex(level_up=>level_up[0]===time)+1
                 if (level) string += '\nYou reached level '+level+'!';
                 if (wkof.settings[script_id].other.times_popped < 5 && Object.keys(day_data.counts).length !== 0) string += '\nClick for details!';
+                if (wkof.settings[script_id].other.times_popped >= 5 && wkof.settings[script_id].other.times_dragged < 3 && Object.keys(day_data.counts).length !== 0) string += '\nDid you know that you can click and drag, too?';
                 return [string];
             },
             color_callback: (date, day_data)=>{
