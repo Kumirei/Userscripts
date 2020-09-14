@@ -46,6 +46,7 @@
         let reviews = await review_cache.get_reviews();
         let [forecast, lessons] = await get_forecast_and_lessons();
         reload = function(new_reviews=false) {
+            if (isNaN(wkof.settings[script_id].general.start_date)) wkof.settings[script_id].general.start_date = "2012-01-01";
             wkof.settings[script_id].general.start_day = Date.parse(new Date(wkof.settings[script_id].general.start_date).toDateString());
             if (new_reviews !== false) reviews = new_reviews;
             setTimeout(()=>{// make settings dialog respond immediately
@@ -722,7 +723,7 @@
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
                 let level = level_ups.findIndex(level_up=>level_up[0]===time)+1
                 if (level) string += '\nYou reached level '+level+'!';
-                if (wkof.settings[script_id].other.times_popped < 5) string += '\nClick for details!';
+                if (wkof.settings[script_id].other.times_popped < 5 && Object.keys(day_data.counts).length !== 0) string += '\nClick for details!';
                 return [string];
             },
             color_callback: (date, day_data)=>{
