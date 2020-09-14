@@ -228,6 +228,7 @@
 	justify-content: space-between;
 	padding-top: 10px;
 	max-width: 500px;
+	margin: auto;
 }
 
 #heatmap #popper .item {
