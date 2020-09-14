@@ -321,6 +321,7 @@
 	display: block;
 }
 
+#heatmap .years[month-labels="all"] .year-labels,
 #heatmap .years[month-labels="top"].reverse .year:first-child .year-labels,
 #heatmap .years[month-labels="top"].reverse .year.hidden + .year .year-labels,
 #heatmap .years[month-labels="top"]:not(.reverse).visible-future .year.future .year-labels,
