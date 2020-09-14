@@ -1,31 +1,31 @@
 #heatmap {
 	--background-color: #232629;
-    --day-hover-outline: 1px;
-    --day-hover-outline-color: rgba(0, 0, 0, 0.9);
+	--day-hover-outline: 1px;
+	--day-hover-outline-color: rgba(0, 0, 0, 0.9);
 	--zero-day-color: #636363;
 	--color: rgb(240, 240, 240);
-    background-color: var(--background-color);
-    border-radius: 3px;
+	background-color: var(--background-color);
+	border-radius: 3px;
 	padding: 10px 0;
 	color: var(--color);
 }
 
 #heatmap .stats {
-    display: flex;
-    justify-content: space-evenly;
+	display: flex;
+	justify-content: space-evenly;
 }
 
 #heatmap .head-stats {
-    font-size: 16px;
+	font-size: 16px;
 }
 
 #heatmap .stats .stat-label {
-    margin-right: 5px;
-    font-weight: bold;
+	margin-right: 5px;
+	font-weight: bold;
 }
 
 #heatmap .stats .stat-label::after {
-    content: ':';
+	content: ':';
 }
 
 #heatmap .buttons {
@@ -128,18 +128,22 @@
 	vertical-align: top;
 }
 
-#heatmap #popper .stats  table {
+#heatmap #popper .stats table {
 	display: inline-block;
 	padding: 0 10px;
 }
 
-#heatmap #popper .stats  table th {
+#heatmap #popper .stats table th {
 	font-weight: bold;
 }
 
-#heatmap #popper .stats  table tr {
+#heatmap #popper .stats table tr {
 	display: flex;
 	justify-content: space-between;
+}
+
+#heatmap #popper .stats > table > tr:first-child {
+	justify-content: center;
 }
 
 #heatmap #popper .stats table.srs > tr:first-child th,
@@ -207,6 +211,7 @@
 
 #heatmap #popper .stats > * > * > td {
 	min-width: 25px;
+	text-align: right;
 }
 
 #heatmap .years {
@@ -575,7 +580,7 @@
 .ui-datepicker .ui-datepicker-next {
 	cursor: pointer;
 	height: calc(100% - 3px);
-    width: 34px;
+	width: 34px;
 }
 
 .ui-datepicker * {

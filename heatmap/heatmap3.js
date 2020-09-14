@@ -554,12 +554,12 @@
         popper.querySelector('.count').innerText = info.lists[type+'-ids'].length.toSeparated();
         popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff.toSeparated();
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
-        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i]; e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.map((a,j)=>[j, a]).slice(1).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
-        popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2]});
-        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['SRS'], ['Before / After'], ...srs.slice(1).map((a, i)=>[['App 1', 'App 2', 'App 3', 'App 4', 'Gur 1', 'Gur 2', 'Mas', 'Enl', 'Bur'][i], ...a])]));
-        popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]]});
-        popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = pass[i]});
-        popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = answers[i]});
+        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i].toSeparated(); e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.slice(1).map((a,j)=>[j, a.toSeparated()]).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
+        popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2].toSeparated()});
+        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['SRS'], ['Before / After'], ...srs.slice(1).map((a, i)=>[['App 1', 'App 2', 'App 3', 'App 4', 'Gur 1', 'Gur 2', 'Mas', 'Enl', 'Bur'][i], ...a.map(_=>_.toSeparated())])]));
+        popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]].toSeparated()});
+        popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = (pass[i] || 0).toSeparated()});
+        popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = (answers[i] || 0).toSeparated()});
         popper.querySelector('.items').replaceWith(create_elem({type: 'div', class: 'items', children: item_elems}));
         popper.querySelector('.minimap > .hours-map').replaceWith(create_minimap(type, minimap_data).maps.day);
         popper.style.top = event.pageY+50+'px';
@@ -618,7 +618,7 @@
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);
-        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper) && !event.target.className.includes('day')) popper.classList.remove('popped')});
+        document.addEventListener('click', (event)=>{console.log(event.target);if (!event.composedPath().find((a)=>a===popper||a.className==="months")) popper.classList.remove('popped')});
         // Create header
         header.append(
             create_elem({type: 'div', class: 'date'}),
