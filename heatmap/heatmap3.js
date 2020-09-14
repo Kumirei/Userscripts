@@ -35,8 +35,8 @@
         // For jQuery Datepicker
         wkof.load_css('//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');
         // Heatmap CSS
-        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/Heatmap.css', false);
-        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/heatmap3.css', false);
+        //wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/Heatmap.css', false);
+        //wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/heatmap3.css', false);
     }
 
 
@@ -464,8 +464,7 @@
                     }
                 }
                 if (event.type === "mouseover" && down) {
-                    let view = document.querySelector('#heatmap .view.'+(type==="forecast"?"reviews":"lessons"));
-                    console.log(view);
+                    let view = document.querySelector('#heatmap .view.'+(type==="forecast"?"reviews":type));
                     if (!view) return;
                     for (let m of marked) {
                         m.classList.remove('selected', 'marked');
@@ -485,7 +484,7 @@
             if (event.type === "mouseup") {
                 down = false;
                 for (let m of marked) {
-                    //m.classList.remove('selected', 'marked');
+                    m.classList.remove('selected', 'marked');
                 }
                 marked = [];
             }
@@ -617,7 +616,7 @@
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);
-        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper) && !event.target.classList.contains('day')) popper.classList.remove('popped')});
+        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper) && !event.target.className.includes('day')) popper.classList.remove('popped')});
         // Create header
         header.append(
             create_elem({type: 'div', class: 'date'}),
