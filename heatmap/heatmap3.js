@@ -113,7 +113,7 @@
             let type = ["reviews", "lessons", "forecast"][i];
             let update_color_settings = _=>{
                 wkof.settings[script_id][type].colors = [];
-                elem.previousElementSibling.children[1].children.forEach((child, i) => {
+                elem.nextElementSibling.children[1].children.forEach((child, i) => {
                     wkof.settings[script_id][type].colors.push([child.children[0].children[0].value, child.children[1].children[0].value]);
                 });
             };
@@ -134,7 +134,7 @@
             });
             elem.insertAdjacentElement('afterend', panel);
         });
-        dialog[0].querySelectorAll('#heatmap3_general ~ div .right:first-child .row:first-child .text input').forEach(elem=>elem.disabled=true);
+        dialog[0].querySelectorAll('#heatmap3_general ~ div .panel .row:first-child .text input').forEach(elem=>elem.disabled=true);
         dialog[0].querySelectorAll('#heatmap3_general input[type="color"]').forEach(input=>{
             input.addEventListener('change', ()=>update_label(input));
             update_label(input);
@@ -296,19 +296,19 @@
                                             type: 'section',
                                             label: 'Intervals'
                                         },
-                                        reviews_gradient: {
-                                            type: 'checkbox',
-                                            label: 'Gradients',
-                                            default: true,
-                                            hover_tip: 'Let any colors between the chosen ones be used',
-                                            path: '@reviews.gradient'
-                                        },
                                         reviews_auto_range: {
                                             type: 'checkbox',
-                                            label: 'Auto range',
+                                            label: 'Auto range intervals',
                                             default: true,
                                             hover_tip: 'Automatically decide what the intervals should be',
                                             path: '@reviews.auto_range'
+                                        },
+                                        reviews_gradient: {
+                                            type: 'checkbox',
+                                            label: 'Use gradients',
+                                            default: true,
+                                            hover_tip: 'Let any colors between the chosen ones be used',
+                                            path: '@reviews.gradient'
                                         },
                                         reviews_section2: {
                                             type: 'section',
@@ -338,19 +338,19 @@
                                             type: 'section',
                                             label: 'Intervals'
                                         },
-                                        lessons_gradient: {
-                                            type: 'checkbox',
-                                            label: 'Gradients',
-                                            default: true,
-                                            hover_tip: 'Let any colors between the chosen ones be used',
-                                            path: '@lessons.gradient'
-                                        },
                                         lessons_auto_range: {
                                             type: 'checkbox',
-                                            label: 'Auto range',
+                                            label: 'Auto range intervals',
                                             default: true,
                                             hover_tip: 'Automatically decide what the intervals should be',
                                             path: '@lessons.auto_range'
+                                        },
+                                        lessons_gradient: {
+                                            type: 'checkbox',
+                                            label: 'Use gradients',
+                                            default: true,
+                                            hover_tip: 'Let any colors between the chosen ones be used',
+                                            path: '@lessons.gradient'
                                         },
                                         lessons_section2: {
                                             type: 'section',
@@ -387,19 +387,19 @@
                                             type: 'section',
                                             label: 'Intervals'
                                         },
-                                        forecast_gradient: {
-                                            type: 'checkbox',
-                                            label: 'Gradients',
-                                            default: true,
-                                            hover_tip: 'Let any colors between the chosen ones be used',
-                                            path: '@forecast.gradient'
-                                        },
                                         forecast_auto_range: {
                                             type: 'checkbox',
-                                            label: 'Auto range',
+                                            label: 'Auto range intervals',
                                             default: true,
                                             hover_tip: 'Automatically decide what the intervals should be',
                                             path: '@forecast.auto_range'
+                                        },
+                                        forecast_gradient: {
+                                            type: 'checkbox',
+                                            label: 'Use gradients',
+                                            default: true,
+                                            hover_tip: 'Let any colors between the chosen ones be used',
+                                            path: '@forecast.gradient'
                                         },
                                     },
                                 },
@@ -780,8 +780,8 @@
                 if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
                 let colors = settings[type2].colors;
                 if (!settings[type2].gradient) {
-                    for (let [bound, color] of colors) {
-                        if (day_data.counts[type2] <= bound) {
+                    for (let [bound, color] of colors.slice().reverse()) {
+                        if (day_data.counts[type2] >= bound) {
                             return color;
                             break;
                         }
