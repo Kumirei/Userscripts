@@ -109,7 +109,7 @@
             if (!Math.round(hex_to_rgb(input.value).reduce((a,b)=>a+b/3, 0)/255-0.15)) input.nextElementSibling.classList.remove('light-color');
             else input.nextElementSibling.classList.add('light-color');
         }
-        dialog[0].querySelectorAll('#heatmap3_general ~ div hr:first-of-type').forEach((elem, i) => {
+        dialog[0].querySelectorAll('#heatmap3_general ~ div .wkof_group > div:nth-of-type(2)').forEach((elem, i) => {
             let type = ["reviews", "lessons", "forecast"][i];
             let update_color_settings = _=>{
                 wkof.settings[script_id][type].colors = [];
@@ -128,7 +128,11 @@
             ]});
             panel.addEventListener('change', update_color_settings);
             for (let [value, color] of wkof.settings[script_id][type].colors) panel.children[1].append(create_row(value, color));
-            elem.insertAdjacentElement('beforebegin', panel);
+            if (i == 0 || i == 2) panel.children[1].children[0].addEventListener('change', e=>{
+                let input = e.target.closest('#heatmap3_tabs').querySelector('#heatmap3_'+(i==0?'forecast':'reviews')+' .panel > .row:first-child .color input');
+                if (input.value != e.target.value) {input.value = e.target.value; input.dispatchEvent(new Event('change')); wkof.settings[script_id][i==0?'forecast':'reviews'].colors[0][1] = e.target.value;};
+            });
+            elem.insertAdjacentElement('afterend', panel);
         });
         dialog[0].querySelectorAll('#heatmap3_general ~ div .right:first-child .row:first-child .text input').forEach(elem=>elem.disabled=true);
         dialog[0].querySelectorAll('#heatmap3_general input[type="color"]').forEach(input=>{
@@ -156,10 +160,18 @@
                             label: 'General',
                             hover_tip: 'Settings pertaining to the general functions of the script',
                             content: {
-                                function: {
+                                control: {
                                     type: 'group',
-                                    label: 'Function',
+                                    label: 'Control',
                                     content: {
+                                        position: {
+                                            type: 'dropdown',
+                                            label: 'Position',
+                                            default: 2,
+                                            hover_tip: 'Where on the dashboard to install the heatmap',
+                                            content: {0: "Top", 1: "Below forecast", 2: "Below SRS", 3: "Below panels", 4: "Bottom"},
+                                            path: '@general.position'
+                                        },
                                         start_date: {
                                             type: 'text',
                                             label: 'Start date',
@@ -191,19 +203,11 @@
                                             hover_tip: 'Max number of minutes between review answers to still count within the same session',
                                             path: '@general.session_limit',
                                         },
-                                        position: {
-                                            type: 'dropdown',
-                                            label: 'Position',
-                                            default: 2,
-                                            hover_tip: 'Where on the dashboard to install the heatmap',
-                                            content: {0: "Top", 1: "Below forecast", 2: "Below SRS", 3: "Below panels", 4: "Bottom"},
-                                            path: '@general.position'
-                                        },
                                     },
                                 },
-                                look: {
+                                layout: {
                                     type: 'group',
-                                    label: 'Look',
+                                    label: 'Layout',
                                     content: {
                                         reverse_years: {
                                             type: 'checkbox',
@@ -219,19 +223,19 @@
                                             hover_tip: 'If this is checked then months will display as segments.',
                                             path: '@general.segment_years'
                                         },
-                                        day_labels: {
-                                            type: 'checkbox',
-                                            label: 'Day of week labels',
-                                            default: true,
-                                            hover_tip: 'Adds letters to the left of the heatmaps indicating which row represents which weekday',
-                                            path: '@general.day_labels'
-                                        },
                                         zero_gap: {
                                             type: 'checkbox',
                                             label: 'No gap',
                                             default: false,
                                             hover_tip: `Don't display any gap between days`,
                                             path: '@general.zero_gap'
+                                        },
+                                        day_labels: {
+                                            type: 'checkbox',
+                                            label: 'Day of week labels',
+                                            default: true,
+                                            hover_tip: 'Adds letters to the left of the heatmaps indicating which row represents which weekday',
+                                            path: '@general.day_labels'
                                         },
                                         month_labels: {
                                             type: 'dropdown',
@@ -241,9 +245,12 @@
                                             content: {all: "All", top: "Only at the top", none: "None"},
                                             path: '@general.month_labels'
                                         },
-                                        divider: {
-                                            type: 'divider'
-                                        },
+                                    },
+                                },
+                                indicators: {
+                                    type: 'group',
+                                    label: 'Indicators',
+                                    content: {
                                         now_indicator: {
                                             type: 'checkbox',
                                             label: 'Current day indicator',
@@ -281,29 +288,40 @@
                             label: 'Reviews',
                             hover_tip: 'Settings pertaining to the review heatmaps',
                             content: {
-                                divider: {
-                                    type: 'divider'
-                                },
-                                reviews_gradient: {
-                                    type: 'checkbox',
-                                    label: 'Gradients',
-                                    default: true,
-                                    hover_tip: 'Let any colors between the chosen ones be used',
-                                    path: '@reviews.gradient'
-                                },
-                                reviews_auto_range: {
-                                    type: 'checkbox',
-                                    label: 'Auto range',
-                                    default: true,
-                                    hover_tip: 'Automatically decide what the intervals should be',
-                                    path: '@reviews.auto_range'
-                                },
-                                reload_button: {
-                                    type: 'button',
-                                    label: 'Reload review data',
-                                    text: 'Reload',
-                                    hover_tip: 'Deletes review cache and starts new fetch.',
-                                    on_click: ()=>review_cache.reload().then(reviews=>reload(reviews)),
+                                reviews_settings: {
+                                    type: 'group',
+                                    label: 'Review Settings',
+                                    content: {
+                                        reviews_section: {
+                                            type: 'section',
+                                            label: 'Intervals'
+                                        },
+                                        reviews_gradient: {
+                                            type: 'checkbox',
+                                            label: 'Gradients',
+                                            default: true,
+                                            hover_tip: 'Let any colors between the chosen ones be used',
+                                            path: '@reviews.gradient'
+                                        },
+                                        reviews_auto_range: {
+                                            type: 'checkbox',
+                                            label: 'Auto range',
+                                            default: true,
+                                            hover_tip: 'Automatically decide what the intervals should be',
+                                            path: '@reviews.auto_range'
+                                        },
+                                        reviews_section2: {
+                                            type: 'section',
+                                            label: 'Other'
+                                        },
+                                        reload_button: {
+                                            type: 'button',
+                                            label: 'Reload review data',
+                                            text: 'Reload',
+                                            hover_tip: 'Deletes review cache and starts new fetch.',
+                                            on_click: ()=>review_cache.reload().then(reviews=>reload(reviews)),
+                                        },
+                                    },
                                 },
                             },
                         },
@@ -312,29 +330,47 @@
                             label: 'Lessons',
                             hover_tip: 'Settings pertaining to the lesson heatmaps',
                             content: {
-                                divider: {
-                                    type: 'divider'
-                                },
-                                lessons_gradient: {
-                                    type: 'checkbox',
-                                    label: 'Gradients',
-                                    default: true,
-                                    hover_tip: 'Let any colors between the chosen ones be used',
-                                    path: '@lessons.gradient'
-                                },
-                                lessons_auto_range: {
-                                    type: 'checkbox',
-                                    label: 'Auto range',
-                                    default: true,
-                                    hover_tip: 'Automatically decide what the intervals should be',
-                                    path: '@lessons.auto_range'
-                                },
-                                lessons_count_zeros: {
-                                    type: 'checkbox',
-                                    label: 'Include zeros in streak',
-                                    default: true,
-                                    hover_tip: 'Counts days with no lessons available towards the streak',
-                                    path: '@lessons.count_zeros'
+                                lessons_settings: {
+                                    type: 'group',
+                                    label: 'Lesson Settings',
+                                    content: {
+                                        lessons_section: {
+                                            type: 'section',
+                                            label: 'Intervals'
+                                        },
+                                        lessons_gradient: {
+                                            type: 'checkbox',
+                                            label: 'Gradients',
+                                            default: true,
+                                            hover_tip: 'Let any colors between the chosen ones be used',
+                                            path: '@lessons.gradient'
+                                        },
+                                        lessons_auto_range: {
+                                            type: 'checkbox',
+                                            label: 'Auto range',
+                                            default: true,
+                                            hover_tip: 'Automatically decide what the intervals should be',
+                                            path: '@lessons.auto_range'
+                                        },
+                                        lessons_section2: {
+                                            type: 'section',
+                                            label: 'Other'
+                                        },
+                                        lessons_count_zeros: {
+                                            type: 'checkbox',
+                                            label: 'Include zeros in streak',
+                                            default: true,
+                                            hover_tip: 'Counts days with no lessons available towards the streak',
+                                            path: '@lessons.count_zeros'
+                                        },
+                                        recover_lessons: {
+                                            type: 'checkbox',
+                                            label: 'Recover reset lessons',
+                                            default: false,
+                                            hover_tip: 'Allow the Heatmap to guess when you did lessons for items that have been reset',
+                                            path: '@lessons.recover_lessons'
+                                        },
+                                    },
                                 },
                             },
                         },
@@ -343,22 +379,29 @@
                             label: 'Review Forecast',
                             hover_tip: 'Settings pertaining to the forecast',
                             content: {
-                                divider: {
-                                    type: 'divider'
-                                },
-                                forecast_gradient: {
-                                    type: 'checkbox',
-                                    label: 'Gradients',
-                                    default: true,
-                                    hover_tip: 'Let any colors between the chosen ones be used',
-                                    path: '@forecast.gradient'
-                                },
-                                forecast_auto_range: {
-                                    type: 'checkbox',
-                                    label: 'Auto range',
-                                    default: true,
-                                    hover_tip: 'Automatically decide what the intervals should be',
-                                    path: '@forecast.auto_range'
+                                forecast_settings: {
+                                    type: 'group',
+                                    label: 'Forecast Settings',
+                                    content: {
+                                        forecast_section: {
+                                            type: 'section',
+                                            label: 'Intervals'
+                                        },
+                                        forecast_gradient: {
+                                            type: 'checkbox',
+                                            label: 'Gradients',
+                                            default: true,
+                                            hover_tip: 'Let any colors between the chosen ones be used',
+                                            path: '@forecast.gradient'
+                                        },
+                                        forecast_auto_range: {
+                                            type: 'checkbox',
+                                            label: 'Auto range',
+                                            default: true,
+                                            hover_tip: 'Automatically decide what the intervals should be',
+                                            path: '@forecast.auto_range'
+                                        },
+                                    },
                                 },
                             },
                         },
@@ -398,6 +441,7 @@
                 gradient: true,
                 auto_range: true,
                 count_zeros: true,
+                recover_lessons: false,
             },
             forecast: {
                 gradient: true,
@@ -733,20 +777,22 @@
             color_callback: (date, day_data)=>{
                 let type2 = type;
                 if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let colors = settings[type2].colors.slice().reverse();
+                let colors = settings[type2].colors;
                 if (!settings[type2].gradient) {
-                    for (let [count, color] of colors) {
-                        if (day_data.counts[type2] >= count) {
+                    for (let [bound, color] of colors) {
+                        if (day_data.counts[type2] <= bound) {
                             return color;
                             break;
                         }
                     }
+                    return colors[0][1];
                 } else {
-                    if (day_data.counts[type2] >= colors[0][0]) return colors[0][1];
-                    for (let i=1; i<colors.length; i++) {
-                        if (day_data.counts[type2] >= colors[i][0]) {
-                            let percentage = (day_data.counts[type2]-colors[i][0])/(colors[i-1][0]-colors[i][0]);
-                            return interpolate_color(colors[i][1], colors[i-1][1], percentage);
+                    if (!day_data.counts[type2]) return colors[0][1];
+                    if (day_data.counts[type2] >= colors[colors.length-1][0]) return colors[colors.length-1][1];
+                    for (let i=2; i<colors.length; i++) {
+                        if (day_data.counts[type2] <= colors[i][0]) {
+                            let percentage = (day_data.counts[type2]-colors[i-1][0])/(colors[i][0]-colors[i-1][0]);
+                            return interpolate_color(colors[i-1][1], colors[i][1], percentage);
                             break;
                         }
                     }

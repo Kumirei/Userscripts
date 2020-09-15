@@ -490,43 +490,29 @@
 
 #heatmap3_tabs div[role="tabpanel"] .panel .delete button {
 	height: 30px;
-	line-height: 24px;
 	font-size: 18px;
 	background-color: transparent;
 	border-color: transparent;
 }
 
-#heatmap3_general ~ div[role="tabpanel"] hr ~ .row,
-#heatmap3_tabs #heatmap3_look .row {
+#heatmap3_general ~ div[role="tabpanel"] > .wkof_group {
+	padding-top: 10px;
+}
+
+#heatmap3_general ~ div[role="tabpanel"] > .wkof_group > .row {
 	display: inline-block;
 	width: 50%;
-	margin-top: -10px;
-	min-width: fit-content;
 	padding-bottom: 5px;
+	margin-bottom: 0 !important;
 }
 
-#heatmap3_general ~ div[role="tabpanel"] hr ~ .row > div,
-#heatmap3_tabs #heatmap3_look .row > div {
+#heatmap3_general ~ div[role="tabpanel"] > .wkof_group > .row > div {
 	width: auto;
-	display: inline-block;
 	margin: 0 10px;
-	vertical-align: middle;
 }
 
-#heatmap3_general ~ div[role="tabpanel"] hr ~ .row > .right,
-#heatmap3_tabs #heatmap3_look .row .right {
+#heatmap3_general ~ div[role="tabpanel"] > .wkof_group > .row > .right {
 	float: right;
-}
-
-#heatmap3_tabs #heatmap3_forecast hr ~ .row:nth-child(5),
-#heatmap3_tabs #heatmap3_look .row:nth-child(6),
-#heatmap3_tabs #heatmap3_look .row:nth-child(n+10) {
-	width: 100%;
-}
-#heatmap3_tabs #heatmap3_forecast hr ~ .row:nth-child(5) .right,
-#heatmap3_tabs #heatmap3_look .row:nth-child(6) .right,
-#heatmap3_tabs #heatmap3_look .row:nth-child(n+10) .right {
-	width: 50%;
 }
 
 #heatmap #popper .items .radical-svg {
