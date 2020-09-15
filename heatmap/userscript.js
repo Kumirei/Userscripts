@@ -667,7 +667,7 @@
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);
-        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper) && !event.target.classList.contains('day')) popper.classList.remove('popped')});
+        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper||a.className=="months")) popper.classList.remove('popped')});
         // Create header
         header.append(
             create_elem({type: 'div', class: 'date'}),
