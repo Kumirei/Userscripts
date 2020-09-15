@@ -579,3 +579,13 @@
 #heatmap3_tabs .panel > .row:first-child .delete {
 	visibility: hidden;
 }
+
+#heatmap .day.selected {
+	height: var(--day-size);
+	width: var(--day-size);
+	border-width: 1px;
+	border-style: solid;
+	border-color: white;
+	border-radius: 2px;
+	box-sizing: border-box;
+}
