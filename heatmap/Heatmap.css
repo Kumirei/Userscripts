@@ -131,8 +131,7 @@
     opacity: 1;
 }
 
-.heatmap .day.marked,
-.heatmap .single-day .hour.marked {
+.heatmap .marked {
 	height: var(--day-size);
 	width: var(--day-size);
 	border-width: 1px;
