@@ -449,7 +449,7 @@
                         let title = `${start_date.toDateString().slice(4)} ${kanji_day(start_date.getDay())} - ${end_date.toDateString().slice(4)} ${kanji_day(end_date.getDay())}`;
                         let today = new Date(new Date().toDateString()).getTime();
                         let offset = wkof.settings[script_id].general.day_start*60*60*1000;
-                        let minimap_data = cook_data(type, data[type].filter(a=>a[0]>start_date.getTime()+offset&&a[0]<end_date.getTime()+1000*60*60*24+offset).map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
+                        let minimap_data = cook_data(type, data[type].filter(a=>a[0]>start_date.getTime()+offset&&a[0]<end_date.getTime()+1000*60*60*24+offset).map(a=>[today+new Date(a[0]).getHours()*60*60*1000+wkof.settings[script_id].general.day_start*60*60*1000, ...a.slice(1)]));
                         let popper_info = {counts: {}, lists: {}};
                         for (let item of minimap_data) {
                             for (let [key, value] of Object.entries(item[1])) {
@@ -518,12 +518,13 @@
     }
 
     async function update_popper(event, type, title, info, minimap_data) {
-        let items = await wkof.ItemData.get_items({wk_items: {options: {assignments: true}, filters: {subject_ids: info.lists[type+'-ids']}}});
+        let items_id = await wkof.ItemData.get_index(await wkof.ItemData.get_items(), 'subject_id');
         let popper = document.getElementById('popper');
         let levels = new Array(61).fill(0);
         levels[0] = new Array(6).fill(0);
         let item_types = {rad: 0, kan: 0, voc: 0};
-        for (let item of items) {
+        for (let id of info.lists[type+'-ids']) {
+            let item = items_id[id];
             levels[0][Math.floor((item.data.level-1)/10)]++;
             levels[item.data.level]++;
             item_types[item.object.slice(0, 3)]++;
@@ -539,7 +540,8 @@
         let pass = [info.counts.pass, info.counts.reviews-info.counts.pass, Math.floor(info.counts.pass/info.counts.reviews*100)];
         let answers = [info.counts.reviews*2-item_types.rad, info.counts.incorrect, Math.floor((info.counts.reviews*2-item_types.rad)/(info.counts.incorrect+info.counts.reviews*2-item_types.rad)*100)];
         let item_elems = [];
-        for (let item of items) {
+        for (let id of [...new Set(info.lists[type+'-ids'])]) {
+            let item = items_id[id];
             item_elems.push(create_elem({type: 'a', class: 'item '+item.object+' hover-wrapper-target', href: item.data.document_url, children: [
                 create_elem({type: "div", class: "hover-wrapper above", children: [
                     create_elem({type: "a", class: "characters", href: item.data.document_url, child: item.data.characters || create_elem({type: 'img', class: 'radical-svg', src: item.data.character_images.find(a=>a.content_type=="image/svg+xml"&&a.metadata.inline_styles).url})}),
@@ -554,7 +556,7 @@
         popper.querySelector('.count').innerText = info.lists[type+'-ids'].length.toSeparated();
         popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff.toSeparated();
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
-        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i].toSeparated(); e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.slice(1).map((a,j)=>[j, a.toSeparated()]).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
+        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i].toSeparated(); e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.slice(1).map((a,j)=>[j+1, a.toSeparated()]).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
         popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2].toSeparated()});
         popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['SRS'], ['Before / After'], ...srs.slice(1).map((a, i)=>[['App 1', 'App 2', 'App 3', 'App 4', 'Gur 1', 'Gur 2', 'Mas', 'Enl', 'Bur'][i], ...a.map(_=>_.toSeparated())])]));
         popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]].toSeparated()});
@@ -575,7 +577,7 @@
             type: "day",
             id: 'hours-map',
             first_date: Date.parse(new Date(data[0][0]-settings.general.day_start*60*60*1000).toDateString()),
-            last_date: data.reduce((max,a)=>max<a[0]?a[0]:max, 0),
+            last_date: Date.parse(new Date(data[0][0]+24*60*60*1000-settings.general.day_start*60*60*1000).toDateString()),
             day_start: settings.general.day_start,
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
@@ -618,7 +620,6 @@
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);
-        document.addEventListener('click', (event)=>{console.log(event.target);if (!event.composedPath().find((a)=>a===popper||a.className==="months")) popper.classList.remove('popped')});
         // Create header
         header.append(
             create_elem({type: 'div', class: 'date'}),
