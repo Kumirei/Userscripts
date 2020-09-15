@@ -142,7 +142,7 @@
 	justify-content: space-between;
 }
 
-#heatmap #popper .stats > table > tr:first-child {
+#heatmap #popper .stats > table > tr:first-of-type {
 	justify-content: center;
 }
 
