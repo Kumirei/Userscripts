@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap 3.0.0 BETA
 // @namespace    http://tampermonkey.net/
-// @version      3.0.20
+// @version      3.0.21
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -516,15 +516,15 @@
                     let view = document.querySelector('#heatmap .view.'+(type==="forecast"?"reviews":type));
                     if (!view) return;
                     for (let m of marked) {
-                        m.classList.remove('selected', 'marked');
+                        m.classList.remove('selected');
                     }
                     marked = [];
-                    elem.classList.add('selected', 'marked');
+                    elem.classList.add('selected');
                     marked.push(elem);
                     let d = new Date(first_date.getTime());
                     while (d.toDateString() !== date.toDateString()) {
                         let e = view.querySelector(`.day[data-date="${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}"]`);
-                        e.classList.add('selected', 'marked');
+                        e.classList.add('selected');
                         marked.push(e);
                         d.setDate(d.getDate()+(d<date?1:-1));
                     }
@@ -533,7 +533,7 @@
             if (event.type === "mouseup") {
                 down = false;
                 for (let m of marked) {
-                    m.classList.remove('selected', 'marked');
+                    m.classList.remove('selected');
                 }
                 marked = [];
             }
