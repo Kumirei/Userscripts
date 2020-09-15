@@ -84,9 +84,9 @@
         }
         let foreacast_average = forecast_items.length/Object.keys(forecast_days).length;
         let forecast_sd = Math.sqrt(1/(forecast_items.length/foreacast_average)*Object.values(forecast_days).map(x=>Math.pow(x-foreacast_average, 2)).reduce((a,b)=>a+b));
-        let forecast = Array(settings.forecast.colors.length-1).fill(null).map((_, i)=>Math.round(icdf(((settings.forecast.gradient?0.9:1)*(i+1))/(settings.forecast.colors.length-(settings.forecast.gradient?1:0)), foreacast_average, forecast_sd)));
-        let reviews = Array(settings.reviews.colors.length-1).fill(null).map((_, i)=>Math.round(icdf(((settings.reviews.gradient?0.9:1)*(i+1))/(settings.reviews.colors.length-(settings.reviews.gradient?1:0)), stats.reviews.average[1], stats.reviews.average[2])));
-        let lessons = Array(settings.lessons.colors.length-1).fill(null).map((_, i)=>Math.round(icdf(((settings.lessons.gradient?0.9:1)*(i+1))/(settings.lessons.colors.length-(settings.lessons.gradient?1:0)), stats.lessons.average[1], stats.lessons.average[2])));
+        let forecast = [1, ...Array(settings.forecast.colors.length-2).fill(null).map((_, i)=>1+Math.round(icdf(((settings.forecast.gradient?0.9:1)*(i+1))/(settings.forecast.colors.length-(settings.forecast.gradient?1:0)), foreacast_average, forecast_sd)))];
+        let reviews = [1, ...Array(settings.reviews.colors.length-2).fill(null).map((_, i)=>1+Math.round(icdf(((settings.reviews.gradient?0.9:1)*(i+1))/(settings.reviews.colors.length-(settings.reviews.gradient?1:0)), stats.reviews.average[1], stats.reviews.average[2])))];
+        let lessons = [1, ...Array(settings.lessons.colors.length-2).fill(null).map((_, i)=>1+Math.round(icdf(((settings.lessons.gradient?0.9:1)*(i+1))/(settings.lessons.colors.length-(settings.lessons.gradient?1:0)), stats.lessons.average[1], stats.lessons.average[2])))];
         if (settings.reviews.auto_range) for (let i=1; i<settings.reviews.colors.length; i++) settings.reviews.colors[i][0] = reviews[i-1];
         if (settings.lessons.auto_range) for (let i=1; i<settings.lessons.colors.length; i++) settings.lessons.colors[i][0] = lessons[i-1];
         if (settings.forecast.auto_range) for (let i=1; i<settings.forecast.colors.length; i++) settings.forecast.colors[i][0] = forecast[i-1];
@@ -130,6 +130,7 @@
             for (let [value, color] of wkof.settings[script_id][type].colors) panel.children[1].append(create_row(value, color));
             elem.insertAdjacentElement('beforebegin', panel);
         });
+        dialog[0].querySelectorAll('#heatmap3_general ~ div .right:first-child .row:first-child .text input').forEach(elem=>elem.disabled=true);
         dialog[0].querySelectorAll('#heatmap3_general input[type="color"]').forEach(input=>{
             input.addEventListener('change', ()=>update_label(input));
             update_label(input);
@@ -411,9 +412,9 @@
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
             // Default workaround
-            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
-            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
-            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],];
+            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#636363"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
+            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#636363"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
+            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#636363"], [1, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],];
             wkof.Settings.save(script_id);
             return settings;
         });

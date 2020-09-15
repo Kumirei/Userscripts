@@ -589,3 +589,7 @@
 	text-align: center !important;
 }
 /* end jQuery UI CSS */
+
+#heatmap3_tabs .panel > .row:first-child .delete {
+	visibility: hidden;
+}
