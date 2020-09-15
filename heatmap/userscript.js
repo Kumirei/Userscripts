@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap 3.0.0 BETA
 // @namespace    http://tampermonkey.net/
-// @version      3.0.17
+// @version      3.0.18
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -86,9 +86,9 @@
         }
         let foreacast_average = forecast_items.length/Object.keys(forecast_days).length;
         let forecast_sd = Math.sqrt(1/(forecast_items.length/foreacast_average)*Object.values(forecast_days).map(x=>Math.pow(x-foreacast_average, 2)).reduce((a,b)=>a+b));
-        let forecast = Array(settings.forecast.colors.length-1).fill(null).map((_, i)=>Math.round(icdf(((settings.forecast.gradient?0.9:1)*(i+1))/(settings.forecast.colors.length-(settings.forecast.gradient?1:0)), foreacast_average, forecast_sd)));
-        let reviews = Array(settings.reviews.colors.length-1).fill(null).map((_, i)=>Math.round(icdf(((settings.reviews.gradient?0.9:1)*(i+1))/(settings.reviews.colors.length-(settings.reviews.gradient?1:0)), stats.reviews.average[1], stats.reviews.average[2])));
-        let lessons = Array(settings.lessons.colors.length-1).fill(null).map((_, i)=>Math.round(icdf(((settings.lessons.gradient?0.9:1)*(i+1))/(settings.lessons.colors.length-(settings.lessons.gradient?1:0)), stats.lessons.average[1], stats.lessons.average[2])));
+        let forecast = [1, ...Array(settings.forecast.colors.length-2).fill(null).map((_, i)=>1+Math.round(icdf(((settings.forecast.gradient?0.9:1)*(i+1))/(settings.forecast.colors.length-(settings.forecast.gradient?1:0)), foreacast_average, forecast_sd)))];
+        let reviews = [1, ...Array(settings.reviews.colors.length-2).fill(null).map((_, i)=>1+Math.round(icdf(((settings.reviews.gradient?0.9:1)*(i+1))/(settings.reviews.colors.length-(settings.reviews.gradient?1:0)), stats.reviews.average[1], stats.reviews.average[2])))];
+        let lessons = [1, ...Array(settings.lessons.colors.length-2).fill(null).map((_, i)=>1+Math.round(icdf(((settings.lessons.gradient?0.9:1)*(i+1))/(settings.lessons.colors.length-(settings.lessons.gradient?1:0)), stats.lessons.average[1], stats.lessons.average[2])))];
         if (settings.reviews.auto_range) for (let i=1; i<settings.reviews.colors.length; i++) settings.reviews.colors[i][0] = reviews[i-1];
         if (settings.lessons.auto_range) for (let i=1; i<settings.lessons.colors.length; i++) settings.lessons.colors[i][0] = lessons[i-1];
         if (settings.forecast.auto_range) for (let i=1; i<settings.forecast.colors.length; i++) settings.forecast.colors[i][0] = forecast[i-1];
@@ -111,11 +111,11 @@
             if (!Math.round(hex_to_rgb(input.value).reduce((a,b)=>a+b/3, 0)/255-0.15)) input.nextElementSibling.classList.remove('light-color');
             else input.nextElementSibling.classList.add('light-color');
         }
-        dialog[0].querySelectorAll('#heatmap3_general ~ div hr:first-of-type').forEach((elem, i) => {
+        dialog[0].querySelectorAll('#heatmap3_general ~ div .wkof_group > div:nth-of-type(2)').forEach((elem, i) => {
             let type = ["reviews", "lessons", "forecast"][i];
             let update_color_settings = _=>{
                 wkof.settings[script_id][type].colors = [];
-                elem.previousElementSibling.children[1].children.forEach((child, i) => {
+                elem.nextElementSibling.children[1].children.forEach((child, i) => {
                     wkof.settings[script_id][type].colors.push([child.children[0].children[0].value, child.children[1].children[0].value]);
                 });
             };
@@ -130,8 +130,13 @@
             ]});
             panel.addEventListener('change', update_color_settings);
             for (let [value, color] of wkof.settings[script_id][type].colors) panel.children[1].append(create_row(value, color));
-            elem.insertAdjacentElement('beforebegin', panel);
+            if (i == 0 || i == 2) panel.children[1].children[0].addEventListener('change', e=>{
+                let input = e.target.closest('#heatmap3_tabs').querySelector('#heatmap3_'+(i==0?'forecast':'reviews')+' .panel > .row:first-child .color input');
+                if (input.value != e.target.value) {input.value = e.target.value; input.dispatchEvent(new Event('change')); wkof.settings[script_id][i==0?'forecast':'reviews'].colors[0][1] = e.target.value;};
+            });
+            elem.insertAdjacentElement('afterend', panel);
         });
+        dialog[0].querySelectorAll('#heatmap3_general ~ div .panel .row:first-child .text input').forEach(elem=>elem.disabled=true);
         dialog[0].querySelectorAll('#heatmap3_general input[type="color"]').forEach(input=>{
             input.addEventListener('change', ()=>update_label(input));
             update_label(input);
@@ -157,10 +162,18 @@
                             label: 'General',
                             hover_tip: 'Settings pertaining to the general functions of the script',
                             content: {
-                                function: {
+                                control: {
                                     type: 'group',
-                                    label: 'Function',
+                                    label: 'Control',
                                     content: {
+                                        position: {
+                                            type: 'dropdown',
+                                            label: 'Position',
+                                            default: 2,
+                                            hover_tip: 'Where on the dashboard to install the heatmap',
+                                            content: {0: "Top", 1: "Below forecast", 2: "Below SRS", 3: "Below panels", 4: "Bottom"},
+                                            path: '@general.position'
+                                        },
                                         start_date: {
                                             type: 'text',
                                             label: 'Start date',
@@ -192,19 +205,11 @@
                                             hover_tip: 'Max number of minutes between review answers to still count within the same session',
                                             path: '@general.session_limit',
                                         },
-                                        position: {
-                                            type: 'dropdown',
-                                            label: 'Position',
-                                            default: 2,
-                                            hover_tip: 'Where on the dashboard to install the heatmap',
-                                            content: {0: "Top", 1: "Below forecast", 2: "Below SRS", 3: "Below panels", 4: "Bottom"},
-                                            path: '@general.position'
-                                        },
                                     },
                                 },
-                                look: {
+                                layout: {
                                     type: 'group',
-                                    label: 'Look',
+                                    label: 'Layout',
                                     content: {
                                         reverse_years: {
                                             type: 'checkbox',
@@ -220,19 +225,19 @@
                                             hover_tip: 'If this is checked then months will display as segments.',
                                             path: '@general.segment_years'
                                         },
-                                        day_labels: {
-                                            type: 'checkbox',
-                                            label: 'Day of week labels',
-                                            default: true,
-                                            hover_tip: 'Adds letters to the left of the heatmaps indicating which row represents which weekday',
-                                            path: '@general.day_labels'
-                                        },
                                         zero_gap: {
                                             type: 'checkbox',
                                             label: 'No gap',
                                             default: false,
                                             hover_tip: `Don't display any gap between days`,
                                             path: '@general.zero_gap'
+                                        },
+                                        day_labels: {
+                                            type: 'checkbox',
+                                            label: 'Day of week labels',
+                                            default: true,
+                                            hover_tip: 'Adds letters to the left of the heatmaps indicating which row represents which weekday',
+                                            path: '@general.day_labels'
                                         },
                                         month_labels: {
                                             type: 'dropdown',
@@ -242,9 +247,12 @@
                                             content: {all: "All", top: "Only at the top", none: "None"},
                                             path: '@general.month_labels'
                                         },
-                                        divider: {
-                                            type: 'divider'
-                                        },
+                                    },
+                                },
+                                indicators: {
+                                    type: 'group',
+                                    label: 'Indicators',
+                                    content: {
                                         now_indicator: {
                                             type: 'checkbox',
                                             label: 'Current day indicator',
@@ -282,29 +290,40 @@
                             label: 'Reviews',
                             hover_tip: 'Settings pertaining to the review heatmaps',
                             content: {
-                                divider: {
-                                    type: 'divider'
-                                },
-                                reviews_gradient: {
-                                    type: 'checkbox',
-                                    label: 'Gradients',
-                                    default: true,
-                                    hover_tip: 'Let any colors between the chosen ones be used',
-                                    path: '@reviews.gradient'
-                                },
-                                reviews_auto_range: {
-                                    type: 'checkbox',
-                                    label: 'Auto range',
-                                    default: true,
-                                    hover_tip: 'Automatically decide what the intervals should be',
-                                    path: '@reviews.auto_range'
-                                },
-                                reload_button: {
-                                    type: 'button',
-                                    label: 'Reload review data',
-                                    text: 'Reload',
-                                    hover_tip: 'Deletes review cache and starts new fetch.',
-                                    on_click: ()=>review_cache.reload().then(reviews=>reload(reviews)),
+                                reviews_settings: {
+                                    type: 'group',
+                                    label: 'Review Settings',
+                                    content: {
+                                        reviews_section: {
+                                            type: 'section',
+                                            label: 'Intervals'
+                                        },
+                                        reviews_auto_range: {
+                                            type: 'checkbox',
+                                            label: 'Auto range intervals',
+                                            default: true,
+                                            hover_tip: 'Automatically decide what the intervals should be',
+                                            path: '@reviews.auto_range'
+                                        },
+                                        reviews_gradient: {
+                                            type: 'checkbox',
+                                            label: 'Use gradients',
+                                            default: true,
+                                            hover_tip: 'Let any colors between the chosen ones be used',
+                                            path: '@reviews.gradient'
+                                        },
+                                        reviews_section2: {
+                                            type: 'section',
+                                            label: 'Other'
+                                        },
+                                        reload_button: {
+                                            type: 'button',
+                                            label: 'Reload review data',
+                                            text: 'Reload',
+                                            hover_tip: 'Deletes review cache and starts new fetch.',
+                                            on_click: ()=>review_cache.reload().then(reviews=>reload(reviews)),
+                                        },
+                                    },
                                 },
                             },
                         },
@@ -313,29 +332,47 @@
                             label: 'Lessons',
                             hover_tip: 'Settings pertaining to the lesson heatmaps',
                             content: {
-                                divider: {
-                                    type: 'divider'
-                                },
-                                lessons_gradient: {
-                                    type: 'checkbox',
-                                    label: 'Gradients',
-                                    default: true,
-                                    hover_tip: 'Let any colors between the chosen ones be used',
-                                    path: '@lessons.gradient'
-                                },
-                                lessons_auto_range: {
-                                    type: 'checkbox',
-                                    label: 'Auto range',
-                                    default: true,
-                                    hover_tip: 'Automatically decide what the intervals should be',
-                                    path: '@lessons.auto_range'
-                                },
-                                lessons_count_zeros: {
-                                    type: 'checkbox',
-                                    label: 'Include zeros in streak',
-                                    default: true,
-                                    hover_tip: 'Counts days with no lessons available towards the streak',
-                                    path: '@lessons.count_zeros'
+                                lessons_settings: {
+                                    type: 'group',
+                                    label: 'Lesson Settings',
+                                    content: {
+                                        lessons_section: {
+                                            type: 'section',
+                                            label: 'Intervals'
+                                        },
+                                        lessons_auto_range: {
+                                            type: 'checkbox',
+                                            label: 'Auto range intervals',
+                                            default: true,
+                                            hover_tip: 'Automatically decide what the intervals should be',
+                                            path: '@lessons.auto_range'
+                                        },
+                                        lessons_gradient: {
+                                            type: 'checkbox',
+                                            label: 'Use gradients',
+                                            default: true,
+                                            hover_tip: 'Let any colors between the chosen ones be used',
+                                            path: '@lessons.gradient'
+                                        },
+                                        lessons_section2: {
+                                            type: 'section',
+                                            label: 'Other'
+                                        },
+                                        lessons_count_zeros: {
+                                            type: 'checkbox',
+                                            label: 'Include zeros in streak',
+                                            default: true,
+                                            hover_tip: 'Counts days with no lessons available towards the streak',
+                                            path: '@lessons.count_zeros'
+                                        },
+                                        recover_lessons: {
+                                            type: 'checkbox',
+                                            label: 'Recover reset lessons',
+                                            default: false,
+                                            hover_tip: 'Allow the Heatmap to guess when you did lessons for items that have been reset',
+                                            path: '@lessons.recover_lessons'
+                                        },
+                                    },
                                 },
                             },
                         },
@@ -344,22 +381,29 @@
                             label: 'Review Forecast',
                             hover_tip: 'Settings pertaining to the forecast',
                             content: {
-                                divider: {
-                                    type: 'divider'
-                                },
-                                forecast_gradient: {
-                                    type: 'checkbox',
-                                    label: 'Gradients',
-                                    default: true,
-                                    hover_tip: 'Let any colors between the chosen ones be used',
-                                    path: '@forecast.gradient'
-                                },
-                                forecast_auto_range: {
-                                    type: 'checkbox',
-                                    label: 'Auto range',
-                                    default: true,
-                                    hover_tip: 'Automatically decide what the intervals should be',
-                                    path: '@forecast.auto_range'
+                                forecast_settings: {
+                                    type: 'group',
+                                    label: 'Forecast Settings',
+                                    content: {
+                                        forecast_section: {
+                                            type: 'section',
+                                            label: 'Intervals'
+                                        },
+                                        forecast_auto_range: {
+                                            type: 'checkbox',
+                                            label: 'Auto range intervals',
+                                            default: true,
+                                            hover_tip: 'Automatically decide what the intervals should be',
+                                            path: '@forecast.auto_range'
+                                        },
+                                        forecast_gradient: {
+                                            type: 'checkbox',
+                                            label: 'Use gradients',
+                                            default: true,
+                                            hover_tip: 'Let any colors between the chosen ones be used',
+                                            path: '@forecast.gradient'
+                                        },
+                                    },
                                 },
                             },
                         },
@@ -399,6 +443,7 @@
                 gradient: true,
                 auto_range: true,
                 count_zeros: true,
+                recover_lessons: false,
             },
             forecast: {
                 gradient: true,
@@ -408,13 +453,14 @@
                 visible_years: {reviews: {}, lessons: {},},
                 visible_map: "reviews",
                 times_popped: 0,
+                times_dragged: 0,
             }
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
             // Default workaround
-            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
-            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
-            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],];
+            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#636363"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
+            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#636363"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
+            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#636363"], [1, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],];
             wkof.Settings.save(script_id);
             return settings;
         });
@@ -450,7 +496,7 @@
                         let title = `${start_date.toDateString().slice(4)} ${kanji_day(start_date.getDay())} - ${end_date.toDateString().slice(4)} ${kanji_day(end_date.getDay())}`;
                         let today = new Date(new Date().toDateString()).getTime();
                         let offset = wkof.settings[script_id].general.day_start*60*60*1000;
-                        let minimap_data = cook_data(type, data[type].filter(a=>a[0]>start_date.getTime()+offset&&a[0]<end_date.getTime()+1000*60*60*24+offset).map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
+                        let minimap_data = cook_data(type, data[type].filter(a=>a[0]>start_date.getTime()+offset&&a[0]<end_date.getTime()+1000*60*60*24+offset).map(a=>[today+new Date(a[0]).getHours()*60*60*1000+wkof.settings[script_id].general.day_start*60*60*1000, ...a.slice(1)]));
                         let popper_info = {counts: {}, lists: {}};
                         for (let item of minimap_data) {
                             for (let [key, value] of Object.entries(item[1])) {
@@ -463,10 +509,11 @@
                             }
                         }
                         update_popper(event, type, title, popper_info, minimap_data);
+                        wkof.settings[script_id].other.times_dragged++;
                     }
                 }
                 if (event.type === "mouseover" && down) {
-                    let view = document.querySelector('#heatmap .view.'+type);
+                    let view = document.querySelector('#heatmap .view.'+(type==="forecast"?"reviews":type));
                     if (!view) return;
                     for (let m of marked) {
                         m.classList.remove('selected', 'marked');
@@ -518,12 +565,13 @@
     }
 
     async function update_popper(event, type, title, info, minimap_data) {
-        let items = await wkof.ItemData.get_items({wk_items: {options: {assignments: true}, filters: {subject_ids: info.lists[type+'-ids']}}});
+        let items_id = await wkof.ItemData.get_index(await wkof.ItemData.get_items(), 'subject_id');
         let popper = document.getElementById('popper');
         let levels = new Array(61).fill(0);
         levels[0] = new Array(6).fill(0);
         let item_types = {rad: 0, kan: 0, voc: 0};
-        for (let item of items) {
+        for (let id of info.lists[type+'-ids']) {
+            let item = items_id[id];
             levels[0][Math.floor((item.data.level-1)/10)]++;
             levels[item.data.level]++;
             item_types[item.object.slice(0, 3)]++;
@@ -539,7 +587,8 @@
         let pass = [info.counts.pass, info.counts.reviews-info.counts.pass, Math.floor(info.counts.pass/info.counts.reviews*100)];
         let answers = [info.counts.reviews*2-item_types.rad, info.counts.incorrect, Math.floor((info.counts.reviews*2-item_types.rad)/(info.counts.incorrect+info.counts.reviews*2-item_types.rad)*100)];
         let item_elems = [];
-        for (let item of items) {
+        for (let id of [...new Set(info.lists[type+'-ids'])]) {
+            let item = items_id[id];
             item_elems.push(create_elem({type: 'a', class: 'item '+item.object+' hover-wrapper-target', href: item.data.document_url, children: [
                 create_elem({type: "div", class: "hover-wrapper above", children: [
                     create_elem({type: "a", class: "characters", href: item.data.document_url, child: item.data.characters || create_elem({type: 'img', class: 'radical-svg', src: item.data.character_images.find(a=>a.content_type=="image/svg+xml"&&a.metadata.inline_styles).url})}),
@@ -554,12 +603,12 @@
         popper.querySelector('.count').innerText = info.lists[type+'-ids'].length.toSeparated();
         popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff.toSeparated();
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
-        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i]; e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.map((a,j)=>[j, a]).slice(1).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
-        popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2]});
-        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['SRS'], ['Before / After'], ...srs.slice(1).map((a, i)=>[['App 1', 'App 2', 'App 3', 'App 4', 'Gur 1', 'Gur 2', 'Mas', 'Enl', 'Bur'][i], ...a])]));
-        popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]]});
-        popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = pass[i]});
-        popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = answers[i]});
+        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i].toSeparated(); e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.slice(1).map((a,j)=>[j+1, a.toSeparated()]).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
+        popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2].toSeparated()});
+        popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['SRS'], ['Before / After'], ...srs.slice(1).map((a, i)=>[['App 1', 'App 2', 'App 3', 'App 4', 'Gur 1', 'Gur 2', 'Mas', 'Enl', 'Bur'][i], ...a.map(_=>_.toSeparated())])]));
+        popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]].toSeparated()});
+        popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = (pass[i] || 0).toSeparated()});
+        popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = (answers[i] || 0).toSeparated()});
         popper.querySelector('.items').replaceWith(create_elem({type: 'div', class: 'items', children: item_elems}));
         popper.querySelector('.minimap > .hours-map').replaceWith(create_minimap(type, minimap_data).maps.day);
         popper.style.top = event.pageY+50+'px';
@@ -575,12 +624,12 @@
             type: "day",
             id: 'hours-map',
             first_date: Date.parse(new Date(data[0][0]-settings.general.day_start*60*60*1000).toDateString()),
-            last_date: data.reduce((max,a)=>max<a[0]?a[0]:max, 0),
+            last_date: Date.parse(new Date(data[0][0]+24*60*60*1000-settings.general.day_start*60*60*1000).toDateString()),
             day_start: settings.general.day_start,
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
                 if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && day_data.counts.forecast) type2 = "forecast";
-                let string = [`${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upcoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} at ${date[3]}:00`];
+                let string = [`${(day_data.counts[type2]||0).toSeparated()} ${type2==="forecast"?"reviews upcoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} at ${date[3]}:00`];
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
                 return string;
             },
@@ -631,7 +680,7 @@
             create_table('left', [["SRS"], ['Before / After'], ["App", 0, 0], ["Gur", 0, 0], ["Mas", 0, 0], ["Enl", 0, 0], ["Bur", 0, 0]], {class: 'srs hover-wrapper-target', child: create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'table'})})}),
             create_table('left', [["Type"], ["Rad", 0], ["Kan", 0], ["Voc", 0]], {class: 'type'}),
             create_table('left', [["Summary"], ["Pass", 0], ["Fail", 0], ["Acc", 0]], {class: 'summary'}),
-            create_table('left', [["Answers"], ["Right", 0], ["Wrong", 0], ["Acc", 0]], {class: 'answers'}),
+            create_table('left', [["Answers"], ["Right", 0], ["Wrong", 0], ["Acc", 0]], {class: 'answers hover-wrapper-target', child: create_elem({type: 'div', class: 'hover-wrapper above', child: 'The total number of correct and incorrect answers'})}),
         );
         return popper;
     }
@@ -717,7 +766,7 @@
                 let type2 = type;
                 let time = Date.parse(date.join('-')+' 0:0');
                 if (type2 === "reviews" && time>Date.now()-60*60*1000*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let string = `${day_data.counts[type2]||0} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/... /, '')+' '+kanji_day(new Date(time).getDay())}`;
+                let string = `${(day_data.counts[type2]||0).toSeparated()} ${type2==="forecast"?"reviews upoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/... /, '')+' '+kanji_day(new Date(time).getDay())}`;
                 if (time >= new Date(settings.general.start_day).getTime()) string += `\nDay ${(Math.round((time-Date.parse(new Date(Math.max(data[0][0], new Date(settings.general.start_day).getTime())).toDateString()))/(24*60*60*1000))+1).toSeparated()}`;
                 if (time < Date.now() && time >= new Date(settings.general.start_day).getTime()) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
@@ -725,25 +774,28 @@
                 let level = level_ups.findIndex(level_up=>level_up[0]===time)+1
                 if (level) string += '\nYou reached level '+level+'!';
                 if (wkof.settings[script_id].other.times_popped < 5 && Object.keys(day_data.counts).length !== 0) string += '\nClick for details!';
+                if (wkof.settings[script_id].other.times_popped >= 5 && wkof.settings[script_id].other.times_dragged < 3 && Object.keys(day_data.counts).length !== 0) string += '\nDid you know that you can click and drag, too?';
                 return [string];
             },
             color_callback: (date, day_data)=>{
                 let type2 = type;
                 if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let colors = settings[type2].colors.slice().reverse();
+                let colors = settings[type2].colors;
                 if (!settings[type2].gradient) {
-                    for (let [count, color] of colors) {
-                        if (day_data.counts[type2] >= count) {
+                    for (let [bound, color] of colors.slice().reverse()) {
+                        if (day_data.counts[type2] >= bound) {
                             return color;
                             break;
                         }
                     }
+                    return colors[0][1];
                 } else {
-                    if (day_data.counts[type2] >= colors[0][0]) return colors[0][1];
-                    for (let i=1; i<colors.length; i++) {
-                        if (day_data.counts[type2] >= colors[i][0]) {
-                            let percentage = (day_data.counts[type2]-colors[i][0])/(colors[i-1][0]-colors[i][0]);
-                            return interpolate_color(colors[i][1], colors[i-1][1], percentage);
+                    if (!day_data.counts[type2]) return colors[0][1];
+                    if (day_data.counts[type2] >= colors[colors.length-1][0]) return colors[colors.length-1][1];
+                    for (let i=2; i<colors.length; i++) {
+                        if (day_data.counts[type2] <= colors[i][0]) {
+                            let percentage = (day_data.counts[type2]-colors[i-1][0])/(colors[i][0]-colors[i-1][0]);
+                            return interpolate_color(colors[i-1][1], colors[i][1], percentage);
                             break;
                         }
                     }
