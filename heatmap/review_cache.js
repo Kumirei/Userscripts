@@ -42,26 +42,23 @@
     }
 
     function compress(data) {
-        let last_time = 0;
-        return {
-            date: data.date,
-            reviews: data.reviews.map(item=>{
-                let map = [(item[0]-last_time)/60000, item[1], item[2], item[3], item[4]];
-                last_time = item[0];
-                return map;
-            }),
-        };
+        return press(true, data);
     }
 
     function decompress(data) {
-        let total_time = 0;
+        return press(false, data);
+    }
+
+    function press(com, data) {
+        let last = 0;
         return {
             date: data.date,
-            reviews: data.map(item=>{
-                total_time += item[0];
-                return [total_time*60000, item[1], item[2], item[3], item[4]];
-            }),
-        };
+            reviews: data.reviews.map(item => {
+                let map = [com ? (item[0]-last)/60000 : (last+item[0])*60000, ...item.slice(1)];
+                last = com ? item[0] : last+item[0];
+                return map;
+            })
+        }
     }
 
     async function update_data(data) {
