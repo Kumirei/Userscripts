@@ -41,7 +41,7 @@
         let [date, new_reviews] = await fetch_new_reviews(data.date);
         if (new_reviews.length) {
             for (let new_review of new_reviews) data.reviews.push(new_review);
-            data.reviews.sort((a,b)=>a[0]<b[0]?-1:1);
+            data.reviews.sort((a,b) => a[0]<b[0] ? -1 : 1);
             data.date = date;
             save(data);
         }
@@ -50,8 +50,8 @@
 
     async function fetch_new_reviews(last_fetch) {
         let updated_reviews = await wkof.Apiv2.fetch_endpoint('reviews', {filters: {updated_after: last_fetch}});
-        let new_reviews = updated_reviews.data.filter(item=> last_fetch<item.data.created_at);
-        new_reviews = new_reviews.map(item=>[
+        let new_reviews = updated_reviews.data.filter(item => last_fetch<item.data.created_at);
+        new_reviews = new_reviews.map(item => [
             Math.floor(Date.parse(item.data.created_at)/60000)*60000,
             item.data.subject_id,
             item.data.starting_srs_stage,
