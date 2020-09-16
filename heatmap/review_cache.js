@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3
+// @version      1.0.4
 // @description  try to take over the world!
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
