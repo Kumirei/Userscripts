@@ -6,10 +6,7 @@
 // ==/UserScript==
 
 (function(wkof) {
-    window.review_cache = {
-        get_reviews,
-        reload,
-    }
+    window.review_cache = {get_reviews, reload,}
 
     function get_reviews() {
         wkof.include('Apiv2');
@@ -30,7 +27,6 @@
 
     function compress(data) {return press(true, data);}
     function decompress(data) {return press(false, data);}
-
     function press(com, data) {
         let last = 0;
         let pressed = data.reviews.map(item => {
