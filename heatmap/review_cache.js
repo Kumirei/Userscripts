@@ -1,11 +1,8 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @namespace    http://tampermonkey.net/
 // @version      1.0.4
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
-// @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
-// @grant        none
 // ==/UserScript==
 
 (function(wkof) {
