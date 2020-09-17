@@ -4,9 +4,10 @@
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // ==/UserScript==
+/*jshint esversion: 8 */
 
 (function(wkof) {
-    window.review_cache = {get_reviews, reload,}
+    window.review_cache = {get_reviews, reload,};
 
     function get_reviews() {
         wkof.include('Apiv2');
@@ -18,7 +19,7 @@
     }
 
     function load_data() {
-        return wkof.file_cache.load('review_cache').then(decompress, _=>{return {date: "1970-01-01T00:00:00.000Z", reviews: [],}});
+        return wkof.file_cache.load('review_cache').then(decompress, _=>{return {date: "1970-01-01T00:00:00.000Z", reviews: [],};});
     }
 
     function save(data) {
@@ -28,6 +29,7 @@
     function compress(data) {return press(true, data);}
     function decompress(data) {return press(false, data);}
     function press(com, data) {
+        if (!data.date) data = {date: localStorage.getItem("review_cache"), reviews: data}; // temporary line so that beta testers don't have to manually reload data
         let last = 0;
         let pressed = data.reviews.map(item => {
                 let map = [com ? (item[0]-last)/60000 : (last+item[0])*60000, ...item.slice(1)];
