@@ -9,6 +9,7 @@
 // @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=846941
 // @grant        none
 // ==/UserScript==
+/*jshint esversion: 8 */
 
 (function($, wkof, review_cache, Heatmap) {
     /* eslint no-multi-spaces: off */
@@ -58,7 +59,7 @@
                 auto_range(stats, forecast);
                 install_heatmap(reviews, forecast, lessons, stats);
             }, 1);
-        }
+        };
         reload();
     }
 
@@ -102,7 +103,7 @@
         // Add apply button
         let apply = create_elem({type: 'button', class: 'ui-button ui-corner-all ui-widget', child: 'Apply'});
         applied = false;
-        apply.onclick = e=>{applied = true; reload()};
+        apply.onclick = e=>{applied = true; reload();};
         dialog[0].nextElementSibling.getElementsByClassName('ui-dialog-buttonset')[0].insertAdjacentElement('afterbegin', apply);
         // Add color settings
         let update_label = function(input) {
@@ -110,7 +111,7 @@
             else input.nextElementSibling.innerText = input.value;
             if (!Math.round(hex_to_rgb(input.value).reduce((a,b)=>a+b/3, 0)/255-0.15)) input.nextElementSibling.classList.remove('light-color');
             else input.nextElementSibling.classList.add('light-color');
-        }
+        };
         dialog[0].querySelectorAll('#heatmap3_general ~ div .wkof_group > div:nth-of-type(2)').forEach((elem, i) => {
             let type = ["reviews", "lessons", "forecast"][i];
             let update_color_settings = _=>{
@@ -132,7 +133,7 @@
             for (let [value, color] of wkof.settings[script_id][type].colors) panel.children[1].append(create_row(value, color));
             if (i == 0 || i == 2) panel.children[1].children[0].addEventListener('change', e=>{
                 let input = e.target.closest('#heatmap3_tabs').querySelector('#heatmap3_'+(i==0?'forecast':'reviews')+' .panel > .row:first-child .color input');
-                if (input.value != e.target.value) {input.value = e.target.value; input.dispatchEvent(new Event('change')); wkof.settings[script_id][i==0?'forecast':'reviews'].colors[0][1] = e.target.value;};
+                if (input.value != e.target.value) {input.value = e.target.value; input.dispatchEvent(new Event('change')); wkof.settings[script_id][i==0?'forecast':'reviews'].colors[0][1] = e.target.value;}
             });
             elem.insertAdjacentElement('afterend', panel);
         });
@@ -485,7 +486,7 @@
                     event.preventDefault();
                     down = true;
                     first_day = elem;
-                    first_date = new Date(elem.getAttribute('data-date'))
+                    first_date = new Date(elem.getAttribute('data-date'));
                 }
                 if (event.type === "mouseup") {
                     if (first_day !== elem) {
@@ -537,7 +538,7 @@
                 }
                 marked = [];
             }
-        }
+        };
     }
 
     function toggle_year(event) {
@@ -603,12 +604,12 @@
         popper.querySelector('.count').innerText = info.lists[type+'-ids'].length.toSeparated();
         popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff.toSeparated();
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
-        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i].toSeparated(); e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.slice(1).map((a,j)=>[j+1, a.toSeparated()]).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
-        popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2].toSeparated()});
+        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i].toSeparated(); e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.slice(1).map((a,j)=>[j+1, a.toSeparated()]).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)));});
+        popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2].toSeparated();});
         popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['SRS'], ['Before / After'], ...srs.slice(1).map((a, i)=>[['App 1', 'App 2', 'App 3', 'App 4', 'Gur 1', 'Gur 2', 'Mas', 'Enl', 'Bur'][i], ...a.map(_=>_.toSeparated())])]));
-        popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]].toSeparated()});
-        popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = (pass[i] || 0).toSeparated()});
-        popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = (answers[i] || 0).toSeparated()});
+        popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]].toSeparated();});
+        popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = (pass[i] || 0).toSeparated();});
+        popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = (answers[i] || 0).toSeparated();});
         popper.querySelector('.items').replaceWith(create_elem({type: 'div', class: 'items', children: item_elems}));
         popper.querySelector('.minimap > .hours-map').replaceWith(create_minimap(type, minimap_data).maps.day);
         popper.style.top = event.pageY+50+'px';
@@ -642,7 +643,6 @@
                     for (let [count, color] of colors) {
                         if (day_data.counts[type2]*multiplier >= count) {
                             return color;
-                            break;
                         }
                     }
                 } else {
@@ -651,7 +651,6 @@
                         if (day_data.counts[type2]*multiplier >= colors[i][0]) {
                             let percentage = (day_data.counts[type2]*multiplier-colors[i][0])/(colors[i-1][0]-colors[i][0]);
                             return interpolate_color(colors[i][1], colors[i-1][1], percentage);
-                            break;
                         }
                     }
                 }
@@ -667,7 +666,7 @@
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);
-        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper||a.className=="months")) popper.classList.remove('popped')});
+        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper||a.className=="months")) popper.classList.remove('popped');});
         // Create header
         header.append(
             create_elem({type: 'div', class: 'date'}),
@@ -697,7 +696,7 @@
         heatmap.style.setProperty('--color-level', settings.general.level_indicator?settings.general.color_level_indicator:'transparent');
         // Create heatmaps
         let cooked_reviews = cook_data("reviews", reviews);
-        let cooked_lessons = cook_data("lessons", lessons)
+        let cooked_lessons = cook_data("lessons", lessons);
         let level_ups = get_level_ups(lessons).map(date=>[date, 'level-up']);
         if (level_ups.length === 60) level_ups[59][1] += ' level-60';
         let reviews_view = create_view('reviews', stats, level_ups, reviews[0][0], forecast.reduce((max,a)=>max>a[0]?max:a[0]), cooked_reviews.concat(forecast));
@@ -771,7 +770,7 @@
                 if (time < Date.now() && time >= new Date(settings.general.start_day).getTime() && time > first_date) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
-                let level = level_ups.findIndex(level_up=>level_up[0]===time)+1
+                let level = level_ups.findIndex(level_up=>level_up[0]===time)+1;
                 if (level) string += '\nYou reached level '+level+'!';
                 if (wkof.settings[script_id].other.times_popped < 5 && Object.keys(day_data.counts).length !== 0) string += '\nClick for details!';
                 if (wkof.settings[script_id].other.times_popped >= 5 && wkof.settings[script_id].other.times_dragged < 3 && Object.keys(day_data.counts).length !== 0) string += '\nDid you know that you can click and drag, too?';
@@ -785,7 +784,6 @@
                     for (let [bound, color] of colors.slice().reverse()) {
                         if (day_data.counts[type2] >= bound) {
                             return color;
-                            break;
                         }
                     }
                     return colors[0][1];
@@ -796,7 +794,6 @@
                         if (day_data.counts[type2] <= colors[i][0]) {
                             let percentage = (day_data.counts[type2]-colors[i-1][0])/(colors[i][0]-colors[i-1][0]);
                             return interpolate_color(colors[i-1][1], colors[i][1], percentage);
-                            break;
                         }
                     }
                 }
@@ -825,7 +822,7 @@
             let up = create_elem({type: 'a', class: 'toggle-year up hover-wrapper-target', onclick: toggle_year, children: [create_elem({type: 'div', class: 'hover-wrapper above', child: create_elem({type: 'div', child: 'Click to '+(year==new Date().getFullYear()?'show next':'hide this')+' year'})}), create_elem({type: 'i', class: 'icon-chevron-up'})]});
             let down = create_elem({type: 'a', class: 'toggle-year down hover-wrapper-target', onclick: toggle_year, children: [create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'div', child: 'Click to '+(year<=new Date().getFullYear()?'show previous':'hide this')+' year'})}), create_elem({type: 'i', class: 'icon-chevron-down'})]});
             target.append(up, down);
-            if (wkof.settings[script_id].other.visible_years[type][year] === false) map.classList.add('hidden')
+            if (wkof.settings[script_id].other.visible_years[type][year] === false) map.classList.add('hidden');
         }
     }
 
@@ -835,7 +832,7 @@
             create_stat_element('Days Studied', stats.days_studied[1]+'%', stats.days_studied[0].toSeparated()+' out of '+stats.days.toSeparated()),
             create_stat_element('Done Daily', stats.average[0]+' / '+(stats.average[1] || 0), 'Per Day / Day studied\nMax: '+stats.max_done[0].toSeparated()+' on '+stats.max_done[1]),
             create_stat_element('Streak', stats.streak[1]+' / '+stats.streak[0], 'Current / Longest'),
-        ]})
+        ]});
         let foot_stats = create_elem({type: 'div', class: 'foot-stats stats', children: [
             create_stat_element('Sessions', stats.sessions.toSeparated(), (Math.floor(stats.total[0]/stats.sessions) || 0)+' per session'),
             create_stat_element(type.toProper(), stats.total[0].toSeparated(), create_table("left", [
@@ -850,7 +847,7 @@
                 ['Week', m_to_hm(stats.time[3])],
                 ['Today', m_to_hm(stats.time[4])]
             ])),
-        ]})
+        ]});
         return [head_stats, foot_stats];
     }
 
@@ -860,7 +857,7 @@
             create_elem({type: 'div', class: 'hover-wrapper above', child: hover}),
             create_elem({type: 'span', class: 'stat-label', child: label}),
             create_elem({type: 'span', class: 'value', child: value}),
-        ]})
+        ]});
     }
 
     // Creates a table from a matrix
@@ -925,7 +922,7 @@
     // Find implicit level up dates by looking at when items were unlocked
     function get_level_ups(lessons) {
         // Prepare level array
-        let levels = new Array(61).fill(null).map(_=>{return {}});
+        let levels = new Array(61).fill(null).map(_=>{return {};});
         // Group unlocked items within each level by unlock date
         for (let [start, id, level, unlock] of lessons) {
             if (new Date(unlock) < new Date(wkof.settings[script_id].general.start_day)) continue;
@@ -1046,22 +1043,22 @@
     /*-------------------------------------------------------------------------------------------------------------------------------*/
 
     // Returns the kanij for the day
-    function kanji_day(day) {return ['日', '月', '火', '水', '木', '金', '土'][day]};
+    function kanji_day(day) {return ['日', '月', '火', '水', '木', '金', '土'][day];}
     // Filter for WKOF's get_items()
     wkof.wait_state('wkof.ItemData.registry', 'ready').then(()=>{wkof.ItemData.registry.sources.wk_items.filters.subject_ids = {filter_func: (ids, item)=>ids.includes(item.id)};});
     // Converts minutes to a timestamp string "#h #m"
     function m_to_hm(minutes) {return Math.floor(minutes/60)+'h '+Math.floor(minutes%60)+'m';}
     // Adds thousand separators to numbers. 1000000 → "1,000,000"
-    Number.prototype.toSeparated = function(separator=",") {return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator)}
+    Number.prototype.toSeparated = function(separator=",") {return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator);};
     // Capitalizes the first character in a string. "proper" → "Proper"
-    String.prototype.toProper = function() {return this.slice(0,1).toUpperCase()+this.slice(1)}
+    String.prototype.toProper = function() {return this.slice(0,1).toUpperCase()+this.slice(1);};
     // Returns a hex color between the left and right hex colors
     function interpolate_color(left, right, index) {
         left = hex_to_rgb(left); right = hex_to_rgb(right);
         let result = [0, 0, 0];
         for (let i = 0; i < 3; i++) result[i] = Math.round(left[i] + index * (right[i] - left[i]));
         return rgb_to_hex(result);
-    };
+    }
     // Converts a hex color to rgb
     function hex_to_rgb(hex) {
         let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -1070,7 +1067,7 @@
     // Converts an rgb color to hex
     function rgb_to_hex(cols) {
         let rgb = cols[2] | (cols[1] << 8) | (cols[0] << 16);
-        return '#' + (0x1000000 + rgb).toString(16).slice(1)
+        return '#' + (0x1000000 + rgb).toString(16).slice(1);
     }
     // Inverse cumulative distribution function
     function icdf(p, mean, sd) {
@@ -1084,5 +1081,5 @@
         }
         return Math.sqrt(2)*inverf(2*p-1)*sd+mean;
     }
-    function validate_start_date(date) {return new Date(date) !== "Invalid Date"?true:"Invalid date"}
+    function validate_start_date(date) {return new Date(date) !== "Invalid Date"?true:"Invalid date";}
 })(window.jQuery, window.wkof, window.review_cache, window.Heatmap);
