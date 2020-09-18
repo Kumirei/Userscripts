@@ -515,6 +515,24 @@
 	float: right;
 }
 
+#heatmap3_tabs div[role="tabpanel"] div.right + .row {
+	display: flex;
+	width: 100%;
+}
+
+#heatmap3_tabs div[role="tabpanel"] div.right + .row > .left {
+	width: 210px;
+	margin: 0;
+}
+
+#heatmap3_tabs div[role="tabpanel"] div.right + .row > .right {
+	width: 50%;
+}
+
+#heatmap3_tabs div[role="tabpanel"] div.right + .row > .right button {
+	width: calc(100% - 30px);
+}
+
 #heatmap #popper .items .radical-svg {
 	width: 14px;
 	filter: invert(1);
@@ -588,4 +606,8 @@
 	border-color: white;
 	border-radius: 2px;
 	box-sizing: border-box;
+}
+
+#heatmap #popper .items .burn {
+	filter: grayscale(1);
 }
