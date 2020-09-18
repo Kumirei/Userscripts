@@ -7,9 +7,9 @@
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @grant        none
 // ==/UserScript==
+/*jshint esversion: 8 */
 
 (function($, wkof, review_cache, Heatmap) {
-    /* eslint no-multi-spaces: off */
 
     // Make sure WKOF is installed
     let script_id = 'heatmap3';
@@ -44,7 +44,8 @@
     async function initiate() {
         let t = Date.now();
         let reviews = await review_cache.get_reviews();
-        let [forecast, lessons] = await get_forecast_and_lessons();
+        let items = await wkof.ItemData.get_items('assignments');
+        let [forecast, lessons] = await get_forecast_and_lessons(items);
         reload = function(new_reviews=false) {
             if (isNaN(Date.parse(wkof.settings[script_id].general.start_date))) wkof.settings[script_id].general.start_date = "2012-01-01";
             wkof.settings[script_id].general.start_day = new Date(wkof.settings[script_id].general.start_date)-(-new Date(wkof.settings[script_id].general.start_date).getTimezoneOffset()*60*1000);
@@ -54,9 +55,9 @@
                     lessons: calculate_stats("lessons", lessons),
                 };
                 auto_range(stats, forecast);
-                install_heatmap(reviews, forecast, lessons, stats);
+                install_heatmap(reviews, forecast, lessons, stats, items);
             }, 1);
-        }
+        };
         reload();
     }
 
@@ -100,7 +101,7 @@
         // Add apply button
         let apply = create_elem({type: 'button', class: 'ui-button ui-corner-all ui-widget', child: 'Apply'});
         applied = false;
-        apply.onclick = e=>{applied = true; reload()};
+        apply.onclick = e=>{applied = true; reload();};
         dialog[0].nextElementSibling.getElementsByClassName('ui-dialog-buttonset')[0].insertAdjacentElement('afterbegin', apply);
         // Add color settings
         let update_label = function(input) {
@@ -108,7 +109,7 @@
             else input.nextElementSibling.innerText = input.value;
             if (!Math.round(hex_to_rgb(input.value).reduce((a,b)=>a+b/3, 0)/255-0.15)) input.nextElementSibling.classList.remove('light-color');
             else input.nextElementSibling.classList.add('light-color');
-        }
+        };
         dialog[0].querySelectorAll('#heatmap3_general ~ div .wkof_group > div:nth-of-type(2)').forEach((elem, i) => {
             let type = ["reviews", "lessons", "forecast"][i];
             let update_color_settings = _=>{
@@ -130,7 +131,11 @@
             for (let [value, color] of wkof.settings[script_id][type].colors) panel.children[1].append(create_row(value, color));
             if (i == 0 || i == 2) panel.children[1].children[0].addEventListener('change', e=>{
                 let input = e.target.closest('#heatmap3_tabs').querySelector('#heatmap3_'+(i==0?'forecast':'reviews')+' .panel > .row:first-child .color input');
-                if (input.value != e.target.value) {input.value = e.target.value; input.dispatchEvent(new Event('change')); wkof.settings[script_id][i==0?'forecast':'reviews'].colors[0][1] = e.target.value;};
+                if (input.value != e.target.value) {
+                    input.value = e.target.value;
+                    input.dispatchEvent(new Event('change'));
+                    wkof.settings[script_id][i==0?'forecast':'reviews'].colors[0][1] = e.target.value;
+                }
             });
             elem.insertAdjacentElement('afterend', panel);
         });
@@ -310,6 +315,13 @@
                                             hover_tip: 'Let any colors between the chosen ones be used',
                                             path: '@reviews.gradient'
                                         },
+                                        reviews_generate: {
+                                            type: 'button',
+                                            label: 'Generate colors',
+                                            text: 'Generate',
+                                            hover_tip: 'Generates new colors from the first and last non-zero interval',
+                                            on_click: generate_colors,
+                                        },
                                         reviews_section2: {
                                             type: 'section',
                                             label: 'Other'
@@ -351,6 +363,13 @@
                                             default: true,
                                             hover_tip: 'Let any colors between the chosen ones be used',
                                             path: '@lessons.gradient'
+                                        },
+                                        lessons_generate: {
+                                            type: 'button',
+                                            label: 'Generate colors',
+                                            text: 'Generate',
+                                            hover_tip: 'Generates new colors from the first and last non-zero interval',
+                                            on_click: generate_colors,
                                         },
                                         lessons_section2: {
                                             type: 'section',
@@ -400,6 +419,13 @@
                                             default: true,
                                             hover_tip: 'Let any colors between the chosen ones be used',
                                             path: '@forecast.gradient'
+                                        },
+                                        forecast_generate: {
+                                            type: 'button',
+                                            label: 'Generate colors',
+                                            text: 'Generate',
+                                            hover_tip: 'Generates new colors from the first and last non-zero interval',
+                                            on_click: generate_colors,
                                         },
                                     },
                                 },
@@ -464,6 +490,21 @@
         });
     }
 
+    function generate_colors(setting_name) {
+        let type = setting_name.split('_')[0];
+        let panel = document.getElementById('heatmap3_'+type+'_settings').querySelector('.panel');
+        let colors = wkof.settings[script_id][type].colors;
+        let first = colors[1];
+        let last = colors[colors.length-1];
+        for (let [i, color] of Object.entries(colors).slice(2)) {
+            colors[i][1] = interpolate_color(first[1], last[1], (color[0]-first[0])/(last[0]-first[0]));
+        }
+        panel.querySelectorAll('.color input').forEach((input, i) => {
+            input.value = colors[i][1];
+            input.dispatchEvent(new Event('change'));
+        });
+    }
+
     function get_event_handler(data) {
         let down, first_day, first_date, marked = [];
         let ms_day = 24*60*60*1000;
@@ -476,14 +517,16 @@
                     let title = `${date.toDateString().slice(4)} ${kanji_day(date.getDay())}`;
                     let today = new Date(new Date().toDateString()).getTime();
                     let offset = wkof.settings[script_id].general.day_start*60*60*1000;
-                    let minimap_data = cook_data(type, data[type].filter(a=>a[0]>date.getTime()+offset&&a[0]<date.getTime()+1000*60*60*24+offset));//.map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
-                    update_popper(event, type, title, elem.info, minimap_data);
+                    let day_data = data[type].filter(a=>a[0]>date.getTime()+offset&&a[0]<date.getTime()+1000*60*60*24+offset);
+                    let minimap_data = cook_data(type, day_data);
+                    let burns = day_data.filter(item => item[2] === 8 && item[3]+item[4] === 0).map(item => item[1]);
+                    update_popper(event, type, title, elem.info, minimap_data, burns);
                 }
                 if (event.type === "mousedown") {
                     event.preventDefault();
                     down = true;
                     first_day = elem;
-                    first_date = new Date(elem.getAttribute('data-date'))
+                    first_date = new Date(elem.getAttribute('data-date'));
                 }
                 if (event.type === "mouseup") {
                     if (first_day !== elem) {
@@ -535,7 +578,7 @@
                 }
                 marked = [];
             }
-        }
+        };
     }
 
     function toggle_year(event) {
@@ -562,7 +605,7 @@
         wkof.Settings.save(script_id);
     }
 
-    async function update_popper(event, type, title, info, minimap_data) {
+    async function update_popper(event, type, title, info, minimap_data, burns) {
         let items_id = await wkof.ItemData.get_index(await wkof.ItemData.get_items(), 'subject_id');
         let popper = document.getElementById('popper');
         let levels = new Array(61).fill(0);
@@ -587,7 +630,8 @@
         let item_elems = [];
         for (let id of [...new Set(info.lists[type+'-ids'])]) {
             let item = items_id[id];
-            item_elems.push(create_elem({type: 'a', class: 'item '+item.object+' hover-wrapper-target', href: item.data.document_url, children: [
+            let burn = burns.includes(id);
+            item_elems.push(create_elem({type: 'a', class: 'item '+item.object+' hover-wrapper-target'+(burn?' burn':''), href: item.data.document_url, children: [
                 create_elem({type: "div", class: "hover-wrapper above", children: [
                     create_elem({type: "a", class: "characters", href: item.data.document_url, child: item.data.characters || create_elem({type: 'img', class: 'radical-svg', src: item.data.character_images.find(a=>a.content_type=="image/svg+xml"&&a.metadata.inline_styles).url})}),
                     create_table("left", [["Meanings", item.data.meanings.map(i=>i.meaning).join(', ')], ["Readings", item.data.readings?item.data.readings.map(i=>i.reading).join('、 '):"-"],["Level", item.data.level]], {class: 'info'})
@@ -601,12 +645,12 @@
         popper.querySelector('.count').innerText = info.lists[type+'-ids'].length.toSeparated();
         popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff.toSeparated();
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
-        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i].toSeparated(); e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.slice(1).map((a,j)=>[j+1, a.toSeparated()]).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)))});
-        popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2].toSeparated()});
+        popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i].toSeparated(); e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.slice(1).map((a,j)=>[j+1, a.toSeparated()]).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)));});
+        popper.querySelectorAll('.srs > tr > td').forEach((e, i)=>{e.innerText = srs[0][Math.floor(i/2)][i%2].toSeparated();});
         popper.querySelector('.srs .hover-wrapper table').replaceWith(create_table('left', [['SRS'], ['Before / After'], ...srs.slice(1).map((a, i)=>[['App 1', 'App 2', 'App 3', 'App 4', 'Gur 1', 'Gur 2', 'Mas', 'Enl', 'Bur'][i], ...a.map(_=>_.toSeparated())])]));
-        popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]].toSeparated()});
-        popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = (pass[i] || 0).toSeparated()});
-        popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = (answers[i] || 0).toSeparated()});
+        popper.querySelectorAll('.type td').forEach((e, i)=>{e.innerText = item_types[['rad', 'kan', 'voc'][i]].toSeparated();});
+        popper.querySelectorAll('.summary td').forEach((e, i)=>{e.innerText = (pass[i] || 0).toSeparated();});
+        popper.querySelectorAll('.answers td').forEach((e, i)=>{e.innerText = (answers[i] || 0).toSeparated();});
         popper.querySelector('.items').replaceWith(create_elem({type: 'div', class: 'items', children: item_elems}));
         popper.querySelector('.minimap > .hours-map').replaceWith(create_minimap(type, minimap_data).maps.day);
         popper.style.top = event.pageY+50+'px';
@@ -617,7 +661,7 @@
 
     function create_minimap(type, data) {
         let settings = wkof.settings[script_id];
-        let multiplier = 1/6;
+        let multiplier = 2;
         return new Heatmap({
             type: "day",
             id: 'hours-map',
@@ -640,7 +684,6 @@
                     for (let [count, color] of colors) {
                         if (day_data.counts[type2]*multiplier >= count) {
                             return color;
-                            break;
                         }
                     }
                 } else {
@@ -649,7 +692,6 @@
                         if (day_data.counts[type2]*multiplier >= colors[i][0]) {
                             let percentage = (day_data.counts[type2]*multiplier-colors[i][0])/(colors[i-1][0]-colors[i][0]);
                             return interpolate_color(colors[i][1], colors[i-1][1], percentage);
-                            break;
                         }
                     }
                 }
@@ -665,7 +707,7 @@
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);
-        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper||a.className=="months")) popper.classList.remove('popped')});
+        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper||a.className=="months")) popper.classList.remove('popped');});
         // Create header
         header.append(
             create_elem({type: 'div', class: 'date'}),
@@ -684,7 +726,7 @@
     }
 
     // Create and install the heatmap
-    function install_heatmap(reviews, forecast, lessons, stats) {
+    async function install_heatmap(reviews, forecast, lessons, stats, items) {
         let settings = wkof.settings[script_id];
         // Create elements
         let heatmap = document.getElementById('heatmap') || create_elem({type: 'section', id: 'heatmap', class: 'heatmap '+(settings.other.visible_map === "reviews" ? "reviews" : ""), position: settings.general.position});
@@ -695,9 +737,8 @@
         heatmap.style.setProperty('--color-level', settings.general.level_indicator?settings.general.color_level_indicator:'transparent');
         // Create heatmaps
         let cooked_reviews = cook_data("reviews", reviews);
-        let cooked_lessons = cook_data("lessons", lessons)
-        let level_ups = get_level_ups(lessons).map(date=>[date, 'level-up']);
-        if (level_ups.length === 60) level_ups[59][1] += ' level-60';
+        let cooked_lessons = cook_data("lessons", lessons);
+        let level_ups = await get_level_ups(items);
         let reviews_view = create_view('reviews', stats, level_ups, reviews[0][0], forecast.reduce((max,a)=>max>a[0]?max:a[0]), cooked_reviews.concat(forecast));
         let lessons_view = create_view('lessons', stats, level_ups, lessons[0][0], lessons.reduce((max,a)=>max>a[0]?max:a[0]), cooked_lessons);
         let popper = create_popper({reviews: cooked_reviews, forecast, lessons: cooked_lessons});
@@ -749,6 +790,7 @@
     // Create heatmaps together with peripherals such as stats
     function create_view(type, stats, level_ups, first_date, last_date, data) {
         let settings = wkof.settings[script_id];
+        let level_marks = level_ups.map(([level, date])=>[date, 'level-up'+(level==60?' level-60':'')]);
         // New heatmap instance
         let heatmap = new Heatmap({
             type: "year",
@@ -759,7 +801,7 @@
             last_date: last_date,
             segment_years: settings.general.segment_years,
             zero_gap: settings.general.zero_gap,
-            markings: [[new Date(Date.now()-60*60*1000*settings.general.day_start), "today"], ...level_ups],
+            markings: [[new Date(Date.now()-60*60*1000*settings.general.day_start), "today"], ...level_marks],
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
                 let time = Date.parse(date.join('-')+' 0:0');
@@ -769,7 +811,7 @@
                 if (time < Date.now() && time >= new Date(settings.general.start_day).getTime() && time > first_date) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
-                let level = level_ups.findIndex(level_up=>level_up[0]===time)+1
+                let level = (level_ups.find(a=>a[1]==new Date(time).toDateString()) || [undefined])[0];
                 if (level) string += '\nYou reached level '+level+'!';
                 if (wkof.settings[script_id].other.times_popped < 5 && Object.keys(day_data.counts).length !== 0) string += '\nClick for details!';
                 if (wkof.settings[script_id].other.times_popped >= 5 && wkof.settings[script_id].other.times_dragged < 3 && Object.keys(day_data.counts).length !== 0) string += '\nDid you know that you can click and drag, too?';
@@ -783,7 +825,6 @@
                     for (let [bound, color] of colors.slice().reverse()) {
                         if (day_data.counts[type2] >= bound) {
                             return color;
-                            break;
                         }
                     }
                     return colors[0][1];
@@ -794,7 +835,6 @@
                         if (day_data.counts[type2] <= colors[i][0]) {
                             let percentage = (day_data.counts[type2]-colors[i-1][0])/(colors[i][0]-colors[i-1][0]);
                             return interpolate_color(colors[i-1][1], colors[i][1], percentage);
-                            break;
                         }
                     }
                 }
@@ -823,7 +863,7 @@
             let up = create_elem({type: 'a', class: 'toggle-year up hover-wrapper-target', onclick: toggle_year, children: [create_elem({type: 'div', class: 'hover-wrapper above', child: create_elem({type: 'div', child: 'Click to '+(year==new Date().getFullYear()?'show next':'hide this')+' year'})}), create_elem({type: 'i', class: 'icon-chevron-up'})]});
             let down = create_elem({type: 'a', class: 'toggle-year down hover-wrapper-target', onclick: toggle_year, children: [create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'div', child: 'Click to '+(year<=new Date().getFullYear()?'show previous':'hide this')+' year'})}), create_elem({type: 'i', class: 'icon-chevron-down'})]});
             target.append(up, down);
-            if (wkof.settings[script_id].other.visible_years[type][year] === false) map.classList.add('hidden')
+            if (wkof.settings[script_id].other.visible_years[type][year] === false) map.classList.add('hidden');
         }
     }
 
@@ -833,7 +873,7 @@
             create_stat_element('Days Studied', stats.days_studied[1]+'%', stats.days_studied[0].toSeparated()+' out of '+stats.days.toSeparated()),
             create_stat_element('Done Daily', stats.average[0]+' / '+(stats.average[1] || 0), 'Per Day / Day studied\nMax: '+stats.max_done[0].toSeparated()+' on '+stats.max_done[1]),
             create_stat_element('Streak', stats.streak[1]+' / '+stats.streak[0], 'Current / Longest'),
-        ]})
+        ]});
         let foot_stats = create_elem({type: 'div', class: 'foot-stats stats', children: [
             create_stat_element('Sessions', stats.sessions.toSeparated(), (Math.floor(stats.total[0]/stats.sessions) || 0)+' per session'),
             create_stat_element(type.toProper(), stats.total[0].toSeparated(), create_table("left", [
@@ -848,7 +888,7 @@
                 ['Week', m_to_hm(stats.time[3])],
                 ['Today', m_to_hm(stats.time[4])]
             ])),
-        ]})
+        ]});
         return [head_stats, foot_stats];
     }
 
@@ -858,7 +898,7 @@
             create_elem({type: 'div', class: 'hover-wrapper above', child: hover}),
             create_elem({type: 'span', class: 'stat-label', child: label}),
             create_elem({type: 'span', class: 'value', child: value}),
-        ]})
+        ]});
     }
 
     // Creates a table from a matrix
@@ -898,46 +938,51 @@
     /*-------------------------------------------------------------------------------------------------------------------------------*/
 
     // Extract upcoming reviews and completed lessons from the WKOF cache
-    function get_forecast_and_lessons() {
-        return wkof.ItemData.get_items('assignments').then(data=>{
-            let forecast = [], lessons = [];
-            let vacation_offset = Date.now()-new Date(wkof.user.current_vacation_started_at || Date.now());
-            for (let item of data) {
-                if (item.assignments && item.assignments.started_at !== null) {
-                    // If the assignment has been started add a lesson containing staring date, id, level, and unlock date
-                    lessons.push([Date.parse(item.assignments.started_at), item.id, item.data.level, Date.parse(item.assignments.unlocked_at)]);
-                    if (Date.parse(item.assignments.available_at) > Date.now()) {
-                        // If the assignment is scheduled add a forecast item ready for sending to the heatmap module
-                        let forecast_item = [Date.parse(item.assignments.available_at)+vacation_offset, {forecast: 1,}, {'forecast-ids': item.id}];
-                        forecast_item[1]["forecast-srs1-"+item.assignments.srs_stage] = 1;
-                        forecast.push(forecast_item);
-                    }
+    function get_forecast_and_lessons(data) {
+        let forecast = [], lessons = [];
+        let vacation_offset = Date.now()-new Date(wkof.user.current_vacation_started_at || Date.now());
+        for (let item of data) {
+            if (item.assignments && item.assignments.started_at !== null) {
+                // If the assignment has been started add a lesson containing staring date, id, level, and unlock date
+                lessons.push([Date.parse(item.assignments.started_at), item.id, item.data.level, Date.parse(item.assignments.unlocked_at)]);
+                if (Date.parse(item.assignments.available_at) > Date.now()) {
+                    // If the assignment is scheduled add a forecast item ready for sending to the heatmap module
+                    let forecast_item = [Date.parse(item.assignments.available_at)+vacation_offset, {forecast: 1,}, {'forecast-ids': item.id}];
+                    forecast_item[1]["forecast-srs1-"+item.assignments.srs_stage] = 1;
+                    forecast.push(forecast_item);
                 }
             }
-            // Sort lessons by started_at for easy extraction of chronological info
-            lessons.sort((a,b)=>a[0]<b[0]?-1:1);
-            return [forecast, lessons];
-        });
+        }
+        // Sort lessons by started_at for easy extraction of chronological info
+        lessons.sort((a,b)=>a[0]<b[0]?-1:1);
+        return [forecast, lessons];
     }
 
-    // Find implicit level up dates by looking at when items were unlocked
-    function get_level_ups(lessons) {
-        // Prepare level array
-        let levels = new Array(61).fill(null).map(_=>{return {}});
-        // Group unlocked items within each level by unlock date
-        for (let [start, id, level, unlock] of lessons) {
-            if (new Date(unlock) < new Date(wkof.settings[script_id].general.start_day)) continue;
-            let date_string = new Date(unlock).toDateString();
-            if (!levels[level][date_string]) levels[level][date_string] = 0;
-            levels[level][date_string]++;
+    async function get_level_ups(items) {
+        let level_progressions = await wkof.Apiv2.get_endpoint('level_progressions');
+        let first_recorded_date = level_progressions[Math.min(...Object.keys(level_progressions))].data.unlocked_at;
+        // Find indefinite level ups
+        let levels = {};
+        items.forEach(item => {
+            if (item.object !== "kanji" || item.assignments.unlocked_at >= first_recorded_date) return;
+            let date = new Date(item.assignments.unlocked_at).toDateString();
+            if (!levels[item.data.level]) levels[item.data.level] = {};
+            if (!levels[item.data.level][date]) levels[item.data.level][date] = 1;
+            else levels[item.data.level][date]++;
+        });
+        for (let [level, data] of Object.entries(levels)) {
+            for (let [date, count] of Object.entries(data)) {
+                if (count < 10) delete data[date];
+            }
+            if (Object.keys(levels[level]).length == 0) {
+                delete levels[level];
+                continue;
+            }
+            levels[level] = Object.keys(data).reduce((low, curr) => low < curr ? low : curr, Date.now());
         }
-        // Discard dates with fewer than 20 unlocked items, then pick the earliest date remaining
-        for (let [level, dates] of Object.entries(levels)) {
-            for (let [date, count] of Object.entries(dates)) if (count < 20) delete levels[level][date];
-            levels[level] = Math.min(...Object.keys(dates).map(date=>Date.parse(date)));
-        }
-        // Remove the 0th level entry
-        levels.shift(1);
+        levels = Object.entries(levels).map(([level, date]) => [Number(level), date]);
+        // Add definite level ups
+        Object.values(level_progressions).forEach(level => levels.push([level.data.level, new Date(level.data.unlocked_at).toDateString()]));
         return levels;
     }
 
@@ -1044,22 +1089,22 @@
     /*-------------------------------------------------------------------------------------------------------------------------------*/
 
     // Returns the kanij for the day
-    function kanji_day(day) {return ['日', '月', '火', '水', '木', '金', '土'][day]};
+    function kanji_day(day) {return ['日', '月', '火', '水', '木', '金', '土'][day];}
     // Filter for WKOF's get_items()
     wkof.wait_state('wkof.ItemData.registry', 'ready').then(()=>{wkof.ItemData.registry.sources.wk_items.filters.subject_ids = {filter_func: (ids, item)=>ids.includes(item.id)};});
     // Converts minutes to a timestamp string "#h #m"
     function m_to_hm(minutes) {return Math.floor(minutes/60)+'h '+Math.floor(minutes%60)+'m';}
     // Adds thousand separators to numbers. 1000000 → "1,000,000"
-    Number.prototype.toSeparated = function(separator=",") {return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator)}
+    Number.prototype.toSeparated = function(separator=",") {return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator);};
     // Capitalizes the first character in a string. "proper" → "Proper"
-    String.prototype.toProper = function() {return this.slice(0,1).toUpperCase()+this.slice(1)}
+    String.prototype.toProper = function() {return this.slice(0,1).toUpperCase()+this.slice(1);};
     // Returns a hex color between the left and right hex colors
     function interpolate_color(left, right, index) {
         left = hex_to_rgb(left); right = hex_to_rgb(right);
         let result = [0, 0, 0];
         for (let i = 0; i < 3; i++) result[i] = Math.round(left[i] + index * (right[i] - left[i]));
         return rgb_to_hex(result);
-    };
+    }
     // Converts a hex color to rgb
     function hex_to_rgb(hex) {
         let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -1068,7 +1113,7 @@
     // Converts an rgb color to hex
     function rgb_to_hex(cols) {
         let rgb = cols[2] | (cols[1] << 8) | (cols[0] << 16);
-        return '#' + (0x1000000 + rgb).toString(16).slice(1)
+        return '#' + (0x1000000 + rgb).toString(16).slice(1);
     }
     // Inverse cumulative distribution function
     function icdf(p, mean, sd) {
@@ -1082,5 +1127,5 @@
         }
         return Math.sqrt(2)*inverf(2*p-1)*sd+mean;
     }
-    function validate_start_date(date) {return new Date(date) !== "Invalid Date"?true:"Invalid date"}
+    function validate_start_date(date) {return new Date(date) !== "Invalid Date"?true:"Invalid date";}
 })(window.jQuery, window.wkof, window.review_cache, window.Heatmap);
