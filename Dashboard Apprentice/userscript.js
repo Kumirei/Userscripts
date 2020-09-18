@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Dashboard Apprentice
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Displays all your apprentice items on the dashboard
 // @author       Kumirei
 // @match        https://www.wanikani.com/
@@ -93,6 +93,7 @@
         var elem = $('<div id="wkda_items"></div>')[0];
         if (is_dark_theme()) elem.className = 'dark';
         for (var i=1; i<5; i++) {
+            if (!data[i].length) continue;
             var srs_elem = $('<div class="apprentice_'+i+'"></div>')[0];
             var title = $('<span>Apprentice '+i+'</span>')[0];
             var items = $('<div class="items"></div>')[0];
