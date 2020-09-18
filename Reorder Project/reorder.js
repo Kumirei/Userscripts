@@ -304,7 +304,7 @@
         for (let i=wkof.settings[script_id].prioritize.sort.order.length-1; i>=0; i--) {
             let sort_key = wkof.settings[script_id].prioritize.sort.order[i];
             if (!wkof.settings[script_id].sort[sort_key].active) continue;
-            items.sort((a,b)=>(a[sort_key] > b[sort_key])?1:-1)
+            items.sort((a,b)=>(a[sort_key] > b[sort_key])?1:-1);
         }
     }
 
@@ -334,7 +334,7 @@
             let match = re.exec(new Error().stack);
             if (match && wkof.settings[script_id].other.back2back) return 0;
             return old_random();
-        }
+        };
         Math.random = new_random;
     }
 
