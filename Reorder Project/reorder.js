@@ -7,6 +7,7 @@
 // @include      /^https://(www|preview).wanikani.com/(lesson|review)/session/
 // @grant        none
 // ==/UserScript==
+/*jshint esversion: 8 */
 
 (function(wkof, $) {
     /* eslint no-multi-spaces: "off" */
@@ -25,6 +26,7 @@
     Critical first
     ARBITRARY REORDERING???
     Presets
+    Custom active queue size
     */
     let script_name = "Wanikani: Kumi Reorder General";
     let script_title = "Reorder General";
