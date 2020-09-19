@@ -481,6 +481,7 @@
         };
         let dialog = new wkof.Settings(config);
         config.pre_open = (elem)=>{dialog.refresh(); modify_settings(elem);};
+        delete wkof.settings[script_id].wkofs_active_tabs;
         dialog.open();
     }
 
@@ -678,7 +679,6 @@
     }
 
     async function update_popper(event, type, title, info, minimap_data, burns) {
-        console.log(minimap_data);
         let items_id = await wkof.ItemData.get_index(await wkof.ItemData.get_items(), 'subject_id');
         let popper = document.getElementById('popper');
         let levels = new Array(61).fill(0);
@@ -1169,7 +1169,6 @@
         stats.average[0] = Math.round(stats.total[0]/stats.days);
         stats.average[1] = Math.round(stats.total[0]/stats.days_studied[0]);
         stats.average[2] = Math.sqrt(1/stats.days_studied[0]*done_days.map(x=>Math.pow(x-stats.average[1], 2)).reduce((a,b)=>a+b));
-        console.log(stats);
         return stats;
     }
 
