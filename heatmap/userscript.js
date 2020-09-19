@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap 3.0.0 BETA
 // @namespace    http://tampermonkey.net/
-// @version      3.0.21
+// @version      3.0.22
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -12,7 +12,6 @@
 /*jshint esversion: 8 */
 
 (function($, wkof, review_cache, Heatmap) {
-    /* eslint no-multi-spaces: off */
 
     // Make sure WKOF is installed
     let script_id = 'heatmap3';
