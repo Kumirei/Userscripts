@@ -621,7 +621,3 @@
 #heatmap #popper .items .burn {
 	filter: grayscale(1);
 }
-
-#wkof_ds > div[aria-describedby="wkofs_heatmap3"] {
-	top: 66px !important;
-}
