@@ -121,9 +121,9 @@
         }
         let foreacast_average = forecast_items.length/Object.keys(forecast_days).length;
         let forecast_sd = Math.sqrt(1/(forecast_items.length/foreacast_average)*Object.values(forecast_days).map(x=>Math.pow(x-foreacast_average, 2)).reduce((a,b)=>a+b));
-        let forecast = [1, ...Array(settings.forecast.colors.length-2).fill(null).map((_, i)=>1+Math.round(ifcdf(((settings.forecast.gradient?0.9:1)*(i+1))/(settings.forecast.colors.length-(settings.forecast.gradient?1:0)), foreacast_average, forecast_sd)))];
-        let reviews = [1, ...Array(settings.reviews.colors.length-2).fill(null).map((_, i)=>1+Math.round(ifcdf(((settings.reviews.gradient?0.9:1)*(i+1))/(settings.reviews.colors.length-(settings.reviews.gradient?1:0)), stats.reviews.average[1], stats.reviews.average[2])))];
-        let lessons = [1, ...Array(settings.lessons.colors.length-2).fill(null).map((_, i)=>1+Math.round(ifcdf(((settings.lessons.gradient?0.9:1)*(i+1))/(settings.lessons.colors.length-(settings.lessons.gradient?1:0)), stats.lessons.average[1], stats.lessons.average[2])))];
+        let forecast = [1, ...Array(settings.forecast.colors.length-2).fill(null).map((_, i)=>Math.round(ifcdf(((settings.forecast.gradient?0.9:1)*(i+1))/(settings.forecast.colors.length-(settings.forecast.gradient?1:0)), foreacast_average, forecast_sd)))];
+        let reviews = [1, ...Array(settings.reviews.colors.length-2).fill(null).map((_, i)=>Math.round(ifcdf(((settings.reviews.gradient?0.9:1)*(i+1))/(settings.reviews.colors.length-(settings.reviews.gradient?1:0)), stats.reviews.average[1], stats.reviews.average[2])))];
+        let lessons = [1, ...Array(settings.lessons.colors.length-2).fill(null).map((_, i)=>Math.round(ifcdf(((settings.lessons.gradient?0.9:1)*(i+1))/(settings.lessons.colors.length-(settings.lessons.gradient?1:0)), stats.lessons.average[1], stats.lessons.average[2])))];
         if (settings.reviews.auto_range) for (let i=1; i<settings.reviews.colors.length; i++) settings.reviews.colors[i][0] = reviews[i-1];
         if (settings.lessons.auto_range) for (let i=1; i<settings.lessons.colors.length; i++) settings.lessons.colors[i][0] = lessons[i-1];
         if (settings.forecast.auto_range) for (let i=1; i<settings.forecast.colors.length; i++) settings.forecast.colors[i][0] = forecast[i-1];
@@ -1190,17 +1190,23 @@
         function fcdf(x, mean, sd) {
             // Error function
             function erf(x) {
-                let a1=0.278393, a2=0.230389, a3=0.000972, a4=0.078108;
-                return 1-(1/(1+a1*x+a2*x*x+a3*x*x*x+a4*x*x*x*x));
+                let sign = x>=0?1:-1;
+                x = Math.abs(x);
+                let a1 = 0.254829592, a2 = -0.284496736;
+                let a3 =  1.421413741, a4 = -1.453152027;
+                let a5 =  1.061405429, p =   0.3275911;
+                let t = 1/(1+p*x);
+                let y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*Math.exp(-x*x);
+                return sign*y;
             }
-            return 0.5*(erf((x+mean)/(sd*Math.sqrt(2))) + erf((x-mean)/(sd*Math.sqrt(2))));
+            return 0.5*(erf((x+mean)/(sd*Math.sqrt(2)))+erf((x-mean)/(sd*Math.sqrt(2))));
         }
-        let p2 = 0, x = 0, step = Math.ceil(sd/10);
+        let p2 = 0, items = 0, step = Math.ceil(sd/10);
         while (p2 < p) {
-            x += step;
-            p2 = fcdf(x, m, sd);
+            items += step;
+            p2 = fcdf(items, m, sd);
         }
-        return x;
+        return items;
     }
     function validate_start_date(date) {return new Date(date) !== "Invalid Date"?true:"Invalid date";}
 })(window.jQuery, window.wkof, window.review_cache, window.Heatmap);
