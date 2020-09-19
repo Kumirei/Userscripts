@@ -247,7 +247,7 @@
                                         theme: {
                                             type: 'dropdown',
                                             label: 'Theme',
-                                            default: "light",
+                                            default: "dark",
                                             hover_tip: 'Theme!',
                                             content: {"light": "Light", "dark": "Dark", "breeze-dark": "Breeze Dark",},
                                             path: '@general.theme'
@@ -502,7 +502,7 @@
                 level_indicator: true,
                 color_level_indicator: '#ffffff',
                 position: 2,
-                theme: "light",
+                theme: "dark",
             },
             reviews: {
                 gradient: true,
