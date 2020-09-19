@@ -36,40 +36,54 @@
     async function initiate() {
         let t = Date.now();
         let reviews = await review_cache.get_reviews();
-        let [forecast, lessons] = await get_forecast_and_lessons();
-        let restored_lessons = await restore_lessons(lessons);
-        console.log('lessons', lessons);
-        console.log('restored_lessons', restored_lessons);
-        console.log('concat', lessons.concat(restored_lessons).sort((a,b)=>a[0]<b[0]?-1:1));
+        let items = await wkof.ItemData.get_items('assignments');
+        let [forecast, lessons] = await get_forecast_and_lessons(items);
+        let restored_lessons = await get_recovered_lessons(items, reviews, lessons);
+        if (true) lessons = lessons.concat(restored_lessons).sort((a,b)=>a[0]<b[0]?-1:1);
         reload = function(new_reviews=false) {
             if (new_reviews !== false) reviews = new_reviews;
             setTimeout(()=>{// make settings dialog respond immediately
                 let stats = {
                     reviews: calculate_stats("reviews", reviews),
-                    lessons: calculate_stats("lessons", lessons.concat(restored_lessons).sort((a,b)=>a[0]<b[0]?-1:1)),
+                    lessons: calculate_stats("lessons", lessons),
                 };
                 auto_range(stats, forecast);
-                install_heatmap(reviews, forecast, lessons.concat(restored_lessons).sort((a,b)=>a[0]<b[0]?-1:1), stats);
+                install_heatmap(reviews, forecast, lessons, stats);
             }, 1);
         };
         reload();
     }
 
-    async function restore_lessons(real_lessons) {
-        let t = Date.now();
-        let hour4 = 4*60*60*1000;
-        let items_id = wkof.ItemData.get_index(await wkof.ItemData.get_items(), 'subject_id');
-        let reviews = (await review_cache.get_reviews()).filter(a=>a[2]==1).map(item=>[item[0]-hour4, item[1], items_id[item[1]].data.level, item[0]-hour4]);
-        let last_date = 0, restored_lessons = [], ids = {};
-        Object.values(await wkof.Apiv2.get_endpoint('resets')).sort((a,b)=>a.data.confirmed_at<b.data.confirmed_at?-1:1).forEach(reset=>{
+    async function get_recovered_lessons(items, reviews, real_lessons) {
+        if (!wkof.file_cache.dir.recovered_lessons) {
+            let recovered_lessons = await recover_lessons(items, reviews, real_lessons);
+            wkof.file_cache.save('recovered_lessons', recovered_lessons);
+            return recovered_lessons;
+        }
+        else return await wkof.file_cache.load('recovered_lessons');
+    }
+
+    async function recover_lessons(items, reviews, real_lessons) {
+        // Fetch and prepare data
+        let resets = await wkof.Apiv2.get_endpoint('resets');
+        let items_id = wkof.ItemData.get_index(items, 'subject_id');
+        let delay = 4*60*60*1000;
+        let app1_reviews = reviews.filter(a=>a[2]==1).map(item=>[item[0]-delay, item[1], items_id[item[1]].data.level, item[0]-delay]);
+        // Check reviews based on reset intervals
+        let last_date = 0, recovered_lessons = [];
+        Object.values(resets).sort((a,b) => a.data.confirmed_at<b.data.confirmed_at?-1:1).forEach(reset => {
             let ids = {}, date = Date.parse(reset.data.confirmed_at);
-            reviews.filter(a=>a[0]>last_date&&a[0]<date).forEach(item=>{if (!ids[item[1]] || ids[item[1]][0] > item[0]) ids[item[1]] = item;});
+            // Filter out items not belonging to the current reset period
+            let reset_reviews = app1_reviews.filter(a=>a[0]>last_date&&a[0]<date);
+            // Choose the earliest App1 review
+            reset_reviews.forEach(item=>{if (!ids[item[1]] || ids[item[1]][0] > item[0]) ids[item[1]] = item;});
+            // Remove items that still have lesson data
             real_lessons.filter(a=>a[0]<date).forEach(item=>delete ids[item[1]]);
-            Object.values(ids).forEach((item)=>restored_lessons.push(item));
+            // Save recovered lessons to array
+            Object.values(ids).forEach((item)=>recovered_lessons.push(item));
             last_date = date;
         });
-        console.log('time', Date.now()-t);
-        return restored_lessons;
+        return recovered_lessons;
     }
 
 
@@ -855,26 +869,24 @@
     /*-------------------------------------------------------------------------------------------------------------------------------*/
 
     // Extract upcoming reviews and completed lessons from the WKOF cache
-    function get_forecast_and_lessons() {
-        return wkof.ItemData.get_items('assignments').then(data=>{
-            let forecast = [], lessons = [];
-            let vacation_offset = Date.now()-new Date(wkof.user.current_vacation_started_at || Date.now());
-            for (let item of data) {
-                if (item.assignments && item.assignments.started_at !== null) {
-                    // If the assignment has been started add a lesson containing staring date, id, level, and unlock date
-                    lessons.push([Date.parse(item.assignments.started_at), item.id, item.data.level, Date.parse(item.assignments.unlocked_at)]);
-                    if (Date.parse(item.assignments.available_at) > Date.now()) {
-                        // If the assignment is scheduled add a forecast item ready for sending to the heatmap module
-                        let forecast_item = [Date.parse(item.assignments.available_at)+vacation_offset, {forecast: 1,}, {'forecast-ids': item.id}];
-                        forecast_item[1]["forecast-srs1-"+item.assignments.srs_stage] = 1;
-                        forecast.push(forecast_item);
-                    }
+    function get_forecast_and_lessons(data) {
+        let forecast = [], lessons = [];
+        let vacation_offset = Date.now()-new Date(wkof.user.current_vacation_started_at || Date.now());
+        for (let item of data) {
+            if (item.assignments && item.assignments.started_at !== null) {
+                // If the assignment has been started add a lesson containing staring date, id, level, and unlock date
+                lessons.push([Date.parse(item.assignments.started_at), item.id, item.data.level, Date.parse(item.assignments.unlocked_at)]);
+                if (Date.parse(item.assignments.available_at) > Date.now()) {
+                    // If the assignment is scheduled add a forecast item ready for sending to the heatmap module
+                    let forecast_item = [Date.parse(item.assignments.available_at)+vacation_offset, {forecast: 1,}, {'forecast-ids': item.id}];
+                    forecast_item[1]["forecast-srs1-"+item.assignments.srs_stage] = 1;
+                    forecast.push(forecast_item);
                 }
             }
-            // Sort lessons by started_at for easy extraction of chronological info
-            lessons.sort((a,b)=>a[0]<b[0]?-1:1);
-            return [forecast, lessons];
-        });
+        }
+        // Sort lessons by started_at for easy extraction of chronological info
+        lessons.sort((a,b)=>a[0]<b[0]?-1:1);
+        return [forecast, lessons];
     }
 
     // Find implicit level up dates by looking at when items were unlocked
