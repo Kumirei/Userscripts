@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap 3.0.0 BETA
 // @namespace    http://tampermonkey.net/
-// @version      3.0.25
+// @version      3.0.26
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -123,9 +123,9 @@
         }
         let foreacast_average = forecast_items.length/Object.keys(forecast_days).length;
         let forecast_sd = Math.sqrt(1/(forecast_items.length/foreacast_average)*Object.values(forecast_days).map(x=>Math.pow(x-foreacast_average, 2)).reduce((a,b)=>a+b));
-        let forecast = [1, ...Array(settings.forecast.colors.length-2).fill(null).map((_, i)=>1+Math.round(ifcdf(((settings.forecast.gradient?0.9:1)*(i+1))/(settings.forecast.colors.length-(settings.forecast.gradient?1:0)), foreacast_average, forecast_sd)))];
-        let reviews = [1, ...Array(settings.reviews.colors.length-2).fill(null).map((_, i)=>1+Math.round(ifcdf(((settings.reviews.gradient?0.9:1)*(i+1))/(settings.reviews.colors.length-(settings.reviews.gradient?1:0)), stats.reviews.average[1], stats.reviews.average[2])))];
-        let lessons = [1, ...Array(settings.lessons.colors.length-2).fill(null).map((_, i)=>1+Math.round(ifcdf(((settings.lessons.gradient?0.9:1)*(i+1))/(settings.lessons.colors.length-(settings.lessons.gradient?1:0)), stats.lessons.average[1], stats.lessons.average[2])))];
+        let forecast = [1, ...Array(settings.forecast.colors.length-2).fill(null).map((_, i)=>Math.round(ifcdf(((settings.forecast.gradient?0.9:1)*(i+1))/(settings.forecast.colors.length-(settings.forecast.gradient?1:0)), foreacast_average, forecast_sd)))];
+        let reviews = [1, ...Array(settings.reviews.colors.length-2).fill(null).map((_, i)=>Math.round(ifcdf(((settings.reviews.gradient?0.9:1)*(i+1))/(settings.reviews.colors.length-(settings.reviews.gradient?1:0)), stats.reviews.average[1], stats.reviews.average[2])))];
+        let lessons = [1, ...Array(settings.lessons.colors.length-2).fill(null).map((_, i)=>Math.round(ifcdf(((settings.lessons.gradient?0.9:1)*(i+1))/(settings.lessons.colors.length-(settings.lessons.gradient?1:0)), stats.lessons.average[1], stats.lessons.average[2])))];
         if (settings.reviews.auto_range) for (let i=1; i<settings.reviews.colors.length; i++) settings.reviews.colors[i][0] = reviews[i-1];
         if (settings.lessons.auto_range) for (let i=1; i<settings.lessons.colors.length; i++) settings.lessons.colors[i][0] = lessons[i-1];
         if (settings.forecast.auto_range) for (let i=1; i<settings.forecast.colors.length; i++) settings.forecast.colors[i][0] = forecast[i-1];
@@ -752,28 +752,7 @@
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
                 return string;
             },
-            color_callback: (date, day_data)=>{
-                let type2 = type;
-                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let colors = settings[type2].colors;
-                if (!settings[type2].gradient) {
-                    for (let [bound, color] of colors.slice().reverse()) {
-                        if (day_data.counts[type2]*multiplier >= bound) {
-                            return color;
-                        }
-                    }
-                    return colors[0][1];
-                } else {
-                    if (!day_data.counts[type2]*multiplier) return colors[0][1];
-                    if (day_data.counts[type2]*multiplier >= colors[colors.length-1][0]) return colors[colors.length-1][1];
-                    for (let i=2; i<colors.length; i++) {
-                        if (day_data.counts[type2]*multiplier <= colors[i][0]) {
-                            let percentage = (day_data.counts[type2]*multiplier-colors[i-1][0])/(colors[i][0]-colors[i-1][0]);
-                            return interpolate_color(colors[i-1][1], colors[i][1], percentage);
-                        }
-                    }
-                }
-            },
+            color_callback: (date, day_data)=>color_picker(type, date, day_data, 2),
         }, data);
     }
 
@@ -896,28 +875,7 @@
                 if (wkof.settings[script_id].other.times_popped >= 5 && wkof.settings[script_id].other.times_dragged < 3 && Object.keys(day_data.counts).length !== 0) string += '\nDid you know that you can click and drag, too?';
                 return [string];
             },
-            color_callback: (date, day_data)=>{
-                let type2 = type;
-                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let colors = settings[type2].colors;
-                if (!settings[type2].gradient) {
-                    for (let [bound, color] of colors.slice().reverse()) {
-                        if (day_data.counts[type2] >= bound) {
-                            return color;
-                        }
-                    }
-                    return colors[0][1];
-                } else {
-                    if (!day_data.counts[type2]) return colors[0][1];
-                    if (day_data.counts[type2] >= colors[colors.length-1][0]) return colors[colors.length-1][1];
-                    for (let i=2; i<colors.length; i++) {
-                        if (day_data.counts[type2] <= colors[i][0]) {
-                            let percentage = (day_data.counts[type2]-colors[i-1][0])/(colors[i][0]-colors[i-1][0]);
-                            return interpolate_color(colors[i-1][1], colors[i][1], percentage);
-                        }
-                    }
-                }
-            },
+            color_callback: (date, day_data)=>color_picker(type, date, day_data),
         }, data);
         modify_heatmap(type, heatmap);
         // Create layout
@@ -934,6 +892,30 @@
         for (let year of Object.values(heatmap.maps).reverse()) years.prepend(year);
         view.append(title, head_stats, years, foot_stats);
         return view;
+    }
+
+    function color_picker(type, date, day_data, multiplier=1) {
+        let settings = wkof.settings[script_id];
+        let type2 = type;
+        if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
+        let colors = settings[type2].colors;
+        if (!settings[type2].gradient) {
+            for (let [bound, color] of colors.slice().reverse()) {
+                if (day_data.counts[type2]*multiplier >= bound) {
+                    return color;
+                }
+            }
+            return colors[0][1];
+        } else {
+            if (!day_data.counts[type2]*multiplier) return colors[0][1];
+            if (day_data.counts[type2]*multiplier >= colors[colors.length-1][0]) return colors[colors.length-1][1];
+            for (let i=2; i<colors.length; i++) {
+                if (day_data.counts[type2]*multiplier <= colors[i][0]) {
+                    let percentage = (day_data.counts[type2]*multiplier-colors[i-1][0])/(colors[i][0]-colors[i-1][0]);
+                    return interpolate_color(colors[i-1][1], colors[i][1], percentage);
+                }
+            }
+        }
     }
 
     function modify_heatmap(type, heatmap) {
@@ -1210,17 +1192,23 @@
         function fcdf(x, mean, sd) {
             // Error function
             function erf(x) {
-                let a1=0.278393, a2=0.230389, a3=0.000972, a4=0.078108;
-                return 1-(1/(1+a1*x+a2*x*x+a3*x*x*x+a4*x*x*x*x));
+                let sign = x>=0?1:-1;
+                x = Math.abs(x);
+                let a1 = 0.254829592, a2 = -0.284496736;
+                let a3 =  1.421413741, a4 = -1.453152027;
+                let a5 =  1.061405429, p =   0.3275911;
+                let t = 1/(1+p*x);
+                let y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*Math.exp(-x*x);
+                return sign*y;
             }
-            return 0.5*(erf((x+mean)/(sd*Math.sqrt(2))) + erf((x-mean)/(sd*Math.sqrt(2))));
+            return 0.5*(erf((x+mean)/(sd*Math.sqrt(2)))+erf((x-mean)/(sd*Math.sqrt(2))));
         }
-        let p2 = 0, x = 0, step = Math.ceil(sd/10);
+        let p2 = 0, items = 0, step = Math.ceil(sd/10);
         while (p2 < p) {
-            x += step;
-            p2 = fcdf(x, m, sd);
+            items += step;
+            p2 = fcdf(items, m, sd);
         }
-        return x;
+        return items;
     }
     function validate_start_date(date) {return new Date(date) !== "Invalid Date"?true:"Invalid date";}
 })(window.jQuery, window.wkof, window.review_cache, window.Heatmap);
