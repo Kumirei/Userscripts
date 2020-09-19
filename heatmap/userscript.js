@@ -47,7 +47,12 @@
     async function initiate() {
         let t = Date.now();
         let reviews = await review_cache.get_reviews();
-        let [forecast, lessons] = await get_forecast_and_lessons();
+        let items = await wkof.ItemData.get_items('assignments');
+        let [forecast, lessons] = await get_forecast_and_lessons(items);
+        if (wkof.settings[script_id].lessons.recover_lessons) {
+            let restored_lessons = await get_recovered_lessons(items, reviews, lessons);
+            lessons = lessons.concat(restored_lessons).sort((a,b)=>a[0]<b[0]?-1:1);
+        }
         reload = function(new_reviews=false) {
             if (isNaN(Date.parse(wkof.settings[script_id].general.start_date))) wkof.settings[script_id].general.start_date = "2012-01-01";
             wkof.settings[script_id].general.start_day = new Date(wkof.settings[script_id].general.start_date)-(-new Date(wkof.settings[script_id].general.start_date).getTimezoneOffset()*60*1000);
@@ -57,10 +62,42 @@
                     lessons: calculate_stats("lessons", lessons),
                 };
                 auto_range(stats, forecast);
-                install_heatmap(reviews, forecast, lessons, stats);
+                install_heatmap(reviews, forecast, lessons, stats, items);
             }, 1);
         };
         reload();
+    }
+
+    async function get_recovered_lessons(items, reviews, real_lessons) {
+        if (!wkof.file_cache.dir.recovered_lessons) {
+            let recovered_lessons = await recover_lessons(items, reviews, real_lessons);
+            wkof.file_cache.save('recovered_lessons', recovered_lessons);
+            return recovered_lessons;
+        }
+        else return await wkof.file_cache.load('recovered_lessons');
+    }
+
+    async function recover_lessons(items, reviews, real_lessons) {
+        // Fetch and prepare data
+        let resets = await wkof.Apiv2.get_endpoint('resets');
+        let items_id = wkof.ItemData.get_index(items, 'subject_id');
+        let delay = 4*60*60*1000;
+        let app1_reviews = reviews.filter(a=>a[2]==1).map(item=>[item[0]-delay, item[1], items_id[item[1]].data.level, item[0]-delay]);
+        // Check reviews based on reset intervals
+        let last_date = 0, recovered_lessons = [];
+        Object.values(resets).sort((a,b) => a.data.confirmed_at<b.data.confirmed_at?-1:1).forEach(reset => {
+            let ids = {}, date = Date.parse(reset.data.confirmed_at);
+            // Filter out items not belonging to the current reset period
+            let reset_reviews = app1_reviews.filter(a=>a[0]>last_date&&a[0]<date);
+            // Choose the earliest App1 review
+            reset_reviews.forEach(item=>{if (!ids[item[1]] || ids[item[1]][0] > item[0]) ids[item[1]] = item;});
+            // Remove items that still have lesson data
+            real_lessons.filter(a=>a[0]<date).forEach(item=>delete ids[item[1]]);
+            // Save recovered lessons to array
+            Object.values(ids).forEach((item)=>recovered_lessons.push(item));
+            last_date = date;
+        });
+        return recovered_lessons;
     }
 
 
@@ -87,9 +124,9 @@
         }
         let foreacast_average = forecast_items.length/Object.keys(forecast_days).length;
         let forecast_sd = Math.sqrt(1/(forecast_items.length/foreacast_average)*Object.values(forecast_days).map(x=>Math.pow(x-foreacast_average, 2)).reduce((a,b)=>a+b));
-        let forecast = [1, ...Array(settings.forecast.colors.length-2).fill(null).map((_, i)=>1+Math.round(icdf(((settings.forecast.gradient?0.9:1)*(i+1))/(settings.forecast.colors.length-(settings.forecast.gradient?1:0)), foreacast_average, forecast_sd)))];
-        let reviews = [1, ...Array(settings.reviews.colors.length-2).fill(null).map((_, i)=>1+Math.round(icdf(((settings.reviews.gradient?0.9:1)*(i+1))/(settings.reviews.colors.length-(settings.reviews.gradient?1:0)), stats.reviews.average[1], stats.reviews.average[2])))];
-        let lessons = [1, ...Array(settings.lessons.colors.length-2).fill(null).map((_, i)=>1+Math.round(icdf(((settings.lessons.gradient?0.9:1)*(i+1))/(settings.lessons.colors.length-(settings.lessons.gradient?1:0)), stats.lessons.average[1], stats.lessons.average[2])))];
+        let forecast = [1, ...Array(settings.forecast.colors.length-2).fill(null).map((_, i)=>1+Math.round(ifcdf(((settings.forecast.gradient?0.9:1)*(i+1))/(settings.forecast.colors.length-(settings.forecast.gradient?1:0)), foreacast_average, forecast_sd)))];
+        let reviews = [1, ...Array(settings.reviews.colors.length-2).fill(null).map((_, i)=>1+Math.round(ifcdf(((settings.reviews.gradient?0.9:1)*(i+1))/(settings.reviews.colors.length-(settings.reviews.gradient?1:0)), stats.reviews.average[1], stats.reviews.average[2])))];
+        let lessons = [1, ...Array(settings.lessons.colors.length-2).fill(null).map((_, i)=>1+Math.round(ifcdf(((settings.lessons.gradient?0.9:1)*(i+1))/(settings.lessons.colors.length-(settings.lessons.gradient?1:0)), stats.lessons.average[1], stats.lessons.average[2])))];
         if (settings.reviews.auto_range) for (let i=1; i<settings.reviews.colors.length; i++) settings.reviews.colors[i][0] = reviews[i-1];
         if (settings.lessons.auto_range) for (let i=1; i<settings.lessons.colors.length; i++) settings.lessons.colors[i][0] = lessons[i-1];
         if (settings.forecast.auto_range) for (let i=1; i<settings.forecast.colors.length; i++) settings.forecast.colors[i][0] = forecast[i-1];
@@ -133,7 +170,11 @@
             for (let [value, color] of wkof.settings[script_id][type].colors) panel.children[1].append(create_row(value, color));
             if (i == 0 || i == 2) panel.children[1].children[0].addEventListener('change', e=>{
                 let input = e.target.closest('#heatmap3_tabs').querySelector('#heatmap3_'+(i==0?'forecast':'reviews')+' .panel > .row:first-child .color input');
-                if (input.value != e.target.value) {input.value = e.target.value; input.dispatchEvent(new Event('change')); wkof.settings[script_id][i==0?'forecast':'reviews'].colors[0][1] = e.target.value;}
+                if (input.value != e.target.value) {
+                    input.value = e.target.value;
+                    input.dispatchEvent(new Event('change'));
+                    wkof.settings[script_id][i==0?'forecast':'reviews'].colors[0][1] = e.target.value;
+                }
             });
             elem.insertAdjacentElement('afterend', panel);
         });
@@ -205,6 +246,14 @@
                                             placeholder: '(minutes)',
                                             hover_tip: 'Max number of minutes between review answers to still count within the same session',
                                             path: '@general.session_limit',
+                                        },
+                                        theme: {
+                                            type: 'dropdown',
+                                            label: 'Theme',
+                                            default: "light",
+                                            hover_tip: 'Theme!',
+                                            content: {"light": "Light", "dark": "Dark", "breeze-dark": "Breeze Dark",},
+                                            path: '@general.theme'
                                         },
                                     },
                                 },
@@ -313,6 +362,13 @@
                                             hover_tip: 'Let any colors between the chosen ones be used',
                                             path: '@reviews.gradient'
                                         },
+                                        reviews_generate: {
+                                            type: 'button',
+                                            label: 'Generate colors',
+                                            text: 'Generate',
+                                            hover_tip: 'Generates new colors from the first and last non-zero interval',
+                                            on_click: generate_colors,
+                                        },
                                         reviews_section2: {
                                             type: 'section',
                                             label: 'Other'
@@ -354,6 +410,13 @@
                                             default: true,
                                             hover_tip: 'Let any colors between the chosen ones be used',
                                             path: '@lessons.gradient'
+                                        },
+                                        lessons_generate: {
+                                            type: 'button',
+                                            label: 'Generate colors',
+                                            text: 'Generate',
+                                            hover_tip: 'Generates new colors from the first and last non-zero interval',
+                                            on_click: generate_colors,
                                         },
                                         lessons_section2: {
                                             type: 'section',
@@ -404,6 +467,13 @@
                                             hover_tip: 'Let any colors between the chosen ones be used',
                                             path: '@forecast.gradient'
                                         },
+                                        forecast_generate: {
+                                            type: 'button',
+                                            label: 'Generate colors',
+                                            text: 'Generate',
+                                            hover_tip: 'Generates new colors from the first and last non-zero interval',
+                                            on_click: generate_colors,
+                                        },
                                     },
                                 },
                             },
@@ -435,6 +505,7 @@
                 level_indicator: true,
                 color_level_indicator: '#ffffff',
                 position: 2,
+                theme: "light",
             },
             reviews: {
                 gradient: true,
@@ -459,11 +530,53 @@
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
             // Default workaround
-            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#636363"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
-            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#636363"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
-            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#636363"], [1, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],];
+            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#747474"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
+            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#747474"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
+            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#747474"], [1, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],];
+            // Load settings from old script if possible
+            //port_settings(settings);
             wkof.Settings.save(script_id);
             return settings;
+        });
+    }
+
+    async function port_settings(settings) {
+        if (wkof.file_cache.dir["wkof.settings.wanikani_heatmap"]) {
+            let old = await wkof.file_cache.load("wkof.settings.wanikani_heatmap");
+            settings.general.start_date = old.general.start_date;
+            settings.general.week_start = old.general.week_start?0:6;
+            settings.general.day_start = old.general.hours_offset;
+            settings.general.reverse_years = old.general.reverse_years;
+            settings.general.segment_years = old.general.segment_years;
+            settings.general.day_labels = old.general.day_labels;
+            settings.general.now_indicator = old.general.today;
+            settings.general.color_now_indicator = old.general.today_color;
+            settings.general.level_indicator = old.general.level_ups;
+            settings.general.color_level_indicator = old.general.level_ups_color;
+            settings.reviews.auto_range = old.reviews.auto_range;
+            settings.reviews.colors = [[0, "#747474"], [1, old.reviews.color1], [old.reviews.interval1, old.reviews.color2], [old.reviews.interval2, old.reviews.color3], [old.reviews.interval3, old.reviews.color4], [old.reviews.interval4, old.reviews.color5]];
+            settings.forecast.colors = [[0, "#747474"], [1, old.reviews.forecast_color1], [old.reviews.interval1, old.reviews.forecast_color2], [old.reviews.interval2, old.reviews.forecast_color3], [old.reviews.interval3, old.reviews.forecast_color4], [old.reviews.interval4, old.reviews.forecast_color5]];
+            settings.forecast.auto_range = old.reviews.auto_range;
+            settings.lessons.colors = [[0, "#747474"], [1, old.lessons.color1], [old.lessons.interval1, old.lessons.color2], [old.lessons.interval2, old.lessons.color3], [old.lessons.interval3, old.lessons.color4], [old.lessons.interval4, old.lessons.color5]];
+            settings.lessons.auto_range = old.lessons.auto_range;
+            settings.lessons.count_zeros = old.lessons.count_zeros;
+            wkof.file_cache.delete("wkof.settings.wanikani_heatmap");
+            wkof.Settings.save(script_id);
+        }
+    }
+
+    function generate_colors(setting_name) {
+        let type = setting_name.split('_')[0];
+        let panel = document.getElementById('heatmap3_'+type+'_settings').querySelector('.panel');
+        let colors = wkof.settings[script_id][type].colors;
+        let first = colors[1];
+        let last = colors[colors.length-1];
+        for (let [i, color] of Object.entries(colors).slice(2)) {
+            colors[i][1] = interpolate_color(first[1], last[1], (color[0]-first[0])/(last[0]-first[0]));
+        }
+        panel.querySelectorAll('.color input').forEach((input, i) => {
+            input.value = colors[i][1];
+            input.dispatchEvent(new Event('change'));
         });
     }
 
@@ -473,14 +586,16 @@
         return function event_handler(event) {
             let elem = event.target;
             if (elem.classList.contains('day')) {
-                let date = new Date(elem.getAttribute('data-date'));
+                let date = new Date(elem.getAttribute('data-date')+' 0:0');
                 let type = elem.closest('.view').classList.contains('reviews')?date<new Date()?'reviews':'forecast':'lessons';
                 if (event.type === "click" && Object.keys(elem.info.lists).length) {
                     let title = `${date.toDateString().slice(4)} ${kanji_day(date.getDay())}`;
                     let today = new Date(new Date().toDateString()).getTime();
                     let offset = wkof.settings[script_id].general.day_start*60*60*1000;
-                    let minimap_data = cook_data(type, data[type].filter(a=>a[0]>date.getTime()+offset&&a[0]<date.getTime()+1000*60*60*24+offset));//.map(a=>[today+new Date(a[0]).getHours()*60*60*1000, ...a.slice(1)]));
-                    update_popper(event, type, title, elem.info, minimap_data);
+                    let day_data = data[type].filter(a=>a[0]>=date.getTime()+offset&&a[0]<date.getTime()+1000*60*60*24+offset);
+                    let minimap_data = cook_data(type, day_data);
+                    let burns = day_data.filter(item => item[2] === 8 && item[3]+item[4] === 0).map(item => item[1]);
+                    update_popper(event, type, title, elem.info, minimap_data, burns);
                 }
                 if (event.type === "mousedown") {
                     event.preventDefault();
@@ -565,7 +680,8 @@
         wkof.Settings.save(script_id);
     }
 
-    async function update_popper(event, type, title, info, minimap_data) {
+    async function update_popper(event, type, title, info, minimap_data, burns) {
+        console.log(minimap_data);
         let items_id = await wkof.ItemData.get_index(await wkof.ItemData.get_items(), 'subject_id');
         let popper = document.getElementById('popper');
         let levels = new Array(61).fill(0);
@@ -590,7 +706,8 @@
         let item_elems = [];
         for (let id of [...new Set(info.lists[type+'-ids'])]) {
             let item = items_id[id];
-            item_elems.push(create_elem({type: 'a', class: 'item '+item.object+' hover-wrapper-target', href: item.data.document_url, children: [
+            let burn = burns.includes(id);
+            item_elems.push(create_elem({type: 'a', class: 'item '+item.object+' hover-wrapper-target'+(burn?' burn':''), href: item.data.document_url, children: [
                 create_elem({type: "div", class: "hover-wrapper above", children: [
                     create_elem({type: "a", class: "characters", href: item.data.document_url, child: item.data.characters || create_elem({type: 'img', class: 'radical-svg', src: item.data.character_images.find(a=>a.content_type=="image/svg+xml"&&a.metadata.inline_styles).url})}),
                     create_table("left", [["Meanings", item.data.meanings.map(i=>i.meaning).join(', ')], ["Readings", item.data.readings?item.data.readings.map(i=>i.reading).join('、 '):"-"],["Level", item.data.level]], {class: 'info'})
@@ -598,10 +715,12 @@
                 create_elem({type: 'a', class: "characters", child: item.data.characters || create_elem({type: 'img', class: 'radical-svg', src: item.data.character_images.find(a=>a.content_type=="image/svg+xml"&&a.metadata.inline_styles).url})})
             ]}));
         }
+        let time = minimap_data.map((a,i)=>Math.floor((a[0]-(minimap_data[i-1]||[0])[0])/(60*1000))).filter(a=>a<10).reduce((a,b)=>a+b);
         // Populate popper
         popper.className = type;
         popper.querySelector('.date').innerText = title;
         popper.querySelector('.count').innerText = info.lists[type+'-ids'].length.toSeparated();
+        popper.querySelector('.time').innerText = type=="forecast" ? "" : ' ('+time+' min)';
         popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff.toSeparated();
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
         popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i].toSeparated(); e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.slice(1).map((a,j)=>[j+1, a.toSeparated()]).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)));});
@@ -620,7 +739,7 @@
 
     function create_minimap(type, data) {
         let settings = wkof.settings[script_id];
-        let multiplier = 1/6;
+        let multiplier = 2;
         return new Heatmap({
             type: "day",
             id: 'hours-map',
@@ -635,22 +754,23 @@
                 return string;
             },
             color_callback: (date, day_data)=>{
-                date[2]++;
                 let type2 = type;
-                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now() && day_data.counts.forecast) type2 = "forecast";
-                let colors = settings[type2].colors.slice().reverse();
+                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
+                let colors = settings[type2].colors;
                 if (!settings[type2].gradient) {
-                    for (let [count, color] of colors) {
-                        if (day_data.counts[type2]*multiplier >= count) {
+                    for (let [bound, color] of colors.slice().reverse()) {
+                        if (day_data.counts[type2]*multiplier >= bound) {
                             return color;
                         }
                     }
+                    return colors[0][1];
                 } else {
-                    if (day_data.counts[type2]*multiplier >= colors[0][0]) return colors[0][1];
-                    for (let i=0; i<colors.length; i++) {
-                        if (day_data.counts[type2]*multiplier >= colors[i][0]) {
-                            let percentage = (day_data.counts[type2]*multiplier-colors[i][0])/(colors[i-1][0]-colors[i][0]);
-                            return interpolate_color(colors[i][1], colors[i-1][1], percentage);
+                    if (!day_data.counts[type2]*multiplier) return colors[0][1];
+                    if (day_data.counts[type2]*multiplier >= colors[colors.length-1][0]) return colors[colors.length-1][1];
+                    for (let i=2; i<colors.length; i++) {
+                        if (day_data.counts[type2]*multiplier <= colors[i][0]) {
+                            let percentage = (day_data.counts[type2]*multiplier-colors[i-1][0])/(colors[i][0]-colors[i-1][0]);
+                            return interpolate_color(colors[i-1][1], colors[i][1], percentage);
                         }
                     }
                 }
@@ -670,7 +790,7 @@
         // Create header
         header.append(
             create_elem({type: 'div', class: 'date'}),
-            create_elem({type: 'div', class: 'count'}),
+            create_elem({type: 'div', class: 'subheader', children: [create_elem({type: 'span', class: 'count'}), create_elem({type: 'span', class: 'time',})]}),
             create_elem({type: 'div', class: 'score hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Net progress of SRS levels'}), create_elem({type: 'span'})]}),
         );
         // Create minimap and stats
@@ -685,20 +805,20 @@
     }
 
     // Create and install the heatmap
-    function install_heatmap(reviews, forecast, lessons, stats) {
+    async function install_heatmap(reviews, forecast, lessons, stats, items) {
         let settings = wkof.settings[script_id];
         // Create elements
         let heatmap = document.getElementById('heatmap') || create_elem({type: 'section', id: 'heatmap', class: 'heatmap '+(settings.other.visible_map === "reviews" ? "reviews" : ""), position: settings.general.position});
         let buttons = create_buttons();
         let views = create_elem({type: 'div', class: 'views'});
         heatmap.onclick = heatmap.onmousedown = heatmap.onmouseup = heatmap.onmouseover = get_event_handler({reviews, forecast, lessons});
-        heatmap.style.setProperty('--color-now', settings.general.now_indicator?settings.general.color_now_indicator:'transparent');
-        heatmap.style.setProperty('--color-level', settings.general.level_indicator?settings.general.color_level_indicator:'transparent');
+        heatmap.setAttribute('theme', settings.general.theme);
+        heatmap.style.setProperty('--color-now', settings.general.now_indicator ? settings.general.color_now_indicator : 'transparent');
+        heatmap.style.setProperty('--color-level', settings.general.level_indicator ? settings.general.color_level_indicator : 'transparent');
         // Create heatmaps
         let cooked_reviews = cook_data("reviews", reviews);
         let cooked_lessons = cook_data("lessons", lessons);
-        let level_ups = get_level_ups(lessons).map(date=>[date, 'level-up']);
-        if (level_ups.length === 60) level_ups[59][1] += ' level-60';
+        let level_ups = await get_level_ups(items);
         let reviews_view = create_view('reviews', stats, level_ups, reviews[0][0], forecast.reduce((max,a)=>max>a[0]?max:a[0]), cooked_reviews.concat(forecast));
         let lessons_view = create_view('lessons', stats, level_ups, lessons[0][0], lessons.reduce((max,a)=>max>a[0]?max:a[0]), cooked_lessons);
         let popper = create_popper({reviews: cooked_reviews, forecast, lessons: cooked_lessons});
@@ -750,6 +870,7 @@
     // Create heatmaps together with peripherals such as stats
     function create_view(type, stats, level_ups, first_date, last_date, data) {
         let settings = wkof.settings[script_id];
+        let level_marks = level_ups.map(([level, date])=>[date, 'level-up'+(level==60?' level-60':'')]);
         // New heatmap instance
         let heatmap = new Heatmap({
             type: "year",
@@ -760,7 +881,7 @@
             last_date: last_date,
             segment_years: settings.general.segment_years,
             zero_gap: settings.general.zero_gap,
-            markings: [[new Date(Date.now()-60*60*1000*settings.general.day_start), "today"], ...level_ups],
+            markings: [[new Date(Date.now()-60*60*1000*settings.general.day_start), "today"], ...level_marks],
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
                 let time = Date.parse(date.join('-')+' 0:0');
@@ -770,7 +891,7 @@
                 if (time < Date.now() && time >= new Date(settings.general.start_day).getTime() && time > first_date) string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`;
                 string += '\n';
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
-                let level = level_ups.findIndex(level_up=>level_up[0]===time)+1;
+                let level = (level_ups.find(a=>a[1]==new Date(time).toDateString()) || [undefined])[0];
                 if (level) string += '\nYou reached level '+level+'!';
                 if (wkof.settings[script_id].other.times_popped < 5 && Object.keys(day_data.counts).length !== 0) string += '\nClick for details!';
                 if (wkof.settings[script_id].other.times_popped >= 5 && wkof.settings[script_id].other.times_dragged < 3 && Object.keys(day_data.counts).length !== 0) string += '\nDid you know that you can click and drag, too?';
@@ -839,13 +960,13 @@
                 ['Year', stats.total[1].toSeparated()],
                 ['Month', stats.total[2].toSeparated()],
                 ['Week', stats.total[3].toSeparated()],
-                ['Today', stats.total[4].toSeparated()]
+                ['24h', stats.total[4].toSeparated()],
             ])),
             create_stat_element('Time', m_to_hm(stats.time[0]), create_table("left", [
                 ['Year', m_to_hm(stats.time[1])],
                 ['Month', m_to_hm(stats.time[2])],
                 ['Week', m_to_hm(stats.time[3])],
-                ['Today', m_to_hm(stats.time[4])]
+                ['24h', m_to_hm(stats.time[4])],
             ])),
         ]});
         return [head_stats, foot_stats];
@@ -897,46 +1018,51 @@
     /*-------------------------------------------------------------------------------------------------------------------------------*/
 
     // Extract upcoming reviews and completed lessons from the WKOF cache
-    function get_forecast_and_lessons() {
-        return wkof.ItemData.get_items('assignments').then(data=>{
-            let forecast = [], lessons = [];
-            let vacation_offset = Date.now()-new Date(wkof.user.current_vacation_started_at || Date.now());
-            for (let item of data) {
-                if (item.assignments && item.assignments.started_at !== null) {
-                    // If the assignment has been started add a lesson containing staring date, id, level, and unlock date
-                    lessons.push([Date.parse(item.assignments.started_at), item.id, item.data.level, Date.parse(item.assignments.unlocked_at)]);
-                    if (Date.parse(item.assignments.available_at) > Date.now()) {
-                        // If the assignment is scheduled add a forecast item ready for sending to the heatmap module
-                        let forecast_item = [Date.parse(item.assignments.available_at)+vacation_offset, {forecast: 1,}, {'forecast-ids': item.id}];
-                        forecast_item[1]["forecast-srs1-"+item.assignments.srs_stage] = 1;
-                        forecast.push(forecast_item);
-                    }
+    function get_forecast_and_lessons(data) {
+        let forecast = [], lessons = [];
+        let vacation_offset = Date.now()-new Date(wkof.user.current_vacation_started_at || Date.now());
+        for (let item of data) {
+            if (item.assignments && item.assignments.started_at !== null) {
+                // If the assignment has been started add a lesson containing staring date, id, level, and unlock date
+                lessons.push([Date.parse(item.assignments.started_at), item.id, item.data.level, Date.parse(item.assignments.unlocked_at)]);
+                if (Date.parse(item.assignments.available_at) > Date.now()) {
+                    // If the assignment is scheduled add a forecast item ready for sending to the heatmap module
+                    let forecast_item = [Date.parse(item.assignments.available_at)+vacation_offset, {forecast: 1,}, {'forecast-ids': item.id}];
+                    forecast_item[1]["forecast-srs1-"+item.assignments.srs_stage] = 1;
+                    forecast.push(forecast_item);
                 }
             }
-            // Sort lessons by started_at for easy extraction of chronological info
-            lessons.sort((a,b)=>a[0]<b[0]?-1:1);
-            return [forecast, lessons];
-        });
+        }
+        // Sort lessons by started_at for easy extraction of chronological info
+        lessons.sort((a,b)=>a[0]<b[0]?-1:1);
+        return [forecast, lessons];
     }
 
-    // Find implicit level up dates by looking at when items were unlocked
-    function get_level_ups(lessons) {
-        // Prepare level array
-        let levels = new Array(61).fill(null).map(_=>{return {};});
-        // Group unlocked items within each level by unlock date
-        for (let [start, id, level, unlock] of lessons) {
-            if (new Date(unlock) < new Date(wkof.settings[script_id].general.start_day)) continue;
-            let date_string = new Date(unlock).toDateString();
-            if (!levels[level][date_string]) levels[level][date_string] = 0;
-            levels[level][date_string]++;
+    async function get_level_ups(items) {
+        let level_progressions = await wkof.Apiv2.get_endpoint('level_progressions');
+        let first_recorded_date = level_progressions[Math.min(...Object.keys(level_progressions))].data.unlocked_at;
+        // Find indefinite level ups
+        let levels = {};
+        items.forEach(item => {
+            if (item.object !== "kanji" || !item.assignments || !item.assignments.unlocked_at || item.assignments.unlocked_at >= first_recorded_date) return;
+            let date = new Date(item.assignments.unlocked_at).toDateString();
+            if (!levels[item.data.level]) levels[item.data.level] = {};
+            if (!levels[item.data.level][date]) levels[item.data.level][date] = 1;
+            else levels[item.data.level][date]++;
+        });
+        for (let [level, data] of Object.entries(levels)) {
+            for (let [date, count] of Object.entries(data)) {
+                if (count < 10) delete data[date];
+            }
+            if (Object.keys(levels[level]).length == 0) {
+                delete levels[level];
+                continue;
+            }
+            levels[level] = Object.keys(data).reduce((low, curr) => low < curr ? low : curr, Date.now());
         }
-        // Discard dates with fewer than 20 unlocked items, then pick the earliest date remaining
-        for (let [level, dates] of Object.entries(levels)) {
-            for (let [date, count] of Object.entries(dates)) if (count < 20) delete levels[level][date];
-            levels[level] = Math.min(...Object.keys(dates).map(date=>Date.parse(date)));
-        }
-        // Remove the 0th level entry
-        levels.shift(1);
+        levels = Object.entries(levels).map(([level, date]) => [Number(level), date]);
+        // Add definite level ups
+        Object.values(level_progressions).forEach(level => levels.push([level.data.level, new Date(level.data.unlocked_at).toDateString()]));
         return levels;
     }
 
@@ -976,21 +1102,22 @@
         let current_streak = streaks[new Date(Date.now()-60*60*1000*settings.general.day_start).toDateString()];
         let ms_day = 24*60*60*1000;
         let stats = {
-            total: [0, 0, 0, 0, 0], // [total, year, month, week, day]
+            total: [0, 0, 0, 0, 0, 0], // [total, year, month, week, day, day]
             days_studied: [0, 0],   // [days studied, percentage]
             average: [0, 0, 0],     // [average, per studied, standard deviation]
             streak: [longest_streak, current_streak],
             sessions: 0,            // Number of sessions
-            time: [0, 0, 0, 0, 0],  // [total, year, month, week, day]
+            time: [0, 0, 0, 0, 0, 0],  // [total, year, month, week, day, day]
             days: 0,                // Number of days since first review
             max_done: [0, 0],       // Max done in one day [count, date]
             streaks,
         };
         let last_day = new Date(0);
         let today = new Date();
-        let week = new Date(new Date(Date.parse(new Date().toDateString())-(new Date().getDay()+6-settings.general.week_start)%7*ms_day+ms_day/2).toDateString());
-        let month = new Date(today.getFullYear()+'-'+(today.getMonth()+1)+'-01');
-        let year = new Date('Jan ' + today.getFullYear());
+        let d = new Date(Date.now()-1*24*60*60*1000);
+        let week = new Date(Date.now()-7*24*60*60*1000);
+        let month = new Date(Date.now()-30*24*60*60*1000);
+        let year = new Date(Date.now()-365*24*60*60*1000);
         let last_time = 0;
         let done_day = 0;
         let done_days = [];
@@ -1024,9 +1151,17 @@
                 stats.total[3]++;
                 stats.time[3] += minutes;
             }
-            if (today.toDateString() == day.toDateString()) {
+            if (week < day) {
+                stats.total[3]++;
+                stats.time[3] += minutes;
+            }
+            if (d < day) {
                 stats.total[4]++;
                 stats.time[4] += minutes;
+            }
+            if (today.toDateString() == day.toDateString()) {
+                stats.total[5]++;
+                stats.time[5] += minutes;
             }
             last_day = day;
             last_time = item[0];
@@ -1037,6 +1172,7 @@
         stats.average[0] = Math.round(stats.total[0]/stats.days);
         stats.average[1] = Math.round(stats.total[0]/stats.days_studied[0]);
         stats.average[2] = Math.sqrt(1/stats.days_studied[0]*done_days.map(x=>Math.pow(x-stats.average[1], 2)).reduce((a,b)=>a+b));
+        console.log(stats);
         return stats;
     }
 
@@ -1054,6 +1190,7 @@
     String.prototype.toProper = function() {return this.slice(0,1).toUpperCase()+this.slice(1);};
     // Returns a hex color between the left and right hex colors
     function interpolate_color(left, right, index) {
+        if (isNaN(index)) return left;
         left = hex_to_rgb(left); right = hex_to_rgb(right);
         let result = [0, 0, 0];
         for (let i = 0; i < 3; i++) result[i] = Math.round(left[i] + index * (right[i] - left[i]));
@@ -1069,17 +1206,23 @@
         let rgb = cols[2] | (cols[1] << 8) | (cols[0] << 16);
         return '#' + (0x1000000 + rgb).toString(16).slice(1);
     }
-    // Inverse cumulative distribution function
-    function icdf(p, mean, sd) {
-        // Inverse error function
-        function inverf(x) {
-            let sign = (x >= 0) ? 1 : -1;
-            let a = ((8*(Math.PI - 3)) / ((3*Math.PI)*(4 - Math.PI)));
-            let b  = Math.log(1-x*x);
-            let c = Math.sqrt(Math.sqrt(Math.pow(((2 / Math.PI / a) + (b / 2)), 2) - b / a) - (2 / Math.PI / a) - (b / 2) );
-            return sign * c ;
+    // Crude approximation of inverse folded cumulative distribution function
+    function ifcdf(p, m, sd) {
+        // Folded cumulative distribution function
+        function fcdf(x, mean, sd) {
+            // Error function
+            function erf(x) {
+                let a1=0.278393, a2=0.230389, a3=0.000972, a4=0.078108;
+                return 1-(1/(1+a1*x+a2*x*x+a3*x*x*x+a4*x*x*x*x));
+            }
+            return 0.5*(erf((x+mean)/(sd*Math.sqrt(2))) + erf((x-mean)/(sd*Math.sqrt(2))));
         }
-        return Math.sqrt(2)*inverf(2*p-1)*sd+mean;
+        let p2 = 0, x = 0, step = Math.ceil(sd/10);
+        while (p2 < p) {
+            x += step;
+            p2 = fcdf(x, m, sd);
+        }
+        return x;
     }
     function validate_start_date(date) {return new Date(date) !== "Invalid Date"?true:"Invalid date";}
 })(window.jQuery, window.wkof, window.review_cache, window.Heatmap);
