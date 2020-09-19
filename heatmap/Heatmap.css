@@ -198,8 +198,8 @@
 }
 
 .heatmap .day:not(.marked):hover {
-    border: var(--day-hover-outline) solid var(--day-hover-outline-color);
-    width: calc(var(--day-size) - 2*var(--day-hover-outline));
+    border: 1px solid rgba(0, 0, 0, 0.9);
+	box-sizing: border-box;
 }
 
 .heatmap .single-day {
