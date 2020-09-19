@@ -750,28 +750,7 @@
                 if (type2 !== "lessons" && day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')]) string += '\nBurns '+day_data.counts[type2+'-srs'+(type2==="reviews"?'2-9':'1-8')];
                 return string;
             },
-            color_callback: (date, day_data)=>{
-                let type2 = type;
-                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let colors = settings[type2].colors;
-                if (!settings[type2].gradient) {
-                    for (let [bound, color] of colors.slice().reverse()) {
-                        if (day_data.counts[type2]*multiplier >= bound) {
-                            return color;
-                        }
-                    }
-                    return colors[0][1];
-                } else {
-                    if (!day_data.counts[type2]*multiplier) return colors[0][1];
-                    if (day_data.counts[type2]*multiplier >= colors[colors.length-1][0]) return colors[colors.length-1][1];
-                    for (let i=2; i<colors.length; i++) {
-                        if (day_data.counts[type2]*multiplier <= colors[i][0]) {
-                            let percentage = (day_data.counts[type2]*multiplier-colors[i-1][0])/(colors[i][0]-colors[i-1][0]);
-                            return interpolate_color(colors[i-1][1], colors[i][1], percentage);
-                        }
-                    }
-                }
-            },
+            color_callback: (date, day_data)=>color_picker(type, date, day_data, 2),
         }, data);
     }
 
@@ -894,28 +873,7 @@
                 if (wkof.settings[script_id].other.times_popped >= 5 && wkof.settings[script_id].other.times_dragged < 3 && Object.keys(day_data.counts).length !== 0) string += '\nDid you know that you can click and drag, too?';
                 return [string];
             },
-            color_callback: (date, day_data)=>{
-                let type2 = type;
-                if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
-                let colors = settings[type2].colors;
-                if (!settings[type2].gradient) {
-                    for (let [bound, color] of colors.slice().reverse()) {
-                        if (day_data.counts[type2] >= bound) {
-                            return color;
-                        }
-                    }
-                    return colors[0][1];
-                } else {
-                    if (!day_data.counts[type2]) return colors[0][1];
-                    if (day_data.counts[type2] >= colors[colors.length-1][0]) return colors[colors.length-1][1];
-                    for (let i=2; i<colors.length; i++) {
-                        if (day_data.counts[type2] <= colors[i][0]) {
-                            let percentage = (day_data.counts[type2]-colors[i-1][0])/(colors[i][0]-colors[i-1][0]);
-                            return interpolate_color(colors[i-1][1], colors[i][1], percentage);
-                        }
-                    }
-                }
-            },
+            color_callback: (date, day_data)=>color_picker(type, date, day_data),
         }, data);
         modify_heatmap(type, heatmap);
         // Create layout
@@ -932,6 +890,30 @@
         for (let year of Object.values(heatmap.maps).reverse()) years.prepend(year);
         view.append(title, head_stats, years, foot_stats);
         return view;
+    }
+
+    function color_picker(type, date, day_data, multiplier=1) {
+        let settings = wkof.settings[script_id];
+        let type2 = type;
+        if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
+        let colors = settings[type2].colors;
+        if (!settings[type2].gradient) {
+            for (let [bound, color] of colors.slice().reverse()) {
+                if (day_data.counts[type2]*multiplier >= bound) {
+                    return color;
+                }
+            }
+            return colors[0][1];
+        } else {
+            if (!day_data.counts[type2]*multiplier) return colors[0][1];
+            if (day_data.counts[type2]*multiplier >= colors[colors.length-1][0]) return colors[colors.length-1][1];
+            for (let i=2; i<colors.length; i++) {
+                if (day_data.counts[type2]*multiplier <= colors[i][0]) {
+                    let percentage = (day_data.counts[type2]*multiplier-colors[i-1][0])/(colors[i][0]-colors[i-1][0]);
+                    return interpolate_color(colors[i-1][1], colors[i][1], percentage);
+                }
+            }
+        }
     }
 
     function modify_heatmap(type, heatmap) {
