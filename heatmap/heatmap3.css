@@ -1,3 +1,7 @@
+/*--------------------------------------------------------------------------------------------
+/*	General
+/*--------------------------------------------------------------------------------------------
+*/
 #heatmap {
 	background-color: var(--background-color);
 	border-radius: 3px;
@@ -25,6 +29,17 @@
 	--vocab-color: #43d473;
 	--items-color: black;
 
+}
+
+/*--------------------------------------------------------------------------------------------
+/*	Basics
+/*--------------------------------------------------------------------------------------------
+*/
+
+#heatmap .title {
+	text-align: center;
+	font-size: 18px;
+	margin-bottom: 10px;
 }
 
 #heatmap .stats {
@@ -63,24 +78,23 @@
 	border: none;
 }
 
-#heatmap .title {
-	text-align: center;
-	font-size: 18px;
-	margin-bottom: 10px;
+#heatmap .view {
+	display: flex;
+	flex-direction: column;
 }
 
-#heatmap .day.today,
-#heatmap .hour.today {
-	border-color: var(--color-now);
+#heatmap.reviews .view.lessons,
+#heatmap:not(.reviews) .view.reviews {
+	display: none !important;
 }
 
-#heatmap .day.level-up {
-	border-color: var(--color-level);
-}
 
-#heatmap .day.level-up.level-60 {
-	border-color: gold;
-}
+
+
+/*--------------------------------------------------------------------------------------------
+/*	Popper
+/*--------------------------------------------------------------------------------------------
+*/
 
 #heatmap #popper {
 	background-color: rgba(0,0,0, 0.9);
@@ -98,6 +112,19 @@
 #heatmap #popper.popped {
 	display: block;
 }
+
+#heatmap #popper.forecast .summary,
+#heatmap #popper.forecast .answers,
+#heatmap #popper.forecast .score,
+#heatmap #popper.lessons .srs,
+#heatmap #popper.lessons .summary,
+#heatmap #popper.lessons .answers,
+#heatmap #popper.lessons .score {
+	display: none;
+}
+
+/* Head
+/*--------------------------------------------------------------------------------------------*/
 
 #heatmap #popper .header {
 	text-align: center;
@@ -118,32 +145,31 @@
 	font-size: 16px;
 }
 
-#heatmap #popper.reviews .count::after {
-	content: ' reviews';
+#heatmap #popper.reviews .count::after {content: ' reviews';}
+#heatmap #popper.forecast .count::after {content: ' upcoming reviews';}
+#heatmap #popper.lessons .count::after {content: ' lessons';}
+
+#heatmap #popper .minimap {
+	text-align: center;
+	margin-bottom: 10px;
 }
 
-#heatmap #popper.forecast .count::after {
-	content: ' upcoming reviews';
+#heatmap #popper .minimap > span {
+	margin-right: 10px;
+	font-weight: bold;
 }
 
-#heatmap #popper.lessons .count::after {
-	content: ' lessons';
+#heatmap #popper .minimap > div {
+	display: inline-grid;
 }
 
-#heatmap #popper.forecast .summary,
-#heatmap #popper.forecast .answers,
-#heatmap #popper.forecast .score,
-#heatmap #popper.lessons .srs,
-#heatmap #popper.lessons .summary,
-#heatmap #popper.lessons .answers,
-#heatmap #popper.lessons .score {
-	display: none;
-}
-
+/* Stats
+/*--------------------------------------------------------------------------------------------*/
 
 #heatmap #popper .stats {
 	display: flex;
 	vertical-align: top;
+	text-align: center;
 }
 
 #heatmap #popper .stats table {
@@ -164,6 +190,32 @@
 	justify-content: center;
 }
 
+#heatmap #popper .stats tr > :not(:last-child) {
+	padding-right: 5px;
+	box-sizing: initial;
+}
+
+#heatmap #popper .stats > * > * > td {
+	min-width: 25px;
+	text-align: right;
+}
+
+/* Levels */
+
+#heatmap #popper .stats .levels .hover-wrapper th::before {
+	content: 'Level ';
+}
+
+#heatmap #popper .stats .levels .hover-wrapper th::after {
+	content: ':';
+}
+
+#heatmap #popper .stats .levels tr[data-count="0"] .hover-wrapper {
+	display: none;
+}
+
+/* SRS */
+
 #heatmap #popper .stats table.srs > tr:first-child th,
 #heatmap #popper .stats table.srs > tr:nth-of-type(2) th,
 #heatmap #popper .stats table.srs .hover-wrapper tr:first-of-type th,
@@ -177,66 +229,48 @@
 	font-weight: normal;
 }
 
-#heatmap #popper .stats {
-	text-align: center;
-}
-
-#heatmap #popper .stats tr > :not(:last-child) {
-	padding-right: 5px;
-	box-sizing: initial;
-}
-
-#heatmap #popper .srs th {
+#heatmap #popper .stats .srs th {
 	width: 28px;
 	text-align: left;
 }
 
-#heatmap #popper .answers th {
-	width: 50px;
-	text-align: left;
-}
-
-#heatmap #popper .srs tr:first-of-type th,
-#heatmap #popper .answers tr:first-child th {
+#heatmap #popper .stats .srs tr:first-of-type th,
+#heatmap #popper .stats .answers tr:first-child th {
 	width: 100%;
 	text-align: center;
 }
 
-#heatmap #popper .summary tr:last-child td::after,
-#heatmap #popper .answers tr:last-child td::after {
-	content: '%';
-}
-
-#heatmap #popper .srs .hover-wrapper tr :not(.hover-wrapper) {
+#heatmap #popper .stats .srs .hover-wrapper tr :not(.hover-wrapper) {
 	min-width: 30px;
 }
 
-#heatmap #popper .srs .hover-wrapper tr > th {
+#heatmap #popper .stats .srs .hover-wrapper tr > th {
 	min-width: 42px !important;
 }
 
-#heatmap #popper .levels .hover-wrapper th::before {
-	content: 'Level ';
-}
-
-#heatmap #popper .levels .hover-wrapper th::after {
-	content: ':';
-}
-
-#heatmap #popper .srs .hover-wrapper tr:first-child {
+#heatmap #popper .stats .srs .hover-wrapper tr:first-child {
 	font-weight: bold;
 }
 
-#heatmap #popper .stats > * > * > td {
-	min-width: 25px;
-	text-align: right;
+/* Type */
+
+/* Summary */
+
+#heatmap #popper .stats .summary tr:last-child td::after,
+#heatmap #popper .stats .answers tr:last-child td::after {
+	content: '%';
 }
 
-#heatmap .years {
-	margin: auto;
-	display: flex;
-	flex-direction: column-reverse;
+/* Answers */
+
+#heatmap #popper .stats .answers th {
+	width: 50px;
+	text-align: left;
 }
+
+
+/* Items
+/*--------------------------------------------------------------------------------------------*/
 
 #heatmap #popper .items {
 	position: relative;
@@ -257,23 +291,15 @@
 	position: relative;
 }
 
-#heatmap #popper .items .radical,
-#heatmap #popper .items .radical .hover-wrapper .characters {
-	background-color: var(--radical-color);
-	order: 0;
+#heatmap #popper .items .characters {
+	color: var(--items-color) !important;
 }
 
-#heatmap #popper .items .kanji,
-#heatmap #popper .items .kanji .hover-wrapper .characters {
-	background-color: var(--kanji-color);
-	order: 1;
+#heatmap #popper .items .burn {
+	filter: grayscale(1);
 }
 
-#heatmap #popper .items .vocabulary,
-#heatmap #popper .items .vocabulary .hover-wrapper .characters {
-	background-color: var(--vocab-color);
-	order: 2;
-}
+/* Hover */
 
 #heatmap #popper .item .hover-wrapper {
 	padding: 7px;
@@ -309,8 +335,53 @@
 	margin-top: 10px;
 }
 
-#heatmap #popper .items .characters {
-	color: var(--items-color) !important;
+#heatmap #popper .items .hover-wrapper .radical-svg {
+	width: 74px;
+}
+
+#heatmap .head-stats .stat .hover-wrapper.above {
+	text-align: center;
+}
+
+/* Types */
+
+#heatmap #popper .items .radical,
+#heatmap #popper .items .radical .hover-wrapper .characters {
+	background-color: var(--radical-color);
+	order: 0;
+}
+
+#heatmap #popper .items .kanji,
+#heatmap #popper .items .kanji .hover-wrapper .characters {
+	background-color: var(--kanji-color);
+	order: 1;
+}
+
+#heatmap #popper .items .vocabulary,
+#heatmap #popper .items .vocabulary .hover-wrapper .characters {
+	background-color: var(--vocab-color);
+	order: 2;
+}
+
+#heatmap #popper .items .radical-svg {
+	width: 14px;
+	filter: invert(1);
+}
+
+/*--------------------------------------------------------------------------------------------
+/*	Years
+/*--------------------------------------------------------------------------------------------
+*/
+
+#heatmap .years {
+	margin: auto;
+	display: flex;
+	flex-direction: column-reverse;
+}
+
+#heatmap .years.reverse {
+	display: flex;
+	flex-direction: column;
 }
 
 #heatmap .years[month-labels="top"] .year .month-label,
@@ -319,10 +390,7 @@
 }
 
 #heatmap .years[month-labels="top"]:not(.reverse).visible-future .year.future .month-label,
-#heatmap .years[month-labels="top"]:not(.reverse):not(.visible-future) .year.current .month-label {
-	display: block;
-}
-
+#heatmap .years[month-labels="top"]:not(.reverse):not(.visible-future) .year.current .month-label,
 #heatmap .years[month-labels="top"].reverse .year:first-child .month-label,
 #heatmap .years[month-labels="top"].reverse .year.hidden + .year .month-label {
 	display: block;
@@ -336,35 +404,37 @@
 	margin-top: 14px !important;
 }
 
+/* Year
+/*--------------------------------------------------------------------------------------------*/
+
+#heatmap .year.hidden {
+	display: none;
+}
+
 #heatmap .year .year-labels {
+	position: relative;
 	margin-top: 0px;
 }
 
-#heatmap .year-labels {
-	position: relative;
-}
+/* Toggle year */
 
-#heatmap .year-labels .toggle-year {
+#heatmap .year .year-labels .toggle-year {
 	position: absolute;
 	color: var(--color);
 	width: calc(100% - 20px);
 	text-align: center;
 }
 
-#heatmap .years[day-labels="false"] .year-labels .toggle-year {
-	width: calc(100% - 10px);;
-}
-
-#heatmap .year-labels .toggle-year.down {
-	bottom: 3px;
-}
-
-#heatmap .year-labels .toggle-year.up {
+#heatmap .year .year-labels .toggle-year.up {
 	top: 2px;
 }
 
-#heatmap .year.hidden {
-	display: none;
+#heatmap .year .year-labels .toggle-year.down {
+	bottom: 3px;
+}
+
+#heatmap .years[day-labels="false"] .year-labels .toggle-year {
+	width: calc(100% - 10px);;
 }
 
 #heatmap .year:first-child .toggle-year.down,
@@ -381,15 +451,6 @@
 #heatmap .year.future .toggle-year.down,
 #heatmap .year.hidden + .year .toggle-year {
 	display: block !important;
-}
-
-#heatmap .years.reverse {
-	display: flex;
-	flex-direction: column;
-}
-
-#heatmap .years[day-labels="false"] .day-labels {
-	display: none;
 }
 
 #heatmap .years.reverse .toggle-year.up {
@@ -413,9 +474,82 @@
 	cursor: pointer;
 }
 
+/* Day labels */
+
+#heatmap .years[day-labels="false"] .day-labels {
+	display: none;
+}
+
+#heatmap .zero_gap .day-label {
+	line-height: var(--day-size);
+	font-size: calc(var(--day-size) - 2px);
+}
+
+/* Days
+/*--------------------------------------------------------------------------------------------*/
+
+#heatmap .day.today,
+#heatmap .hour.today {
+	border-color: var(--color-now);
+}
+
+#heatmap .day.level-up {
+	border-color: var(--color-level);
+}
+
+#heatmap .day.level-up.level-60 {
+	border-color: gold;
+}
+
+#heatmap .day.selected {
+	height: var(--day-size);
+	width: var(--day-size);
+	border-width: 1px;
+	border-style: solid;
+	border-color: white;
+	border-radius: 2px;
+	box-sizing: border-box;
+}
+
+/*--------------------------------------------------------------------------------------------
+/*	Settings
+/*--------------------------------------------------------------------------------------------
+*/
+
 #wkofs_heatmap3 .right {
 	position: relative;
 }
+
+/* Color settings
+/*--------------------------------------------------------------------------------------------*/
+
+#heatmap3_tabs .row.panel {
+	margin-top: 8px;
+	margin-bottom: 5px !important;
+}
+
+#heatmap3_tabs .row.panel .row {
+	display: flex;
+	justify-content: space-around;
+}
+
+#heatmap3_tabs .row.panel .color {
+	position: relative;
+}
+
+#heatmap3_tabs .row.panel .delete button {
+	height: 30px;
+	font-size: 18px;
+	background-color: transparent;
+	border-color: transparent;
+}
+
+#heatmap3_tabs .panel > .row:first-child .delete {
+	visibility: hidden;
+}
+
+/* Color labels
+/*--------------------------------------------------------------------------------------------*/
 
 #wkofs_heatmap3 .right .color-label {
 	position: absolute;
@@ -434,76 +568,9 @@
 	color: black !important;
 }
 
-#heatmap .view {
-	display: flex;
-	flex-direction: column;
-}
 
-#heatmap.reviews .view.lessons,
-#heatmap:not(.reviews) .view.reviews {
-	display: none !important;
-}
-
-#heatmap .zero_gap .day-label {
-	line-height: var(--day-size);
-	font-size: calc(var(--day-size) - 2px);
-}
-
-@media (max-width: 767px) {
-	#heatmap .year-labels .toggle-year {
-		font-size: 12px;
-	}
-}
-
-@media (max-width: 700px) {
-	#heatmap .year-labels .toggle-year {
-		font-size: 10px;
-	}
-}
-
-@media (max-width: 600px) {
-	#heatmap .year-labels .toggle-year {
-		font-size: 8px;
-	}
-	#heatmap .year-labels .toggle-year.up {
-		top: -2px;
-	}
-	#heatmap .year-labels .toggle-year.down {
-		bottom: -2px;
-	}
-}
-
-@media (max-width: 500px) {
-	#heatmap .year-labels .toggle-year {
-		font-size: 6px;
-	}
-	#heatmap .year-labels .toggle-year.up {
-		top: -5px;
-	}
-	#heatmap .year-labels .toggle-year.down {
-		bottom: -5px;
-	}
-}
-
-#heatmap3_tabs div[role="tabpanel"] .panel {
-	margin-top: 8px;
-}
-
-#heatmap3_tabs div[role="tabpanel"] .panel .row {
-	display: flex;
-	justify-content: space-around;
-}
-
-#heatmap3_tabs div[role="tabpanel"] .panel .color {
-	position: relative;
-}
-
-#heatmap3_tabs div[role="tabpanel"] .panel .delete button {
-	height: 30px;
-	font-size: 18px;
-	background-color: transparent;
-	border-color: transparent;
-}
+/* Compacting
+/*--------------------------------------------------------------------------------------------*/
 
 #heatmap3_general ~ div[role="tabpanel"] > .wkof_group {
 	padding-top: 10px;
@@ -543,50 +610,52 @@
 	width: calc(100% - 30px);
 }
 
-#heatmap #popper .items .radical-svg {
-	width: 14px;
-	filter: invert(1);
+/*--------------------------------------------------------------------------------------------
+/*	Responsive
+/*--------------------------------------------------------------------------------------------
+*/
+
+@media (max-width: 767px) {
+	#heatmap .year-labels .toggle-year {
+		font-size: 12px;
+	}
 }
 
-#heatmap #popper .items .hover-wrapper .radical-svg {
-	width: 74px;
+@media (max-width: 700px) {
+	#heatmap .year-labels .toggle-year {
+		font-size: 10px;
+	}
 }
 
-#heatmap .head-stats .stat .hover-wrapper.above {
-	text-align: center;
+@media (max-width: 600px) {
+	#heatmap .year-labels .toggle-year {
+		font-size: 8px;
+	}
+	#heatmap .year-labels .toggle-year.up {
+		top: -2px;
+	}
+	#heatmap .year-labels .toggle-year.down {
+		bottom: -2px;
+	}
 }
 
-#heatmap #popper .minimap {
-	text-align: center;
-	margin-bottom: 10px;
+@media (max-width: 500px) {
+	#heatmap .year-labels .toggle-year {
+		font-size: 6px;
+	}
+	#heatmap .year-labels .toggle-year.up {
+		top: -5px;
+	}
+	#heatmap .year-labels .toggle-year.down {
+		bottom: -5px;
+	}
 }
 
-#heatmap #popper .minimap > span {
-	margin-right: 10px;
-	font-weight: bold;
-}
+/*--------------------------------------------------------------------------------------------
+/*	jQuery Datepicker fix
+/*--------------------------------------------------------------------------------------------
+*/
 
-#heatmap #popper .minimap > div {
-	display: inline-grid;
-}
-
-#heatmap3_tabs .row:last-child {
-	margin-bottom: 5px !important;
-}
-
-#heatmap3_tabs #heatmap3_look {
-	padding-top: 12px;
-}
-
-#wkofs_heatmap3 #heatmap3_tabs hr {
-	margin-bottom: 20px;
-}
-
-#heatmap #popper .levels tr[data-count="0"] .hover-wrapper {
-	display: none;
-}
-
-/* jQuery UI CSS */
 .ui-datepicker .ui-widget-header .ui-icon {
 	background-image: url('https://code.jquery.com/ui/1.12.1/themes/base/images/ui-icons_444444_256x240.png');
 }
@@ -601,23 +670,4 @@
 .ui-datepicker * {
 	box-shadow: none;
 	text-align: center !important;
-}
-/* end jQuery UI CSS */
-
-#heatmap3_tabs .panel > .row:first-child .delete {
-	visibility: hidden;
-}
-
-#heatmap .day.selected {
-	height: var(--day-size);
-	width: var(--day-size);
-	border-width: 1px;
-	border-style: solid;
-	border-color: white;
-	border-radius: 2px;
-	box-sizing: border-box;
-}
-
-#heatmap #popper .items .burn {
-	filter: grayscale(1);
 }
