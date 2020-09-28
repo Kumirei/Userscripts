@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.0.5
+// @version      1.0.6
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // ==/UserScript==
@@ -36,7 +36,6 @@
     function compress(data) {return press(true, data);}
     function decompress(data) {return press(false, data);}
     function press(com, data) {
-        if (!data.date) data = {date: localStorage.getItem("review_cache"), reviews: data}; // temporary line so that beta testers don't have to manually reload data
         let last = 0;
         let pressed = data.reviews.map(item => {
                 let map = [com ? (item[0]-last)/60000 : (last+item[0])*60000, ...item.slice(1)];
