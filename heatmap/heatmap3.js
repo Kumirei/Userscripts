@@ -524,6 +524,7 @@
                 visible_map: "reviews",
                 times_popped: 0,
                 times_dragged: 0,
+                ported: false,
             }
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
@@ -532,7 +533,8 @@
             if (!settings.lessons.colors) settings.lessons.colors = [[0, "#747474"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
             if (!settings.forecast.colors) settings.forecast.colors = [[0, "#747474"], [1, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],];
             // Load settings from old script if possible
-            //port_settings(settings);
+            settings.other.ported = true; // Temporary line for beta testers
+            if (!settings.other.ported) port_settings(settings);
             wkof.Settings.save(script_id);
             return settings;
         });
@@ -558,9 +560,8 @@
             settings.lessons.colors = [[0, "#747474"], [1, old.lessons.color1], [old.lessons.interval1, old.lessons.color2], [old.lessons.interval2, old.lessons.color3], [old.lessons.interval3, old.lessons.color4], [old.lessons.interval4, old.lessons.color5]];
             settings.lessons.auto_range = old.lessons.auto_range;
             settings.lessons.count_zeros = old.lessons.count_zeros;
-            wkof.file_cache.delete("wkof.settings.wanikani_heatmap");
-            wkof.Settings.save(script_id);
         }
+        settings.other.ported = true;
     }
 
     function generate_colors(setting_name) {
@@ -897,7 +898,7 @@
     function color_picker(type, date, day_data, multiplier=1) {
         let settings = wkof.settings[script_id];
         let type2 = type;
-        if (type2 === "reviews" && Date.parse(date.join('-'))>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
+        if (type2 === "reviews" && Date.parse(date.join('-')+' 0:0')>Date.now()-1000*60*60*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
         let colors = settings[type2].colors;
         if (!settings[type2].gradient) {
             for (let [bound, color] of colors.slice().reverse()) {
