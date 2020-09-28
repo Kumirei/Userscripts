@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.5
 // @description  Simple script that can generate heatmaps
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
