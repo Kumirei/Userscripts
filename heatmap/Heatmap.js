@@ -1,23 +1,27 @@
 // ==UserScript==
 // @name         Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
-// @description  Adds review and lesson heatmaps to the dashboard.
+// @version      1.0.1
+// @description  Simple script that can generate heatmaps
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @grant        none
 // ==/UserScript==
+/*jshint esversion: 8 */
 
 (function($) {
+    // The heatmap object
     class Heatmap {
         constructor(config, data) {
             this.maps = {};
             this.config = config;
             this.data = {};
 
+            // If data is provided, initiate right away
             if (data !== undefined) this.initiate(data);
         }
 
+        // Creates heatmaps for the data
         initiate(data) {
             let dates = this._get_dates(data);
             let parsed_data = this._parse_data(data, dates);
@@ -33,17 +37,20 @@
             }
         }
 
+        // Parses data into a date structure
         _parse_data(data, dates) {
+            // Prepare vessel
             let parsed_data = {};
             for (let year=dates.first_year; year<=dates.last_year; year++) {
                 parsed_data[year] = {};
                 for (let month=1; month<=12; month++) {
                     parsed_data[year][month] = {};
                     for (let day=0; day<=31; day++) {
-                        parsed_data[year][month][day] = {counts: {}, lists: {}, hours: new Array(24).fill().map(()=>{return {counts: {}, lists: {}}})};
+                        parsed_data[year][month][day] = {counts: {}, lists: {}, hours: new Array(24).fill().map(()=>{return {counts: {}, lists: {}};})};
                     }
                 }
             }
+            // Populate vessel
             for (let [date, counts, lists] of data) {
                 let [year, month, day, hour] = this._get_ymdh(date-1000*60*60*this.config.day_start);
                 if (date-1000*60*60*this.config.day_start < new Date(this.config.first_date).getTime() || date-1000*60*60*this.config.day_start > new Date(this.config.last_date || date+1).getTime()) continue;
@@ -64,6 +71,7 @@
             return parsed_data;
         }
 
+        // Create a year element for the heatmap
         _init_year(year, data, dates) {
             let cls = 'year heatmap ' + this.config.id + (this.config.segment_years?' segment_years':'') + (this.config.zero_gap?' zero_gap':'') + (year>new Date().getFullYear()?' future':'') + (year==new Date().getFullYear()?' current':'');
             let year_elem = this._create_elem({type: 'div', class: cls,});
@@ -77,15 +85,17 @@
             return year_elem;
         }
 
+        // Create labels for the years
         _get_year_labels(year) {
             let year_label = this._create_elem({type: 'div', class: 'year-label hover-wrapper-target', child: String(year)});
             let day_labels = this._create_elem({type: 'div', class: 'day-labels'});
             for (let day=0; day<7; day++) {
                 day_labels.append(this._create_elem({type: 'div', class: 'day-label', child: ['M','T','W','T','F','S','S'][(day+Number(this.config.week_start))%7]}));
-            };
+            }
             return [year_label, day_labels];
         }
 
+        // Create a month element for the year
         _init_month(year, month, data, dates) {
             let offset = (new Date(year+'-'+month+'-01 0:0').getDay()+6-this.config.week_start)%7;
             let month_elem = this._create_elem({type: 'div', class: 'month offset-'+offset});
@@ -100,6 +110,7 @@
             return month_elem;
         }
 
+        // Create a day element for the month
         _init_day(year, month, day, data, dates) {
             let day_data = data[year][month][day];
             let day_elem = this._create_elem({type: 'div',
@@ -112,6 +123,7 @@
             return day_elem;
         }
 
+        // Creates a simple heatmap with 24 squares that represent a single day
         _init_single_day(data, dates) {
             let day = this._create_elem({type: 'div', class: 'single-day '+this.config.id});
             let hour_data = data[dates.first_year][dates.first_month][dates.first_day].hours;
@@ -128,6 +140,7 @@
             return day;
         }
 
+        // Marks provided dates with a border
         _add_markings(markings, years) {
             for (let [date, mark] of markings) {
                 let [year, month, day] = this._get_ymdh(date);
@@ -135,8 +148,13 @@
             }
         }
 
+        // Number of days in each month
         _get_days_in_month(year, month) {return [31, this._is_leap_year(year)?29:28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month-1];}
+
+        // Checks for leap year
         _is_leap_year(year) {return year%4==0 && (year%100!=0 || year%400==0);}
+
+        // Shorthand for creating new elements
         _create_elem(config) {
             let div = document.createElement(config.type);
             for (let [attr, value] of Object.entries(config)) {
@@ -148,6 +166,8 @@
             }
             return div;
         }
+
+        // Get first and last dates that should be visible in the heatmap
         _get_dates() {
             let [first_year, first_month, first_day] = this._get_ymdh(this.config.first_date);
             let [last_year, last_month, last_day] = this._get_ymdh(this.config.last_date || Date.now());
@@ -155,8 +175,12 @@
                     last_year, last_month, last_day,
                    };
         }
+
+        // Convert date into year month date and hour
         _get_ymdh(date) {let d = new Date(date); return [d.getFullYear(), d.getMonth()+1, d.getDate(), d.getHours()];}
 
     }
+
+    // Expose class
     window.Heatmap = Heatmap;
 })();
