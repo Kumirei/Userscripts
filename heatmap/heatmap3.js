@@ -42,10 +42,8 @@
 
     // Fetch necessary data then install the heatmap
     async function initiate() {
-        let t = Date.now();
-        let reviews = await review_cache.get_reviews();
-        let items = await wkof.ItemData.get_items('assignments');
-        let [forecast, lessons] = await get_forecast_and_lessons(items);
+        let [reviews, items] = await Promise.all([review_cache.get_reviews(), wkof.ItemData.get_items('assignments')]);
+        let [forecast, lessons] = get_forecast_and_lessons(items);
         if (wkof.settings[script_id].lessons.recover_lessons) {
             let restored_lessons = await get_recovered_lessons(items, reviews, lessons);
             lessons = lessons.concat(restored_lessons).sort((a,b)=>a[0]<b[0]?-1:1);
