@@ -187,301 +187,70 @@
     }
 
     function open_settings() {
-        var config = {
+        let config = {
             script_id: script_id,
             title: 'Heatmap',
             on_save: _=>applied = true,
             on_close: reload_on_change,
-            content: {
-                tabs: {
-                    type: 'tabset',
-                    content: {
-                        general: {
-                            type: 'page',
-                            label: 'General',
-                            hover_tip: 'Settings pertaining to the general functions of the script',
-                            content: {
-                                control: {
-                                    type: 'group',
-                                    label: 'Control',
-                                    content: {
-                                        position: {
-                                            type: 'dropdown',
-                                            label: 'Position',
-                                            default: 2,
-                                            hover_tip: 'Where on the dashboard to install the heatmap',
-                                            content: {0: "Top", 1: "Below forecast", 2: "Below SRS", 3: "Below panels", 4: "Bottom"},
-                                            path: '@general.position'
-                                        },
-                                        start_date: {
-                                            type: 'text',
-                                            label: 'Start date',
-                                            default: '2012-01-01',
-                                            hover_tip: 'All data before this date will be ignored',
-                                            path: '@general.start_date',
-                                        },
-                                        week_start: {
-                                            type: 'dropdown',
-                                            label: 'First day of the week',
-                                            default: 0,
-                                            hover_tip: 'Determines which day of the week is at the top of the heatmaps',
-                                            content: {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"},
-                                            path: '@general.week_start'
-                                        },
-                                        day_start: {
-                                            type: 'number',
-                                            label: 'New day starts at',
-                                            default: 0,
-                                            placeholder: '(hours after midnight)',
-                                            hover_tip: 'Offset for those who tend to stay up after midnight. If you want the new day to start at 4 AM, input 4.',
-                                            path: '@general.day_start',
-                                        },
-                                        session_limit: {
-                                            type: 'number',
-                                            label: 'Session time limit (minutes)',
-                                            default: 10,
-                                            placeholder: '(minutes)',
-                                            hover_tip: 'Max number of minutes between review/lesson items to still count within the same session',
-                                            path: '@general.session_limit',
-                                        },
-                                        theme: {
-                                            type: 'dropdown',
-                                            label: 'Theme',
-                                            default: "dark",
-                                            hover_tip: 'Changes the background color and other things',
-                                            content: {"light": "Light", "dark": "Dark", "breeze-dark": "Breeze Dark",},
-                                            path: '@general.theme'
-                                        },
-                                    },
-                                },
-                                layout: {
-                                    type: 'group',
-                                    label: 'Layout',
-                                    content: {
-                                        reverse_years: {
-                                            type: 'checkbox',
-                                            label: 'Reverse year order',
-                                            default: false,
-                                            hover_tip: 'Puts the most recent years on the bottom instead of the top',
-                                            path: '@general.reverse_years'
-                                        },
-                                        segment_years: {
-                                            type: 'checkbox',
-                                            label: 'Segment year',
-                                            default: true,
-                                            hover_tip: 'Put a gap between months',
-                                            path: '@general.segment_years'
-                                        },
-                                        zero_gap: {
-                                            type: 'checkbox',
-                                            label: 'No gap',
-                                            default: false,
-                                            hover_tip: `Don't display any gap between days`,
-                                            path: '@general.zero_gap'
-                                        },
-                                        day_labels: {
-                                            type: 'checkbox',
-                                            label: 'Day of week labels',
-                                            default: true,
-                                            hover_tip: 'Adds letters to the left of the heatmaps indicating which row represents which weekday',
-                                            path: '@general.day_labels'
-                                        },
-                                        month_labels: {
-                                            type: 'dropdown',
-                                            label: 'Month labels',
-                                            default: "all",
-                                            hover_tip: 'Display month labels above each month',
-                                            content: {all: "All", top: "Only at the top", none: "None"},
-                                            path: '@general.month_labels'
-                                        },
-                                    },
-                                },
-                                indicators: {
-                                    type: 'group',
-                                    label: 'Indicators',
-                                    content: {
-                                        now_indicator: {
-                                            type: 'checkbox',
-                                            label: 'Current day indicator',
-                                            default: true,
-                                            hover_tip: 'Puts a border around the current day',
-                                            path: '@general.now_indicator'
-                                        },
-                                        level_indicator: {
-                                            type: 'checkbox',
-                                            label: 'Level-up indicators',
-                                            default: true,
-                                            hover_tip: 'Puts borders around the days on which you leveled up',
-                                            path: '@general.level_indicator'
-                                        },
-                                        color_now_indicator: {
-                                            type: 'color',
-                                            label: 'Color for current day',
-                                            hover_tip: 'The border around the current day will have this color',
-                                            default: '#ff0000',
-                                            path: '@general.color_now_indicator',
-                                        },
-                                        color_level_indicator: {
-                                            type: 'color',
-                                            label: 'Color for level-ups',
-                                            hover_tip: 'The borders around level-ups will have this color',
-                                            default: '#ffffff',
-                                            path: '@general.color_level_indicator',
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                        reviews: {
-                            type: 'page',
-                            label: 'Reviews',
-                            hover_tip: 'Settings pertaining to the review heatmaps',
-                            content: {
-                                reviews_settings: {
-                                    type: 'group',
-                                    label: 'Review Settings',
-                                    content: {
-                                        reviews_section: {
-                                            type: 'section',
-                                            label: 'Intervals'
-                                        },
-                                        reviews_auto_range: {
-                                            type: 'checkbox',
-                                            label: 'Auto range intervals',
-                                            default: true,
-                                            hover_tip: 'Automatically decide what the intervals should be',
-                                            path: '@reviews.auto_range'
-                                        },
-                                        reviews_gradient: {
-                                            type: 'checkbox',
-                                            label: 'Use gradients',
-                                            default: true,
-                                            hover_tip: 'Interpolate colors based on the exact number of items on that day',
-                                            path: '@reviews.gradient'
-                                        },
-                                        reviews_generate: {
-                                            type: 'button',
-                                            label: 'Generate colors',
-                                            text: 'Generate',
-                                            hover_tip: 'Generate new colors from the first and last non-zero interval',
-                                            on_click: generate_colors,
-                                        },
-                                        reviews_section2: {
-                                            type: 'section',
-                                            label: 'Other'
-                                        },
-                                        reload_button: {
-                                            type: 'button',
-                                            label: 'Reload review data',
-                                            text: 'Reload',
-                                            hover_tip: 'Deletes review cache and starts a new fetch',
-                                            on_click: ()=>review_cache.reload().then(reviews=>reload(reviews)),
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                        lessons: {
-                            type: 'page',
-                            label: 'Lessons',
-                            hover_tip: 'Settings pertaining to the lesson heatmaps',
-                            content: {
-                                lessons_settings: {
-                                    type: 'group',
-                                    label: 'Lesson Settings',
-                                    content: {
-                                        lessons_section: {
-                                            type: 'section',
-                                            label: 'Intervals'
-                                        },
-                                        lessons_auto_range: {
-                                            type: 'checkbox',
-                                            label: 'Auto range intervals',
-                                            default: true,
-                                            hover_tip: 'Automatically decide what the intervals should be',
-                                            path: '@lessons.auto_range'
-                                        },
-                                        lessons_gradient: {
-                                            type: 'checkbox',
-                                            label: 'Use gradients',
-                                            default: true,
-                                            hover_tip: 'Interpolate colors based on the exact number of items on that day',
-                                            path: '@lessons.gradient'
-                                        },
-                                        lessons_generate: {
-                                            type: 'button',
-                                            label: 'Generate colors',
-                                            text: 'Generate',
-                                            hover_tip: 'Generate new colors from the first and last non-zero interval',
-                                            on_click: generate_colors,
-                                        },
-                                        lessons_section2: {
-                                            type: 'section',
-                                            label: 'Other'
-                                        },
-                                        lessons_count_zeros: {
-                                            type: 'checkbox',
-                                            label: 'Include zeros in streak',
-                                            default: true,
-                                            hover_tip: 'Counts days with no lessons available towards the streak',
-                                            path: '@lessons.count_zeros'
-                                        },
-                                        recover_lessons: {
-                                            type: 'checkbox',
-                                            label: 'Recover reset lessons',
-                                            default: false,
-                                            hover_tip: 'Allow the Heatmap to guess when you did lessons for items that have been reset',
-                                            path: '@lessons.recover_lessons'
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                        forecast: {
-                            type: 'page',
-                            label: 'Review Forecast',
-                            hover_tip: 'Settings pertaining to the forecast',
-                            content: {
-                                forecast_settings: {
-                                    type: 'group',
-                                    label: 'Forecast Settings',
-                                    content: {
-                                        forecast_section: {
-                                            type: 'section',
-                                            label: 'Intervals'
-                                        },
-                                        forecast_auto_range: {
-                                            type: 'checkbox',
-                                            label: 'Auto range intervals',
-                                            default: true,
-                                            hover_tip: 'Automatically decide what the intervals should be',
-                                            path: '@forecast.auto_range'
-                                        },
-                                        forecast_gradient: {
-                                            type: 'checkbox',
-                                            label: 'Use gradients',
-                                            default: true,
-                                            hover_tip: 'Interpolate colors based on the exact number of items on that day',
-                                            path: '@forecast.gradient'
-                                        },
-                                        forecast_generate: {
-                                            type: 'button',
-                                            label: 'Generate colors',
-                                            text: 'Generate',
-                                            hover_tip: 'Generate new colors from the first and last non-zero interval',
-                                            on_click: generate_colors,
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
+            content: {tabs: {type: 'tabset', content: {
+                general: {
+                    type: 'page', label: 'General', hover_tip: 'Settings pertaining to the general functions of the script', content: {
+                        control: {type: 'group', label: 'Control', content: {
+                            position: {type: 'dropdown', label: 'Position', default: 2, hover_tip: 'Where on the dashboard to install the heatmap', content: {0: "Top", 1: "Below forecast", 2: "Below SRS", 3: "Below panels", 4: "Bottom"}, path: '@general.position'},
+                            start_date: {type: 'text', label: 'Start date', default: '2012-01-01', hover_tip: 'All data before this date will be ignored', path: '@general.start_date', },
+                            week_start: {type: 'dropdown', label: 'First day of the week', default: 0, hover_tip: 'Determines which day of the week is at the top of the heatmaps', content: {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"}, path: '@general.week_start', },
+                            day_start: {type: 'number', label: 'New day starts at', default: 0, placeholder: '(hours after midnight)', hover_tip: 'Offset for those who tend to stay up after midnight. If you want the new day to start at 4 AM, input 4.', path: '@general.day_start', },
+                            session_limit: {type: 'number', label: 'Session time limit (minutes)', default: 10, placeholder: '(minutes)', hover_tip: 'Max number of minutes between review/lesson items to still count within the same session', path: '@general.session_limit', },
+                            theme: {type: 'dropdown', label: 'Theme', default: "dark", hover_tip: 'Changes the background color and other things', content: {"light": "Light", "dark": "Dark", "breeze-dark": "Breeze Dark",}, path: '@general.theme', },
+                        },},
+                        layout: {type: 'group', label: 'Layout', content: {
+                            reverse_years: {type: 'checkbox', label: 'Reverse year order', default: false, hover_tip: 'Puts the most recent years on the bottom instead of the top', path: '@general.reverse_years', },
+                            segment_years: {type: 'checkbox', label: 'Segment year', default: true, hover_tip: 'Put a gap between months', path: '@general.segment_years', },
+                            zero_gap: {type: 'checkbox', label: 'No gap', default: false, hover_tip: `Don't display any gap between days`, path: '@general.zero_gap', },
+                            day_labels: {type: 'checkbox', label: 'Day of week labels', default: true, hover_tip: 'Adds letters to the left of the heatmaps indicating which row represents which weekday', path: '@general.day_labels', },
+                            month_labels: {type: 'dropdown', label: 'Month labels', default: "all", hover_tip: 'Display month labels above each month', content: {all: "All", top: "Only at the top", none: "None"}, path: '@general.month_labels', },
+                        },},
+                        indicators: {type: 'group', label: 'Indicators', content: {
+                            now_indicator: {type: 'checkbox', label: 'Current day indicator', default: true, hover_tip: 'Puts a border around the current day', path: '@general.now_indicator', },
+                            level_indicator: {type: 'checkbox', label: 'Level-up indicators', default: true, hover_tip: 'Puts borders around the days on which you leveled up', path: '@general.level_indicator', },
+                            color_now_indicator: {type: 'color', label: 'Color for current day', hover_tip: 'The border around the current day will have this color', default: '#ff0000', path: '@general.color_now_indicator', },
+                            color_level_indicator: {type: 'color', label: 'Color for level-ups', hover_tip: 'The borders around level-ups will have this color', default: '#ffffff', path: '@general.color_level_indicator', },
+                        },},
+                    },},
+                    reviews: {type: 'page', label: 'Reviews', hover_tip: 'Settings pertaining to the review heatmaps', content: {
+                        reviews_settings: {type: 'group', label: 'Review Settings', content: {
+                            reviews_section: {type: 'section', label: 'Intervals', },
+                            reviews_auto_range: {type: 'checkbox', label: 'Auto range intervals', default: true, hover_tip: 'Automatically decide what the intervals should be', path: '@reviews.auto_range', },
+                            reviews_gradient: {type: 'checkbox', label: 'Use gradients', default: true, hover_tip: 'Interpolate colors based on the exact number of items on that day', path: '@reviews.gradient', },
+                            reviews_generate: {type: 'button', label: 'Generate colors', text: 'Generate', hover_tip: 'Generate new colors from the first and last non-zero interval', on_click: generate_colors, },
+                            reviews_section2: {type: 'section', label: 'Other', },
+                            reload_button: {type: 'button', label: 'Reload review data', text: 'Reload', hover_tip: 'Deletes review cache and starts a new fetch', on_click: ()=>review_cache.reload().then(reviews=>reload(reviews)), },
+                        },},
+                    },},
+                    lessons: {type: 'page', label: 'Lessons', hover_tip: 'Settings pertaining to the lesson heatmaps', content: {
+                        lessons_settings: {type: 'group', label: 'Lesson Settings', content: {
+                            lessons_section: {type: 'section', label: 'Intervals', },
+                            lessons_auto_range: {type: 'checkbox', label: 'Auto range intervals', default: true, hover_tip: 'Automatically decide what the intervals should be', path: '@lessons.auto_range', },
+                            lessons_gradient: {type: 'checkbox', label: 'Use gradients', default: true, hover_tip: 'Interpolate colors based on the exact number of items on that day', path: '@lessons.gradient', },
+                            lessons_generate: {type: 'button', label: 'Generate colors', text: 'Generate', hover_tip: 'Generate new colors from the first and last non-zero interval', on_click: generate_colors, },
+                            lessons_section2: {type: 'section', label: 'Other', },
+                            lessons_count_zeros: {type: 'checkbox', label: 'Include zeros in streak', default: true, hover_tip: 'Counts days with no lessons available towards the streak', path: '@lessons.count_zeros', },
+                            recover_lessons: {type: 'checkbox', label: 'Recover reset lessons', default: false, hover_tip: 'Allow the Heatmap to guess when you did lessons for items that have been reset', path: '@lessons.recover_lessons', },
+                        },},
+                    },},
+                    forecast: {type: 'page', label: 'Review Forecast', hover_tip: 'Settings pertaining to the forecast', content: {
+                        forecast_settings: {type: 'group', label: 'Forecast Settings', content: {
+                            forecast_section: {type: 'section', label: 'Intervals', },
+                            forecast_auto_range: {type: 'checkbox', label: 'Auto range intervals', default: true, hover_tip: 'Automatically decide what the intervals should be', path: '@forecast.auto_range', },
+                            forecast_gradient: {type: 'checkbox', label: 'Use gradients', default: true, hover_tip: 'Interpolate colors based on the exact number of items on that day', path: '@forecast.gradient', },
+                            forecast_generate: {type: 'button', label: 'Generate colors', text: 'Generate', hover_tip: 'Generate new colors from the first and last non-zero interval', on_click: generate_colors, },
+                        },},
+                    },},
+            },},},
         };
         let dialog = new wkof.Settings(config);
         config.pre_open = (elem)=>{dialog.refresh(); modify_settings(elem);};
-        delete wkof.settings[script_id].wkofs_active_tabs;
+        delete wkof.settings[script_id].wkofs_active_tabs; // Make settings dialog always open in first tab because it is so much taller
         dialog.open();
     }
 
