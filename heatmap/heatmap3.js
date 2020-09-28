@@ -610,7 +610,8 @@
                         let title = `${start_date.toDateString().slice(4)} ${kanji_day(start_date.getDay())} - ${end_date.toDateString().slice(4)} ${kanji_day(end_date.getDay())}`;
                         let today = new Date(new Date().toDateString()).getTime();
                         let offset = wkof.settings[script_id].general.day_start*60*60*1000;
-                        let minimap_data = cook_data(type, data[type].filter(a=>a[0]>start_date.getTime()+offset&&a[0]<end_date.getTime()+1000*60*60*24+offset).map(a=>[today+new Date(a[0]).getHours()*60*60*1000+wkof.settings[script_id].general.day_start*60*60*1000, ...a.slice(1)]));
+                        let day_data = data[type].filter(a=>a[0]>start_date.getTime()+offset&&a[0]<end_date.getTime()+1000*60*60*24+offset).map(a=>[today+new Date(a[0]).getHours()*60*60*1000+wkof.settings[script_id].general.day_start*60*60*1000, ...a.slice(1)]);
+                        let minimap_data = cook_data(type, day_data);
                         let popper_info = {counts: {}, lists: {}};
                         for (let item of minimap_data) {
                             for (let [key, value] of Object.entries(item[1])) {
@@ -622,7 +623,8 @@
                                 popper_info.lists[key].push(value);
                             }
                         }
-                        update_popper(event, type, title, popper_info, minimap_data);
+                        let burns = day_data.filter(item => item[2] === 8 && item[3]+item[4] === 0).map(item => item[1]);
+                        update_popper(event, type, title, popper_info, minimap_data, burns);
                         wkof.settings[script_id].other.times_dragged++;
                     }
                 }
