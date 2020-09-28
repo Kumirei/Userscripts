@@ -9,7 +9,7 @@
 // ==/UserScript==
 /*jshint esversion: 8 */
 
-(function($, wkof, review_cache, Heatmap) {
+(function(wkof, review_cache, Heatmap) {
     let msh = 60*60*1000, msd = 24*msh; // Milliseconds in hour and day
 
     /*-------------------------------------------------------------------------------------------------------------------------------*/
@@ -1058,4 +1058,4 @@
         }
         return items;
     }
-})(window.jQuery, window.wkof, window.review_cache, window.Heatmap);
+})(window.wkof, window.review_cache, window.Heatmap);
