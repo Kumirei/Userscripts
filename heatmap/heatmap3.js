@@ -133,9 +133,8 @@
         // Make start-date a jQuery datepicker
         window.jQuery(dialog[0].querySelector('#heatmap3_start_date')).datepicker({dateFormat: "yy-mm-dd",changeYear: true,yearRange: "2012:+0"});
         // Add apply button
-        let apply = create_elem({type: 'button', class: 'ui-button ui-corner-all ui-widget', child: 'Apply'});
         applied = false;
-        apply.onclick = e=>{applied = true; reload();};
+        let apply = create_elem({type: 'button', class: 'ui-button ui-corner-all ui-widget', child: 'Apply', onclick: e=>{applied = true; reload();}});
         dialog[0].nextElementSibling.getElementsByClassName('ui-dialog-buttonset')[0].insertAdjacentElement('afterbegin', apply);
         // Add color settings
         let update_label = function(input) {
@@ -594,14 +593,8 @@
     // Creates the buttons at the top of the heatmap
     function create_buttons() {
         let buttons = create_elem({type: 'div', class: 'buttons'});
-        // Creates a button element with an icon and a hover element
-        let create_button = (cls, icon, tooltip)=>create_elem({type: 'button', class: cls+'-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: tooltip}),
-        create_elem({type: 'i', class: 'icon-'+icon})]});
-        // Create button elements
-        let settings_button = create_button('settings', 'gear', 'Settings');
-        settings_button.onclick = open_settings;
-        let toggle_button = create_button('toggle', 'inbox', 'Toggle Reviews/Lessons');
-        toggle_button.onclick = toggle_visible_map;
+        let settings_button = create_elem({type: 'button', class: 'settings-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Settings'}), create_elem({type: 'i', class: 'icon-gear'})], open_settings});
+        let toggle_button = create_elem({type: 'button', class: 'toggle-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Toggle Reviews/Lessons'}), create_elem({type: 'i', class: 'icon-inbox'})], toggle_visible_map});
         buttons.append(settings_button, toggle_button);
         return buttons;
     }
