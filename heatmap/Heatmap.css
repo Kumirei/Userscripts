@@ -1,9 +1,22 @@
+/*--------------------------------------------------------------------------------------------
+/*	Heatmap
+/*--------------------------------------------------------------------------------------------
+*/
+
 .heatmap {
     --day-size: 10px;
     --day-gap: 2px;
 	--year-label-size: 20px;
 	--hover-background-color: #424242;
 }
+
+.heatmap.zero_gap {
+	--day-gap: 0px;
+}
+
+
+/* Year
+/*--------------------------------------------------------------------------------------------*/
 
 .heatmap.year {
     display: flex;
@@ -15,29 +28,26 @@
 	margin-right: 10px;
 	display: flex;
 	align-items: center;
+    font-size: var(--year-label-size);
+    font-weight: bold;
 }
 
-.heatmap .months {
-	display: grid;
-	grid-auto-flow: column;
-	grid-gap: var(--day-gap);
+.heatmap .year-labels {
+	display: flex;
+	margin-top: 14px;
 }
 
 .heatmap .day-labels {
 	margin-right: 4px;
 }
 
-.heatmap .day-label {
-	font-size: calc(var(--day-size));
-	line-height: calc(var(--day-size) + var(--day-gap));
-	text-align: center;
-}
+/* Month
+/*--------------------------------------------------------------------------------------------*/
 
-.heatmap .days {
-    display: grid;
-    grid-template-rows: repeat(7, var(--day-size));
-    grid-gap: var(--day-gap);
-    grid-auto-flow: column;
+.heatmap .months {
+	display: grid;
+	grid-auto-flow: column;
+	grid-gap: var(--day-gap);
 }
 
 .heatmap .month-label {
@@ -52,102 +62,8 @@
 	grid-template-rows: inherit;
 }
 
-.heatmap .year-labels {
-	display: flex;
-	margin-top: 14px;
-}
-
-.heatmap .day .hover-wrapper,
-.heatmap .hour .hover-wrapper {
-    transform: translate(15px, 15px);
-}
-
-.heatmap .hover-wrapper {
-    opacity: 0;
-    visibility: hidden;
-    position: absolute;
-    background-color: var(--hover-background-color);
-	color: rgb(240, 240, 240) !important;
-    padding: 5px;
-    border-radius: 3px;
-    font-size: 12px;
-    font-weight: normal;
-    width: max-content;
-    transition: opacity 0s;
-    text-align: left;
-	height: fit-content;
-	white-space: pre-line;
-}
-
-.heatmap .hover-wrapper-target:hover .hover-wrapper {
-    opacity: 1;
-	visibility: visible;
-    transition-delay: 0.5s;
-	z-index: 1001;
-}
-
-.heatmap .hover-wrapper-target {
-	position: relative;
-}
-
-.heatmap .hover-wrapper.above {
-	left: 50%;
-	transform: translate(-50%, calc(-100% - 5px))
-}
-
-.heatmap .hover-wrapper.above::after,
-.heatmap .hover-wrapper.below::before {
-	content: '';
-	border-right: 5px solid transparent;
-	border-left: 5px solid transparent;
-	opacity: 0;
-    transition: opacity 0s;
-	position: absolute;
-	left: 50%;
-	transform: translatex(-50%);
-}
-
-.heatmap .hover-wrapper.above::after {
-    border-top: 5px solid var(--hover-background-color);
-	bottom: -5px;
-
-}
-
-.heatmap .hover-wrapper.below::before {
-    border-bottom: 5px solid var(--hover-background-color);
-	top: -5px;
-
-}
-
-.heatmap .hover-wrapper.below {
-	left: 50%;
-	transform: translate(-50%, 100%);
-	bottom: -5px;
-}
-
-.heatmap .hover-wrapper-target:hover .hover-wrapper.above::after,
-.heatmap .hover-wrapper-target:hover .hover-wrapper.below::before {
-    transition-delay: 0.5s;
-    opacity: 1;
-}
-
-.heatmap .marked {
-	height: var(--day-size);
-	width: var(--day-size);
-	border-width: 1px;
-	border-style: solid;
-	border-color: white;
-	border-radius: 2px;
-	box-sizing: border-box;
-}
-
-.heatmap .day.marked:hover {
-	z-index: 9;
-}
-
-.heatmap .year-label {
-    font-size: var(--year-label-size);
-    font-weight: bold;
+.heatmap .month.no-data {
+	visibility: hidden;
 }
 
 .heatmap:not(.segment_years) > .months > .month:not(:first-child),
@@ -155,16 +71,24 @@
     margin-left: calc(0px - var(--day-size) - var(--day-gap));
 }
 
-.heatmap.zero_gap {
-	--day-gap: 0px;
-}
-
-.heatmap .month.no-data {
-	visibility: hidden;
-}
-
 .heatmap .month:not(:first-child).offset-0 {
 	margin-left: calc(var(--day-size) + var(--day-gap));
+}
+
+/* Day
+/*--------------------------------------------------------------------------------------------*/
+
+.heatmap .days {
+    display: grid;
+    grid-template-rows: repeat(7, var(--day-size));
+    grid-gap: var(--day-gap);
+    grid-auto-flow: column;
+}
+
+.heatmap .day-label {
+	font-size: calc(var(--day-size));
+	line-height: calc(var(--day-size) + var(--day-gap));
+	text-align: center;
 }
 
 .heatmap .month.offset-1 .day:first-child {
@@ -214,8 +138,105 @@
 	height: var(--day-size);
 }
 
-/*---------------------------------------------------------------------------------------------------------------*/
+/* Hover wrapper
+/*--------------------------------------------------------------------------------------------*/
 
+.heatmap .hover-wrapper {
+    opacity: 0;
+    visibility: hidden;
+    position: absolute;
+    background-color: var(--hover-background-color);
+	color: rgb(240, 240, 240) !important;
+    padding: 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: normal;
+    width: max-content;
+    transition: opacity 0s;
+    text-align: left;
+	height: fit-content;
+	white-space: pre-line;
+}
+
+.heatmap .hover-wrapper-target {
+	position: relative;
+}
+
+.heatmap .hover-wrapper-target:hover .hover-wrapper {
+    opacity: 1;
+	visibility: visible;
+    transition-delay: 0.5s;
+	z-index: 1001;
+}
+
+.heatmap .day .hover-wrapper,
+.heatmap .hour .hover-wrapper {
+    transform: translate(15px, 15px);
+}
+
+.heatmap .hover-wrapper.above {
+	left: 50%;
+	transform: translate(-50%, calc(-100% - 5px))
+}
+
+.heatmap .hover-wrapper.above::after {
+    border-top: 5px solid var(--hover-background-color);
+	bottom: -5px;
+
+}
+
+.heatmap .hover-wrapper.below {
+	left: 50%;
+	transform: translate(-50%, 100%);
+	bottom: -5px;
+}
+
+.heatmap .hover-wrapper.below::before {
+    border-bottom: 5px solid var(--hover-background-color);
+	top: -5px;
+
+}
+
+.heatmap .hover-wrapper.above::after,
+.heatmap .hover-wrapper.below::before {
+	content: '';
+	border-right: 5px solid transparent;
+	border-left: 5px solid transparent;
+	opacity: 0;
+    transition: opacity 0s;
+	position: absolute;
+	left: 50%;
+	transform: translatex(-50%);
+}
+
+.heatmap .hover-wrapper-target:hover .hover-wrapper.above::after,
+.heatmap .hover-wrapper-target:hover .hover-wrapper.below::before {
+    transition-delay: 0.5s;
+    opacity: 1;
+}
+
+/* Marks
+/*--------------------------------------------------------------------------------------------*/
+
+.heatmap .marked {
+	height: var(--day-size);
+	width: var(--day-size);
+	border-width: 1px;
+	border-style: solid;
+	border-color: white;
+	border-radius: 2px;
+	box-sizing: border-box;
+}
+
+.heatmap .day.marked:hover {
+	z-index: 9;
+}
+
+
+/*--------------------------------------------------------------------------------------------
+/*	Responsive
+/*--------------------------------------------------------------------------------------------
+*/
 
 @media (max-width: 980px) {
     .heatmap {
