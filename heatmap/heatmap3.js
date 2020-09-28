@@ -224,7 +224,7 @@
                                             type: 'dropdown',
                                             label: 'First day of the week',
                                             default: 0,
-                                            hover_tip: 'Start the week on the selected day.',
+                                            hover_tip: 'Determines which day of the week is at the top of the heatmaps',
                                             content: {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"},
                                             path: '@general.week_start'
                                         },
@@ -241,14 +241,14 @@
                                             label: 'Session time limit (minutes)',
                                             default: 10,
                                             placeholder: '(minutes)',
-                                            hover_tip: 'Max number of minutes between review answers to still count within the same session',
+                                            hover_tip: 'Max number of minutes between review/lesson items to still count within the same session',
                                             path: '@general.session_limit',
                                         },
                                         theme: {
                                             type: 'dropdown',
                                             label: 'Theme',
                                             default: "dark",
-                                            hover_tip: 'Theme!',
+                                            hover_tip: 'Changes the background color and other things',
                                             content: {"light": "Light", "dark": "Dark", "breeze-dark": "Breeze Dark",},
                                             path: '@general.theme'
                                         },
@@ -262,14 +262,14 @@
                                             type: 'checkbox',
                                             label: 'Reverse year order',
                                             default: false,
-                                            hover_tip: 'Puts the most recent years on the bottom instead of the top.',
+                                            hover_tip: 'Puts the most recent years on the bottom instead of the top',
                                             path: '@general.reverse_years'
                                         },
                                         segment_years: {
                                             type: 'checkbox',
                                             label: 'Segment year',
                                             default: true,
-                                            hover_tip: 'If this is checked then months will display as segments.',
+                                            hover_tip: 'Put a gap between months',
                                             path: '@general.segment_years'
                                         },
                                         zero_gap: {
@@ -290,7 +290,7 @@
                                             type: 'dropdown',
                                             label: 'Month labels',
                                             default: "all",
-                                            hover_tip: 'Display labels for the months above the maps',
+                                            hover_tip: 'Display month labels above each month',
                                             content: {all: "All", top: "Only at the top", none: "None"},
                                             path: '@general.month_labels'
                                         },
@@ -304,27 +304,27 @@
                                             type: 'checkbox',
                                             label: 'Current day indicator',
                                             default: true,
-                                            hover_tip: 'Puts borders around the current day',
+                                            hover_tip: 'Puts a border around the current day',
                                             path: '@general.now_indicator'
                                         },
                                         level_indicator: {
                                             type: 'checkbox',
                                             label: 'Level-up indicators',
                                             default: true,
-                                            hover_tip: 'Puts borders around the days you leveled up',
+                                            hover_tip: 'Puts borders around the days on which you leveled up',
                                             path: '@general.level_indicator'
                                         },
                                         color_now_indicator: {
                                             type: 'color',
                                             label: 'Color for current day',
-                                            hover_tip: 'The borders around today will have this color.',
+                                            hover_tip: 'The border around the current day will have this color',
                                             default: '#ff0000',
                                             path: '@general.color_now_indicator',
                                         },
                                         color_level_indicator: {
                                             type: 'color',
                                             label: 'Color for level-ups',
-                                            hover_tip: 'The borders around level-ups will have this color.',
+                                            hover_tip: 'The borders around level-ups will have this color',
                                             default: '#ffffff',
                                             path: '@general.color_level_indicator',
                                         },
@@ -356,14 +356,14 @@
                                             type: 'checkbox',
                                             label: 'Use gradients',
                                             default: true,
-                                            hover_tip: 'Let any colors between the chosen ones be used',
+                                            hover_tip: 'Interpolate colors based on the exact number of items on that day',
                                             path: '@reviews.gradient'
                                         },
                                         reviews_generate: {
                                             type: 'button',
                                             label: 'Generate colors',
                                             text: 'Generate',
-                                            hover_tip: 'Generates new colors from the first and last non-zero interval',
+                                            hover_tip: 'Generate new colors from the first and last non-zero interval',
                                             on_click: generate_colors,
                                         },
                                         reviews_section2: {
@@ -374,7 +374,7 @@
                                             type: 'button',
                                             label: 'Reload review data',
                                             text: 'Reload',
-                                            hover_tip: 'Deletes review cache and starts new fetch.',
+                                            hover_tip: 'Deletes review cache and starts a new fetch',
                                             on_click: ()=>review_cache.reload().then(reviews=>reload(reviews)),
                                         },
                                     },
@@ -405,14 +405,14 @@
                                             type: 'checkbox',
                                             label: 'Use gradients',
                                             default: true,
-                                            hover_tip: 'Let any colors between the chosen ones be used',
+                                            hover_tip: 'Interpolate colors based on the exact number of items on that day',
                                             path: '@lessons.gradient'
                                         },
                                         lessons_generate: {
                                             type: 'button',
                                             label: 'Generate colors',
                                             text: 'Generate',
-                                            hover_tip: 'Generates new colors from the first and last non-zero interval',
+                                            hover_tip: 'Generate new colors from the first and last non-zero interval',
                                             on_click: generate_colors,
                                         },
                                         lessons_section2: {
@@ -461,14 +461,14 @@
                                             type: 'checkbox',
                                             label: 'Use gradients',
                                             default: true,
-                                            hover_tip: 'Let any colors between the chosen ones be used',
+                                            hover_tip: 'Interpolate colors based on the exact number of items on that day',
                                             path: '@forecast.gradient'
                                         },
                                         forecast_generate: {
                                             type: 'button',
                                             label: 'Generate colors',
                                             text: 'Generate',
-                                            hover_tip: 'Generates new colors from the first and last non-zero interval',
+                                            hover_tip: 'Generate new colors from the first and last non-zero interval',
                                             on_click: generate_colors,
                                         },
                                     },
