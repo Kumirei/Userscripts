@@ -563,8 +563,8 @@
     // Creates the buttons at the top of the heatmap
     function create_buttons() {
         let buttons = create_elem({type: 'div', class: 'buttons'});
-        let settings_button = create_elem({type: 'button', class: 'settings-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Settings'}), create_elem({type: 'i', class: 'icon-gear'})], open_settings});
-        let toggle_button = create_elem({type: 'button', class: 'toggle-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Toggle Reviews/Lessons'}), create_elem({type: 'i', class: 'icon-inbox'})], toggle_visible_map});
+        let settings_button = create_elem({type: 'button', class: 'settings-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Settings'}), create_elem({type: 'i', class: 'icon-gear'})], onclick: open_settings});
+        let toggle_button = create_elem({type: 'button', class: 'toggle-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Toggle Reviews/Lessons'}), create_elem({type: 'i', class: 'icon-inbox'})], onclick: toggle_visible_map});
         buttons.append(settings_button, toggle_button);
         return buttons;
     }
@@ -687,7 +687,7 @@
         let stats = create_elem({type: 'div', class: 'stats'});
         let items = create_elem({type: 'div', class: 'items'});
         popper.append(header, minimap, stats, items);
-        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper||a.className=="months")) popper.classList.remove('popped');});
+        document.addEventListener('click', (event)=>{if (!event.composedPath().find((a)=>a===popper||(a.classList&&a.classList.contains("years")))) popper.classList.remove('popped');});
         // Create header
         header.append(
             create_elem({type: 'div', class: 'date'}),
@@ -814,7 +814,7 @@
     }
 
     // Updates the popper with new info
-    async function update_popper(event, type, title, info, minimap_data, burns) {
+    async function update_popper(event, type, title, info, minimap_data, burns, time) {
         let items_id = await wkof.ItemData.get_index(await wkof.ItemData.get_items(), 'subject_id');
         let popper = document.getElementById('popper');
         // Get info
@@ -849,12 +849,11 @@
                 create_elem({type: 'a', class: "characters", child: item.data.characters || create_elem({type: 'img', class: 'radical-svg', src: item.data.character_images.find(a=>a.content_type=="image/svg+xml"&&a.metadata.inline_styles).url})})
             ]}));
         }
-        let time = minimap_data.map((a,i)=>Math.floor((a[0]-(minimap_data[i-1]||[0])[0])/(60*1000))).filter(a=>a<10).reduce((a,b)=>a+b);
         // Populate popper
         popper.className = type;
         popper.querySelector('.date').innerText = title;
         popper.querySelector('.count').innerText = info.lists[type+'-ids'].length.toSeparated();
-        popper.querySelector('.time').innerText = type=="forecast" ? "" : ' ('+time+' min)';
+        popper.querySelector('.time').innerText = type=="forecast" ? "" : ' ('+time.toSeparated()+' min)';
         popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff.toSeparated();
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
         popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i].toSeparated(); e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.slice(1).map((a,j)=>[j+1, a.toSeparated()]).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)));});
@@ -877,16 +876,19 @@
     function day_click(data) {
         function event_handler(event) {
             let elem = event.target;
-            let date = new Date(elem.getAttribute('data-date')+' 0:0');
-            let type = elem.closest('.view').classList.contains('reviews')?date<new Date()?'reviews':'forecast':'lessons';
-            if (Object.keys(elem.info.lists).length) {
-                let title = `${date.toDateString().slice(4)} ${kanji_day(date.getDay())}`;
-                let today = new Date(new Date().toDateString()).getTime();
-                let offset = wkof.settings[script_id].general.day_start*msh;
-                let day_data = data[type].filter(a=>a[0]>=date.getTime()+offset&&a[0]<date.getTime()+msd+offset);
-                let minimap_data = cook_data(type, day_data);
-                let burns = day_data.filter(item => item[2] === 8 && item[3]+item[4] === 0).map(item => item[1]);
-                update_popper(event, type, title, elem.info, minimap_data, burns);
+            if (elem.classList.contains('day')) {
+                let date = new Date(elem.getAttribute('data-date')+' 0:0');
+                let type = elem.closest('.view').classList.contains('reviews')?date<new Date()?'reviews':'forecast':'lessons';
+                if (Object.keys(elem.info.lists).length) {
+                    let title = `${date.toDateString().slice(4)} ${kanji_day(date.getDay())}`;
+                    let today = new Date(new Date().toDateString()).getTime();
+                    let offset = wkof.settings[script_id].general.day_start*msh;
+                    let day_data = data[type].filter(a=>a[0]>=date.getTime()+offset&&a[0]<date.getTime()+msd+offset);
+                    let minimap_data = cook_data(type, day_data);
+                    let burns = day_data.filter(item => item[2] === 8 && item[3]+item[4] === 0).map(item => item[1]);
+                    let time = minimap_data.map((a,i)=>Math.floor((a[0]-(minimap_data[i-1]||[0])[0])/(60*1000))).filter(a=>a<10).reduce((a,b)=>a+b);
+                    update_popper(event, type, title, elem.info, minimap_data, burns, time);
+                }
             }
         }
         return event_handler;
@@ -895,7 +897,7 @@
     // Returns the function that handles click and drag. Wrapped for data storage
     function click_and_drag(data) {
         let down, first_day, first_date, marked = [];
-        return function event_handler(event) {
+        function event_handler(event) {
             let elem = event.target;
             // If event concerns a day element, proceed
             if (elem.classList.contains('day')) {
@@ -919,8 +921,9 @@
                         let title = `${start_date.toDateString().slice(4)} ${kanji_day(start_date.getDay())} - ${end_date.toDateString().slice(4)} ${kanji_day(end_date.getDay())}`;
                         let today = new Date(new Date().toDateString()).getTime();
                         let offset = wkof.settings[script_id].general.day_start*msh;
-                        let day_data = data[type].filter(a=>a[0]>start_date.getTime()+offset&&a[0]<end_date.getTime()+msd+offset).map(a=>[today+new Date(a[0]).getHours()*msh+wkof.settings[script_id].general.day_start*msh, ...a.slice(1)]);
-                        let minimap_data = cook_data(type, day_data);
+                        let day_data = data[type].filter(a=>a[0]>start_date.getTime()+offset&&a[0]<end_date.getTime()+msd+offset);
+                        let mapped_day_data = day_data.map(a=>[today+new Date(a[0]).getHours()*msh+wkof.settings[script_id].general.day_start*msh, ...a.slice(1)]);
+                        let minimap_data = cook_data(type, mapped_day_data);
                         let popper_info = {counts: {}, lists: {}};
                         for (let item of minimap_data) {
                             for (let [key, value] of Object.entries(item[1])) {
@@ -933,7 +936,8 @@
                             }
                         }
                         let burns = day_data.filter(item => item[2] === 8 && item[3]+item[4] === 0).map(item => item[1]);
-                        update_popper(event, type, title, popper_info, minimap_data, burns);
+                        let time = day_data.map((a,i)=>Math.floor((a[0]-(day_data[i-1]||[0])[0])/(60*1000))).filter(a=>a<10).reduce((a,b)=>a+b);
+                        update_popper(event, type, title, popper_info, minimap_data, burns, time);
                         wkof.settings[script_id].other.times_dragged++;
                     }
                 }
@@ -964,7 +968,8 @@
                 }
                 marked = [];
             }
-        };
+        }
+        return event_handler;
     }
 
     /*-------------------------------------------------------------------------------------------------------------------------------*/
