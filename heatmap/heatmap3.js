@@ -108,9 +108,9 @@
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
             // Workaround for defaults modifying existing settings
-            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#747474"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
-            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#747474"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
-            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#747474"], [1, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],];
+            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#747474"], [1, "#ade4ff"], [100, "#7fc3e4"], [200, "#5da9d0"], [300, "#2e88b4"], [400, "#006699"],];
+            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#747474"], [1, "#ff8aa1"], [100, "#e26d9d"], [200, "#cc569a"], [300, "#ae3997"], [400, "#911b93"],];
+            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#747474"], [1, "#aaaaaa"], [100, "#bfbfbf"], [200, "#d6d6d6"], [300, "#e8e8e8"], [400, "#ffffff"],];
             // Load settings from old script if possible
             if (!settings.other.ported) port_settings(settings);
             wkof.Settings.save(script_id);
