@@ -125,8 +125,8 @@
         // For jQuery Datepicker
         wkof.load_css('//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');
         // Heatmap CSS
-        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/Heatmap.css', false);
-        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/heatmap/heatmap3.css', false);
+        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/Heatmap/Heatmap/Heatmap.css', false);
+        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/Heatmap/heatmap3.css', false);
     }
 
     // Installs the settings button in the menu
