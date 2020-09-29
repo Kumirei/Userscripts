@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Wanikani Heatmap
+// @name         Wanikani Heatmap 3.0.0
 // @namespace    http://tampermonkey.net/
-// @version      3.0.0
+// @version      3.0.1
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -887,7 +887,7 @@
                     let day_data = data[type].filter(a=>a[0]>=date.getTime()+offset&&a[0]<date.getTime()+msd+offset);
                     let minimap_data = cook_data(type, day_data);
                     let burns = day_data.filter(item => item[2] === 8 && item[3]+item[4] === 0).map(item => item[1]);
-                    let time = minimap_data.map((a,i)=>Math.floor((a[0]-(minimap_data[i-1]||[0])[0])/(60*1000))).filter(a=>a<10).reduce((a,b)=>a+b);
+                    let time = minimap_data.map((a,i)=>Math.floor((a[0]-(minimap_data[i-1]||[0])[0])/(60*1000))).filter(a=>a<10).reduce((a,b)=>a+b, 0);
                     update_popper(event, type, title, elem.info, minimap_data, burns, time);
                 }
             }
@@ -937,7 +937,7 @@
                             }
                         }
                         let burns = day_data.filter(item => item[2] === 8 && item[3]+item[4] === 0).map(item => item[1]);
-                        let time = day_data.map((a,i)=>Math.floor((a[0]-(day_data[i-1]||[0])[0])/(60*1000))).filter(a=>a<10).reduce((a,b)=>a+b);
+                        let time = day_data.map((a,i)=>Math.floor((a[0]-(day_data[i-1]||[0])[0])/(60*1000))).filter(a=>a<10).reduce((a,b)=>a+b, 0);
                         update_popper(event, type, title, popper_info, minimap_data, burns, time);
                         wkof.settings[script_id].other.times_dragged++;
                     }
