@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Wanikani Heatmap 3.0.0 BETA
+// @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.28
+// @version      3.0.0
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -87,17 +87,17 @@
                 theme: "dark",
             },
             reviews: {
-                gradient: true,
+                gradient: false,
                 auto_range: true,
             },
             lessons: {
-                gradient: true,
+                gradient: false,
                 auto_range: true,
                 count_zeros: true,
                 recover_lessons: false,
             },
             forecast: {
-                gradient: true,
+                gradient: false,
                 auto_range: true,
             },
             other: {
@@ -110,11 +110,10 @@
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
             // Workaround for defaults modifying existing settings
-            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#747474"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
-            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#747474"], [1, "#dae289"], [100, "#9cc069"], [200, "#669d45"], [300, "#647939"], [400, "#3b6427"],];
-            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#747474"], [1, "#808080"], [100, "#a0a0a0"], [200, "#c0c0c0"], [300, "#dfdfdf"], [400, "#ffffff"],];
+            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#747474"], [1, "#ade4ff"], [100, "#82c5e6"], [200, "#57a5cc"], [300, "#2b86b3"], [400, "#006699"],];
+            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#747474"], [1, "#ff8aa1"], [100, "#e46e9e"], [200, "#c8539a"], [300, "#ad3797"], [400, "#911b93"],];
+            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#747474"], [1, "#aaaaaa"], [100, "#bfbfbf"], [200, "#d5d5d5"], [300, "#eaeaea"], [400, "#ffffff"],];
             // Load settings from old script if possible
-            settings.other.ported = true; // Temporary line for beta testers
             if (!settings.other.ported) port_settings(settings);
             wkof.Settings.save(script_id);
             return settings;
@@ -239,7 +238,7 @@
                         reviews_settings: {type: 'group', label: 'Review Settings', content: {
                             reviews_section: {type: 'section', label: 'Intervals', },
                             reviews_auto_range: {type: 'checkbox', label: 'Auto range intervals', default: true, hover_tip: 'Automatically decide what the intervals should be', path: '@reviews.auto_range', },
-                            reviews_gradient: {type: 'checkbox', label: 'Use gradients', default: true, hover_tip: 'Interpolate colors based on the exact number of items on that day', path: '@reviews.gradient', },
+                            reviews_gradient: {type: 'checkbox', label: 'Use gradients', default: false, hover_tip: 'Interpolate colors based on the exact number of items on that day', path: '@reviews.gradient', },
                             reviews_generate: {type: 'button', label: 'Generate colors', text: 'Generate', hover_tip: 'Generate new colors from the first and last non-zero interval', on_click: generate_colors, },
                             reviews_section2: {type: 'section', label: 'Other', },
                             reload_button: {type: 'button', label: 'Reload review data', text: 'Reload', hover_tip: 'Deletes review cache and starts a new fetch', on_click: ()=>review_cache.reload().then(reviews=>reload(reviews)), },
@@ -249,7 +248,7 @@
                         lessons_settings: {type: 'group', label: 'Lesson Settings', content: {
                             lessons_section: {type: 'section', label: 'Intervals', },
                             lessons_auto_range: {type: 'checkbox', label: 'Auto range intervals', default: true, hover_tip: 'Automatically decide what the intervals should be', path: '@lessons.auto_range', },
-                            lessons_gradient: {type: 'checkbox', label: 'Use gradients', default: true, hover_tip: 'Interpolate colors based on the exact number of items on that day', path: '@lessons.gradient', },
+                            lessons_gradient: {type: 'checkbox', label: 'Use gradients', default: false, hover_tip: 'Interpolate colors based on the exact number of items on that day', path: '@lessons.gradient', },
                             lessons_generate: {type: 'button', label: 'Generate colors', text: 'Generate', hover_tip: 'Generate new colors from the first and last non-zero interval', on_click: generate_colors, },
                             lessons_section2: {type: 'section', label: 'Other', },
                             lessons_count_zeros: {type: 'checkbox', label: 'Include zeros in streak', default: true, hover_tip: 'Counts days with no lessons available towards the streak', path: '@lessons.count_zeros', },
@@ -260,7 +259,7 @@
                         forecast_settings: {type: 'group', label: 'Forecast Settings', content: {
                             forecast_section: {type: 'section', label: 'Intervals', },
                             forecast_auto_range: {type: 'checkbox', label: 'Auto range intervals', default: true, hover_tip: 'Automatically decide what the intervals should be', path: '@forecast.auto_range', },
-                            forecast_gradient: {type: 'checkbox', label: 'Use gradients', default: true, hover_tip: 'Interpolate colors based on the exact number of items on that day', path: '@forecast.gradient', },
+                            forecast_gradient: {type: 'checkbox', label: 'Use gradients', default: false, hover_tip: 'Interpolate colors based on the exact number of items on that day', path: '@forecast.gradient', },
                             forecast_generate: {type: 'button', label: 'Generate colors', text: 'Generate', hover_tip: 'Generate new colors from the first and last non-zero interval', on_click: generate_colors, },
                         },},
                     },},
@@ -311,8 +310,8 @@
         // Interpolate between first and last non-zero interval
         let first = colors[1];
         let last = colors[colors.length-1];
-        for (let [i, color] of Object.entries(colors).slice(2)) {
-            colors[i][1] = interpolate_color(first[1], last[1], (color[0]-first[0])/(last[0]-first[0]));
+        for (let i = 2; i<colors.length; i++) {
+            colors[i][1] = interpolate_color(first[1], last[1], (i-1)/(colors.length-2));
         }
         // Refresh settings
         panel.querySelectorAll('.color input').forEach((input, i) => {
