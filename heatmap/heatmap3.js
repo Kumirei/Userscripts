@@ -108,9 +108,9 @@
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
             // Workaround for defaults modifying existing settings
-            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#747474"], [1, "#ade4ff"], [100, "#7fc3e4"], [200, "#5da9d0"], [300, "#2e88b4"], [400, "#006699"],];
-            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#747474"], [1, "#ff8aa1"], [100, "#e26d9d"], [200, "#cc569a"], [300, "#ae3997"], [400, "#911b93"],];
-            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#747474"], [1, "#aaaaaa"], [100, "#bfbfbf"], [200, "#d6d6d6"], [300, "#e8e8e8"], [400, "#ffffff"],];
+            if (!settings.reviews.colors) settings.reviews.colors = [[0, "#747474"], [1, "#ade4ff"], [100, "#82c5e6"], [200, "#57a5cc"], [300, "#2b86b3"], [400, "#006699"],];
+            if (!settings.lessons.colors) settings.lessons.colors = [[0, "#747474"], [1, "#ff8aa1"], [100, "#e46e9e"], [200, "#c8539a"], [300, "#ad3797"], [400, "#911b93"],];
+            if (!settings.forecast.colors) settings.forecast.colors = [[0, "#747474"], [1, "#aaaaaa"], [100, "#bfbfbf"], [200, "#d5d5d5"], [300, "#eaeaea"], [400, "#ffffff"],];
             // Load settings from old script if possible
             if (!settings.other.ported) port_settings(settings);
             wkof.Settings.save(script_id);
@@ -308,8 +308,8 @@
         // Interpolate between first and last non-zero interval
         let first = colors[1];
         let last = colors[colors.length-1];
-        for (let [i, color] of Object.entries(colors).slice(2)) {
-            colors[i][1] = interpolate_color(first[1], last[1], (color[0]-first[0])/(last[0]-first[0]));
+        for (let i = 2; i<colors.length; i++) {
+            colors[i][1] = interpolate_color(first[1], last[1], (i-1)/(colors.length-2));
         }
         // Refresh settings
         panel.querySelectorAll('.color input').forEach((input, i) => {
