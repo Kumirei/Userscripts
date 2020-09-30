@@ -658,7 +658,7 @@
         // Create the elements
         let head_stats = create_elem({type: 'div', class: 'head-stats stats', children: [
             create_stat_element('Days Studied', stats.days_studied[1]+'%', stats.days_studied[0].toSeparated()+' out of '+stats.days.toSeparated()),
-            create_stat_element('Done Daily', stats.average[0]+' / '+(stats.average[1] || 0), 'Per Day / Day studied\nMax: '+stats.max_done[0].toSeparated()+' on '+stats.max_done[1]),
+            create_stat_element('Done Daily', stats.average[0]+' / '+(stats.average[1] || 0), 'Per Day / Days studied\nMax: '+stats.max_done[0].toSeparated()+' on '+stats.max_done[1]),
             create_stat_element('Streak', stats.streak[1]+' / '+stats.streak[0], 'Current / Longest'),
         ]});
         let foot_stats = create_elem({type: 'div', class: 'foot-stats stats', children: [
