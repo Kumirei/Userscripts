@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.3
+// @version      3.0.4
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -743,7 +743,7 @@
         let forecast_mean = forecast_items.length/Object.keys(forecast_days).length;
         let forecast_sd = Math.sqrt(1/(forecast_items.length/forecast_mean)*Object.values(forecast_days).map(x=>Math.pow(x-forecast_mean, 2)).reduce((a,b)=>a+b));
         // Get intervals
-        let range = (length, gradient, mean, sd) => [1, ...Array(length-2).fill(null).map((_, i)=>Math.round(ifcdf(((gradient?0.9:1)*(i+1))/(length-(gradient?1:0)), mean, sd)))];
+        let range = (length, gradient, mean, sd) => [1, ...Array((length<2?2:length)-2).fill(null).map((_, i)=>Math.round(ifcdf(((gradient?0.9:1)*(i+1))/(length-(gradient?1:0)), mean, sd)))];
         let reviews = range(settings.reviews.colors.length, settings.reviews.gradient, stats.reviews.average[1], stats.reviews.average[2]);
         let lessons = range(settings.lessons.colors.length, settings.lessons.gradient, stats.lessons.average[1], stats.lessons.average[2]);
         let forecast = range(settings.forecast.colors.length, settings.forecast.gradient, forecast_mean, forecast_sd);
