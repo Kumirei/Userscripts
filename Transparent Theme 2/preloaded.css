@@ -7,9 +7,9 @@
 
     Name:           Forum Transparency 2.0
     Author:         Kumirei
-    Version:        2.1.10
-    Total lines:    3183
-    Latest update:  2020-08-23
+    Version:        2.1.11
+    Total lines:    3246
+    Latest update:  2020-10-01
 
     Forum post:     https://community.wanikani.com/t/userstyle-forum-transparency-20/32287
     Theme link:     https://userstyles.org/styles/163317/wanikani-forum-transparency-2-0
@@ -167,7 +167,7 @@
     * [3083] Version 2.1.8
     * [3151] Version 2.1.9
     * [3183] Version 2.1.10
-
+    * [3206] Version 2.1.11
 
 
 
@@ -3200,5 +3200,46 @@
 
         .user-menu .quick-access-panel.quick-access-profile li:not(.show-all) a {
             color: var(--main-color);
+        }
+
+
+        /* Version 2.1.11
+        /*_____________________
+
+        Fixed: Menu buttons, Header bubbles, Settings active tab, Wiki editing, Cancel button in reply,
+        */
+
+        .d-header .menu-panel .glyphs .widget-link .fa {
+        	right: unset !important;
+        }
+
+        body[theme="dark"] li[data-highlight="true"] .dashboard_bubble {
+        	color: var(--main-text);
+        }
+
+        .nav-pills>li a.active {
+        	color: var(--main-text);
+        }
+
+        .modal,
+        #discourse-modal .title h3 {
+        	color: var(--main-text);
+        }
+
+        #discourse-modal .btn.close {
+        	background: transparent !important;
+        }
+
+        #discourse-modal .btn.close .fa {
+        	color: inherit !important;
+        }
+
+        a,
+        a:visited {
+        	color: var(--link-color);
+        }
+
+        #reply-control .save-or-cancel .cancel {
+        	color: var(--second-text);
         }
 }

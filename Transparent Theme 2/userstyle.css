@@ -7,9 +7,9 @@
 
     Name:           Forum Transparency 2.0
     Author:         Kumirei
-    Version:        2.1.10
-    Total lines:    3183
-    Latest update:  2020-08-23
+    Version:        2.1.11
+    Total lines:    3246
+    Latest update:  2020-10-01
 
     Forum post:     https://community.wanikani.com/t/userstyle-forum-transparency-20/32287
     Theme link:     https://userstyles.org/styles/163317/wanikani-forum-transparency-2-0
@@ -30,25 +30,25 @@
 
     :root {
         /* BACKGROUND IMAGE */
-        --background-image-url: url(https://i.imgur.com/idxX0V5.png);
+        --background-image-url: url("/*[[background]]*/");
 
         /* TEXT */
-        --main-text: #F0F0F0;		                  /* Main text color */
-        --second-text: #C8C8C8;			              /* Slightly darker text, used when not much contrast is needed */
-        --main-light-grey: #B4B4B4;		              /* Slightly darker than second text */
-        --main-dark: #2A2A2A;					      /* Main dark text color */
-        --main-grey: #545454;					      /* Main grey color. Used in mentions */
-        --link-color: #FFFFFF;						  /* Default color of links */
+        --main-text: /*[[main text]]*/;		                                    /* Main text color */
+        --second-text: /*[[second text]]*/;			                            /* Slightly darker text, used when not much contrast is needed */
+        --main-light-grey: /*[[light grey text]]*/;		                        /* Slightly darker than second text */
+        --main-dark: /*[[dark text]]*/;					                        /* Main dark text color */
+        --main-grey: /*[[grey text]]*/;					                        /* Main grey color. Used in mentions */
+        --link-color: /*[[link color]]*/;						                /* Default color of links */
 
         /* BACKGROUND COLORS */
-        --main-trans: 0, 0, 0;							/* Main color of transparent areas */
-        --main-light-trans: 255, 255, 255;				/* Color of light transparent areas */
+        --main-trans: /*[[main trans bg]]*/;							        /* Main color of transparent areas */
+        --main-light-trans: /*[[light trans bg]]*/;				                /* Color of light transparent areas */
 
         /* BACKGROUND ALPHAS */
-        --main-alpha: 0.7; 								/* The darker alpha, for headers and menus and such */
-        --second-alpha: 0.5;							/* Alpha value for threads and such */
-        --third-alpha: 0.3;					            /* Alpha value of highlighted posts and some other things */
-        --main-light-alpha: 0.2;						/* Alpha value of light transparent areas */
+        --main-alpha: /*[[main alpha]]*/; 								        /* The darker alpha, for headers and menus and such */
+        --second-alpha: /*[[second alpha]]*/;							        /* Alpha value for threads and such */
+        --third-alpha: /*[[third alpha]]*/;					                    /* Alpha value of highlighted posts and some other things */
+        --main-light-alpha: /*[[light alpha]]*/;						        /* Alpha value of light transparent areas */
 
         /* BACKGROUNDS */
         --header-background: rgba(var(--main-trans), var(--main-alpha));                    /* Background for headers and stuff */
@@ -56,37 +56,37 @@
         --highlight-background: rgba(var(--main-light-trans), var(--main-light-alpha));     /* Background for highlights */
 
         /* SYMBOL COLORS */
-        --fa-heart-color: #D580FF;	                  /* Color of hearts */
-        --fa-reply-color: #EF6767;	                  /* Color of reply symbols */
-        --fa-quote-color: #F0F0F0;			          /* Color of quote symbols */
-        --fa-mention-color: #58A2E4;	              /* Color of @ symbols */
-        --fa-edit-color: #71C488;		              /* Color of pen symbols */
-        --fa-pm-color: #F0F0F0;				          /* Color of pm symbols */
-        --fa-checked-box-color: #BBF1A5;	          /* Color of checked boxes */
-        --fa-badge-star: #E8E86E;                     /* Color of badge symbol on user page */
+        --fa-heart-color: /*[[heart]]*/;	                                    /* Color of hearts */
+        --fa-reply-color: /*[[reply]]*/;	                                    /* Color of reply symbols */
+        --fa-quote-color: /*[[quote]]*/;			                            /* Color of quote symbols */
+        --fa-mention-color: /*[[mention]]*/;	                                /* Color of @ symbols */
+        --fa-edit-color: /*[[pen]]*/;		                                    /* Color of pen symbols */
+        --fa-pm-color: /*[[letter]]*/;				                             /* Color of pm symbols */
+        --fa-checked-box-color: /*[[check]]*/;	                                /* Color of checked boxes */
+        --fa-badge-star: /*[[star]]*/;                                          /* Color of badge symbol on user page */
 
         /* OTHER COLORS */
-        --lifetime-purple: 213, 128, 255;				/* The color of lifetime subscriptions */
-        --main-accent: 213, 128, 255;			        /* Main accent color */
+        --lifetime-purple: 213, 128, 255;				                        /* The color of lifetime subscriptions */
+        --main-accent: /*[[accent]]*/;			                                /* Main accent color */
         --border-color: rgba(var(--main-light-trans), var(--second-alpha));     /* Color for various thin borders */
         --border-color-faint: rgba(var(--main-light-trans), 0.6);               /* Color for certain fainter border */
 
         /* THREAD VARIABLES */
-        --posts-margin: 5px;							/* Margin between posts in threads, and some other things */
-        --padding-post: 10px;					        /* Padding at edges of posts and related elements */
-        --padding-slider: 15px;							/* Padding on the slider in threads */
-        --slider-width: 132px;							/* Width of the slider in threads */
-        --suggested-topics-width: 150px;				/* Width of the "Suggested Topics" title */
-        --suggested-topics-height: 20px;				/* Height of the "Suggested Topics" title */
-        --avatar-radius: 50%;                           /* The roundness of avatars */
+        --posts-margin: /*[[post margin]]*/;							        /* Margin between posts in threads, and some other things */
+        --padding-post: /*[[post padding]]*/;					                /* Padding at edges of posts and related elements */
+        --padding-slider: /*[[slider padding]]*/;						        /* Padding on the slider in threads */
+        --slider-width: /*[[slider width]]*/;						         	/* Width of the slider in threads */
+        --suggested-topics-width: /*[[suggested width]]*/;		        		/* Width of the "Suggested Topics" title */
+        --suggested-topics-height: /*[[suggested height]]*/;	       			/* Height of the "Suggested Topics" title */
+        --avatar-radius: /*[[avatar roundness]]*/;                              /* The roundness of avatars */
 
         /* OTHER VARIABLES */
-        --list-padding: 10px;							/* Padding around various lists */
-        --border-radius: 0px;							/* If you want your edges a bit rounded */
-        --glyph-size: 20px;								/* Size of the symbols in, for example, the header */
-        --global-footer: none;							/* Use "none" to remove the footer or "block" if you want to keep it */
-        --wide-posts: 0;                                /* Use 1 for yes, 0 for no. See forum post or userstyle's page to find out what this is */
-        --default-avatar: url("https://discourse-cdn-sjc1.com/business5/uploads/wanikani_community/original/3X/f/d/fd4c154120954695f788402f3bcf4e616499bc2d.png"); /* The avatar for people who has not chosen a personal avatar */
+        --list-padding: /*[[list padding]]*/;				           			/* Padding around various lists */
+        --border-radius: /*[[border radius]]*/;			          				/* If you want your edges a bit rounded */
+        --glyph-size: /*[[glyph size]]*/;				           				/* Size of the symbols in, for example, the header */
+        --global-footer: /*[[footer]]*/;			             				/* Use "none" to remove the footer or "block" if you want to keep it */
+        --wide-posts: /*[[wide posts]]*/;                                       /* Use 1 for yes, 0 for no. See forum post or userstyle's page to find out what this is */
+        --default-avatar: url("/*[[default avatar]]*/");                        /* The avatar for people who has not chosen a personal avatar */
     }
 
 
@@ -167,7 +167,7 @@
     * [3083] Version 2.1.8
     * [3151] Version 2.1.9
     * [3183] Version 2.1.10
-
+    * [3206] Version 2.1.11
 
 
 
@@ -3200,5 +3200,46 @@
 
         .user-menu .quick-access-panel.quick-access-profile li:not(.show-all) a {
             color: var(--main-color);
+        }
+
+
+        /* Version 2.1.11
+        /*_____________________
+
+        Fixed: Menu buttons, Header bubbles, Settings active tab, Wiki editing, Cancel button in reply,
+        */
+
+        .d-header .menu-panel .glyphs .widget-link .fa {
+        	right: unset !important;
+        }
+
+        body[theme="dark"] li[data-highlight="true"] .dashboard_bubble {
+        	color: var(--main-text);
+        }
+
+        .nav-pills>li a.active {
+        	color: var(--main-text);
+        }
+
+        .modal,
+        #discourse-modal .title h3 {
+        	color: var(--main-text);
+        }
+
+        #discourse-modal .btn.close {
+        	background: transparent !important;
+        }
+
+        #discourse-modal .btn.close .fa {
+        	color: inherit !important;
+        }
+
+        a,
+        a:visited {
+        	color: var(--link-color);
+        }
+
+        #reply-control .save-or-cancel .cancel {
+        	color: var(--second-text);
         }
 }
