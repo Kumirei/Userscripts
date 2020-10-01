@@ -1,0 +1,14 @@
+@-moz-document url(https://www.wanikani.com/), url(https://www.wanikani.com/dashboard)
+{
+
+/*------ USELESS PANELS ------*/
+
+  .row .recent-unlocks,
+.row .low-percentage,
+.row .recent-retired,
+.forum-topics-list,
+.blog
+  {
+    display: none !important;
+  }
+}
