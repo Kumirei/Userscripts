@@ -62,7 +62,7 @@
 
 	function set_header_width() {
 		var header_count = $('.dashboard section.review-status ul li').length;
-		var width = (100/header_count) - .1;
+		var width = (100/header_count) - 0.1;
 		$('.dashboard section.review-status ul li').css('width', width + '%');
 	}
 })();
