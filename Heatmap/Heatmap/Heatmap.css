@@ -138,6 +138,14 @@
 	height: var(--day-size);
 }
 
+.heatmap .year.zero_gap .marked {
+	border-radius: 0;
+}
+
+.heatmap .year.zero_gap .marked:hover {
+    border: 1px solid rgba(0, 0, 0, 0.9) !important;
+}
+
 /* Hover wrapper
 /*--------------------------------------------------------------------------------------------*/
 
