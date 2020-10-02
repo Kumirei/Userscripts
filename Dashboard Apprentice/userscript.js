@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Dashboard Apprentice
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Displays all your apprentice items on the dashboard
 // @author       Kumirei
 // @match        https://www.wanikani.com/
@@ -249,6 +249,9 @@
                             '}'+
                             '#wkda_items .items > div a {'+
                             '    color: '+['rgb(240, 240, 240)', 'black'][theme]+' !important;'+
+                            '}'+
+                            '#wkda_items .item.vocabulary .hover_elem {'+
+                            '	max-width: 320px;'+
                             '}'+
                         '</style>');
     }
