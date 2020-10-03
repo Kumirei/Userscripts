@@ -66,8 +66,7 @@
 	visibility: hidden;
 }
 
-.heatmap:not(.segment_years) > .months > .month:not(:first-child),
-.heatmap:not(.segment_years) > .months > .month:not(:first-child).offset-0 {
+.heatmap:not(.segment_years) > .months > .month:not(:first-child) {
     margin-left: calc(0px - var(--day-size) - var(--day-gap));
 }
 
