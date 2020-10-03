@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.5
+// @version      3.0.6
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -93,7 +93,7 @@
             lessons: {
                 gradient: false,
                 auto_range: true,
-                count_zeros: true,
+                count_zeros: false,
                 recover_lessons: false,
             },
             forecast: {
@@ -251,7 +251,7 @@
                             lessons_gradient: {type: 'checkbox', label: 'Use gradients', default: false, hover_tip: 'Interpolate colors based on the exact number of items on that day', path: '@lessons.gradient', },
                             lessons_generate: {type: 'button', label: 'Generate colors', text: 'Generate', hover_tip: 'Generate new colors from the first and last non-zero interval', on_click: generate_colors, },
                             lessons_section2: {type: 'section', label: 'Other', },
-                            lessons_count_zeros: {type: 'checkbox', label: 'Include zeros in streak', default: true, hover_tip: 'Counts days with no lessons available towards the streak', path: '@lessons.count_zeros', },
+                            lessons_count_zeros: {type: 'checkbox', label: 'Include zeros in streak', default: false, hover_tip: 'Counts days with no lessons available towards the streak', path: '@lessons.count_zeros', },
                             recover_lessons: {type: 'checkbox', label: 'Recover reset lessons', default: false, hover_tip: 'Allow the Heatmap to guess when you did lessons for items that have been reset', path: '@lessons.recover_lessons', },
                         },},
                     },},
