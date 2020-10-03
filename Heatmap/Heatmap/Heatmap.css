@@ -75,6 +75,10 @@
 	margin-left: calc(var(--day-size) + var(--day-gap));
 }
 
+.heatmap:not(.segment_years) .month:not(:first-child).offset-0 {
+	margin-left: 0;
+}
+
 /* Day
 /*--------------------------------------------------------------------------------------------*/
 
