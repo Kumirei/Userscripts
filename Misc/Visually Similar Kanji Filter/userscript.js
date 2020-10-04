@@ -1,18 +1,16 @@
 // ==UserScript==
 // @name         Wanikani Open Framework: Visually similar kanji filter
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Adds a wkof filter for visually similar kanji
 // @author       Kumirei
 // @include      https://www.wanikani.com/*
 // @include      *preview.wanikani.com*
-// @grant        GM.getResourceText
-// @resource     stroke_dist_db    https://raw.githubusercontent.com/mwil/wanikani-userscripts/master/wanikani-similar-kanji/db/stroke_edit_dist_esc.json
+// @grant        none
 // ==/UserScript==
 /*jshint esversion: 8 */
 
-(function() {
-    var wkof = unsafeWindow.wkof;
+(function(wkof, $) {
     if (!wkof) return;
 
     var kanji_list = {};
@@ -25,14 +23,9 @@
     .then(get_data)
     .then(register_filter);
 
-    function get_data() {
-        var resolve, promise = new Promise((res, rej)=>{resolve = res;});
-        var JSON = unsafeWindow.JSON;
-        GM.getResourceText("stroke_dist_db").then((data)=>{
-            data = JSON.parse(data);
-            resolve(data);
-        });
-        return promise;
+    async function get_data() {
+        let data = await $.get('https://raw.githubusercontent.com/mwil/wanikani-userscripts/master/wanikani-similar-kanji/db/stroke_edit_dist_esc.json');
+        return JSON.parse(data);
     }
 
     // Adds the filter to wkof
@@ -107,47 +100,48 @@
                             if (!(matches[key] in kanji_list)) {
                                 kanji_list[matches[key]] = false;
                                 wkof.settings.wanikani_visually_similar_filter.kanji_list[matches[key]] = false;
-                                $('#wanikani_visually_similar_filter_kanji_list').append('<option name="'+matches[key]+'">'+matches[key]+'</option>');														}
+                                $('#wanikani_visually_similar_filter_kanji_list').append('<option name="'+matches[key]+'">'+matches[key]+'</option>');
                             }
-                            wkof.settings.wanikani_visually_similar_filter.kanji_input = "";
-                            config.dialog.refresh();
-                            config.dialog.save();
                         }
-                    },
-                    divider: {
-                        type: 'divider'
-                    },
-                    kanji_list: {
-                        type: 'list',
-                        label: 'Kanji list',
-                        multi: true,
-                        hover_tip: 'List of kanji whose visually similar kanji you can choose to study with the self study script',
-                        content: kanji_list
-                    },
-                    remove_button: {
-                        type: 'button',
-                        label: 'Remove selected kanji',
-                        text: 'Remove',
-                        hover_tip: 'Click this button to remove the above selected kanji from the list',
-                        on_click: function(name, config, on_change){
-                            var selected = wkof.settings.wanikani_visually_similar_filter.kanji_list;
-                            for (var char in selected) {
-                                if (selected[char]) {
-                                    $('#wanikani_visually_similar_filter_kanji_list option[name="'+char+'"]').remove();
-                                    delete selected[char];
-                                    delete kanji_list[char];
-                                }
+                        wkof.settings.wanikani_visually_similar_filter.kanji_input = "";
+                        config.dialog.refresh();
+                        config.dialog.save();
+                    }
+                },
+                divider: {
+                    type: 'divider'
+                },
+                kanji_list: {
+                    type: 'list',
+                    label: 'Kanji list',
+                    multi: true,
+                    hover_tip: 'List of kanji whose visually similar kanji you can choose to study with the self study script',
+                    content: kanji_list
+                },
+                remove_button: {
+                    type: 'button',
+                    label: 'Remove selected kanji',
+                    text: 'Remove',
+                    hover_tip: 'Click this button to remove the above selected kanji from the list',
+                    on_click: function(name, config, on_change){
+                        var selected = wkof.settings.wanikani_visually_similar_filter.kanji_list;
+                        for (var char in selected) {
+                            if (selected[char]) {
+                                $('#wanikani_visually_similar_filter_kanji_list option[name="'+char+'"]').remove();
+                                delete selected[char];
+                                delete kanji_list[char];
                             }
-                            config.dialog.save();
                         }
+                        config.dialog.save();
                     }
                 }
-            };
+            }
+        };
 
-            var dialog = new wkof.Settings(config);
-            config.content.add_button.dialog = dialog;
-            config.content.remove_button.dialog = dialog;
-            dialog.open();
-        }
+        var dialog = new wkof.Settings(config);
+        config.content.add_button.dialog = dialog;
+        config.content.remove_button.dialog = dialog;
+        dialog.open();
+    }
 
-    })();
+})(window.wkof, window.jQuery);
