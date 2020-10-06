@@ -7,9 +7,9 @@
 
     Name:           Forum Transparency 2.0
     Author:         Kumirei
-    Version:        2.1.13
-    Total lines:    3281
-    Latest update:  2020-10-01
+    Version:        2.1.14
+    Total lines:    3292
+    Latest update:  2020-10-06
 
     Forum post:     https://community.wanikani.com/t/userstyle-forum-transparency-20/32287
     Theme link:     https://userstyles.org/styles/163317/wanikani-forum-transparency-2-0
@@ -170,7 +170,7 @@
     * [3207] Version 2.1.11
     * [3248] Version 2.1.12
     * [3271] Version 2.1.13
-
+    * [3282] Version 2.1.14
 
 
 
@@ -3276,5 +3276,16 @@
 
     p a {
         color: var(--link-color) !important;
+    }
+
+
+    /* Version 2.1.14
+    /*_____________________
+
+    Fixed: Bubble colors
+    */
+
+    li[data-highlight="true"] .dashboard_bubble {
+       background-color: rgba(var(--main-accent)) !important;
     }
 }
