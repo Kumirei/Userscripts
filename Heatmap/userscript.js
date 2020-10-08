@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.6
+// @version      3.0.7
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -816,7 +816,7 @@
 
     // Updates the popper with new info
     async function update_popper(event, type, title, info, minimap_data, burns, time) {
-        let items_id = await wkof.ItemData.get_index(await wkof.ItemData.get_items(), 'subject_id');
+        let items_id = await wkof.ItemData.get_index(await wkof.ItemData.get_items('include_hidden'), 'subject_id');
         let popper = document.getElementById('popper');
         // Get info
         let levels = new Array(61).fill(0);
