@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.9
+// @version      3.0.10
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -460,7 +460,7 @@
         stats.days_studied[1] = Math.round(stats.days_studied[0]/stats.days*100);
         stats.average[0] = Math.round(stats.total[0]/stats.days);
         stats.average[1] = Math.round(stats.total[0]/stats.days_studied[0]);
-        stats.average[2] = Math.sqrt(1/stats.days_studied[0]*done_days.map(x=>Math.pow(x-stats.average[1], 2)).reduce((a,b)=>a+b));
+        stats.average[2] = Math.sqrt(1/stats.days_studied[0]*done_days.map(x=>Math.pow(x-stats.average[1], 2)).reduce((a,b)=>a+b, 0));
         return stats;
     }
 
@@ -549,8 +549,8 @@
         let cooked_reviews = cook_data("reviews", reviews);
         let cooked_lessons = cook_data("lessons", lessons);
         let level_ups = await get_level_ups(items);
-        let reviews_view = create_view('reviews', stats, level_ups, reviews[0][0], forecast.reduce((max,a)=>max>a[0]?max:a[0]), cooked_reviews.concat(forecast));
-        let lessons_view = create_view('lessons', stats, level_ups, lessons[0][0], lessons.reduce((max,a)=>max>a[0]?max:a[0]), cooked_lessons);
+        let reviews_view = create_view('reviews', stats, level_ups, reviews[0][0], forecast.reduce((max,a)=>max>a[0]?max:a[0], 0), cooked_reviews.concat(forecast));
+        let lessons_view = create_view('lessons', stats, level_ups, lessons[0][0], lessons.reduce((max,a)=>max>a[0]?max:a[0], 0), cooked_lessons);
         let popper = create_popper({reviews: cooked_reviews, forecast, lessons: cooked_lessons});
         views.append(reviews_view, lessons_view, popper);
         // Install
@@ -833,7 +833,7 @@
             srs[i][0] = info.counts[type+'-srs1-'+i]||0;
             srs[i][1] = info.counts[type+'-srs2-'+i]||0;
         }
-        let srs_counter = (index, start, end)=>srs.map((a, i)=>(i>=start?i<=end?a[index]:0:0)).reduce((a,b)=>a+b);
+        let srs_counter = (index, start, end)=>srs.map((a, i)=>(i>=start?i<=end?a[index]:0:0)).reduce((a,b)=>a+b, 0);
         srs[0] = [[srs_counter(0, 1, 4), srs_counter(1, 1, 4)], [srs_counter(0, 5, 6), srs_counter(1, 5, 6)], srs[7], srs[8], srs[9]];
         let srs_diff = Object.entries(srs.slice(1)).reduce((a,b)=>a+b[0]*(b[1][1]-b[1][0]), 0);
         let pass = [info.counts.pass, info.counts.reviews-info.counts.pass, Math.floor(info.counts.pass/info.counts.reviews*100)];
