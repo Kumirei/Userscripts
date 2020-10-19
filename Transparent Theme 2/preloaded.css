@@ -3304,4 +3304,15 @@
     .post-controls .extra-buttons .accepted .d-button-label {
         color: var(--fa-checked-box-color) !important;
     }
+
+
+    /* Version 2.1.16
+    /*_____________________
+
+    Fixed: timed bookmark color
+    */
+
+    .bookmarked .d-icon-discourse-bookmark-clock {
+        color: rgba(var(--main-accent)) !important;
+    }
 }
