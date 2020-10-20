@@ -47,7 +47,6 @@
         .then(load_settings)
         .then(install_menu)
         .then(install_css)
-        .then(install_srs_count)
         .then(install_reorder)
         .then(install_back2back)
         .then(install_priority)
@@ -89,7 +88,6 @@
             },
             other: {
                 back2back: true,
-                srs_breakdown: true,
                 max_reviews: 100,
                 max_lessons: 10,
                 critical_first: false,
@@ -325,22 +323,6 @@
 #wkofs_reorder_general #reorder_general_action > .row:nth-child(-n+3) > div {width: auto; min-width: 90px;}
 </style>`;
         document.getElementsByTagName('head')[0].insertAdjacentHTML('beforeend', css);
-    }
-
-    // Install SRS count element
-    function install_srs_count() {
-        let elem = '<div id="srs_breakdown" class="'+(wkof.settings[script_id].other.srs_breakdown?'':'hidden')+'"></div>';
-        document.getElementById('stats').insertAdjacentHTML('beforeend', elem);
-        $.jStorage.listenKeyChange('currentItem', update_srs_count);
-    }
-
-    // Updates the SRS count
-    function update_srs_count() {
-        let items = get_queue();
-        let counts = new Array(9).fill(0);
-        items.forEach(item=>{counts[item.srs]++;});
-        let text = `[${counts.slice(1, 5).join(', ')}][${counts.slice(5,7).join(', ')}][${counts[7]}][${counts[8]}]`;
-        document.getElementById('srs_breakdown').innerHTML = text;
     }
 
     // Retrieves the current review queue
