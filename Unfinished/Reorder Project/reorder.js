@@ -99,7 +99,28 @@
                 streak_max: 0,
             },
         };
-        return wkof.Settings.load(script_id, defaults);
+        return wkof.Settings.load(script_id, defaults).then(settings=>{
+            settings.presets = [
+                {name: 'Test 1', actions: [
+                    {name: 'Action 1', invert: false, sort: 'Level', filter: 'None', filter_value: ''},
+                ],},
+                {name: 'Test 2', actions: [
+                    {name: 'Action 1', invert: false, sort: 'None', filter: 'Level', filter_value: ''},
+                    {name: 'Action 2', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                ],},
+                {name: 'Test 3', actions: [
+                    {name: 'Action 1', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                    {name: 'Action 2', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                    {name: 'Action 3', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                ],},
+                {name: 'Test 4', actions: [
+                    {name: 'Action 1', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                    {name: 'Action 2', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                    {name: 'Action 3', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                    {name: 'Action 4', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                ],},
+            ];
+        });
     }
 
     // Installs the options button in the menu
@@ -117,85 +138,185 @@
         var config = {
             script_id: script_id,
             title: script_title,
+            pre_open: settings_pre_open,
+            on_save: settings_on_save,
             content: {
-                preset: {
-                    type: 'group',
-                    label: 'Actions',
-                    content: {
-                        actions: {
-                            type: 'list',
-                            content: {},
-                        },
-                    },
-                },
-                action: {
-                    type: 'group',
-                    label: 'Action',
-                    content: {
-                        name: {
-                            type: 'text',
-                            label: 'Name',
-                        },
-                        type: {
-                            type: 'list',
-                            label: 'Type of action',
-                            default: 'filter',
-                            content: {filter: 'Filter', reorder: 'Reorder', truncate: 'Truncate'},
-                        },
-                        filters: {
-                            type: 'group',
-                            label: 'Filters',
-                            content: {
-                                type: {
-                                    type: 'checkbox',
-                                    label: 'Type',
-                                    default: false,
-                                },
-                                level: {
-                                    type: 'checkbox',
-                                    label: 'Type',
-                                    default: false,
-                                },
-                                srs: {
-                                    type: 'checkbox',
-                                    label: 'Type',
-                                    default: false,
-                                },
-                                overdue: {
-                                    type: 'checkbox',
-                                    label: 'Type',
-                                    default: false,
-                                },
-                            },
-                        },
-                        reorder: {
-                            type: 'group',
-                            label: 'Sorting',
-                            content: {
-                                type: {
-                                    type: 'checkbox',
-                                    label: 'Type',
-                                    default: false,
-                                },
-                            },
-                        },
-                        truncate: {
-                            type: 'group',
-                            label: 'Truncate',
-                            content: {
-                                type: {
-                                    type: 'number',
-                                    label: 'First x items',
-                                    default: 0,
-                                },
-                            },
-                        },
-                    },
-                },
-            },
+                general: {type: 'page', label: 'General', content: {
+                    active: {type: 'dropdown', label: 'Active preset', content: {},},
+                    prioritize: {type: 'dropdown', label: 'Prioritize', default: 'reading', content: {none: 'None', reading: 'Reading', meaning: 'Meaning'},},
+                    srs: {type: 'checkbox', label: 'SRS breakdown', default: true,},
+                    bxb: {type: 'checkbox', label: 'Active preset', default: true,},
+                    streak: {type: 'checkbox', label: 'Streak counter', default: true,},
+                    aq: {type: 'number', label: 'Active preset', default: 10,},
+                },},
+                presets: {type: 'page', label: 'Edit Presets', content: {
+                    presets: {type: 'group', label: 'Presets', content: {
+                        buttons: {type: 'html', html: '<div class="presets"><div class="preset-buttons"><button class="new">New</button><button class="up">UP</button><button class="down">DOWN</button><button class="delete">Delete</button></div><div class="preset-right"><select class="presets" size="4"></select></div></div>'},
+                        divider: {type: 'divider'},
+                        section: {type: 'section', label: 'Preset settings'},
+                        name: {type: 'html', html: '<div class="name"><span>Preset name</span><input class="preset-name" placeholder="Preset name"></input></div>'},
+                        actions: {type: 'group', label: 'Actions', content: {
+                            actions: {type: 'html', html: '<div class="presets actions"><div class="preset-buttons"><button class="new">New</button><button class="up">UP</button><button class="down">DOWN</button><button class="delete">Delete</button></div><div class="preset-right"><select class="actions" size="4"></select></div></div>'},
+                            divider: {type: 'divider'},
+                            section: {type: 'section', label: 'Action settings'},
+                            name: {type: 'html', html: '<div class="name"><span>Action name</span><input class="action-name" placeholder="Action name"></input></div>'},
+                            invert: {type: 'html', html: '<div class="invert"><span>Invert action</span><input type="checkbox"></input></div>'},
+                            sort: {type: 'html', html: '<div class="sort"><span>Sort</span><select class="sort">'+
+                                                            '<option name="None">None</option>'+
+                                                            '<option name="Type">Type</option>'+
+                                                            '<option name="Level">Level</option>'+
+                                                            '<option name="SRS">SRS</option>'+
+                                                            '<option name="Overdue">Overdue</option>'+
+                                                            '<option name="Random">Random</option>'+
+                                                            '</select></div>'},
+                            filter: {type: 'html', html: '<div class="filter"><span>Filter</span><select class="filter">'+
+                                                            '<option name="None">None</option>'+
+                                                            '<option name="Type">Type</option>'+
+                                                            '<option name="Level">Level</option>'+
+                                                            '<option name="SRS">SRS</option>'+
+                                                            '<option name="Overdue">Overdue</option>'+
+                                                            '<option name="First">First</option>'+
+                                                            '</select>'+
+                                                            '<input class="filter-value" placeholder=""></input></div>'},
+                        },},
+                },},
+            },},
+        },
         };
         let dialog = new wkof.Settings(config);
         dialog.open();
+    }
+
+    function settings_on_save(settings) {
+        settings.presets = document.getElementById('wkofs_reorder_general').presets;
+    }
+
+    function settings_pre_open(d) {
+        console.log(d);
+        console.log(wkof.settings[script_id].presets);
+        let presets = wkof.settings[script_id].presets.slice();
+        console.log('d', d);
+        d[0].presets = presets; // For retrieval by saving function
+        let presets_elem = d[0].querySelector('#reorder_general_presets .preset-right select');
+        let actions_elem = d[0].querySelector('#reorder_general_actions .preset-right select');
+        let preset_name = d[0].querySelector('#reorder_general_presets .name input');
+        let action_name = d[0].querySelector('#reorder_general_actions .name input');
+        let action_invert = d[0].querySelector('#reorder_general_actions .invert input');
+        let action_sort = d[0].querySelector('#reorder_general_actions .sort select');
+        let action_filter = d[0].querySelector('#reorder_general_actions .filter select');
+        let action_filter_value = d[0].querySelector('#reorder_general_actions .filter input');
+        let presets_group = d[0].querySelector('#reorder_general_presets');
+        // Populate presets
+        let options = "";
+        for (let preset of presets) options += `<option name="${preset.name}">${preset.name}</option>`;
+        presets_elem.innerHTML = options;
+        // Update settings on change
+        let active_selections = [presets[0].name, presets[0].actions[0].name]; // Preset name, action name
+        presets_group.addEventListener('change', e=>{
+            console.log('test', e);
+            // Selected preset changed
+            if (e.target.classList.contains('presets')) {
+                let preset = presets.find(i=>i.name==e.target.value);
+                preset_name.value = preset.name; // Update preset name
+                let actions = "";
+                for (let action of preset.actions) actions += `<option name="${action.name}">${action.name}</option>`;
+                actions_elem.innerHTML = actions; // Update actions list
+                actions_elem.value = active_selections[1]; // Select action
+                fire_event(actions_elem, 'change'); // Fire change event for actions
+            }
+            else if (e.target.classList.contains('preset-name')) {
+                let option = presets_elem.querySelector(`option[name="${presets_elem.value}"]`);
+                presets.find(p=>p.name==presets_elem.value).name = e.target.value;
+                option.setAttribute('name', e.target.value);
+                option.innerText = e.target.value;
+            }
+            else if (e.target.classList.contains('actions')) {
+                let action = presets.find(p=>p.name==presets_elem.value).actions.find(a=>a.name==e.target.value);
+                action_name.value = action.name;
+                action_invert.checked = action.invert;
+                action_sort.value = action.sort;
+                action_filter.value = action.filter;
+                action_filter_value.value = action.filter_value;
+                action_sort.disabled = action.filter != "None";
+                action_filter.disabled = action.sort != "None";
+                if (action_filter.disabled) action_filter.classList.add('none');
+            }
+            else if (e.target.classList.contains('action-name')) {
+                let option = actions_elem.querySelector(`option[name="${actions_elem.value}"]`);
+                presets.find(p=>p.name==presets_elem.value).actions.find(a=>a.name==actions_elem.value).name = e.target.value;
+                option.setAttribute('name', e.target.value);
+                option.innerText = e.target.value;
+            }
+            else if (e.target.classList.contains('invert')) {
+                let action = presets.find(p=>p.name==presets_elem.value).actions.find(a=>a.name==actions_elem.value);
+                action.invert = action_invert.checked;
+            }
+            else if (e.target.classList.contains('sort')) {
+                let action = presets.find(p=>p.name==presets_elem.value).actions.find(a=>a.name==actions_elem.value);
+                action.sort = action_sort.value;
+                action_filter.disabled = action.sort != "None";
+            }
+            else if (e.target.classList.contains('filter')) {
+                let action = presets.find(p=>p.name==presets_elem.value).actions.find(a=>a.name==actions_elem.value);
+                action.filter = action_filter.value;
+                action_sort.disabled = action.filter != "None";
+                if (action.filter != "None") action_filter.classList.remove('none');
+                else action_filter.classList.add('none');
+                action_filter_value.value = "";
+            }
+            else if (e.target.classList.contains('filter-value')) {
+                let action = presets.find(p=>p.name==presets_elem.value).actions.find(a=>a.name==actions_elem.value);
+                action.filter_value = e.target.value;
+            }
+        });
+        // Select first option by default
+        presets_elem.value = presets[0].name;
+        fire_event(presets_elem, 'change');
+        // Add function to buttons
+        console.log(presets);
+        d[0].addEventListener('click', e=>{
+            console.log('test', e);
+            if (e.target.nodeName !== "BUTTON") return;
+            let select = e.target.parentElement.nextElementSibling.children[0];
+            let option = select.querySelector(`option[name="${select.value}"]`);
+            let type = (e.target.parentElement.parentElement.classList.contains('actions') ? 'presets' : 'action');
+            let list = (type == 'actions' ? presets.find(p=>p.name==presets_elem.value).actions : presets);
+            console.log(list);
+            let item = list.find(l=>l.name==select.value);
+            console.log(item);
+            let i;
+            let new_item = (type == 'actions' ? {name: 'New action', invert: false, sort: 'Level', filter: 'None', filter_value: ''} : {name: 'New preset', actions: [{name: 'New action', invert: false, sort: 'Level', filter: 'None', filter_value: ''},],});
+            switch (e.target.className) {
+                case 'new':
+                    select.insertAdjacentHTML('beforeend', '<option name="New preset">New preset</option>');
+                    list.append(new_item);
+                    break;
+                case 'up':
+                    option.previousElementSibling.insertAdjacentElement('beforebegin', option);
+                    i = list.indexOf(item);
+                    console.log(i);
+                    list[i] = list[i-1];
+                    list[i-1] = item;
+                    break;
+                case 'down':
+                    option.nextElementSibling.insertAdjacentElement('afterend', option);
+                    i = list.indexOf(item);
+                    console.log(i);
+                    list[i] = list[i+1];
+                    list[i+1] = item;
+                    break;
+                case 'delete':
+                    option.remove();
+                    list.splice(list.indexOf(item), 1);
+                    break;
+            }
+        });
+    }
+
+    function fire_event(elem, event) {
+        let e = document.createEvent('HTMLEvents');
+        e.initEvent(event, true, true); // Type, bubbling, cancelable
+        return !elem.dispatchEvent(e);
     }
 
     // Install CSS
