@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Wanikani: Review Streak
+// @name         Wanikani: Review Answer Streak
 // @namespace    http://tampermonkey.net/
 // @version      0.1.0
 // @description  Counts the number of times you have get review questions right in a row
@@ -10,7 +10,7 @@
 /*jshint esversion: 8 */
 
 (function(wkof, $) {
-    let script_name = "Review Streak";
+    let script_name = "Review Answer Streak";
     let script_id = "review_streak";
 
     // Make sure WKOF is installed
