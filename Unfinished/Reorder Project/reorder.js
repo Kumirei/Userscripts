@@ -48,7 +48,6 @@
         .then(install_menu)
         .then(install_css)
         .then(install_srs_count)
-        .then(install_streak_count)
         .then(install_reorder)
         .then(install_back2back)
         .then(install_priority)
@@ -94,9 +93,6 @@
                 max_reviews: 100,
                 max_lessons: 10,
                 critical_first: false,
-                streak_counter: true,
-                streak: 0,
-                streak_max: 0,
             },
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
@@ -345,34 +341,6 @@
         items.forEach(item=>{counts[item.srs]++;});
         let text = `[${counts.slice(1, 5).join(', ')}][${counts.slice(5,7).join(', ')}][${counts[7]}][${counts[8]}]`;
         document.getElementById('srs_breakdown').innerHTML = text;
-    }
-
-    function install_streak_count() {
-        let settings = wkof.settings[script_id].other;
-        let elem = `<span id="streak" class="${settings.streak_counter?'':'hidden'}"><i class="icon-trophy"></i><span class="current">${settings.streak}</span>(<span class="max">${settings.streak_max}</span>)</span>`;
-        document.getElementById('stats').insertAdjacentHTML('afterbegin', elem);
-        let curr_elem = document.querySelector('#streak .current');
-        let max_elem = document.querySelector('#streak .max');
-
-        let lastlast = [0, 0, settings.streak, settings.streak_max]; // Question, incorrect, streak, max streak
-        let last = [0, 0, settings.streak, settings.streak_max]; // Question, incorrect, streak, max streak
-        $.jStorage.listenKeyChange('questionCount', _=>{
-            let curr = [$.jStorage.get('questionCount'), $.jStorage.get('wrongCount')];
-            if (curr[0] < last[0]) { // Undone answer
-                curr = lastlast;
-                last = lastlast; // Lock in undone answer. Can't un-undo, after all
-                settings.streak = curr[2];
-                settings.streak_max = curr[3];
-            }
-            else if (curr[1] == last[1]) settings.streak++; // Correct answer
-            else if (curr[1] > last[1]) settings.streak = 0; // Incorrect answer
-            if (settings.streak > settings.streak_max) settings.streak_max = settings.streak;
-            lastlast = last;
-            last = [curr[0], curr[1], settings.streak, settings.streak_max];
-            curr_elem.innerText = last[2];
-            max_elem.innerText = last[3];
-            wkof.Settings.save(script_id);
-        });
     }
 
     // Retrieves the current review queue
