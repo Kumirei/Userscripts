@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Real (Time) Numbers
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
+// @version      1.2.0
 // @description  Updates the review count automatically as soon as new reviews are due
 // @author       Kumirei
 // @match        https://www.wanikani.com
@@ -82,31 +82,30 @@
         // what reviews/lessons are/will be available (default: 0)
         constructor(force_update, dt) {
             if (typeof(force_update) == 'undefined')
-            force_update = false;
+                force_update = false;
             if (typeof(dt) == 'undefined')
-            dt = 0;
+                dt = 0;
             this.force_update = force_update;
             this.dt = dt;
             this.thresholds = {reviews: [0,1,50,100,250,500,1000], // thresholds where reviews button image changes
-                lessons: [0,1,25,50,100,250,500]}; // thresholds where lessons button image changes
-                this.threshold_cls_prefix = {reviews: "lessons-and-reviews__reviews-button--",
-                lessons: "lessons-and-reviews__lessons-button--",
-            };
+                               lessons: [0,1,25,50,100,250,500]}; // thresholds where lessons button image changes
+            this.threshold_cls_prefix = {reviews: "lessons-and-reviews__reviews-button--",
+                                         lessons: "lessons-and-reviews__lessons-button--"};
+            this.session_start_tooltip_with_pending = {review: 'Start review session',
+                                                       lesson: "Start lessons"};
         }
 
-        // Fetches the review/lessons counts, updates the dashboard
+        // Fetches the review/lessons counts, updates the counts on the page
         fetch_and_update() {
             this.fetch_pending_counts()
-            .then(this.update_pending_counts.bind(this));
+                .then(this.update_pending_counts.bind(this));
         }
 
         // Retreives the number of reviews/lessons due
         async fetch_pending_counts() {
             let data = await wkof.Apiv2.get_endpoint('summary', {force_update: this.force_update});
-            return {
-                reviews: this.get_pending(data.reviews).length,
-                lessons: this.get_pending(data.lessons).length
-            };
+            return {reviews: this.get_pending(data.reviews).length,
+                    lessons: this.get_pending(data.lessons).length};
         }
 
         // Given a list of reviews/lessons returned from the api,
@@ -116,19 +115,27 @@
             let reference_time = Date.now() + this.dt;
             for (let i=0; i<lst.length; i++) {
                 if (Date.parse(lst[i].available_at) <= reference_time)
-                pending.push(...lst[i].subject_ids);
+                    pending.push(...lst[i].subject_ids);
             }
             return pending;
         }
 
-        // Update both the review and lessons counts in both title bar and big button
+        // Update both the review and lessons counts in both title bar and big button if on the dashboard
+        // Update the count in the top right if on the lessons / reviews summary page
         update_pending_counts(counts) {
-            this.update_pending_count(counts.lessons, 'lessons');
-            this.update_pending_count(counts.reviews, 'reviews');
+            let url = new URL(document.URL);
+            if (['','/','/dashboard','/dashboard/'].includes(url.pathname)) {
+                this.dashboard_update_pending_count(counts.lessons, 'lessons');
+                this.dashboard_update_pending_count(counts.reviews, 'reviews');
+            } else if (['/review','/review/'].includes(url.pathname)) {
+                this.summary_update_pending_count(counts.reviews, 'review');
+            } else if (['/lesson','/lesson/'].includes(url.pathname)) {
+                this.summary_update_pending_count(counts.lessons, 'lesson');
+            }
         }
 
-        // Update the review or lessons count in both title bar and big button
-        update_pending_count(count, reviews_or_lessons) {
+        // Update the review or lessons count in both title bar and big button for the dashboard
+        dashboard_update_pending_count(count, reviews_or_lessons) {
             // update count that shows up in title bar when scrolling
             let reviews_elem = document.getElementsByClassName('navigation-shortcut--' + reviews_or_lessons)[0];
             reviews_elem.setAttribute('data-count', count);
@@ -147,6 +154,21 @@
             );
             big_reviews_elem.classList.add(this.threshold_cls_prefix[reviews_or_lessons] + review_threshold);
             big_reviews_elem.getElementsByTagName('span')[0].innerText = count;
+        }
+
+        // Update the review or lessons count in the top right of the review or lessons summary page
+        // The second argument is singular here and plural in dashboard_update_pending_count(...).
+        summary_update_pending_count(count, review_or_lesson) {
+            let link = document.querySelector('#start-session a');
+            let cl = link.classList;
+            if (count == 0) {
+                link.setAttribute('title', 'No ' + review_or_lesson + 's in queue');
+                cl.add('disabled'); // ignores duplicates automatically
+            } else if (count > 0) {
+                link.setAttribute('title', this.session_start_tooltip_with_pending[review_or_lesson]);
+                cl.remove('disabled');
+            }
+            document.getElementById(review_or_lesson + '-queue-count').innerText = count;
         }
     }
 })();
