@@ -95,23 +95,23 @@
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
             settings.presets = [
-                {name: 'Test 1', actions: [
-                    {name: 'Action 1', invert: false, sort: 'Level', filter: 'None', filter_value: ''},
+                {id: 1, name: 'Test 1', actions: [
+                    {id: 1, name: 'Action 1', invert: false, sort: 'Level', filter: 'None', filter_value: ''},
                 ],},
-                {name: 'Test 2', actions: [
-                    {name: 'Action 1', invert: false, sort: 'None', filter: 'Level', filter_value: ''},
-                    {name: 'Action 2', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                {id: 2, name: 'Test 2', actions: [
+                    {id: 1, name: 'Action 1', invert: false, sort: 'None', filter: 'Level', filter_value: ''},
+                    {id: 2, name: 'Action 2', invert: false, sort: 'None', filter: 'None', filter_value: ''},
                 ],},
-                {name: 'Test 3', actions: [
-                    {name: 'Action 1', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                    {name: 'Action 2', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                    {name: 'Action 3', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                {id: 3, name: 'Test 3', actions: [
+                    {id: 1, name: 'Action 1', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                    {id: 2, name: 'Action 2', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                    {id: 3, name: 'Action 3', invert: false, sort: 'None', filter: 'None', filter_value: ''},
                 ],},
-                {name: 'Test 4', actions: [
-                    {name: 'Action 1', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                    {name: 'Action 2', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                    {name: 'Action 3', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                    {name: 'Action 4', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                {id: 4, name: 'Test 4', actions: [
+                    {id: 1, name: 'Action 1', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                    {id: 2, name: 'Action 2', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                    {id: 3, name: 'Action 3', invert: false, sort: 'None', filter: 'None', filter_value: ''},
+                    {id: 4, name: 'Action 4', invert: false, sort: 'None', filter: 'None', filter_value: ''},
                 ],},
             ];
         });
@@ -148,14 +148,14 @@
                         buttons: {type: 'html', html: '<div class="presets"><div class="preset-buttons"><button class="new">New</button><button class="up">UP</button><button class="down">DOWN</button><button class="delete">Delete</button></div><div class="preset-right"><select class="presets" size="4"></select></div></div>'},
                         divider: {type: 'divider'},
                         section: {type: 'section', label: 'Preset settings'},
-                        name: {type: 'html', html: '<div class="name"><span>Preset name</span><input class="preset-name" placeholder="Preset name"></input></div>'},
+                        name: {type: 'html', html: '<div class="name"><span class="label">Preset name</span><input class="preset-name" placeholder="Preset name"></input></div>'},
                         actions: {type: 'group', label: 'Actions', content: {
                             actions: {type: 'html', html: '<div class="presets actions"><div class="preset-buttons"><button class="new">New</button><button class="up">UP</button><button class="down">DOWN</button><button class="delete">Delete</button></div><div class="preset-right"><select class="actions" size="4"></select></div></div>'},
                             divider: {type: 'divider'},
                             section: {type: 'section', label: 'Action settings'},
-                            name: {type: 'html', html: '<div class="name"><span>Action name</span><input class="action-name" placeholder="Action name"></input></div>'},
-                            invert: {type: 'html', html: '<div class="invert"><span>Invert action</span><input type="checkbox"></input></div>'},
-                            sort: {type: 'html', html: '<div class="sort"><span>Sort</span><select class="sort">'+
+                            name: {type: 'html', html: '<div class="name"><span class="label">Action name</span><input class="action-name" placeholder="Action name"></input></div>'},
+                            invert: {type: 'html', html: '<div class="invert"><span class="label">Invert action</span><input type="checkbox"></input></div>'},
+                            sort: {type: 'html', html: '<div class="sort"><span class="label">Sort</span><select class="sort">'+
                                                             '<option name="None">None</option>'+
                                                             '<option name="Type">Type</option>'+
                                                             '<option name="Level">Level</option>'+
@@ -163,7 +163,7 @@
                                                             '<option name="Overdue">Overdue</option>'+
                                                             '<option name="Random">Random</option>'+
                                                             '</select></div>'},
-                            filter: {type: 'html', html: '<div class="filter"><span>Filter</span><select class="filter">'+
+                            filter: {type: 'html', html: '<div class="filter"><span class="label">Filter</span><select class="filter">'+
                                                             '<option name="None">None</option>'+
                                                             '<option name="Type">Type</option>'+
                                                             '<option name="Level">Level</option>'+
@@ -171,7 +171,7 @@
                                                             '<option name="Overdue">Overdue</option>'+
                                                             '<option name="First">First</option>'+
                                                             '</select>'+
-                                                            '<input class="filter-value" placeholder=""></input></div>'},
+                                                            '<input class="filter-value" placeholder="Filter value"></input></div>'},
                         },},
                 },},
             },},
@@ -186,121 +186,124 @@
     }
 
     function settings_pre_open(d) {
-        console.log(d);
-        console.log(wkof.settings[script_id].presets);
         let presets = wkof.settings[script_id].presets.slice();
-        console.log('d', d);
         d[0].presets = presets; // For retrieval by saving function
-        let presets_elem = d[0].querySelector('#reorder_general_presets .preset-right select');
-        let actions_elem = d[0].querySelector('#reorder_general_actions .preset-right select');
-        let preset_name = d[0].querySelector('#reorder_general_presets .name input');
-        let action_name = d[0].querySelector('#reorder_general_actions .name input');
-        let action_invert = d[0].querySelector('#reorder_general_actions .invert input');
-        let action_sort = d[0].querySelector('#reorder_general_actions .sort select');
-        let action_filter = d[0].querySelector('#reorder_general_actions .filter select');
-        let action_filter_value = d[0].querySelector('#reorder_general_actions .filter input');
+        // Useful variables
         let presets_group = d[0].querySelector('#reorder_general_presets');
+        let presets_elem = presets_group.querySelector('select.presets');
+        let preset_name = presets_group.querySelector('.preset-name');
+        let action_name = presets_group.querySelector('.action-name');
+        let action_invert = presets_group.querySelector('.invert input');
+        let action_sort = presets_group.querySelector('select.sort');
+        let action_filter = presets_group.querySelector('select.filter');
+        let action_filter_value = presets_group.querySelector('input.filter-value');
         // Populate presets
         let options = "";
-        for (let preset of presets) options += `<option name="${preset.name}">${preset.name}</option>`;
+        for (let preset of presets) options += `<option name="${preset.id}">${preset.name}</option>`;
         presets_elem.innerHTML = options;
         // Update settings on change
-        let active_selections = [presets[0].name, presets[0].actions[0].name]; // Preset name, action name
+        let preset = _=>presets.find(p=>p.id==presets_elem.querySelector('option:checked').getAttribute('name')); // Find selected preset
+        let action = _=>preset().actions.find(a=>a.id==presets_group.querySelector('.actions option:checked').getAttribute('name')); // Find selected action
+        presets_elem.value = presets[0].name; // Select first preset
         presets_group.addEventListener('change', e=>{
-            console.log('test', e);
             // Selected preset changed
             if (e.target.classList.contains('presets')) {
-                let preset = presets.find(i=>i.name==e.target.value);
-                preset_name.value = preset.name; // Update preset name
+                preset_name.value = preset().name; // Update name field
                 let actions = "";
-                for (let action of preset.actions) actions += `<option name="${action.name}">${action.name}</option>`;
+                for (let action of preset().actions) actions += `<option name="${action.id}">${action.name}</option>`;
+                let actions_elem = presets_group.querySelector('select.actions');
                 actions_elem.innerHTML = actions; // Update actions list
-                actions_elem.value = active_selections[1]; // Select action
+                actions_elem.value = preset().actions[0].name; // Select action
                 fire_event(actions_elem, 'change'); // Fire change event for actions
             }
+            // Preset name changed
             else if (e.target.classList.contains('preset-name')) {
-                let option = presets_elem.querySelector(`option[name="${presets_elem.value}"]`);
-                presets.find(p=>p.name==presets_elem.value).name = e.target.value;
-                option.setAttribute('name', e.target.value);
-                option.innerText = e.target.value;
+                preset().name = e.target.value; // Update stored name
+                presets_group.querySelector('select.presets option:checked').innerText = e.target.value; // Update selection
             }
+            // Selected action changed
             else if (e.target.classList.contains('actions')) {
-                let action = presets.find(p=>p.name==presets_elem.value).actions.find(a=>a.name==e.target.value);
-                action_name.value = action.name;
-                action_invert.checked = action.invert;
-                action_sort.value = action.sort;
-                action_filter.value = action.filter;
-                action_filter_value.value = action.filter_value;
-                action_sort.disabled = action.filter != "None";
-                action_filter.disabled = action.sort != "None";
+                let a = action();
+                // Update settings
+                action_name.value = a.name;
+                action_invert.checked = a.invert;
+                action_sort.value = a.sort;
+                action_filter.value = a.filter;
+                action_filter_value.value = a.filter_value;
+                // Disable sort/filter if the other is active
+                action_sort.disabled = a.filter != "None";
+                action_filter.disabled = a.sort != "None";
                 if (action_filter.disabled) action_filter.classList.add('none');
             }
+            // Action name changed
             else if (e.target.classList.contains('action-name')) {
-                let option = actions_elem.querySelector(`option[name="${actions_elem.value}"]`);
-                presets.find(p=>p.name==presets_elem.value).actions.find(a=>a.name==actions_elem.value).name = e.target.value;
-                option.setAttribute('name', e.target.value);
-                option.innerText = e.target.value;
+                action().name = e.target.value; // Update stored name
+                presets_group.querySelector('select.actions option:checked').innerText = e.target.value; // Update selection
             }
+            // Invert setting toggled
             else if (e.target.classList.contains('invert')) {
-                let action = presets.find(p=>p.name==presets_elem.value).actions.find(a=>a.name==actions_elem.value);
-                action.invert = action_invert.checked;
+                action.invert = action_invert.checked; // Update setting
             }
+            // Sort type changed
             else if (e.target.classList.contains('sort')) {
-                let action = presets.find(p=>p.name==presets_elem.value).actions.find(a=>a.name==actions_elem.value);
-                action.sort = action_sort.value;
-                action_filter.disabled = action.sort != "None";
+                action.sort = action_sort.value; // Update stored setting
+                action_filter.disabled = action.sort != "None"; // Disable/enable filter setting
             }
+            // Filter type changed
             else if (e.target.classList.contains('filter')) {
-                let action = presets.find(p=>p.name==presets_elem.value).actions.find(a=>a.name==actions_elem.value);
-                action.filter = action_filter.value;
-                action_sort.disabled = action.filter != "None";
-                if (action.filter != "None") action_filter.classList.remove('none');
+                action.filter = action_filter.value; // Update stored setting
+                action_sort.disabled = action.filter != "None"; // Disable/enable sort setting
+                if (action.filter != "None") action_filter.classList.remove('none'); // Hide/show filter value
                 else action_filter.classList.add('none');
-                action_filter_value.value = "";
+                action_filter_value.value = ""; // Set value to 0 whever filter type is changed
             }
+            // Filter value changed
             else if (e.target.classList.contains('filter-value')) {
-                let action = presets.find(p=>p.name==presets_elem.value).actions.find(a=>a.name==actions_elem.value);
-                action.filter_value = e.target.value;
+                action.filter_value = e.target.value; // Update value
+                // TODO: Validation
             }
         });
-        // Select first option by default
-        presets_elem.value = presets[0].name;
         fire_event(presets_elem, 'change');
+        // Workaround for WK disabling backspace
+        presets_group.addEventListener('keydown', e => {if (e.target.nodeName == "INPUT" && e.keyCode == 8) e.target.value = e.target.value.slice(0, -1);});
         // Add function to buttons
-        console.log(presets);
         d[0].addEventListener('click', e=>{
-            console.log('test', e);
-            if (e.target.nodeName !== "BUTTON") return;
+            if (e.target.nodeName !== "BUTTON") return; // Onlt hande button clicks
             let select = e.target.parentElement.nextElementSibling.children[0];
-            let option = select.querySelector(`option[name="${select.value}"]`);
-            let type = (e.target.parentElement.parentElement.classList.contains('actions') ? 'presets' : 'action');
-            let list = (type == 'actions' ? presets.find(p=>p.name==presets_elem.value).actions : presets);
+            let option = select.querySelector(`option:checked`);
+            let type = (e.target.parentElement.parentElement.classList.contains('actions') ? 'actions' : 'presets');
+            let list = (type == 'actions' ? preset().actions : presets);
             console.log(list);
-            let item = list.find(l=>l.name==select.value);
-            console.log(item);
-            let i;
-            let new_item = (type == 'actions' ? {name: 'New action', invert: false, sort: 'Level', filter: 'None', filter_value: ''} : {name: 'New preset', actions: [{name: 'New action', invert: false, sort: 'Level', filter: 'None', filter_value: ''},],});
+            let item = (type == 'actions' ? action() : preset());
             switch (e.target.className) {
                 case 'new':
-                    select.insertAdjacentHTML('beforeend', '<option name="New preset">New preset</option>');
-                    list.append(new_item);
+                    let new_item = {id: list.reduce((a,b)=>a>b.id?a:b.id, 0)+1, name: 'New preset', actions: [{id: 0, name: 'New action', invert: false, sort: 'Level', filter: 'None', filter_value: ''},],};
+                    if (type == 'actions') new_item = {id: list.reduce((a,b)=>a>b.id?a:b.id, 0)+1, name: 'New action', invert: false, sort: 'Level', filter: 'None', filter_value: ''};
+                    select.insertAdjacentHTML('beforeend', `<option name="${new_item.id}">${new_item.name}</option>`);
+                    list.push(new_item);
                     break;
                 case 'up':
+                    if (!option.previousElementSibling) break;
+                    console.log(list, item, list.indexOf(item));
                     option.previousElementSibling.insertAdjacentElement('beforebegin', option);
-                    i = list.indexOf(item);
-                    console.log(i);
+                    var i = list.indexOf(item);
+                    console.log(list.slice());
                     list[i] = list[i-1];
+                    console.log(list.slice());
                     list[i-1] = item;
+                    console.log(list.slice());
                     break;
                 case 'down':
+                    if (!option.nextElementSibling) break;
                     option.nextElementSibling.insertAdjacentElement('afterend', option);
                     i = list.indexOf(item);
-                    console.log(i);
                     list[i] = list[i+1];
                     list[i+1] = item;
                     break;
                 case 'delete':
+                    let parent = option.parentElement;
                     option.remove();
+                    parent.value = parent.children[0].innerText;
                     list.splice(list.indexOf(item), 1);
                     break;
             }
