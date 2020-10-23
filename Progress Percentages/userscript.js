@@ -1,12 +1,10 @@
 // ==UserScript==
 // @name         Wanikani: Progress Percentages
 // @namespace    http://tampermonkey.net/
-// @version      1.2.3
+// @version      1.2.4
 // @description  Calculates the percentage of known kanji for each JLPT level, Joyo grade, Frequency bracket, and various other sources.
 // @author       Kumirei
-// @match        https://www.wanikani.com/
-// @match        https://www.wanikani.com/dashboard
-// @include      *preview.wanikani.com*
+// @include      /^https://(www|preview).wanikani.com/(dashboard)?/
 // @require      https://greasyfork.org/scripts/377613-wanikani-open-framework-jlpt-joyo-and-frequency-filters/code/Wanikani%20Open%20Framework%20JLPT,%20Joyo,%20and%20Frequency%20filters.user.js
 // @license      MIT; http://opensource.org/licenses/MIT
 // @grant        none
@@ -247,22 +245,6 @@ function display_data(percentages) {
         font-size: 16px !important;
         display: inline !important;
     }
-    #search > div > div > div {
-        display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 20px 20px;
-    }
-    #search-form {
-        grid-column: 3;
-        width: 100% !important;
-    }
-    #search-bar {
-        visibility: visible !important;
-    }
-    #search-bar.hidden #search-form {
-        display: none;
-    }
-    #search-bar.hidden .progress_percentages {
-        grid-column: 1 / span 3 !important;
-    }
     </style>`);
     if (is_dark_theme()) {$('head').append(`<style id="progress_percentages_dark">
     .progress_percentages {
@@ -306,9 +288,9 @@ function display_data(percentages) {
     section.appendChild(prev_button);
     section.appendChild(list);
     section.appendChild(next_button);
-    if (wkof.settings.progress_percentages.position == "top") $('#search-form').before(section);
+    if (wkof.settings.progress_percentages.position == "top") $('#search-bar').before(section);
     else if (wkof.settings.progress_percentages.position == "below_srs") $(".srs-progress").append(section);
-    else $('#search-form').before(section);
+    else $('#search-bar').before(section);
 }
 
 // Switches which percentages are showing
