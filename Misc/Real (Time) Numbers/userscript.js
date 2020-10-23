@@ -1,16 +1,16 @@
 // ==UserScript==
 // @name         Wanikani: Real (Time) Numbers
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Updates the review count automatically as soon as new reviews are due
 // @author       Kumirei
-// @match        https://www.wanikani.com
-// @match        https://www.wanikani.com/dashboard
-// @match        https://preview.wanikani.com
-// @match        https://preview.wanikani.com/dashboard
+// @include      /^https://(www|preview).wanikani.com/(lesson/*|review/*|dashboard)?/
 // @grant        none
 // ==/UserScript==
 /*jshint esversion: 8 */
+
+// @include for /review/* and /lesson/* is required because otherwise, the script will not run on the /review summary
+// page if it was navigated to automatically upon completion of reviews/lesson (still works without them if navigating there directly)
 
 (function() {
     let script_name = "Real (Time) Numbers";
@@ -29,6 +29,12 @@
         // Wait until the top of the hour then update the review/lessons count
         let tpu = new PendingUpdater(true,45*1000); // no caching, look 45 seconds into the future to account for out of sync clocks
         wait_until(get_next_hour(), fetch_and_update_recurring);
+
+        // Fetches the review/lessons counts, updates the dashboard, then does the same thing on top of every hour
+        function fetch_and_update_recurring() {
+            tpu.fetch_and_update();
+            wait_until(get_next_hour(), fetch_and_update_recurring);
+        }
 
         // Also update lessons/reviews whenever page is switched to
         let lastVisibilityState = 'visible';
@@ -51,12 +57,13 @@
             transition: background 300ms;
         }`;
         add_css(css, 'real-time-numbers-css');
-    }
 
-    // Fetches the review/lessons counts, updates the dashboard, then does the same thing on top of every hour
-    function fetch_and_update_recurring() {
-        tpu.fetch_and_update();
-        wait_until(get_next_hour(), fetch_and_update_recurring);
+        // Also update lessons/reviews immediately if page was navigated to using back/forward button
+        // must be run after css or else fade won't happen if this results in an update
+        let nav = window.performance.getEntriesByType('navigation');
+        if (nav.length > 0 && nav[0].type == 'back_forward') {
+            vpu.fetch_and_update();
+        }
     }
 
     // Waits until a given time and executes the given function
@@ -69,7 +76,9 @@
         let current_date = new Date();
         return new Date(current_date.toDateString() + ' ' + (current_date.getHours()+1) + ':').getTime();
     }
-
+    
+    // Adds CSS to document
+    // Does not escape its input
     function add_css(css, id="") {
         document.getElementsByTagName('head')[0].insertAdjacentHTML('beforeend', `<style id="${id}">${css}</style>`);
     }
@@ -91,8 +100,6 @@
                                lessons: [0,1,25,50,100,250,500]}; // thresholds where lessons button image changes
             this.threshold_cls_prefix = {reviews: "lessons-and-reviews__reviews-button--",
                                          lessons: "lessons-and-reviews__lessons-button--"};
-            this.session_start_tooltip_with_pending = {review: 'Start review session',
-                                                       lesson: "Start lessons"};
         }
 
         // Fetches the review/lessons counts, updates the counts on the page
@@ -164,9 +171,11 @@
             if (count == 0) {
                 link.setAttribute('title', 'No ' + review_or_lesson + 's in queue');
                 cl.add('disabled'); // ignores duplicates automatically
+                $('#start-session a').on('click', (e) => e.preventDefault()); // add jQuery event handler that prevents click
             } else if (count > 0) {
-                link.setAttribute('title', this.session_start_tooltip_with_pending[review_or_lesson]);
+                link.setAttribute('title', 'Start ' + review_or_lesson + ' session');
                 cl.remove('disabled');
+                $('#start-session a').off('click'); // remove jQuery event handler that prevents click
             }
             document.getElementById(review_or_lesson + '-queue-count').innerText = count;
         }
