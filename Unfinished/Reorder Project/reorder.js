@@ -42,6 +42,8 @@
         }
         return;
     }
+
+    let wkof_items;
     wkof.include('Menu,Settings,ItemData');
     wkof.ready('Menu,Settings,ItemData')
         .then(load_settings)
@@ -58,43 +60,13 @@
         //delete wkof.settings[script_id];
         //wkof.Settings.save(script_id);
         let defaults = {
-            sort: {
-                type: {
-                    active: false,
-                    order: ["rad", "kan", "voc"],
-                },
-                level: {
-                    active: true,
-                    order: 0,
-                },
-                srs: {
-                    active: false,
-                    order: 0,
-                },
-                overdue: {
-                    active: false,
-                    order: 0,
-                },
-            },
-            prioritize: {
-                card: {
-                    active: true,
-                    card: "reading",
-                },
-                sort: {
-                    active: false,
-                    order: ["type", "level", "srs", "overdue"],
-                },
-            },
-            other: {
-                back2back: true,
-                max_reviews: 100,
-                max_lessons: 10,
-                critical_first: false,
-            },
+            active: 0,
+            prioritize: "none",
+            active_queue: 10,
+            back2back: true,
         };
         return wkof.Settings.load(script_id, defaults).then(settings=>{
-            settings.presets = [
+            if (!settings.presets) settings.presets = [
                 {id: 1, name: 'Test 1', actions: [
                     {id: 1, name: 'Action 1', invert: false, sort: 'Level', filter: 'None', filter_value: ''},
                 ],},
@@ -129,6 +101,8 @@
     }
 
     function open_settings() {
+        let presets = {};
+        for (let p of wkof.settings[script_id].presets) presets[p.id] = p.name;
         var config = {
             script_id: script_id,
             title: script_title,
@@ -136,31 +110,30 @@
             on_save: settings_on_save,
             content: {
                 general: {type: 'page', label: 'General', content: {
-                    active: {type: 'dropdown', label: 'Active preset', content: {},},
+                    active: {type: 'dropdown', label: 'Active preset', content: presets,},
                     prioritize: {type: 'dropdown', label: 'Prioritize', default: 'reading', content: {none: 'None', reading: 'Reading', meaning: 'Meaning'},},
-                    srs: {type: 'checkbox', label: 'SRS breakdown', default: true,},
-                    bxb: {type: 'checkbox', label: 'Active preset', default: true,},
-                    streak: {type: 'checkbox', label: 'Streak counter', default: true,},
-                    aq: {type: 'number', label: 'Active preset', default: 10,},
+                    active_queue: {type: 'number', label: 'Active queue size', default: 10,},
+                    back2back: {type: 'checkbox', label: 'Back to back', default: true,},
                 },},
                 presets: {type: 'page', label: 'Edit Presets', content: {
                     presets: {type: 'group', label: 'Presets', content: {
-                        buttons: {type: 'html', html: '<div class="presets"><div class="preset-buttons"><button class="new">New</button><button class="up">UP</button><button class="down">DOWN</button><button class="delete">Delete</button></div><div class="preset-right"><select class="presets" size="4"></select></div></div>'},
+                        buttons: {type: 'html', html: '<div class="presets"><div class="preset-buttons"><button class="new"><i class="icon-plus"></i></button><button class="up"><i class="icon-caret-up"></i></button><button class="down"><i class="icon-caret-down"></i></button><button class="delete"><i class="icon-trash"></i></button></div><div class="preset-right"><select class="presets" size="4"></select></div></div>'},
                         divider: {type: 'divider'},
                         section: {type: 'section', label: 'Preset settings'},
                         name: {type: 'html', html: '<div class="name"><span class="label">Preset name</span><input class="preset-name" placeholder="Preset name"></input></div>'},
                         actions: {type: 'group', label: 'Actions', content: {
-                            actions: {type: 'html', html: '<div class="presets actions"><div class="preset-buttons"><button class="new">New</button><button class="up">UP</button><button class="down">DOWN</button><button class="delete">Delete</button></div><div class="preset-right"><select class="actions" size="4"></select></div></div>'},
+                            actions: {type: 'html', html: '<div class="presets actions"><div class="preset-buttons"><button class="new"><i class="icon-plus"></i></button><button class="up"><i class="icon-caret-up"></i></button><button class="down"><i class="icon-caret-down"></i></button><button class="delete"><i class="icon-trash"></i></button></div><div class="preset-right"><select class="actions" size="4"></select></div></div>'},
                             divider: {type: 'divider'},
                             section: {type: 'section', label: 'Action settings'},
                             name: {type: 'html', html: '<div class="name"><span class="label">Action name</span><input class="action-name" placeholder="Action name"></input></div>'},
-                            invert: {type: 'html', html: '<div class="invert"><span class="label">Invert action</span><input type="checkbox"></input></div>'},
+                            invert: {type: 'html', html: '<div class="invert"><span class="label">Invert action</span><input class="invert" type="checkbox"></input></div>'},
                             sort: {type: 'html', html: '<div class="sort"><span class="label">Sort</span><select class="sort">'+
                                                             '<option name="None">None</option>'+
                                                             '<option name="Type">Type</option>'+
                                                             '<option name="Level">Level</option>'+
                                                             '<option name="SRS">SRS</option>'+
                                                             '<option name="Overdue">Overdue</option>'+
+                                                            '<option name="Critical">Critical</option>'+
                                                             '<option name="Random">Random</option>'+
                                                             '</select></div>'},
                             filter: {type: 'html', html: '<div class="filter"><span class="label">Filter</span><select class="filter">'+
@@ -169,6 +142,7 @@
                                                             '<option name="Level">Level</option>'+
                                                             '<option name="SRS">SRS</option>'+
                                                             '<option name="Overdue">Overdue</option>'+
+                                                            '<option name="Critical">Critical</option>'+
                                                             '<option name="First">First</option>'+
                                                             '</select>'+
                                                             '<input class="filter-value" placeholder="Filter value"></input></div>'},
@@ -201,6 +175,12 @@
         let options = "";
         for (let preset of presets) options += `<option name="${preset.id}">${preset.name}</option>`;
         presets_elem.innerHTML = options;
+        // Update active preset setting
+        function update_active_preset_setting() {
+            options = "";
+            for (let preset of presets) options += `<option name="${preset.id}">${preset.name}</option>`;
+            document.getElementById('reorder_general_active').innerHTML = options;
+        }
         // Update settings on change
         let preset = _=>presets.find(p=>p.id==presets_elem.querySelector('option:checked').getAttribute('name')); // Find selected preset
         let action = _=>preset().actions.find(a=>a.id==presets_group.querySelector('.actions option:checked').getAttribute('name')); // Find selected action
@@ -220,6 +200,7 @@
             else if (e.target.classList.contains('preset-name')) {
                 preset().name = e.target.value; // Update stored name
                 presets_group.querySelector('select.presets option:checked').innerText = e.target.value; // Update selection
+                update_active_preset_setting();
             }
             // Selected action changed
             else if (e.target.classList.contains('actions')) {
@@ -242,24 +223,24 @@
             }
             // Invert setting toggled
             else if (e.target.classList.contains('invert')) {
-                action.invert = action_invert.checked; // Update setting
+                action().invert = action_invert.checked; // Update setting
             }
             // Sort type changed
             else if (e.target.classList.contains('sort')) {
-                action.sort = action_sort.value; // Update stored setting
-                action_filter.disabled = action.sort != "None"; // Disable/enable filter setting
+                action().sort = action_sort.value; // Update stored setting
+                action_filter.disabled = action().sort != "None"; // Disable/enable filter setting
             }
             // Filter type changed
             else if (e.target.classList.contains('filter')) {
-                action.filter = action_filter.value; // Update stored setting
-                action_sort.disabled = action.filter != "None"; // Disable/enable sort setting
-                if (action.filter != "None") action_filter.classList.remove('none'); // Hide/show filter value
+                action().filter = action_filter.value; // Update stored setting
+                action_sort.disabled = action().filter != "None"; // Disable/enable sort setting
+                if (action().filter != "None") action_filter.classList.remove('none'); // Hide/show filter value
                 else action_filter.classList.add('none');
                 action_filter_value.value = ""; // Set value to 0 whever filter type is changed
             }
             // Filter value changed
             else if (e.target.classList.contains('filter-value')) {
-                action.filter_value = e.target.value; // Update value
+                action().filter_value = e.target.value; // Update value
                 // TODO: Validation
             }
         });
@@ -273,7 +254,6 @@
             let option = select.querySelector(`option:checked`);
             let type = (e.target.parentElement.parentElement.classList.contains('actions') ? 'actions' : 'presets');
             let list = (type == 'actions' ? preset().actions : presets);
-            console.log(list);
             let item = (type == 'actions' ? action() : preset());
             switch (e.target.className) {
                 case 'new':
@@ -284,14 +264,10 @@
                     break;
                 case 'up':
                     if (!option.previousElementSibling) break;
-                    console.log(list, item, list.indexOf(item));
                     option.previousElementSibling.insertAdjacentElement('beforebegin', option);
                     var i = list.indexOf(item);
-                    console.log(list.slice());
                     list[i] = list[i-1];
-                    console.log(list.slice());
                     list[i-1] = item;
-                    console.log(list.slice());
                     break;
                 case 'down':
                     if (!option.nextElementSibling) break;
@@ -305,7 +281,9 @@
                     option.remove();
                     parent.value = parent.children[0].innerText;
                     list.splice(list.indexOf(item), 1);
+                    fire_event(select, 'change');
                     break;
+                default: update_active_preset_setting();
             }
         });
     }
@@ -359,10 +337,7 @@
 
     // Create new queue
     function run(items) {
-        sort(items);
-        critical_first(items);
-        truncate(items);
-        shuffle(items);
+        items = process(items);
         $.jStorage.set('reviewQueue', items.slice(10));
         $.jStorage.set('activeQueue', items.slice(0, 10));
         $.jStorage.set('currentItem', items[0]);
@@ -374,10 +349,13 @@
             let registry = {};
             items.forEach(item=>{
                 if (!item.assignments) return;
+                let critical = false;
+                if (item.level == wkof.user.level && item.object != "vocabulary" && (item.assignments && item.assignments.passed_at == null)) critical = true;
                 registry[item.id] = {
                     level: item.data.level,
                     UID: item.object[0].toLowerCase()+item.id,
                     available_at: item.assignments.available_at,
+                    critical,
                 };
             });
             return registry;
@@ -392,10 +370,11 @@
     // Calculates sorting indices and stores the data in the items
     function inject_sort_indices(items) {
         items.forEach(item=>{
-            let o = wkof.settings[script_id].sort.type.order;
-            let order = {r: o.indexOf('rad'), k: o.indexOf('kan'), v: o.indexOf('voc')};
+            let order = {r: 0, k: 1, v: 2};
             item.type = order[item.UID[0]];
             item.overdue = calculate_overdue(item);
+            item.critical = item.critical ? 0 : 1;
+            //item.random = Math.random();
         });
     }
 
@@ -406,29 +385,62 @@
 
 
     // Sort the itmes
-    function sort(items) {
-        for (let i=wkof.settings[script_id].prioritize.sort.order.length-1; i>=0; i--) {
-            let sort_key = wkof.settings[script_id].prioritize.sort.order[i];
-            if (!wkof.settings[script_id].sort[sort_key].active) continue;
-            items.sort((a,b)=>(a[sort_key] > b[sort_key])?1:-1);
+    function process(items) {
+        let settings = wkof.settings[script_id];
+        let preset = settings.presets.find(p=>p.id==settings.active);
+        let key, invert, sorter = (a, b) => a[key] > b[key] ? (invert?-1:1) : (invert?1:-1);
+        let sort_actions = preset.actions.filter(a=>a.sort != "None").length;
+        let sort_count = 0;
+        for (let action of preset.actions) {
+            invert = !action.invert;
+            let type;
+            if (action.sort != "None") type = 'sort';
+            else if (action.filter != "None") type = 'filter';
+            key = action[type].toLowerCase();
+            if (type == "sort") {
+                items.sort(sorter);
+                sort_count++;
+            } else if (type == "filter") {
+                let value = action.filter_value;
+                switch (action.filter) {
+                    case "Type":
+                        break;
+                    case "Level":
+                        break;
+                    case "SRS":
+                        break;
+                    case "Overdue":
+                        break;
+                    case "Critical":
+                        break;
+                    case "First":
+                        if (!invert) items.splice(value);
+                        else items.splice(0, items.length-value);
+                        break;
+                }
+            }
         }
+        items.reverse();
+        return items;
     }
 
     // Set up prioritisation of reading or meaning
     function install_priority() {
         $.jStorage.listenKeyChange('currentItem', prioritize);
-    }
 
-    // Prioritize reading or meaning
-    function prioritize() {
-        if (!wkof.settings[script_id].prioritize.card.active) return;
-        let prio = wkof.settings[script_id].prioritize.card.card;
-        let item = $.jStorage.get('currentItem');
-        if (!item.UID || item.rad || $.jStorage.get('questionType') == prio) return;
-        let done = $.jStorage.get(item.UID);
-        if (!done || !done[prio=="reading"?"rc":"mc"]) {
-            $.jStorage.set('questionType', prio);
-            $.jStorage.set('currentItem', item);
+        // Prioritize reading or meaning
+        function prioritize() {
+            let prio = wkof.settings[script_id].prioritize;
+            let item = $.jStorage.get('currentItem');
+            // Skip if item does not yet have a UID, it is a radical, it is already
+            // the right question, or no priority is selected
+            if (!item.UID || item.rad || $.jStorage.get('questionType') == prio || "none" == prio) return;
+            let done = $.jStorage.get(item.UID);
+            // Change the question if no question has been answered yet
+            if (!done) {
+                $.jStorage.set('questionType', prio);
+                $.jStorage.set('currentItem', item);
+            }
         }
     }
 
@@ -438,7 +450,7 @@
         let new_random = function(){
             let re = /https:\/\/cdn.wanikani.com\/assets\/v03\/review\//;
             let match = re.exec(new Error().stack);
-            if (match && wkof.settings[script_id].other.back2back) return 0;
+            if (match && wkof.settings[script_id].back2back) return 0;
             return old_random();
         };
         Math.random = new_random;
