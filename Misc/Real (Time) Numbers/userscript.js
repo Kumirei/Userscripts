@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Wanikani: Real (Time) Numbers
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.2.2
 // @description  Updates the review count automatically as soon as new reviews are due
 // @author       Kumirei
-// @include      /^https://(www|preview).wanikani.com/(lesson/*|review/*|dashboard)?/
+// @include      /^https://(www|preview).wanikani.com/(lesson/*|review/*|dashboard)?$/
 // @grant        none
 // ==/UserScript==
 /*jshint esversion: 8 */
@@ -76,7 +76,7 @@
         let current_date = new Date();
         return new Date(current_date.toDateString() + ' ' + (current_date.getHours()+1) + ':').getTime();
     }
-    
+
     // Adds CSS to document
     // Does not escape its input
     function add_css(css, id="") {

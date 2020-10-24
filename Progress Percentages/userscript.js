@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Wanikani: Progress Percentages
 // @namespace    http://tampermonkey.net/
-// @version      1.2.4
+// @version      1.2.5
 // @description  Calculates the percentage of known kanji for each JLPT level, Joyo grade, Frequency bracket, and various other sources.
 // @author       Kumirei
-// @include      /^https://(www|preview).wanikani.com/(dashboard)?/
+// @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @require      https://greasyfork.org/scripts/377613-wanikani-open-framework-jlpt-joyo-and-frequency-filters/code/Wanikani%20Open%20Framework%20JLPT,%20Joyo,%20and%20Frequency%20filters.user.js
 // @license      MIT; http://opensource.org/licenses/MIT
 // @grant        none
