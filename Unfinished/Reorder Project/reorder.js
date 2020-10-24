@@ -4,7 +4,7 @@
 // @version      0.1.0
 // @description  Reorders n stuff
 // @author       Kumirei
-// @include      /^https://(www|preview).wanikani.com/(lesson|review)/session/
+// @include      /^https://(www|preview).wanikani.com/(lesson|review)/session$/
 // @grant        none
 // ==/UserScript==
 /*jshint esversion: 8 */
@@ -42,13 +42,12 @@
         return;
     }
 
-    let wkof_items;
     wkof.include('Menu,Settings,ItemData');
     wkof.ready('Menu,Settings,ItemData')
         .then(load_settings)
         .then(install_menu)
         .then(install_css)
-        .then(install_reorder)
+        .then(install_interface)
         .then(install_back2back)
         .then(install_priority)
         .then(prepare_data)
@@ -306,7 +305,7 @@
     }
 
     // Installs the main interface
-    function install_reorder() {
+    function install_interface() {
     }
 
     // Prepares the data
@@ -424,8 +423,9 @@
             // the right question, or no priority is selected
             if (!item.UID || item.rad || $.jStorage.get('questionType') == prio || "none" == prio) return;
             let done = $.jStorage.get(item.UID);
-            // Change the question if no question has been answered yet
-            if (!done) {
+            // Change the question if no question has been answered yet,
+            // Or the priority question has not been answered correctly yet
+            if (!done || !done[prio=="reading"?"rc":"mc"]) {
                 $.jStorage.set('questionType', prio);
                 $.jStorage.set('currentItem', item);
             }
