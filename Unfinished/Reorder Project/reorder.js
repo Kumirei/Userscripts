@@ -32,7 +32,6 @@
     let script_title = "Reorder General";
     let script_id = "reorder_general";
     let srs_intervals = [4, 8, 23, 47, 167, 335, 719, 2879];
-    let truncated = [];
 
     // Make sure WKOF is installed
     if (!wkof) {
@@ -53,7 +52,7 @@
         .then(install_back2back)
         .then(install_priority)
         .then(prepare_data)
-        .then(start);
+        .then(run);
 
     // Load WKOF settings
     function load_settings() {
@@ -108,6 +107,7 @@
             title: script_title,
             pre_open: settings_pre_open,
             on_save: settings_on_save,
+            on_close: new_queue(),
             content: {
                 general: {type: 'page', label: 'General', content: {
                     active: {type: 'dropdown', label: 'Active preset', content: presets,},
@@ -296,13 +296,7 @@
 
     // Install CSS
     function install_css() {
-        let css = `<style id="${script_id+'CSS'}">
-#srs_breakdown {
-    font-weight: bold;
-}
-#srs_breakdown.hidden {display: none;}
-#wkofs_reorder_general #reorder_general_action > .row:nth-child(-n+3) > div {width: auto; min-width: 90px;}
-</style>`;
+        let css = `<style id="${script_id+'CSS'}"></style>`;
         document.getElementsByTagName('head')[0].insertAdjacentHTML('beforeend', css);
     }
 
@@ -317,22 +311,16 @@
 
     // Prepares the data
     async function prepare_data() {
-        let item_data = await fetch_item_data();
+        let registry = await fetch_item_data();
         let items = get_queue();
-        inject_data(items, item_data);
+        inject_data(items, registry);
         inject_sort_indices(items);
         return items;
     }
 
-    // Startup
-    function start(items) {
-        run(items);
-    }
-
     // Create new queue from all reviews
     function new_queue() {
-        let items = [...get_queue(), ...truncated];
-        run(items);
+        run(get_queue());
     }
 
     // Create new queue
@@ -363,8 +351,8 @@
     }
 
     // Combines the two objects
-    function inject_data(items, item_data) {
-        items.forEach(item=>{for (let key in item_data[item.id]) item[key] = item_data[item.id][key];});
+    function inject_data(items, registry) {
+        items.forEach(item=>{for (let key in registry[item.id]) item[key] = registry[item.id][key];});
     }
 
     // Calculates sorting indices and stores the data in the items
@@ -376,11 +364,11 @@
             item.critical = item.critical ? 0 : 1;
             //item.random = Math.random();
         });
-    }
 
-    // Calculates how overdue an item is
-    function calculate_overdue(item) {
-        return (Date.now()-Date.parse(item.available_at))/(1000*60*60)/srs_intervals[item.srs];
+        // Calculates how overdue an item is
+        function calculate_overdue(item) {
+            return (Date.now()-Date.parse(item.available_at))/(1000*60*60)/srs_intervals[item.srs];
+        }
     }
 
 
@@ -454,22 +442,5 @@
             return old_random();
         };
         Math.random = new_random;
-    }
-
-    // Shuffle
-    function shuffle(items) {
-        let shuffled = items.map(a=>[Math.random(), a]).sort((a,b)=>(a[0]>b[0])?1:-1).map(a=>a[1]);
-        for (let i=0; i<items.length; i++) items[i] = shuffled[i];
-    }
-
-    // Sets a fixed number of items in queue
-    function truncate(items) {
-        truncated = items.splice(wkof.settings[script_id].other.max_reviews);
-    }
-
-    // Brings critical items to front
-    function critical_first(items) {
-        if (!wkof.settings[script_id].other.critical_first) return;
-        items.sort((a,b)=>((!a.voc && a.level==wkof.user.level) && (b.voc || b.level!=wkof.user.level))?-1:1);
     }
 })(window.wkof, window.jQuery);
