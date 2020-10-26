@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Show extensive breakdown of review count
 // @author        Kumirei
-// @version       1.1.0
+// @version       1.1.1
 // @include       /^https://(www|preview).wanikani.com*/
 // @grant         none
 // ==/UserScript==
@@ -94,23 +94,23 @@
             level_count++;
         }
         let HTML = `
-<div id="review_hover_details" class="${level_count>=53?"smallest":level_count>=45?"smaller":level_count>=40?"small":level_count>30?"smol":""}">
-<table>
-<tr class="table-header"><th></th><th>Tot</th><th>Rad</th><th>Kan</th><th>Voc</th></tr>
-${table_row(counts, 'srs', 'App')}
-${table_row(counts, 'srs', 'Gur')}
-${table_row(counts, 'srs', 'Mas')}
-${table_row(counts, 'srs', 'Enl')}
-<tr><th>Tot</th><td>${counts.total}</td><td>${counts.type.rad}</td><td>${counts.type.kan}</td><td>${counts.type.voc}</td></tr>
-</table>
-<table>
-<tr class="table-header"><th>Lvl</th><th>Tot</th><th>Rad</th><th>Kan</th><th>Voc</th><th>App</th><th>Gur</th><th>Mas</th><th>Enl</th><th>Cum</th></tr>
-${levels}
-</table>
-</div>
-`;
+        <div id="review_hover_details" class="${level_count>=53?"smallest":level_count>=45?"smaller":level_count>=40?"small":level_count>30?"smol":""}">
+            <table>
+                <tr class="table-header"><th></th><th>Tot</th><th>Rad</th><th>Kan</th><th>Voc</th></tr>
+                ${table_row(counts, 'srs', 'App')}
+                ${table_row(counts, 'srs', 'Gur')}
+                ${table_row(counts, 'srs', 'Mas')}
+                ${table_row(counts, 'srs', 'Enl')}
+                <tr><th>Tot</th><td>${counts.total}</td><td>${counts.type.rad}</td><td>${counts.type.kan}</td><td>${counts.type.voc}</td></tr>
+            </table>
+            <table>
+                <tr class="table-header"><th>Lvl</th><th>Tot</th><th>Rad</th><th>Kan</th><th>Voc</th><th>App</th><th>Gur</th><th>Mas</th><th>Enl</th><th>Cum</th></tr>
+                ${levels}
+            </table>
+        </div>
+        `;
         document.getElementsByClassName('navigation-shortcut--reviews')[0].insertAdjacentHTML('beforeend', HTML);
-        document.getElementsByClassName('lessons-and-reviews__reviews-button')[0].insertAdjacentHTML('afterend', HTML);
+        document.getElementsByClassName('lessons-and-reviews__reviews-button')[0].insertAdjacentHTML('beforeend', HTML);
     }
 
     function table_row(counts, table_type, row_type, cumulative) {
@@ -128,83 +128,91 @@ ${levels}
 
     function install_css() {
         document.getElementsByTagName('head')[0].insertAdjacentHTML('beforeend', `
-<style id="ReviewHoverDetailsCSS">
-    .navigation-shortcut--reviews {
-        position: relative;
-    }
-    .navigation-shortcut--reviews:hover #review_hover_details,
-    #review_hover_details:hover,
-    .lessons-and-reviews__reviews-button:hover + #review_hover_details{
-        display: table;
-    }
-    #review_hover_details {
-        display: none;
-        position: absolute;
-        padding: 10px;
-        border-radius: 5px;
-        background-color: #4d4d4d !important;
-        width: max-content;
-        text-align: center;
-        margin-top: 10px;
-        z-index: 11;
-        left: 50%;
-        transform: translateX(-50%);
-        box-shadow: 2px 2px rgba(0,0,0,0.3);
-    }
-    #review_hover_details::before {
-        position: absolute;
-        border-bottom: 20px solid #4d4d4d;
-        border-right: 20px solid transparent;
-        border-left: 20px solid transparent;
-        content: " ";
-        top: -10px;
-        transform: translateX(-50%);
-    }
-    #review_hover_details table tr:nth-child(2n+3) {
-        background-color: rgba(240, 240, 240, 0.15) !important;
-    }
-    #review_hover_details table:not(:last-child) {
-        margin-bottom: 20px;
-    }
-    #review_hover_details table tr:first-child th {
-        border-bottom: 1px solid rgb(240, 240, 240);
-        color: rgb(240, 240, 240);
-    }
-    #review_hover_details table:first-child tr:last-child * {
-        border-top: 1px solid rgb(240, 240, 240);
-    }
-    #review_hover_details th {
-        color: rgb(240, 240, 240);
-        width: 30px;
-    }
-    #review_hover_details td {
-        color: #ddd;
-    }
-    #review_hover_details table tr :first-child,
-    #review_hover_details table tr :nth-child(2),
-    #review_hover_details table:nth-child(2) :nth-child(5),
-    #review_hover_details table:nth-child(2) :nth-child(9) {
-        border-right: 1px solid white;
-    }
-    #review_hover_details td[data-count="0"] {
-        color: transparent;
-    }
-    #review_hover_details.smol {
-        line-height: 16px;
-    }
-    #review_hover_details.small {
-        font-size: 12px;
-        line-height: 14px;
-    }
-    #review_hover_details.smaller {
-        font-size: 12px;
-        line-height: 12px;
-    }
-    #review_hover_details.smallest {
-        font-size: 12px;
-        line-height: 10px;
-    }
-</style>
-`);
+        <style id="ReviewHoverDetailsCSS">
+        .navigation-shortcut--reviews {
+            position: relative;
+        }
+        .navigation-shortcut--reviews:hover #review_hover_details,
+        #review_hover_details:hover,
+        .lessons-and-reviews__reviews-button:hover #review_hover_details {
+            display: table;
+        }
+        .lessons-and-reviews__reviews-button #review_hover_details {
+            top: 100%;
+        }
+        #review_hover_details {
+            display: none;
+            position: absolute;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #4d4d4d !important;
+            width: max-content;
+            text-align: center;
+            margin-top: 10px;
+            z-index: 11;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 2px 2px rgba(0,0,0,0.3);
+        }
+        #review_hover_details::before {
+            position: absolute;
+            border-bottom: 20px solid #4d4d4d;
+            border-right: 20px solid transparent;
+            border-left: 20px solid transparent;
+            content: " ";
+            top: -10px;
+            transform: translateX(-50%);
+        }
+        #review_hover_details table tr:nth-child(2n+3) {
+            background-color: rgba(240, 240, 240, 0.15) !important;
+        }
+        #review_hover_details table:not(:last-child) {
+            margin-bottom: 20px;
+        }
+        #review_hover_details table tr:first-child th {
+            border-bottom: 1px solid rgb(240, 240, 240);
+            color: rgb(240, 240, 240);
+        }
+        #review_hover_details table:first-child tr:last-child * {
+            border-top: 1px solid rgb(240, 240, 240);
+        }
+        #review_hover_details th {
+            color: rgb(240, 240, 240);
+            width: 30px;
+        }
+        #review_hover_details td {
+            color: #ddd;
+        }
+        #review_hover_details table tr :first-child,
+        #review_hover_details table tr :nth-child(2),
+        #review_hover_details table:nth-child(2) tr :nth-child(5),
+        #review_hover_details table:nth-child(2) tr :nth-child(9) {
+            border-right: 1px solid white;
+        }
+        #review_hover_details td[data-count="0"] {
+            color: transparent;
+        }
+        #review_hover_details {
+            font-size: 14px;
+            line-height: 20px;
+            font-weight: normal;
+        }
+        #review_hover_details.smol {
+            line-height: 16px;
+        }
+        #review_hover_details.small {
+            font-size: 12px;
+            line-height: 14px;
+        }
+        #review_hover_details.smaller {
+            font-size: 12px;
+            line-height: 12px;
+        }
+        #review_hover_details.smallest {
+            font-size: 12px;
+            line-height: 10px;
+        }
+        </style>
+        `);
     }
 })(window.wkof);
