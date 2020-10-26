@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Open Framework: Visually similar kanji filter
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.2.1
 // @description  Adds a wkof filter for visually similar kanji
 // @author       Kumirei
 // @include      https://www.wanikani.com/*
@@ -11,11 +11,13 @@
 /*jshint esversion: 8 */
 
 (function(wkof, $) {
+    let script_id = "VSKFilter";
     if (!wkof) return;
 
     var kanji_list = {};
 
     // Install menu
+    wkof.set_state(script_id, 'loading');
     wkof.include('Menu,Settings');
     wkof.ready('Menu,Settings')
     .then(load_settings)
@@ -53,7 +55,7 @@
                     return false;
                 }
             };
-            wkof.set_state('wkof.Kumirei.VSKFilter', 'ready');
+            wkof.set_state(script_id, 'ready');
         });
     }
 
@@ -143,5 +145,4 @@
         config.content.remove_button.dialog = dialog;
         dialog.open();
     }
-
 })(window.wkof, window.jQuery);
