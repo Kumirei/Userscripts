@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        WaniKani Stroke Order
 // @namespace   japanese
-// @version     1.1.4
+// @version     1.1.5
 // @description Shows a kanji's stroke order on its page and during lessons and reviews.
 // @license     GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 // @include     http*://*wanikani.com/kanji/*
@@ -130,7 +130,7 @@
 
         // Reviews hack: Only do it once
         if ($('#stroke_order').length == 0) {
-            var sectionHTML = '<section><h2>Stroke Order</h2><svg id="stroke_order"></svg></section>';
+            let sectionHTML = '<section><h2>Stroke Order</h2><div style="width:100%;overflow-x: auto; overflow-y: hidden"><svg id="stroke_order"></svg></div></section>';
 
             switch(curPage) {
                 case PageEnum.kanji:
