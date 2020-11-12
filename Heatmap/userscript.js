@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.10
+// @version      3.0.11
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -40,7 +40,7 @@
     // Fetch necessary data then install the heatmap
     async function initiate() {
         // Fetch data
-        let [reviews, items] = await Promise.all([review_cache.get_reviews(), wkof.ItemData.get_items('assignments')]);
+        let [reviews, items] = await Promise.all([review_cache.get_reviews(), wkof.ItemData.get_items('assignments,include_hidden')]);
         let [forecast, lessons] = get_forecast_and_lessons(items);
         if (wkof.settings[script_id].lessons.recover_lessons) {
             let recovered_lessons = await get_recovered_lessons(items, reviews, lessons);
