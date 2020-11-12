@@ -70,11 +70,19 @@
     function accept_jlpt_kanji_vocab(filter_value, item) {
         var characters = item.data.characters;
         if (item.object === 'kanji') return accept_jlpt_kanji(filter_value, characters);
+        var minLevel = 6;
         for (var idx in characters) {
-            let char = characters.charAt(idx);
-            if (isKanji(char) && !accept_jlpt_kanji(filter_value, char)) return false;
+            var char = characters.charAt(idx);
+            if (isKanji(char)){
+                var jlpt_data = data[char];
+                if (!jlpt_data) {
+                    minLevel = 0;
+                } else {
+                    minLevel = Math.min(minLevel, jlpt_data.jlpt_level || 0);
+                };
+            };
         };
-        return true;
+        return (filter_value[minLevel] === true);
     }
 
     // Adds two JLPT level filters and a filter to add JLPT data to items
@@ -95,7 +103,7 @@
             label: 'JLPT level with vocab',
             default: {5: false, 4: false, 3: false, 2: false, 1: false, 0: false},
             content: {5: 'N5', 4: 'N4', 3: 'N3', 2: 'N2', 1: 'N1', 0: 'Not Classified in JLPT'},
-            hover_tip: 'Filter kanji by JLPT level.\nSelects the kanji.\nIncludes vocabulary where all\nkanji are of selected level.)',
+            hover_tip: 'Filter kanji by JLPT level.\nSelects the kanji.\nIncludes vocabulary where the\nhighest level kanji is of selected level.',
             filter_func: function (filterValue, item) {return (item.object !== 'radical') ? accept_jlpt_kanji_vocab(filterValue, item) : false},
         };
     }
@@ -123,11 +131,19 @@
     function accept_joyo_kanji_vocab(filter_value, item) {
         var characters = item.data.characters;
         if (item.object === 'kanji') return accept_joyo_kanji(filter_value, characters);
+        var maxGrade = 0;
         for (var idx in characters) {
-            let char = characters.charAt(idx);
-            if (isKanji(char) && !accept_joyo_kanji(filter_value, char)) return false;
+            var char = characters.charAt(idx);
+            if (isKanji(char)){
+                var joyo_data = data[char];
+                if (!joyo_data) {
+                    maxGrade = 10;
+                } else {
+                    maxGrade = Math.max(maxGrade, joyo_data.joyo_grade || 10);
+                };
+            };
         };
-        return true;
+        return (filter_value[maxGrade] === true);
     }
 
     // Adds two Joyo grade filters and a filter to add Joyo data to items
@@ -148,7 +164,7 @@
             label: 'Joyo grade with vocab.',
             default: {1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 9: false, 10: false},
             content: {1: 'Joyo 1', 2: 'Joyo 2', 3: 'Joyo 3', 4: 'Joyo 4', 5: 'Joyo 5', 6: 'Joyo 6', 9: 'Joyo 9', 10: 'No Joyo Grade'},
-            hover_tip: 'Filter by Joyo grade.\nSelects the kanji.\nIncludes vocabulary where all kanji\nare of the selected grades.)',
+            hover_tip: 'Filter by Joyo grade.\nSelects the kanji.\nIncludes vocabulary where the\nhighest level kanji is of selected grade.',
             filter_func: function (filterValue, item) {return (item.object !== 'radical') ? accept_joyo_kanji_vocab(filterValue, item) : false},
         };
     }
@@ -167,11 +183,19 @@
     function accept_frequency_kanji_vocab(filter_value, item) {
         var characters = item.data.characters;
         if (item.object === 'kanji') return accept_frequency_kanji(filter_value, characters);
+        var maxFrequency = 0;
         for (var idx in characters) {
-            let char = characters.charAt(idx);
-            if (isKanji(char) && !accept_frequency_kanji(filter_value, char)) return false;
+            var char = characters.charAt(idx);
+            if (isKanji(char)){
+                var frequencyData = data[char];
+                if (!frequencyData) {
+                    maxFrequency = 10000;
+                } else {
+                    maxFrequency = Math.max(maxFrequency, frequencyData.frequency || 10000);
+                };
+            };
         };
-        return true;
+        return (filter_value[maxFrequency] === true);
     }
 
     // Adds two filters for total kanji frequency
@@ -189,7 +213,7 @@
             label: 'Frequency with vocab.',
             default: {500: false, 1000: false, 1500: false, 2000: false, 2500: false, 10000: false},
             content: {500: "500", 1000: "1000", 1500: "1500", 2000: "2000", 2500: "2500", 10000: 'No Frequency Information'},
-            hover_tip: 'Filter by kanji frequency.\nSelects the kani and the vocabulary\nusing only selected kanji.',
+            hover_tip: 'Filter by kanji frequency.\nSelects the kanji.\nIncludes vocabulary where the\nlowest frequency kanji is of selected frequency.',
             filter_func: function (filterValue, item) {return (item.object !== 'radical') ? accept_frequency_kanji_vocab(filterValue, item) : false},
         };
     }
