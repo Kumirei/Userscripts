@@ -3375,4 +3375,16 @@
 	.category-selector span.category-name {
 		color: var(--main-text) !important;
 	}
+
+
+    /* Version 2.1.20
+    /*_____________________
+
+    Fixed: Solutions color
+    */
+
+    .post-controls .extra-buttons .accepted-text .d-icon,
+    .post-controls .extra-buttons .accepted-text .accepted-label {
+        color: var(--fa-checked-box-color)
+    }
 }
