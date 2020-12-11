@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.12
+// @version      3.0.13
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -573,11 +573,14 @@
     // Prepares data for the heatmap
     function cook_data(type, data) {
         if (type === "reviews") {
+            let ans = (srs, err) => {
+                let srs2 = srs - Math.ceil(err/2)*(srs<5?1:2)+(err==0?1:0);
+                return srs2<1?1:srs2;
+            };
             return data.map(item=>{
                 let cooked = [item[0], {reviews: 1, pass: (item[3]+item[4]==0?1:0), incorrect: item[3]+item[4], streak: item[5]}, {'reviews-ids': item[1]}];
                 cooked[1][type+'-srs1-'+item[2]] = 1;
-                let new_srs = item[2]-((item[3]+item[4])*(item[2]<5?1:2))+((item[3]+item[4])==0?1:0);
-                cooked[1][type+'-srs2-'+(new_srs<1?1:new_srs)] = 1;
+                cooked[1][type+'-srs2-'+ans(item[2], item[3]+item[4])] = 1;
                 return cooked;
             });
         }
@@ -595,7 +598,7 @@
             id: type,
             week_start: settings.general.week_start,
             day_start: settings.general.day_start,
-            first_date: Math.max(new Date(settings.general.start_day).getTime(), first_date),
+            first_date: Math.max(new Date(settings.general.start_day).getTime(), first_date)-settings.general.day_start*60*60*1000,
             last_date: last_date,
             segment_years: settings.general.segment_years,
             zero_gap: settings.general.zero_gap,
