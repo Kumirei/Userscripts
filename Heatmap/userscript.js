@@ -116,6 +116,7 @@
             // Load settings from old script if possible
             if (!settings.other.ported) port_settings(settings);
             // Make sure at least one year is visible
+            let visible_years = wkof.settings[script_id].other.visible_years;
             for (let type of ['reviews', 'lessons']) {
                 if (!Object.values(visible_years[type]).find(a=>a==true)) {
                     visible_years[type][new Date().getFullYear()] = true;
