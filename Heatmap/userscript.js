@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.13
+// @version      3.0.14
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -115,6 +115,12 @@
             if (!settings.forecast.colors) settings.forecast.colors = [[0, "#747474"], [1, "#aaaaaa"], [100, "#bfbfbf"], [200, "#d5d5d5"], [300, "#eaeaea"], [400, "#ffffff"],];
             // Load settings from old script if possible
             if (!settings.other.ported) port_settings(settings);
+            // Make sure at least one year is visible
+            for (let type of ['reviews', 'lessons']) {
+                if (!Object.values(visible_years[type]).find(a=>a==true)) {
+                    visible_years[type][new Date().getFullYear()] = true;
+                }
+            }
             wkof.Settings.save(script_id);
             return settings;
         });
@@ -813,6 +819,10 @@
         } else {
             visible_years[type][year-1] = true;
             year_elem.previousElementSibling.classList.remove('hidden');
+        }
+        // Make sure at least one year is visible
+        if (!Object.values(visible_years[type]).find(a=>a==true)) {
+            visible_years[type][year] = true;
         }
         wkof.Settings.save(script_id);
     }
