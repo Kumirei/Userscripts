@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.18
+// @version      3.0.19
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=852495
-// @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=852491
+// @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=888244
 // @grant        none
 // ==/UserScript==
 /*jshint esversion: 8 */
