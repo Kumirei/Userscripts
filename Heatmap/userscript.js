@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.16
+// @version      3.0.17
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -569,7 +569,7 @@
     function create_buttons() {
         let buttons = create_elem({type: 'div', class: 'buttons'});
         let settings_button = create_elem({type: 'button', class: 'settings-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Settings'}), create_elem({type: 'i', class: 'icon-gear'})], onclick: open_settings});
-        let toggle_button = create_elem({type: 'button', class: 'toggle-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Toggle Reviews/Lessons'}), create_elem({type: 'i', class: 'icon-inbox'})], onclick: toggle_visible_map});
+        let toggle_button = create_elem({type: 'button', class: 'toggle-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Toggle view'}), create_elem({type: 'i', class: 'icon-inbox'})], onclick: toggle_visible_map});
         buttons.append(settings_button, toggle_button);
         return buttons;
     }
