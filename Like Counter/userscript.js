@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      2.0.18
+// @version      2.0.19
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -141,7 +141,8 @@
         main_content.css('padding-top', (main_content_toppad + 25) + 'px');
         // Insert CSS.
         var css =
-            '.float_wkappnav .d-header {height:inherit;}'+
+            '.float_wkappnav .d-header {padding-bottom: 2em;}'+
+            '.float_wkappnav .d-header {height: 4em !important;}'+
             '.float_wkappnav .d-header .title {height:4em;}'+
             '.float_wkappnav .wanikani-app-nav-container {border-top:1px solid #ccc; line-height:2em;}'+
             '.float_wkappnav .wanikani-app-nav ul {padding-bottom:0; margin-bottom:0; border-bottom:inherit;}'+
