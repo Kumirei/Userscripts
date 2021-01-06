@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.20
+// @version      3.0.21
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -889,7 +889,8 @@
         function event_handler(event) {
             let elem = event.target;
             if (elem.classList.contains('day')) {
-                let date = new Date(elem.getAttribute('data-date')+' 0:0');
+                let date = elem.getAttribute('data-date').split('-');
+                date = new Date(date[0], date[1]-1, date[2], 0, 0);
                 let type = elem.closest('.view').classList.contains('reviews')?date<new Date()?'reviews':'forecast':'lessons';
                 if (Object.keys(elem.info.lists).length) {
                     let title = `${date.toDateString().slice(4)} ${kanji_day(date.getDay())}`;
@@ -913,7 +914,8 @@
             let elem = event.target;
             // If event concerns a day element, proceed
             if (elem.classList.contains('day')) {
-                let date = new Date(elem.getAttribute('data-date')+' 0:0');
+                let date = elem.getAttribute('data-date').split('-');
+                date = new Date(date[0], date[1]-1, date[2], 0, 0);
                 let type = elem.closest('.view').classList.contains('reviews')?date<new Date()?'reviews':'forecast':'lessons';
                 // Start selection
                 if (event.type === "mousedown") {
