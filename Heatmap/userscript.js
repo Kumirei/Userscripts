@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.19
+// @version      3.0.20
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -609,7 +609,7 @@
             markings: [[new Date(Date.now()-msh*settings.general.day_start), "today"], ...level_marks],
             day_hover_callback: (date, day_data)=>{
                 let type2 = type;
-                let time = Date.parse(date[0], date[1]-1, date[2], 0, 0);
+                let time = new Date(date[0], date[1]-1, date[2], 0, 0).getTime();
                 if (type2 === "reviews" && time>Date.now()-msh*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
                 let string = `${(day_data.counts[type2]||0).toSeparated()} ${type2==="forecast"?"reviews upcoming":(day_data.counts[type2]===1?type2.slice(0,-1):type2)} on ${new Date(time).toDateString().replace(/... /, '')+' '+kanji_day(new Date(time).getDay())}`;
                 if (time >= new Date(settings.general.start_day).getTime() && time > first_date) string += `\nDay ${(Math.round((time-Date.parse(new Date(Math.max(data[0][0], new Date(settings.general.start_day).getTime())).toDateString()))/msd)+1).toSeparated()}`;
@@ -764,7 +764,7 @@
     function color_picker(type, date, day_data, multiplier=1) {
         let settings = wkof.settings[script_id];
         let type2 = type;
-        if (type2 === "reviews" &&  Date.parse(date[0], date[1]-1, date[2], 0, 0)>Date.now()-msh*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
+        if (type2 === "reviews" && new Date(date[0], date[1]-1, date[2], 0, 0).getTime()>Date.now()-msh*settings.general.day_start && day_data.counts.forecast) type2 = "forecast";
         let colors = settings[type2].colors;
         // If gradients are not enabled, use intervals
         if (!settings[type2].gradient) {
