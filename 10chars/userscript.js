@@ -7,11 +7,12 @@
 // @include      https://community.wanikani.com/t/*
 // @grant        none
 // ==/UserScript==
+/*jshint esversion: 8 */
 
 (function() {
     let observer = new MutationObserver(m => m.forEach(detect_composer));
     observer.observe(document.getElementById('reply-control'), {childList: true, subtree: true});
-    function detect_composer(m) {m.addedNodes.forEach(n => {if (n.tagName == "TEXTAREA") inject();})}
+    function detect_composer(m) {m.addedNodes.forEach(n => {if (n.tagName == "TEXTAREA") inject();});}
     function inject() {
         let old_save = window.require("discourse/controllers/composer").default.prototype.save;
         let new_save = function(t){
@@ -21,7 +22,7 @@
             if (text.length < 10) text += ' <!-- Lorem Ipsum -->';
             composer.value = text;
             old_save.call(this, t);
-        }
+        };
         window.require("discourse/controllers/composer").default.prototype.save = new_save;
     }
 })();
