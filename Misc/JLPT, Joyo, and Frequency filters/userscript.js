@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Open Framework JLPT, Joyo, and Frequency filters
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.1.0
 // @description  Adds filters for JLPT level, Joyo grade, total frequency, and adding various relative frequencies
 // @author       Kumirei
 // @include      https://www.wanikani.com/*
@@ -40,47 +40,181 @@
         .then(register_frequency_data)
         .then(set_ready_flag);
 
-    // Adds JLPT level filter and a filter to add JLPT data to items
+    // Tests wether a character is a kanji
+    function isKanji(characters) {
+        var c = characters.charCodeAt(0);
+        return (c >= 0x4e00 && c <= 0x9faf) || (c >= 0x3400 && c <= 0x4dbf);
+    }
+
+    // filtering functions for jlpt
+    function include_jlpt_data(filter_value, item){
+        if (item.object != "kanji") return true;
+        if (data[item.data.characters]){
+            var level = data[item.data.characters].jlpt_level;
+            if (level) item.jlpt_level = level;
+        }
+        return true;
+    }
+
+    function accept_jlpt_kanji(filter_value, characters) {
+        var jlpt_level_data = data[characters];
+        var jlpt_level;
+        if (!jlpt_level_data) {
+            jlpt_level = 0;
+        } else {
+            jlpt_level = jlpt_level_data.jlpt_level || 0;
+        }
+        return (filter_value[jlpt_level] === true);
+    }
+
+    function accept_jlpt_kanji_vocab(filter_value, item) {
+        var characters = item.data.characters;
+        if (item.object === 'kanji') return accept_jlpt_kanji(filter_value, characters);
+        var minLevel = 6;
+        for (var idx in characters) {
+            var char = characters.charAt(idx);
+            if (isKanji(char)){
+                var jlpt_data = data[char];
+                if (!jlpt_data) {
+                    minLevel = 0;
+                } else {
+                    minLevel = Math.min(minLevel, jlpt_data.jlpt_level || 0);
+                }
+            }
+        }
+        return (filter_value[minLevel] === true);
+    }
+
+    // Adds two JLPT level filters and a filter to add JLPT data to items
     function register_jlpt_data() {
         wkof.ItemData.registry.sources.wk_items.filters.include_jlpt_data = {
-            filter_func: function(filter_value, item){if (item.object != "kanji") return true; var level = data[item.data.characters].jlpt_level; if (level) item.jlpt_level = level; return true;}
+            filter_func: include_jlpt_data
         };
         wkof.ItemData.registry.sources.wk_items.filters.jlpt_level = {
-            type: 'text',
+            type: 'multi',
             label: 'JLPT level',
-            default: '',
-            placeholder: '(e.g. 1..3,5)',
-            hover_tip: 'Filter by JLPT level\nExamples:\n  * (All levels)\n  1..3,5 (Levels 1 through 3, and level 5)',
-            filter_value_map: levels_to_arr,
-            filter_func: function(filter_value, item){if (item.object != "kanji") return false; var jlpt_level = data[item.data.characters].jlpt_level; return (jlpt_level && filter_value[jlpt_level] === true);}
+            default: {5: false, 4: false, 3: false, 2: false, 1: false, 0: false},
+            content: {5: 'N5', 4: 'N4', 3: 'N3', 2: 'N2', 1: 'N1', 0: 'Not Classified in JLPT'},
+            hover_tip: 'Filter kanji by JLPT level.\nSelects only kanji.',
+            filter_func: function (filterValue, item) {return (item.object === 'kanji' ? accept_jlpt_kanji(filterValue, item.data.characters) : false);},
+        };
+        wkof.ItemData.registry.sources.wk_items.filters.jlpt_level_vocab = {
+            type: 'multi',
+            label: 'JLPT level with vocab',
+            default: {5: false, 4: false, 3: false, 2: false, 1: false, 0: false},
+            content: {5: 'N5', 4: 'N4', 3: 'N3', 2: 'N2', 1: 'N1', 0: 'Not Classified in JLPT'},
+            hover_tip: 'Filter kanji by JLPT level.\nSelects the kanji.\nIncludes vocabulary where the\nhighest level kanji is of selected level.',
+            filter_func: function (filterValue, item) {return (item.object !== 'radical') ? accept_jlpt_kanji_vocab(filterValue, item) : false;},
         };
     }
 
-    // Adds Joyo grade filter and a filter to add Joyo data to items
+    // filtering functions for Joyo grade
+    function include_joyo_data(filter_value, item){
+        if (item.object != "kanji") return true;
+        if (data[item.data.characters]){
+            var grade = data[item.data.characters].joyo_grade;
+            if (grade) item.joyo_grade = grade;
+        }
+        return true;
+    }
+
+    function accept_joyo_kanji(filter_value, characters) {
+        var joyo_grade = data[characters];
+        if (!joyo_grade) {
+            joyo_grade = 10;
+        } else {
+            joyo_grade = joyo_grade.joyo_grade || 10;
+        }
+        return (filter_value[joyo_grade] === true);
+    }
+
+    function accept_joyo_kanji_vocab(filter_value, item) {
+        var characters = item.data.characters;
+        if (item.object === 'kanji') return accept_joyo_kanji(filter_value, characters);
+        var maxGrade = 0;
+        for (var idx in characters) {
+            var char = characters.charAt(idx);
+            if (isKanji(char)){
+                var joyo_data = data[char];
+                if (!joyo_data) {
+                    maxGrade = 10;
+                } else {
+                    maxGrade = Math.max(maxGrade, joyo_data.joyo_grade || 10);
+                }
+            }
+        }
+        return (filter_value[maxGrade] === true);
+    }
+
+    // Adds two Joyo grade filters and a filter to add Joyo data to items
     function register_joyo_data() {
         wkof.ItemData.registry.sources.wk_items.filters.include_joyo_data = {
-            filter_func: function(filter_value, item){if (item.object != "kanji") return true; var grade = data[item.data.characters].joyo_grade; if (grade) item.joyo_grade = grade; return true;}
+            filter_func: include_joyo_data
         };
         wkof.ItemData.registry.sources.wk_items.filters.joyo_grade = {
-            type: 'text',
+            type: 'multi',
             label: 'Joyo grade',
-            default: '',
-            placeholder: '(e.g. 1..3,9)',
-            hover_tip: 'Filter by Joyo grade\nExamples:\n  * (All grades)\n  1..3,9 (Grades 1 through 3, and grade 9)',
-            filter_value_map: levels_to_arr,
-            filter_func: function(filter_value, item){if (item.object != "kanji") return false; var joyo_grade = data[item.data.characters].joyo_grade; return (joyo_grade && filter_value[joyo_grade] === true);}
+            default: {1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 9: false, 10: false},
+            content: {1: 'Joyo 1', 2: 'Joyo 2', 3: 'Joyo 3', 4: 'Joyo 4', 5: 'Joyo 5', 6: 'Joyo 6', 9: 'Joyo 9', 10: 'No Joyo Grade'},
+            hover_tip: 'Filter by Joyo grade.\nSelects only the kanji.',
+            filter_func: function (filterValue, item) {return (item.object === 'kanji' ? accept_joyo_kanji(filterValue, item.data.characters) : false);},
+        };
+        wkof.ItemData.registry.sources.wk_items.filters.joyo_grade_vocab = {
+            type: 'multi',
+            label: 'Joyo grade with vocab.',
+            default: {1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 9: false, 10: false},
+            content: {1: 'Joyo 1', 2: 'Joyo 2', 3: 'Joyo 3', 4: 'Joyo 4', 5: 'Joyo 5', 6: 'Joyo 6', 9: 'Joyo 9', 10: 'No Joyo Grade'},
+            hover_tip: 'Filter by Joyo grade.\nSelects the kanji.\nIncludes vocabulary where the\nhighest level kanji is of selected grade.',
+            filter_func: function (filterValue, item) {return (item.object !== 'radical') ? accept_joyo_kanji_vocab(filterValue, item) : false;},
         };
     }
 
-    // Adds a filter for total kanji frequency
+    // filtering functions for frequency
+    function accept_frequency_kanji(filter_value, characters) {
+        var frequency = data[characters];
+        if (!frequency) {
+            frequency = 10000;
+        } else {
+            frequency = frequency.frequency || 10000;
+        }
+        return (filter_value[frequency] === true);
+    }
+
+    function accept_frequency_kanji_vocab(filter_value, item) {
+        var characters = item.data.characters;
+        if (item.object === 'kanji') return accept_frequency_kanji(filter_value, characters);
+        var maxFrequency = 0;
+        for (var idx in characters) {
+            var char = characters.charAt(idx);
+            if (isKanji(char)){
+                var frequencyData = data[char];
+                if (!frequencyData) {
+                    maxFrequency = 10000;
+                } else {
+                    maxFrequency = Math.max(maxFrequency, frequencyData.frequency || 10000);
+                }
+            }
+        }
+        return (filter_value[maxFrequency] === true);
+    }
+
+    // Adds two filters for total kanji frequency
     function register_total_frequency_data() {
         wkof.ItemData.registry.sources.wk_items.filters.total_frequency = {
             type: 'multi',
             label: 'Frequency',
-            default: [],
-            content: {500: "500", 1000: "1000", 1500: "1500", 2000: "2000", 2500: "2500"},
-            hover_tip: 'Filter by kanji frequency',
-            filter_func: function(filter_value, item){if (item.object != "kanji") return false; var freq = data[item.data.characters].frequency; return (freq && filter_value[freq] === true);}
+            default: {500: false, 1000: false, 1500: false, 2000: false, 2500: false, 10000: false},
+            content: {500: "500", 1000: "1000", 1500: "1500", 2000: "2000", 2500: "2500", 10000: 'No Frequency Information'},
+            hover_tip: 'Filter by kanji frequency.\nSelects only the kanji.',
+            filter_func: function (filterValue, item) {return (item.object === 'kanji' ? accept_frequency_kanji(filterValue, item.data.characters) : false);},
+        };
+        wkof.ItemData.registry.sources.wk_items.filters.total_frequency_vocab = {
+            type: 'multi',
+            label: 'Frequency with vocab.',
+            default: {500: false, 1000: false, 1500: false, 2000: false, 2500: false, 10000: false},
+            content: {500: "500", 1000: "1000", 1500: "1500", 2000: "2000", 2500: "2500", 10000: 'No Frequency Information'},
+            hover_tip: 'Filter by kanji frequency.\nSelects the kanji.\nIncludes vocabulary where the\nlowest frequency kanji is of selected frequency.',
+            filter_func: function (filterValue, item) {return (item.object !== 'radical') ? accept_frequency_kanji_vocab(filterValue, item) : false;},
         };
     }
 
@@ -107,64 +241,5 @@
         wkof.set_state(script_id, 'ready');
     }
 
-    //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    // Code below is taken from "Wanikani Open Framework - ItemData module" and was written by Robin Findley (rfindley)
-
-    //------------------------------
-    // Given a criteria string (e.g. '1..3,5,8'), return an array containing
-    // 'true' for each index contained in the criteria.
-    //------------------------------
-    function levels_to_arr(filter_value) {
-        var levels = [], crit_idx, start, stop, lvl;
-
-        // Process each comma-separated criteria separately.
-        var criteria = filter_value.split(',');
-        for (crit_idx = 0; crit_idx < criteria.length; crit_idx++) {
-            var crit = criteria[crit_idx];
-            var value = true;
-
-            // Match '*' = all levels
-            var match = crit.match(/^\s*[']?\s*(\*)\s*[']?\s*$/);
-            if (match !== null) {
-                start = to_num('1');
-                stop = to_num('5'); // All levels
-                for (lvl = start; lvl <= stop; lvl++)
-                    levels[lvl] = value;
-                continue;
-            }
-
-            // Match 'a..b' = range of levels (or exclude if preceded by '!')
-            match = crit.match(/^\s*[']?\s*(\!?)\s*((\+|-)?\d+)\s*(-|\.\.\.?|to)\s*((\+|-)?\d+)\s*[']?\s*$/);
-            if (match !== null) {
-                start = to_num(match[2]);
-                stop = to_num(match[5]);
-                if (match[1] === '!') value = false;
-                for (lvl = start; lvl <= stop; lvl++)
-                    levels[lvl] = value;
-                continue;
-            }
-
-            // Match 'a' = specific level (or exclude if preceded by '!')
-            match = crit.match(/^\s*[']?\s*(\!?)\s*((\+|-)?\d+)\s*[']?\s*$/);
-            if (match !== null) {
-                lvl = to_num(match[2]);
-                if (match[1] === '!') value = false;
-                levels[lvl] = value;
-                continue;
-            }
-            var err = 'wkof.ItemData::levels_to_arr() - Bad filter criteria '+filter_value+'';
-            console.log(err);
-            throw err;
-        }
-        return levels;
-
-        //============
-        function to_num(num) {
-            num = Number(num);
-            return Math.min(Math.max(1, num), 5);
-        }
-    }
 })();
