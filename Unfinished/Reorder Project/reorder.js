@@ -27,6 +27,7 @@
     ARBITRARY REORDERING???
     Presets
     Custom active queue size
+    Accurate progress bar
     */
     let script_name = "Wanikani: Kumi Reorder General";
     let script_title = "Reorder General";
