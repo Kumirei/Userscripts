@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: User Tags
 // @namespace    https://greasyfork.org/en/scripts/36581-wanikani-forums-user-tags
-// @version      0.4.2
+// @version      0.4.3
 // @description  Makes it possible to tag users on the forums.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -65,7 +65,7 @@
           .find(".names")
           .append(
             '<span class="user-tag">' +
-              '    <input value="' +
+              '    <input autocomplete="off" value="' +
               userTag +
               '"></input>' +
               "</span>"
