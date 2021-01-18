@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: User Tags
 // @namespace    https://greasyfork.org/en/scripts/36581-wanikani-forums-user-tags
-// @version      0.4.1
+// @version      0.4.2
 // @description  Makes it possible to tag users on the forums.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -12,7 +12,6 @@
 /*jshint esversion: 8 */
 
 (function($) {
-  const textColor = "#000";
   var userList = [];
   setTriggers();
 
@@ -102,17 +101,21 @@
   function insertStyle() {
     $("head").append(
       '<style class="user-tag">' +
-        "    .names span { " +
-        "        display: inline !important;" +
-        "        max-width: 100% !important;" +
+        "    .user-tag {" +
+        "        flex: 1;" +
+        "        padding-right: 4px;" +
         "    }" +
         "" +
         "    .user-tag input {" +
         "        background: transparent;" +
-        "        color: " +
-        textColor +
-        ";" +
         "        border: none;" +
+        "        width: 100%;" +
+        "    }" +
+        "" +
+        "    .user-tag input:focus {" +
+        "        outline-offset: -1px;" +
+        "        outline-style: dashed;" +
+        "        outline-color: inherit;" +
         "    }" +
         "</style>"
     );
