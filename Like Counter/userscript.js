@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.0.0
+// @version      3.0.2
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -76,7 +76,7 @@
         const username = $('#current-user a')
             .attr('href')
             .split('/u/')[1]
-        const f = await fetch('https://community.wanikani.com/u/kumirei/summary', {
+        const f = await fetch(`https://community.wanikani.com/u/${username}/summary`, {
             headers: {
                 accept: 'application/json, text/javascript, */*; q=0.01',
                 'x-requested-with': 'XMLHttpRequest',
@@ -177,7 +177,7 @@
         // Update counts
         received.children().text(LC.day.received.length)
         given.children().text(LC.summary.max - LC.day.given.length)
-        next.children().text(time_left(LC.day.given[0]))
+        next.children().text(time_left(LC.day.given[0] + msday))
         // Update hover info
         received.attr(
             'title',
@@ -241,7 +241,7 @@
                 '    .float_wkappnav .wanikani-app-nav ul {padding-bottom:0; margin-bottom:0; border-bottom:inherit;}' +
                 '    .dashboard_bubble {color:#fff; background-color:#bdbdbd; font-size:0.8em; border-radius:0.5em; padding:0 6px; margin:0 0 0 4px; font-weight:bold;}' +
                 '    li[data-highlight="true"] .dashboard_bubble {background-color:#6cf;}' +
-                '    body[theme="dark"] .dashboard_bubble {color:#ddd; background-color:#646464;}' +
+                '    body[theme="dark"] .dashboard_bubble {color:inherit !important; background-color:#646464;}' +
                 '    body[theme="dark"] li[data-highlight="true"] .dashboard_bubble {color:#000; background-color:#6cf;}' +
                 '    body[theme="dark"] .wanikani-app-nav[data-highlight-labels="true"] li[data-highlight="true"] a {color:#6cf;}' +
                 '    body[theme="dark"] .wanikani-app-nav ul li a {color:#999;}' +
