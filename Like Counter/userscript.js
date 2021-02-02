@@ -170,10 +170,14 @@
         // END code by rfindley
         LC.elems = {
             received: $(
-                '<li data-highlight="false">Likes Received<span id="likes_received" class="dashboard_bubble">0</span></li>',
+                '<li data-highlight="true" data-name="likes-received">Likes Received<span id="likes_received" class="dashboard_bubble">0</span></li>',
             ),
-            given: $('<li data-highlight="false">Likes Left<span id="likes_given" class="dashboard_bubble">0</span></li>'),
-            next: $('<li data-highlight="false">Next Like<span id="next_like" class="dashboard_bubble">0</span></li>'),
+            given: $(
+                '<li data-highlight="true" data-name="likes-left">Likes Left<span id="likes_given" class="dashboard_bubble">0</span></li>',
+            ),
+            next: $(
+                '<li data-highlight="true" data-name="likes-next">Next Like<span id="next_like" class="dashboard_bubble">0</span></li>',
+            ),
         }
         $('.wanikani-app-nav ul').append([LC.elems.received, LC.elems.given, LC.elems.next])
         update_display()
@@ -241,9 +245,8 @@
         let bubble_color = settings.lifetime_purple ? 'rgb(213, 128, 255)' : '#6cf'
         $('head').append(
             '    <style id=like_counter>' +
-                '    .wanikani-app-nav ul li {color: #545454;}' +
                 '    body[theme="dark"] .wanikani-app-nav ul li {color:#999;}' +
-                '    li span.dashboard_bubble {background-color: ' +
+                '    li[data-highlight="true"] span.dashboard_bubble {background-color: ' +
                 bubble_color +
                 ' !important;}' +
                 '    .wanikani-app-nav > ul {display: flex;}' +
@@ -260,7 +263,7 @@
                 '    .float_wkappnav .wanikani-app-nav ul {padding-bottom:0; margin-bottom:0; border-bottom:inherit;}' +
                 '    .dashboard_bubble {color:#fff; background-color:#bdbdbd; font-size:0.8em; border-radius:0.5em; padding:0 6px; margin:0 0 0 4px; font-weight:bold;}' +
                 '    li[data-highlight="true"] .dashboard_bubble {background-color:#6cf;}' +
-                '    body[theme="dark"] .dashboard_bubble {color:inherit !important; background-color:#646464;}' +
+                '    body[theme="dark"] .dashboard_bubble {background-color:#646464;}' +
                 '    body[theme="dark"] li[data-highlight="true"] .dashboard_bubble {color:#000; background-color:#6cf;}' +
                 '    body[theme="dark"] .wanikani-app-nav[data-highlight-labels="true"] li[data-highlight="true"] a {color:#6cf;}' +
                 '    body[theme="dark"] .wanikani-app-nav ul li a {color:#999;}' +
