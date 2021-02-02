@@ -8,7 +8,7 @@
 // @grant        none
 // ==/UserScript==
 
-;(function() {
+;(function($) {
     // SETTINGS
     const settings = {
         update_interval: 10, // Interval (minutes) for fetching summary page data
@@ -301,4 +301,4 @@
             0.5
         )
     }
-})()
+})(window.jQuery)
