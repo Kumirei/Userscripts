@@ -226,8 +226,12 @@
     function update_next() {
         const msday = 24 * 60 * 60 * 1000
         const yesterday = Date.now() - msday
+        const given = LC.day.given.length
         LC.day.given = LC.day.given.filter((t) => t > yesterday)
-        LC.elems.next.children().text(time_left(LC.day.given[0] + msday))
+        // If likes have been used or expired update whole display
+        if (given !== LC.day.given.length) update_display()
+        // Else just update the timer
+        else LC.elems.next.children().text(time_left(LC.day.given[0] + msday))
     }
 
     // Adds the CSS
