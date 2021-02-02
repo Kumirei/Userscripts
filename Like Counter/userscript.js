@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.0.2
+// @version      3.0.4
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -51,7 +51,18 @@
     $('body').on('click', '.post-stream .toggle-like', update)
 
     // Updates everything
-    async function update() {
+    async function update(event) {
+        // Update displayed count immediately
+        if (event.type) {
+            const old_count = Number(LC.elems.given.children().text())
+            const new_count = $(event.target)
+                .closest('.widget-button')
+                .hasClass('has-like')
+                ? old_count + 1
+                : old_count - 1
+            LC.elems.given.children().text(new_count)
+        }
+        // Update properly with api data
         const updater = async () => {
             await update_day()
             save_stored()
@@ -214,6 +225,8 @@
     // Update the timer for the next like
     function update_next() {
         const msday = 24 * 60 * 60 * 1000
+        const yesterday = Date.now() - msday
+        LC.day.given = LC.day.given.filter((t) => t > yesterday)
         LC.elems.next.children().text(time_left(LC.day.given[0] + msday))
     }
 
