@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.0.5
+// @version      3.0.6
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
