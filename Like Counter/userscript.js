@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.0.6
+// @version      3.0.7
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -223,7 +223,7 @@
         const next_like = new Date(LC.day.given[0] + msday)
         next.attr(
             'title',
-            `Next like at ${next_like.getHours()}:${next_like.getMinutes()}` +
+            `Next like at ${next_like.getHours()}:${(next_like.getMinutes() < 10 ? '0' : '') + next_like.getMinutes()}` +
                 `\n\nLikes replenishing in ${hours.reduce((a, c, i) => `${a}\n${i + 1}h: ${c}`, ``)}`,
         )
     }
