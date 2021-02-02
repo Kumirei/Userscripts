@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.0.4
+// @version      3.0.5
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -202,10 +202,12 @@
                 `\n${comma(Math.round(LC.summary.likes_given / LC.summary.days_visited))} likes given per day visited` +
                 `\n${comma(LC.summary.likes_given)} total likes given` +
                 `\n\n${comma(LC.stored.zero.length)} times have you ran out` +
-                `\n${comma(Math.floor(LC.stored.zero[LC.stored.zero.length - 1] || 0 / msday))} days since you last ran out` +
+                `\n${comma(
+                    Math.floor((now - (LC.stored.zero[LC.stored.zero.length - 1] || now)) / msday),
+                )} days since you last ran out` +
                 `\n\n${comma(LC.stored.full.length)} times have you had full likes` +
                 `\n${comma(
-                    Math.floor(LC.stored.full[LC.stored.full.length - 1] || 0 / msday),
+                    Math.floor((now - (LC.stored.full[LC.stored.full.length - 1] || now)) / msday),
                 )} days since you last had full likes`,
         )
         let hours = Array(24)
