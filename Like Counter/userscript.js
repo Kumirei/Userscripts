@@ -8,7 +8,7 @@
 // @grant        none
 // ==/UserScript==
 
-;(function($) {
+;(function ($) {
     // SETTINGS
     const settings = {
         update_interval: 10, // Interval (minutes) for fetching summary page data
@@ -55,11 +55,7 @@
         // Update displayed count immediately
         if (event.type) {
             const old_count = Number(LC.elems.given.children().text())
-            const new_count = $(event.target)
-                .closest('.widget-button')
-                .hasClass('has-like')
-                ? old_count + 1
-                : old_count - 1
+            const new_count = old_count + ($(event.target).closest('.widget-button').hasClass('has-like') ? 1 : -1)
             LC.elems.given.children().text(new_count)
         }
         // Update properly with api data
@@ -84,9 +80,7 @@
 
     // Updates the LC variable with info from the summary page
     async function update_summary() {
-        const username = $('#current-user a')
-            .attr('href')
-            .split('/u/')[1]
+        const username = $('#current-user a').attr('href').split('/u/')[1]
         const f = await fetch(`https://community.wanikani.com/u/${username}/summary`, {
             headers: {
                 accept: 'application/json, text/javascript, */*; q=0.01',
@@ -105,9 +99,7 @@
     async function update_day() {
         const msday = 24 * 60 * 60 * 1000
         const now = Date.now()
-        const username = $('#current-user a')
-            .attr('href')
-            .split('/u/')[1]
+        const username = $('#current-user a').attr('href').split('/u/')[1]
         LC.day.given = (await fetch_likes(username, 1, 24)).reverse()
         LC.day.received = (await fetch_likes(username, 2, 24)).reverse()
         if (LC.day.given.length === LC.summary.max && (LC.stored.zero[LC.stored.zero.length - 1] || 0) < now - msday) {
@@ -197,7 +189,9 @@
         received.attr(
             'title',
             `${comma(LC.day.received.length)} likes received in past 24h` +
-                `\n${comma(Math.round(LC.summary.likes_received / LC.summary.days_visited))} likes received per day visited` +
+                `\n${comma(
+                    Math.round(LC.summary.likes_received / LC.summary.days_visited),
+                )} likes received per day visited` +
                 `\n${comma(LC.summary.likes_received)} total likes received`,
         )
         given.attr(
@@ -218,13 +212,15 @@
             .fill(0)
             .map(
                 (_, i) =>
-                    LC.day.given.filter((like) => like + msday > now + i * msh && like + msday < now + (i + 1) * msh).length,
+                    LC.day.given.filter((like) => like + msday > now + i * msh && like + msday < now + (i + 1) * msh)
+                        .length,
             )
         const next_like = new Date(LC.day.given[0] + msday)
         next.attr(
             'title',
-            `Next like at ${next_like.getHours()}:${(next_like.getMinutes() < 10 ? '0' : '') + next_like.getMinutes()}` +
-                `\n\nLikes replenishing in ${hours.reduce((a, c, i) => `${a}\n${i + 1}h: ${c}`, ``)}`,
+            `Next like at ${next_like.getHours()}:${
+                (next_like.getMinutes() < 10 ? '0' : '') + next_like.getMinutes()
+            }` + `\n\nLikes replenishing in ${hours.reduce((a, c, i) => `${a}\n${i + 1}h: ${c}`, ``)}`,
         )
     }
 
