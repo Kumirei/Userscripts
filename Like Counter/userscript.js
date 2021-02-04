@@ -64,8 +64,8 @@
             save_stored()
             update_display()
         }
-        // Wait 100ms to allow Discourse backend to register the like
-        setTimeout(updater, 100)
+        // Wait to allow Discourse backend to register the like
+        setTimeout(updater, 500)
     }
 
     // Fetches the data of LC.stored from localStorage
