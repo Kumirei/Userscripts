@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.21
+// @version      3.0.22
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -129,8 +129,8 @@
         // For jQuery Datepicker
         wkof.load_css('//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');
         // Heatmap CSS
-        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/Heatmap/Heatmap/Heatmap.css', false);
-        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/master/Heatmap/heatmap3.css', false);
+        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/ea54ac6ce154af61327e295640ba52baf3f2fba6/Heatmap/Heatmap/Heatmap.css', true);
+        wkof.load_css('https://raw.githubusercontent.com/Kumirei/Wanikani/f2df59561825afda0c596816e7ea85b86383b748/Heatmap/heatmap3.css', true);
     }
 
     // Installs the settings button in the menu
