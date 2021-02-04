@@ -185,6 +185,7 @@
         received.children().text(LC.day.received.length)
         given.children().text(LC.summary.max - LC.day.given.length)
         next.children().text(time_left(LC.day.given[0] + msday))
+        LC.day.given.length < LC.summary.max ? $('body').removeClass('no-likes') : $('body').addClass('no-likes')
         // Update hover info
         received.attr(
             'title',
@@ -245,6 +246,7 @@
                 '    li[data-highlight="true"] span.dashboard_bubble {background-color: ' +
                 bubble_color +
                 ' !important;}' +
+                '    body.no-likes .like > .fa.d-icon-d-unliked {color: red !important}'+
                 '    .wanikani-app-nav > ul {display: flex;}' +
                 '    .wanikani-app-nav li[data-name="likes-received"] {order: 1;}' +
                 '    .wanikani-app-nav li[data-name="likes-left"] {order: 2;}' +
