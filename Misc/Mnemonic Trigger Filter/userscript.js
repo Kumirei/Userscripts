@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Mnemonic Trigger Filter
 // @namespace    mnemonic_trigger_filter
-// @version      1.0.0
+// @version      1.0.1
 // @description  Hides mnemonics containing certain words of phrases
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(review/session|dashboard)?$/
@@ -77,7 +77,7 @@
             if (mutation.target.id === 'item-info-col2' && mutation.addedNodes.length === 5) {
                 ;[0, 2].forEach((i) => {
                     const elem = mutation.addedNodes[i].children[1]
-                    const text = elem.innerText
+                    const text = elem.innerText.toLowerCase()
                     for (const word of wkof.settings[script_id].words.split(',')) {
                         if (text.includes(word.trim().toLowerCase())) {
                             elem.innerText = 'Mnemonic hidden by trigger filter'
