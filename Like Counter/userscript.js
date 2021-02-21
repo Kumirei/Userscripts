@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.0.7
+// @version      3.1.0
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -221,7 +221,7 @@
             'title',
             `Next like at ${next_like.getHours()}:${
                 (next_like.getMinutes() < 10 ? '0' : '') + next_like.getMinutes()
-            }` + `\n\nLikes replenishing in ${hours.reduce((a, c, i) => `${a}\n${i + 1}h: ${c}`, ``)}`,
+            }` + `\n\nLikes replenishing in ${hours.reduce((a, c, i) => (c == 0 ? a : `${a}\n${i + 1}h: ${c}`), ``)}`,
         )
     }
 
@@ -246,7 +246,7 @@
                 '    li[data-highlight="true"] span.dashboard_bubble {background-color: ' +
                 bubble_color +
                 ' !important;}' +
-                '    body.no-likes .like > .fa.d-icon-d-unliked {color: red !important}'+
+                '    body.no-likes .like > .fa.d-icon-d-unliked {color: red !important}' +
                 '    .wanikani-app-nav > ul {display: flex;}' +
                 '    .wanikani-app-nav li[data-name="likes-received"] {order: 1;}' +
                 '    .wanikani-app-nav li[data-name="likes-left"] {order: 2;}' +
