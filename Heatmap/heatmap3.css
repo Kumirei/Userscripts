@@ -350,18 +350,21 @@
 #heatmap #popper .items .radical .hover-wrapper .characters {
     background-color: var(--radical-color);
     order: 0;
+    z-index: 100;
 }
 
 #heatmap #popper .items .kanji,
 #heatmap #popper .items .kanji .hover-wrapper .characters {
     background-color: var(--kanji-color);
     order: 1;
+    z-index: 200;
 }
 
 #heatmap #popper .items .vocabulary,
 #heatmap #popper .items .vocabulary .hover-wrapper .characters {
     background-color: var(--vocab-color);
     order: 2;
+    z-index: 300;
 }
 
 #heatmap #popper .items .radical-svg {
