@@ -7,9 +7,9 @@
 
     Name:           Forum Transparency 2.0
     Author:         Kumirei
-    Version:        2.1.19
-    Total lines:    3378
-    Latest update:  2020-11-26
+    Version:        2.1.21
+    Total lines:    3357
+    Latest update:  2021-02-21
 
     Forum post:     https://community.wanikani.com/t/userstyle-forum-transparency-20/32287
     Theme link:     https://userstyles.org/styles/163317/wanikani-forum-transparency-2-0
@@ -22,74 +22,70 @@
 
     */
 
-
-
     /*__________________________________________*/
     /* 				   Variables
     /*__________________________________________*/
 
     :root {
         /* BACKGROUND IMAGE */
-        --background-image-url: url("https://i.imgur.com/idxX0V5.png");
+        --background-image-url: url('https://i.imgur.com/idxX0V5.png');
 
         /* TEXT */
-        --main-text: #F0F0F0;		                                    /* Main text color */
-        --second-text: #C8C8C8;			                            /* Slightly darker text, used when not much contrast is needed */
-        --main-light-grey: #B4B4B4;		                        /* Slightly darker than second text */
-        --main-dark: #2A2A2A;					                        /* Main dark text color */
-        --main-grey: #545454;					                        /* Main grey color. Used in mentions */
-        --link-color: #FFFFFF;						                /* Default color of links */
+        --main-text: #f0f0f0; /* Main text color */
+        --second-text: #c8c8c8; /* Slightly darker text, used when not much contrast is needed */
+        --main-light-grey: #b4b4b4; /* Slightly darker than second text */
+        --main-dark: #2a2a2a; /* Main dark text color */
+        --main-grey: #545454; /* Main grey color. Used in mentions */
+        --link-color: #ffffff; /* Default color of links */
 
         /* BACKGROUND COLORS */
-        --main-trans: 0, 0, 0;							        /* Main color of transparent areas */
-        --main-light-trans: 255, 255, 255;				                /* Color of light transparent areas */
+        --main-trans: 0, 0, 0; /* Main color of transparent areas */
+        --main-light-trans: 255, 255, 255; /* Color of light transparent areas */
 
         /* BACKGROUND ALPHAS */
-        --main-alpha: 0.7; 								        /* The darker alpha, for headers and menus and such */
-        --second-alpha: 0.5;							        /* Alpha value for threads and such */
-        --third-alpha: 0.3;					                    /* Alpha value of highlighted posts and some other things */
-        --main-light-alpha: 0.2;						        /* Alpha value of light transparent areas */
+        --main-alpha: 0.7; /* The darker alpha, for headers and menus and such */
+        --second-alpha: 0.5; /* Alpha value for threads and such */
+        --third-alpha: 0.3; /* Alpha value of highlighted posts and some other things */
+        --main-light-alpha: 0.2; /* Alpha value of light transparent areas */
 
         /* BACKGROUNDS */
-        --header-background: rgba(var(--main-trans), var(--main-alpha));                    /* Background for headers and stuff */
-        --content-background: rgba(var(--main-trans), var(--second-alpha));                 /* Background for most content */
-        --highlight-background: rgba(var(--main-light-trans), var(--main-light-alpha));     /* Background for highlights */
+        --header-background: rgba(var(--main-trans), var(--main-alpha)); /* Background for headers and stuff */
+        --content-background: rgba(var(--main-trans), var(--second-alpha)); /* Background for most content */
+        --highlight-background: rgba(var(--main-light-trans), var(--main-light-alpha)); /* Background for highlights */
 
         /* SYMBOL COLORS */
-        --fa-heart-color: #D580FF;	                                    /* Color of hearts */
-        --fa-reply-color: #EF6767;	                                    /* Color of reply symbols */
-        --fa-quote-color: #F0F0F0;			                            /* Color of quote symbols */
-        --fa-mention-color: #58A2E4;	                                /* Color of @ symbols */
-        --fa-edit-color: #71C488;		                                    /* Color of pen symbols */
-        --fa-pm-color: #F0F0F0;				                             /* Color of pm symbols */
-        --fa-checked-box-color: #BBF1A5;	                                /* Color of checked boxes */
-        --fa-badge-star: #E8E86E;                                          /* Color of badge symbol on user page */
+        --fa-heart-color: #d580ff; /* Color of hearts */
+        --fa-reply-color: #ef6767; /* Color of reply symbols */
+        --fa-quote-color: #f0f0f0; /* Color of quote symbols */
+        --fa-mention-color: #58a2e4; /* Color of @ symbols */
+        --fa-edit-color: #71c488; /* Color of pen symbols */
+        --fa-pm-color: #f0f0f0; /* Color of pm symbols */
+        --fa-checked-box-color: #bbf1a5; /* Color of checked boxes */
+        --fa-badge-star: #e8e86e; /* Color of badge symbol on user page */
 
         /* OTHER COLORS */
-        --lifetime-purple: 213, 128, 255;				                        /* The color of lifetime subscriptions */
-        --main-accent: 213,+128,+255;			                                /* Main accent color */
-        --border-color: rgba(var(--main-light-trans), var(--second-alpha));     /* Color for various thin borders */
-        --border-color-faint: rgba(var(--main-light-trans), 0.6);               /* Color for certain fainter border */
+        --lifetime-purple: 213, 128, 255; /* The color of lifetime subscriptions */
+        --main-accent: 213, +128, +255; /* Main accent color */
+        --border-color: rgba(var(--main-light-trans), var(--second-alpha)); /* Color for various thin borders */
+        --border-color-faint: rgba(var(--main-light-trans), 0.6); /* Color for certain fainter border */
 
         /* THREAD VARIABLES */
-        --posts-margin: 5px;							        /* Margin between posts in threads, and some other things */
-        --padding-post: 10px;					                /* Padding at edges of posts and related elements */
-        --padding-slider: 15px;						        /* Padding on the slider in threads */
-        --slider-width: 132px;						         	/* Width of the slider in threads */
-        --suggested-topics-width: 150px;		        		/* Width of the "Suggested Topics" title */
-        --suggested-topics-height: 20px;	       			/* Height of the "Suggested Topics" title */
-        --avatar-radius: 50%;                              /* The roundness of avatars */
+        --posts-margin: 5px; /* Margin between posts in threads, and some other things */
+        --padding-post: 10px; /* Padding at edges of posts and related elements */
+        --padding-slider: 15px; /* Padding on the slider in threads */
+        --slider-width: 132px; /* Width of the slider in threads */
+        --suggested-topics-width: 150px; /* Width of the "Suggested Topics" title */
+        --suggested-topics-height: 20px; /* Height of the "Suggested Topics" title */
+        --avatar-radius: 50%; /* The roundness of avatars */
 
         /* OTHER VARIABLES */
-        --list-padding: 10px;				           			/* Padding around various lists */
-        --border-radius: 0px;			          				/* If you want your edges a bit rounded */
-        --glyph-size: 20px;				           				/* Size of the symbols in, for example, the header */
-        --global-footer: none;			             				/* Use "none" to remove the footer or "block" if you want to keep it */
-        --wide-posts: 0;                                       /* Use 1 for yes, 0 for no. See forum post or userstyle's page to find out what this is */
-        --default-avatar: url(https://aws1.discourse-cdn.com/business5/uploads/wanikani_community/original/3X/f/d/fd4c154120954695f788402f3bcf4e616499bc2d.png);                        /* The avatar for people who has not chosen a personal avatar */
+        --list-padding: 10px; /* Padding around various lists */
+        --border-radius: 0px; /* If you want your edges a bit rounded */
+        --glyph-size: 20px; /* Size of the symbols in, for example, the header */
+        --global-footer: none; /* Use "none" to remove the footer or "block" if you want to keep it */
+        --wide-posts: 0; /* Use 1 for yes, 0 for no. See forum post or userstyle's page to find out what this is */
+        --default-avatar: url(https://aws1.discourse-cdn.com/business5/uploads/wanikani_community/original/3X/f/d/fd4c154120954695f788402f3bcf4e616499bc2d.png); /* The avatar for people who has not chosen a personal avatar */
     }
-
-
 
     /*__________________________________________*/
     /* 					INDEX
@@ -98,86 +94,86 @@
     /*
 
     * [1] THEME INFO
-    * [27] VARIABLES
-    * [94] INDEX
-    * [201] GLOBAL
-    * [205] Background
-    * [217] Menus
-    * [226] Links
-    * [235] Global footer
-    * [262] FA:s
-    * [284] Hovering
-    * [297] List borders
-    * [309] Notifications
-    * [325] Categories
-    * [333] Buttons
-    * [370] Lists
-    * [477] Select kit
-    * [485] Spinner
-    * [509] Other
-    * [547] HEADER
-    * [551] General
-    * [581] Lesson and review count bar
-    * [609] Notifications
-    * [729] HOMEPAGE
-    * [733] General
-    * [780] Categories
-    * [852] Top
-    * [887] IN THREAD
-    * [891] Title
-    * [920] Post info
-    * [1180] Post content
-    * [1329] Slider
-    * [1490] Foot
-    * [1607] Reply box
-    * [1729] USER PAGE
-    * [1733] General
-    * [1773] About
-    * [1808] Nav
-    * [1838] FA:s
-    * [1862] Activity
-    * [1895] Summary
-    * [2002] Notifications
-    * [2056] Badges
-    * [2096] Preferences
-    * [2212] SEARCH
-    * [2216] General
-    * [2234] Left
-    * [2287] Right
-    * [2353] Header search
-    * [2378] OTHER PAGES
-    * [2382] Page not found
-    * [2394] User card
-    * [2423] Badges
-    * [2443] Edit history
-    * [2455] About, FAQ, TOS, Privacy
-    * [2537] CHANGE LOG
-    * [2541] Version 1.0.0
-    * [2552] Version 2.0.0
-    * [2560] Version 2.0.1
-    * [2596] Version 2.0.2
-    * [2739] Version 2.1.0
-    * [2752] Version 2.1.1
-    * [2762] Version 2.1.2
-    * [2872] Version 2.1.3
-    * [2908] Version 2.1.4
-    * [2921] Version 2.1.5
-    * [2931] Version 2.1.6
-    * [3017] Version 2.1.7
-    * [3084] Version 2.1.8
-    * [3152] Version 2.1.9
-    * [3184] Version 2.1.10
-    * [3207] Version 2.1.11
-    * [3248] Version 2.1.12
-    * [3271] Version 2.1.13
-    * [3282] Version 2.1.14
-    * [3293] Version 2.1.15
-    * [3309] Version 2.1.16
-    * [3320] Version 2.1.17
-    * [3350] Version 2.1.18
-    * [3361] Version 2.1.19
-
-
+    * [25] VARIABLES
+    * [90] INDEX
+    * [195] GLOBAL
+    *   [199] Background
+    *   [210] Menus
+    *   [218] Links
+    *   [226] Global footer
+    *   [252] FA:s
+    *   [273] Hovering
+    *   [285] List borders
+    *   [396] Notifications
+    *   [311] Categories
+    *   [318] Buttons
+    *   [353] Lists
+    *   [459] Select kit
+    *   [466] Spinner
+    *   [489] Other
+    * [525] HEADER
+    *   [529] General
+    *   [558] Lesson and review count bar
+    *   [585] Notifications
+    * [703] HOMEPAGE
+    *   [707] General
+    *   [753] Categories
+    *   [824] Top
+    * [857] IN THREAD
+    *   [861] Title
+    *   [889] Post info
+    * [1150] Post content
+    *   [1298] Slider
+    *   [1457] Foot
+    *   [1575] Reply box
+    * [1693] USER PAGE
+    *   [1697] General
+    *   [1736] About
+    *   [1770] Nav
+    *   [1799] FA:s
+    *   [1822] Activity
+    *   [1854] Summary
+    *   [1960] Notifications
+    *   [2013] Badges
+    *   [2052] Preferences
+    * [2166] SEARCH
+    *   [2170] General
+    *   [2186] Left
+    *   [2239] Right
+    *   [2304] Header search
+    * [2327] OTHER PAGES
+    *   [2331] Page not found
+    *   [2342] User card
+    *   [2370] Badges
+    *   [2389] Edit history
+    *   [2400] About, FAQ, TOS, Privacy
+    * [2480] CHANGE LOG
+    *   [2484] Version 1.0.0
+    *   [2494] Version 2.0.0
+    *   [2501] Version 2.0.1
+    *   [2536] Version 2.0.2
+    *   [2678] Version 2.1.0
+    *   [2691] Version 2.1.1
+    *   [2701] Version 2.1.2
+    *   [2810] Version 2.1.3
+    *   [2844] Version 2.1.4
+    *   [2858] Version 2.1.5
+    *   [2868] Version 2.1.6
+    *   [2953] Version 2.1.7
+    *   [3019] Version 2.1.8
+    *   [3086] Version 2.1.9
+    *   [3117] Version 2.1.10
+    *   [3140] Version 2.1.11
+    *   [3180] Version 2.1.12
+    *   [3203] Version 2.1.13
+    *   [3213] Version 2.1.14
+    *   [3223] Version 2.1.15
+    *   [3238] Version 2.1.16
+    *   [3248] Version 2.1.17
+    *   [3275] Version 2.1.18
+    *   [3285] Version 2.1.19
+    *   [3303] Version 2.1.20
+    *   [3348] Version 2.1.21
 
 
 
@@ -195,8 +191,6 @@
 
 
     */
-
-
 
     /*__________________________________________*/
     /* 					Global
@@ -213,7 +207,6 @@
         color: var(--main-text);
     }
 
-
     /* Menus
     /*____________________*/
 
@@ -222,7 +215,6 @@
         background-color: var(--header-background);
     }
 
-
     /* Links
     /*____________________*/
 
@@ -230,7 +222,6 @@
         color: var(--main-text) !important;
         font-weight: bold;
     }
-
 
     /* Global Footer
     /*____________________*/
@@ -251,13 +242,12 @@
     #page-footer p {
         margin: 0;
         padding: var(--padding-post);
-        display: inline-block
+        display: inline-block;
     }
 
     #page-footer p:last-child {
         float: right;
     }
-
 
     /* FA:s
     /*____________________*/
@@ -280,19 +270,17 @@
         color: var(--fa-checked-box-color) !important;
     }
 
-
     /* Hovering
     /*____________________*/
 
     .icon:active,
     .icon:hover,
-    .user-menu .notifications li[class="read"]:hover,
+    .user-menu .notifications li[class='read']:hover,
     .menu-links-header a:hover,
     .menu-panel ul.menu-links li a:hover,
     .menu-panel ul li.heading a:hover {
         background-color: var(--highlight-background) !important;
     }
-
 
     /* List Borders
     /*____________________*/
@@ -304,7 +292,6 @@
     .table-heading {
         border-bottom: 2px solid var(--border-color-faint) !important;
     }
-
 
     /* Notifications
     /*____________________*/
@@ -321,7 +308,6 @@
         background-color: var(--main-light-grey) !important;
     }
 
-
     /* Categories
     /*____________________*/
 
@@ -329,10 +315,8 @@
         color: var(--second-text) !important;
     }
 
-
     /* Buttons
     /*____________________*/
-
 
     .btn,
     .btn[href],
@@ -365,7 +349,6 @@
     .btn[disabled]:hover {
         background-color: var(--content-background) !important;
     }
-
 
     /* Lists
     /*____________________*/
@@ -419,7 +402,7 @@
         color: var(--second-text) !important;
     }
 
-    .topic-list>tbody>tr.highlighted {
+    .topic-list > tbody > tr.highlighted {
         animation-name: post-highlight;
     }
 
@@ -473,7 +456,6 @@
         background-color: var(--highlight-background) !important;
     }
 
-
     /* Select kit
     /*____________________*/
 
@@ -481,18 +463,17 @@
         border-radius: var(--border-radius);
     }
 
-
     /* Spinner
     /*____________________*/
 
     .spinner {
         width: 55px;
         height: 55px;
-        border: 2px solid rgb(240,240,240);
+        border: 2px solid rgb(240, 240, 240);
         border-top-color: transparent;
         border-bottom-color: transparent;
         background-image: url(https://i.imgur.com/z0eMoXs.png) !important;
-        background-color: rgba(0,0,0,0.7) !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
         background: no-repeat center 10px;
         background-size: 40px;
         animation: rotate-forever 1s infinite;
@@ -504,7 +485,6 @@
         background-position: center center;
         background-size: 10px;
     }
-
 
     /* Other
     /*____________________*/
@@ -542,8 +522,6 @@
         color: var(--second-text);
     }
 
-
-
     /*__________________________________________*/
     /* 					HEADER
     /*__________________________________________*/
@@ -565,7 +543,7 @@
         height: 60px;
         box-sizing: border-box;
         padding-left: 398px;
-        background: url("https://i.imgur.com/te3wMyh.png") no-repeat;
+        background: url('https://i.imgur.com/te3wMyh.png') no-repeat;
         background-size: contain;
     }
 
@@ -576,7 +554,6 @@
     .d-header .active .icon:after {
         border: none !important;
     }
-
 
     /* Lesson and Review count bar
     /*____________________________*/
@@ -593,18 +570,17 @@
         color: var(--main-text) !important;
     }
 
-    .float_wkappnav li[data-highlight="true"] .dashboard_bubble {
+    .float_wkappnav li[data-highlight='true'] .dashboard_bubble {
         background-color: rgba(var(--main-accent));
     }
 
-    li[data-highlight="false"] .float_wkappnav .dashboard_bubble {
+    li[data-highlight='false'] .float_wkappnav .dashboard_bubble {
         background-color: var(--main-light-grey);
     }
 
     .float_wkappnav #next_review {
         background-color: rgba(var(--main-accent)) !important;
     }
-
 
     /* Notifications
     /*____________________*/
@@ -695,7 +671,7 @@
         position: relative;
         vertical-align: middle;
         right: 50%;
-        transform: translate(50%,-50%);
+        transform: translate(50%, -50%);
     }
 
     .drop-down-mode .d-header-icons .active .icon {
@@ -723,8 +699,6 @@
     .d-header #current-user .unread-private-messages {
         right: initial;
     }
-
-
 
     /*__________________________________________*/
     /* 					HOMEPAGE
@@ -775,7 +749,6 @@
         border-radius: var(--border-radius);
         background-color: var(--content-background);
     }
-
 
     /* Categories
     /*____________________*/
@@ -844,10 +817,9 @@
         border-bottom-color: var(--border-color-faint);
     }
 
-    .topic-list a[title="new topic"] {
+    .topic-list a[title='new topic'] {
         color: rgba(var(--main-accent)) !important;
     }
-
 
     /* Top
     /*____________________*/
@@ -882,8 +854,6 @@
         background-color: var(--highlight-background) !important;
     }
 
-
-
     /*__________________________________________*/
     /* 			   	  IN THREAD
     /*__________________________________________*/
@@ -915,7 +885,6 @@
     .container.posts .row::before {
         display: none;
     }
-
 
     /* Post info
     /*____________________*/
@@ -971,9 +940,11 @@
     }
 
     @keyframes post-highlight {
-        from {background-color: rgba(var(--main-accent), var(--third-alpha));
+        from {
+            background-color: rgba(var(--main-accent), var(--third-alpha));
         }
-        to {background-color: transparent;
+        to {
+            background-color: transparent;
         }
     }
 
@@ -983,12 +954,12 @@
 
     .topic-body .read-state {
         right: calc(var(--padding-post) / 2);
-        transform: translate(50%,0);
+        transform: translate(50%, 0);
         top: 11px;
     }
 
     .topic-post .read-state .fa-circle {
-        color: rgba(var(--main-accent)) !important
+        color: rgba(var(--main-accent)) !important;
     }
 
     .post-controls .like-count {
@@ -1051,7 +1022,7 @@
     }
 
     div[id].small-action .btn {
-        transform: translate(0,4px);
+        transform: translate(0, 4px);
     }
 
     .topic-post .post-links-container ul {
@@ -1080,8 +1051,8 @@
         margin-right: 2px !important;
     }
 
-    #topic .like-count[title*="1 person"]:after,
-    #topic .like-count[title="you liked this post"]:after {
+    #topic .like-count[title*='1 person']:after,
+    #topic .like-count[title='you liked this post']:after {
         content: ' Like';
     }
 
@@ -1098,7 +1069,7 @@
     }
 
     #topic .fa-heart-o:before {
-        content: "";
+        content: '';
     }
 
     nav.post-controls .like-button:active {
@@ -1176,7 +1147,6 @@
         color: var(--main-text);
     }
 
-
     /* Post Content
     /*____________________*/
 
@@ -1208,12 +1178,12 @@
         background-color: rgba(var(--main-light-trans), var(--third-alpha)) !important;
     }
 
-    .spoiled[style*=" 0px;"],
+    .spoiled[style*=' 0px;'],
     .spoiled:hover {
         color: var(--main-text) !important;
     }
 
-    .spoiled[style*=" 5px;"] image {
+    .spoiled[style*=' 5px;'] image {
         filter: none !important;
     }
 
@@ -1223,8 +1193,8 @@
     }
 
     .spoiled:hover code,
-    .spoiled[style*=" 0px;"] code,
-    .spoiled[style*=" 0px;"] .mention,
+    .spoiled[style*=' 0px;'] code,
+    .spoiled[style*=' 0px;'] .mention,
     .spoiled:hover .mention {
         filter: none !important;
         opacity: 1;
@@ -1303,7 +1273,7 @@
 
     .hljs-comment,
     .hljs-doctag {
-        color: #ecec95
+        color: #ecec95;
     }
 
     .hljs-number,
@@ -1324,7 +1294,6 @@
     aside.quote {
         background-color: transparent !important;
     }
-
 
     /* Slider
     /*____________________*/
@@ -1365,7 +1334,7 @@
         border-radius: var(--border-radius) var(--border-radius) 0 0;
     }
 
-    .timeline-container.timeline-docked-bottom .timeline-scrollarea-wrapper{
+    .timeline-container.timeline-docked-bottom .timeline-scrollarea-wrapper {
         border-radius: var(--border-radius);
     }
 
@@ -1439,7 +1408,6 @@
         color: var(--main-text) !important;
     }
 
-
     .timeline-fullscreen .post-excerpt {
         color: var(--second-text) !important;
     }
@@ -1485,7 +1453,6 @@
         position: relative;
         z-index: 10002;
     }
-
 
     /* Foot
     /*____________________*/
@@ -1605,7 +1572,6 @@
         border-bottom: 0;
     }
 
-
     /* Reply Box
     /*____________________*/
 
@@ -1699,7 +1665,7 @@
         top: unset;
         bottom: 10px;
         right: 50%;
-        transform: translate(50%,0);
+        transform: translate(50%, 0);
         color: var(--main-text);
         background-color: transparent;
     }
@@ -1723,8 +1689,6 @@
     #reply-control .grippie {
         background-color: transparent;
     }
-
-
 
     /*__________________________________________*/
     /* 					USER PAGE
@@ -1769,7 +1733,6 @@
         color: var(--second-text) !important;
     }
 
-
     /* About
     /*____________________*/
 
@@ -1804,7 +1767,6 @@
         color: var(--main-light-grey) !important;
     }
 
-
     /* Nav
     /*____________________*/
 
@@ -1834,7 +1796,6 @@
         background-color: rgba(var(--main-accent), var(--second-alpha));
     }
 
-
     /* FA:s
     /*____________________*/
 
@@ -1857,7 +1818,6 @@
     .user-main .fa-heart {
         color: var(--fa-heart-color) !important;
     }
-
 
     /* Activity
     /*____________________*/
@@ -1890,7 +1850,6 @@
         margin: 0 !important;
         background-color: var(--content-background) !important;
     }
-
 
     /* Summary
     /*____________________*/
@@ -1998,7 +1957,6 @@
         margin-bottom: 10px !important;
     }
 
-
     /* Notifications
     /*____________________*/
 
@@ -2052,7 +2010,6 @@
         color: var(--fa-mention-color) !important;
     }
 
-
     /* Badges
     /*____________________*/
 
@@ -2091,7 +2048,6 @@
     .badge-card .grant-count {
         color: var(--second-text);
     }
-
 
     /* Preferences
     /*____________________*/
@@ -2207,8 +2163,6 @@
         font-weight: bold;
     }
 
-
-
     /*__________________________________________*/
     /* 					SEARCH
     /*__________________________________________*/
@@ -2228,7 +2182,6 @@
     .search-page .select-kit .select-kit-row.is-highlighted {
         background-color: var(--highlight-background);
     }
-
 
     /* Left
     /*____________________*/
@@ -2283,7 +2236,6 @@
         color: var(--second-text);
     }
 
-
     /* Right
     /*____________________*/
 
@@ -2297,7 +2249,7 @@
     }
 
     .search-page .search-advanced-sidebar .search-advanced-filters {
-        border-radius: 0 0 var(--border-radius) var(--border-radius)
+        border-radius: 0 0 var(--border-radius) var(--border-radius);
     }
 
     .search-page .search-advanced-sidebar .selected-name {
@@ -2349,7 +2301,6 @@
         background: url(https://i.imgur.com/gwvQaN9.png) !important;
     }
 
-
     /* Header search
     /*____________________*/
 
@@ -2373,8 +2324,6 @@
         color: var(--main-text) !important;
     }
 
-
-
     /*__________________________________________*/
     /* 			      OTHER PAGES
     /*__________________________________________*/
@@ -2383,13 +2332,12 @@
     /*____________________*/
 
     .not-found-container {
-        background-color: var(--header-background)
+        background-color: var(--header-background);
     }
 
     .not-found-container a {
         color: var(--main-text);
     }
-
 
     /* User card
     /*____________________*/
@@ -2419,7 +2367,6 @@
         background-color: var(--highlight-background) !important;
     }
 
-
     /* Badges
     /*____________________*/
 
@@ -2439,7 +2386,6 @@
         font-size: 1.5em;
     }
 
-
     /* Edit history
     /*____________________*/
 
@@ -2450,7 +2396,6 @@
     .modal #revision-details .fa-pencil {
         color: #222 !important;
     }
-
 
     /* About, FAQ, TOS, Privacy
     /*_________________________*/
@@ -2519,9 +2464,9 @@
         max-width: unset;
     }
 
-    .static-privacy div[itemprop="mainContentOfPage"],
-    .static-tos div[itemprop="mainContentOfPage"],
-    .static-faq div[itemprop="mainContentOfPage"] {
+    .static-privacy div[itemprop='mainContentOfPage'],
+    .static-tos div[itemprop='mainContentOfPage'],
+    .static-faq div[itemprop='mainContentOfPage'] {
         padding: var(--list-padding);
         background-color: var(--content-background);
         color: var(--main-text);
@@ -2531,8 +2476,6 @@
     .static-faq h2 > a {
         color: var(--main-text);
     }
-
-
 
     /*__________________________________________*/
     /* 				  CHANGE LOG
@@ -2548,14 +2491,12 @@
 
     */
 
-
     /* Version 2.0.0
     /*____________________
 
     This is the start of the new version of the theme. All changes to the theme will be added below this line.
 
     */
-
 
     /* Version 2.0.1
     /*____________________
@@ -2592,7 +2533,6 @@
         background-color: var(--header-background);
     }
 
-
     /* Version 2.0.2
     /*____________________
 
@@ -2602,7 +2542,7 @@
         opacity: 0;
     }
 
-    .spoiled[style*=" 0px;"] .mention-group,
+    .spoiled[style*=' 0px;'] .mention-group,
     .spoiled:hover .mention-group {
         filter: none !important;
         opacity: 1;
@@ -2735,29 +2675,28 @@
         margin-bottom: var(--list-padding);
     }
 
-
     /* Version 2.1.0
     /*____________________
 
     Added: way to change default image for users that don't have one */
 
-    img[width="45"][src="https://discourse-cdn-sjc1.com/business5/uploads/wanikani_community/original/3X/f/d/fd4c154120954695f788402f3bcf4e616499bc2d.png"].avatar {
+    img[width="45"][src="https://discourse-cdn-sjc1.com/business5/uploads/wanikani_community/original/3X/f/d/fd4c154120954695f788402f3bcf4e616499bc2d.png"].avatar
+    {
         background-image: var(--default-avatar);
         padding-left: 45px;
         box-sizing: border-box;
         background-size: 45px;
     }
 
-
     /* Version 2.1.1
     /*____________________
 
     Fixed: default avatar image sizing */
 
-    img[width="45"][src="https://discourse-cdn-sjc1.com/business5/uploads/wanikani_community/original/3X/f/d/fd4c154120954695f788402f3bcf4e616499bc2d.png"].avatar {
+    img[width="45"][src="https://discourse-cdn-sjc1.com/business5/uploads/wanikani_community/original/3X/f/d/fd4c154120954695f788402f3bcf4e616499bc2d.png"].avatar
+    {
         background-size: cover;
     }
-
 
     /* Version 2.1.2
     /*____________________
@@ -2835,7 +2774,7 @@
     }
 
     .topic-post .read-state .fa.d-icon-circle {
-        color: rgba(var(--main-accent)) !important
+        color: rgba(var(--main-accent)) !important;
     }
 
     .fa.d-icon-d-watching,
@@ -2868,7 +2807,6 @@
         color: var(--main-text);
     }
 
-
     /* Version 2.1.3
     /*____________________
 
@@ -2890,27 +2828,26 @@
 
     .like-button .like:before,
     .like-button .like:after {
-        content: "";
+        content: '';
         background-color: var(--main-text);
         border-radius: 50%;
         position: absolute;
         transform: translate(-5px, 2.5px);
         width: 9px;
         height: 9px;
-
     }
 
     .like-button .like:before {
         transform: translate(-4px, 2.5px);
     }
 
-
     /* Version 2.1.4
     /*____________________
 
     Fixed: Fixed category names being cut short for no reason... */
 
-    .suggested-topics .badge-wrapper.bullet span.badge-category, .suggested-topics .badge-wrapper.bar span.badge-category {
+    .suggested-topics .badge-wrapper.bullet span.badge-category,
+    .suggested-topics .badge-wrapper.bar span.badge-category {
         max-width: unset;
     }
 
@@ -3013,7 +2950,6 @@
         border: 0;
     }
 
-
     /* Version 2.1.7
     /*_____________________
 
@@ -3079,7 +3015,6 @@
     .user-menu .quick-access-panel .d-icon-certificate {
         color: var(--fa-badge-star) !important;
     }
-
 
     /* Version 2.1.8
     /*_____________________
@@ -3148,7 +3083,6 @@
         color: var(--second-text);
     }
 
-
     /* Version 2.1.9
     /*_____________________
 
@@ -3180,7 +3114,6 @@
         color: var(--main-text);
     }
 
-
     /* Version 2.1.10
     /*_____________________
 
@@ -3191,7 +3124,8 @@
         color: var(--second-text);
     }
 
-    #topic-footer-buttons .pinned-button .reason, #topic-footer-buttons .topic-notifications-button .reason {
+    #topic-footer-buttons .pinned-button .reason,
+    #topic-footer-buttons .topic-notifications-button .reason {
         color: var(--main-text);
     }
 
@@ -3203,7 +3137,6 @@
         color: var(--main-color);
     }
 
-
     /* Version 2.1.11
     /*_____________________
 
@@ -3214,11 +3147,11 @@
         right: unset !important;
     }
 
-    body[theme="dark"] li[data-highlight="true"] .dashboard_bubble {
+    body[theme='dark'] li[data-highlight='true'] .dashboard_bubble {
         color: var(--main-text);
     }
 
-    .nav-pills>li a.active {
+    .nav-pills > li a.active {
         color: var(--main-text);
     }
 
@@ -3244,14 +3177,14 @@
         color: var(--second-text);
     }
 
-
     /* Version 2.1.12
     /*_____________________
 
     Fixed: Default avatar, Notification text color
     */
 
-    img[width="45"][src="https://aws1.discourse-cdn.com/business5/uploads/wanikani_community/original/3X/f/d/fd4c154120954695f788402f3bcf4e616499bc2d.png"].avatar {
+    img[width="45"][src="https://aws1.discourse-cdn.com/business5/uploads/wanikani_community/original/3X/f/d/fd4c154120954695f788402f3bcf4e616499bc2d.png"].avatar
+    {
         background-image: var(--default-avatar);
         padding-left: 45px;
         box-sizing: border-box;
@@ -3267,7 +3200,6 @@
         background-color: rgba(var(--main-accent));
     }
 
-
     /* Version 2.1.13
     /*_____________________
 
@@ -3278,22 +3210,20 @@
         color: var(--link-color) !important;
     }
 
-
     /* Version 2.1.14
     /*_____________________
 
     Fixed: Bubble colors
     */
 
-    li[data-highlight="true"] .dashboard_bubble {
-       background-color: rgba(var(--main-accent)) !important;
+    li[data-highlight='true'] .dashboard_bubble {
+        background-color: rgba(var(--main-accent)) !important;
     }
-
 
     /* Version 2.1.15
     /*_____________________
 
-    Fixed: bookmark color, solution color
+    Fixed: bookmark color
     */
 
     .bookmarked .d-icon-bookmark {
@@ -3305,7 +3235,6 @@
         color: var(--fa-checked-box-color) !important;
     }
 
-
     /* Version 2.1.16
     /*_____________________
 
@@ -3315,7 +3244,6 @@
     .bookmarked .d-icon-discourse-bookmark-clock {
         color: rgba(var(--main-accent)) !important;
     }
-
 
     /* Version 2.1.17
     /*_____________________
@@ -3327,25 +3255,22 @@
     .time-gap,
     .topic-post,
     .small-action,
-    .small-action
-    .small-action-desc,
-    .loading-container
-    .presence-users {
+    .small-action .small-action-desc,
+    .loading-container .presence-users {
         width: 100% !important;
     }
 
     .container.posts > .row {
-    	margin-top: -4px;
+        margin-top: -4px;
     }
 
     body.float_wkappnav #main-outlet {
-    	padding-top: 6px !important;
+        padding-top: 6px !important;
     }
 
     .timeline-container.timeline-docked-bottom .timeline-footer-controls {
-    	display: none;
+        display: none;
     }
-
 
     /* Version 2.1.18
     /*_____________________
@@ -3353,10 +3278,9 @@
     Fixed: post widths... Again
     */
 
-	.container.posts > .row {
-		max-width: calc(1110px - var(--slider-width) - 2 * var(--padding-slider));
-	}
-
+    .container.posts > .row {
+        max-width: calc(1110px - var(--slider-width) - 2 * var(--padding-slider));
+    }
 
     /* Version 2.1.19
     /*_____________________
@@ -3364,27 +3288,68 @@
     Fixed: Menu widgets, settings category color
     */
 
-	.d-header .menu-panel .glyphs .widget-link .fa {
-		transform: none !important;
-	}
+    .d-header .menu-panel .glyphs .widget-link .fa {
+        transform: none !important;
+    }
 
-	div.menu-links-header .menu-links-row li a.active {
-		background-color: var(--highlight-background);
-	}
+    div.menu-links-header .menu-links-row li a.active {
+        background-color: var(--highlight-background);
+    }
 
-	.category-selector span.category-name {
-		color: var(--main-text) !important;
-	}
-
+    .category-selector span.category-name {
+        color: var(--main-text) !important;
+    }
 
     /* Version 2.1.20
     /*_____________________
 
-    Fixed: Solutions color
+    Fixed: Solutions color, thread closing notifier, search results
     */
 
     .post-controls .extra-buttons .accepted-text .d-icon,
     .post-controls .extra-buttons .accepted-text .accepted-label {
-        color: var(--fa-checked-box-color)
+        color: var(--fa-checked-box-color);
+    }
+
+    .topic-timer-info {
+        border: 0;
+        margin-top: var(--posts-margin);
+        background-color: var(--content-background);
+        width: fit-content;
+        padding: 5px var(--padding-post);
+        height: 24px;
+        overflow: hidden;
+    }
+
+    .topic-timer-info::after {
+        font-weight: bold;
+        font-size: 1.17em;
+        content: 'This thread will never close :o';
+    }
+
+    h#topic-footer-buttons {
+        margin-top: 0;
+    }
+
+    .search-menu .results .item .first-line {
+        color: var(--main-text);
+    }
+
+    .search-menu .widget-link {
+        color: var(--main-text) !important;
+    }
+
+    .timeline-docked-bottom {
+        margin-bottom: 39px;
+    }
+
+    /* Version 2.1.21
+    /*_____________________
+
+    Fixed: Reply box outline
+    */
+
+    .d-editor-textarea-wrapper.in-focus {
+        outline: none;
     }
 }
