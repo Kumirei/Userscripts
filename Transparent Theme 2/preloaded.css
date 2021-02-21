@@ -7,8 +7,8 @@
 
     Name:           Forum Transparency 2.0
     Author:         Kumirei
-    Version:        2.1.21
-    Total lines:    3357
+    Version:        2.1.22
+    Total lines:    3458
     Latest update:  2021-02-21
 
     Forum post:     https://community.wanikani.com/t/userstyle-forum-transparency-20/32287
@@ -174,7 +174,7 @@
     *   [3285] Version 2.1.19
     *   [3303] Version 2.1.20
     *   [3348] Version 2.1.21
-
+    *   [3427] Version 2.1.22
 
 
 
@@ -3351,5 +3351,75 @@
 
     .d-editor-textarea-wrapper.in-focus {
         outline: none;
+    }
+
+    /* Version 2.1.22
+    /*_____________________
+
+    Fixed: Badge checkmark, button hover text color, user page action button,
+    select kits, ins, code
+    */
+
+    .badge-card .check-display.status-checked {
+        background: rgba(var(--main-accent)) !important;
+    }
+
+    .badge-card .check-display.status-checked > svg {
+        fill: var(--main-text) !important;
+    }
+
+    .btn:focus,
+    .discourse-no-touch .btn:hover,
+    .discourse-no-touch .btn.btn-hover {
+        color: var(--second-text) !important;
+    }
+
+    .user-main .about .details .primary {
+        width: unset;
+        padding-right: 14px;
+    }
+
+    .select-kit-collection {
+        background: transparent !important;
+    }
+
+    .select-kit-body {
+        background-color: var(--header-background) !important;
+    }
+
+    .select-kit .select-kit-row.is-selected,
+    .select-kit .select-kit-row.is-highlighted,
+    .select-kit .select-kit-row.is-selected.is-highlighted {
+        background-color: var(--highlight-background);
+    }
+
+    .select-kit.dropdown-select-box .select-kit-row .texts .name {
+        color: var(--main-text);
+    }
+
+    .select-kit.dropdown-select-box .select-kit-row .texts .desc {
+        color: var(--second-text);
+    }
+
+    .select-kit.dropdown-select-box .select-kit-body {
+        border: none;
+    }
+
+    .heatmap-high,
+    .heatmap-high a,
+    .heatmap-high .d-icon,
+    .heatmap-high .d-button-label {
+        color: var(--fa-edit-color) !important;
+    }
+
+    .cooked ins,
+    .d-editor-preview ins {
+        background-color: var(--fa-edit-color);
+        color: var(--main-dark);
+    }
+
+    code {
+        color: var(--primary-very-high) !important;
+        background: var(--hljs-bg) !important;
     }
 }
