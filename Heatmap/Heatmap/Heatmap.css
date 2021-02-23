@@ -153,6 +153,7 @@
 /*--------------------------------------------------------------------------------------------*/
 
 .heatmap .hover-wrapper {
+	display: none;
     opacity: 0;
     visibility: hidden;
     position: absolute;
@@ -163,7 +164,7 @@
     font-size: 12px;
     font-weight: normal;
     width: max-content;
-    transition: opacity 0s;
+    transition: opacity 0s 0.5s;
     text-align: left;
 	height: fit-content;
 	white-space: pre-line;
@@ -173,10 +174,16 @@
 	position: relative;
 }
 
-.heatmap .hover-wrapper-target:hover .hover-wrapper {
+.heatmap .hover-wrapper-target.heatmap-transition .hover-wrapper {
+	display: block;
+	opacity: 0;
+	visibility: hidden;
+}
+
+.heatmap .hover-wrapper-target:not(.heatmap-transition):hover .hover-wrapper {
+	display: block;
     opacity: 1;
 	visibility: visible;
-    transition-delay: 0.5s;
 	z-index: 1001;
 }
 
