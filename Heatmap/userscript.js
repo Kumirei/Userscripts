@@ -9,7 +9,6 @@
 // @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=888244
 // @grant        none
 // ==/UserScript==
-/*jshint esversion: 8 */
 
 (function(wkof, review_cache, Heatmap) {
     let msh = 60*60*1000, msd = 24*msh; // Milliseconds in hour and day
