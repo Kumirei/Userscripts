@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.1.0
+// @version      3.1.2
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -11,7 +11,7 @@
 ;(function ($) {
     // SETTINGS
     const settings = {
-        update_interval: 10, // Interval (minutes) for fetching summary page data
+        update_interval: 1, // Interval (minutes) for fetching summary page data and likes
         lifetime_purple: false, // Set to true for purple info bubbles
     }
 
@@ -41,7 +41,7 @@
 
     // Update LC
     Promise.all([update_stored(), update_summary()]).then(update)
-    setInterval(update_summary, settings.update_interval * 60 * 1000, LC)
+    setInterval(update_all, settings.update_interval * 60 * 1000, LC)
     // Update the next like timer every second
     setInterval(update_next, 1000)
     // Install
@@ -58,14 +58,8 @@
             const new_count = old_count + ($(event.target).closest('.widget-button').hasClass('has-like') ? 1 : -1)
             LC.elems.given.children().text(new_count)
         }
-        // Update properly with api data
-        const updater = async () => {
-            await update_day()
-            save_stored()
-            update_display()
-        }
         // Wait to allow Discourse backend to register the like
-        setTimeout(updater, 500)
+        setTimeout(update_all, 500)
     }
 
     // Fetches the data of LC.stored from localStorage
@@ -76,6 +70,14 @@
     // Saves the LC.stored data to localStorage
     function save_stored() {
         localStorage.setItem('LCstored', JSON.stringify(LC.stored))
+    }
+
+    // Updates summary info and likes used/received
+    async function update_all() {
+        await update_summary()
+        await update_day()
+        save_stored()
+        update_display()
     }
 
     // Updates the LC variable with info from the summary page
@@ -246,7 +248,7 @@
                 '    li[data-highlight="true"] span.dashboard_bubble {background-color: ' +
                 bubble_color +
                 ' !important;}' +
-                '    body.no-likes .like > .fa.d-icon-d-unliked {color: red !important}' +
+                '    bbody.no-likes .like > .fa.d-icon-d-unliked {color: red !important}' +
                 '    .wanikani-app-nav > ul {display: flex;}' +
                 '    .wanikani-app-nav li[data-name="likes-received"] {order: 1;}' +
                 '    .wanikani-app-nav li[data-name="likes-left"] {order: 2;}' +
