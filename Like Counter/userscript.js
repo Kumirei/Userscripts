@@ -58,8 +58,6 @@
             const new_count = old_count + ($(event.target).closest('.widget-button').hasClass('has-like') ? 1 : -1)
             LC.elems.given.children().text(new_count)
         }
-        // Wait to allow Discourse backend to register the like
-        setTimeout(update_all, 500)
     }
 
     // Fetches the data of LC.stored from localStorage
