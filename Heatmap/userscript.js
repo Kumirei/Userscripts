@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.24
+// @version      3.0.25
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -129,7 +129,7 @@
         // For jQuery Datepicker
         wkof.load_css('//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');
         // Heatmap CSS
-        wkof.load_css('//raw.githubusercontent.com/Kumirei/Wanikani/ea54ac6ce154af61327e295640ba52baf3f2fba6/Heatmap/Heatmap/Heatmap.css', true);
+        wkof.load_css('//raw.githubusercontent.com/Kumirei/Wanikani/198dd9ffbe56234bf97d6b71db03912071ad696c/Heatmap/Heatmap/Heatmap.css', true);
         wkof.load_css('//raw.githubusercontent.com/Kumirei/Wanikani/2742e8764a4c2683646b66004565ada7923ebc05/Heatmap/heatmap3.css', true);
     }
 
@@ -568,6 +568,7 @@
     // Creates the buttons at the top of the heatmap
     function create_buttons() {
         let buttons = create_elem({type: 'div', class: 'buttons'});
+        add_transitions(buttons)
         let settings_button = create_elem({type: 'button', class: 'settings-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Settings'}), create_elem({type: 'i', class: 'icon-gear'})], onclick: open_settings});
         let toggle_button = create_elem({type: 'button', class: 'toggle-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Toggle view'}), create_elem({type: 'i', class: 'icon-inbox'})], onclick: toggle_visible_map});
         buttons.append(settings_button, toggle_button);
@@ -683,7 +684,19 @@
                 ['24h', m_to_hm(stats.time[4])],
             ])),
         ]});
+        add_transitions(head_stats)
+        add_transitions(foot_stats)
         return [head_stats, foot_stats];
+    }
+
+    // Add hover transition
+    function add_transitions(elem) {
+        elem.addEventListener('mouseover', event => {
+            const elem = event.target.closest('.hover-wrapper-target')
+            if (!elem) return;
+            elem.classList.add('heatmap-transition')
+            setTimeout(_=>elem.classList.remove('heatmap-transition'), 20)
+        })
     }
 
     // Initiates the popper element
