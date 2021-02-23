@@ -1,13 +1,12 @@
 // ==UserScript==
 // @name         Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      1.0.6
+// @version      1.0.7
 // @description  Simple script that can generate heatmaps
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @grant        none
 // ==/UserScript==
-/*jshint esversion: 8 */
 
 (function($) {
     // The heatmap object
@@ -76,6 +75,7 @@
             let cls = 'year heatmap ' + this.config.id + (this.config.segment_years?' segment_years':'') + (this.config.zero_gap?' zero_gap':'') + (year>new Date().getFullYear()?' future':'') + (year==new Date().getFullYear()?' current':'');
             let year_elem = this._create_elem({type: 'div', class: cls,});
             year_elem.setAttribute('data-year', year);
+            this._add_transitions(year_elem)
             let labels = this._create_elem({type: 'div', class: 'year-labels', children: this._get_year_labels(year)});
             let months = this._create_elem({type: 'div', class: 'months'});
             for (let month=1; month<=12; month++) {
@@ -126,6 +126,7 @@
         // Creates a simple heatmap with 24 squares that represent a single day
         _init_single_day(data, dates) {
             let day = this._create_elem({type: 'div', class: 'single-day '+this.config.id});
+            this._add_transitions(day)
             let hour_data = data[dates.first_year][dates.first_month][dates.first_day].hours;
             let current_hour = new Date().getHours();
             for (let i=0; i<24; i++) {
@@ -179,6 +180,15 @@
         // Convert date into year month date and hour
         _get_ymdh(date) {let d = new Date(date); return [d.getFullYear(), d.getMonth()+1, d.getDate(), d.getHours()];}
 
+        // Add hover transition
+        _add_transitions(elem) {
+            elem.addEventListener('mouseover', event => {
+                const elem = event.target.closest('.hover-wrapper-target')
+                if (!elem) return;
+                elem.classList.add('heatmap-transition')
+                setTimeout(_=>elem.classList.remove('heatmap-transition'), 20)
+            })
+        }
     }
 
     // Expose class
