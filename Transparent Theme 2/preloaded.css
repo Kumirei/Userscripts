@@ -3459,7 +3459,7 @@
     */
 
     .container.posts {
-        grid-template-columns: auto 147px;
+        grid-template-columns: minmax(0, 1fr) 147px;
     }
 
     .topic-navigation {
