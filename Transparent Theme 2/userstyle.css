@@ -3497,8 +3497,7 @@
     }
 
     .topic-meta-data,
-    .topic-post .post-info.post-date,
-    nav.post-controls .actions button.create {
+    .topic-post .post-info.post-date {
         padding-right: 0 !important;
     }
 
@@ -3545,5 +3544,9 @@
         width: 100%;
         padding: var(--padding-post);
         transform: translate(calc(0px - var(--padding-post)), calc(0px - var(--padding-post)));
+    }
+
+    nav.post-controls {
+        transform: translatex(var(--padding-post));
     }
 }
