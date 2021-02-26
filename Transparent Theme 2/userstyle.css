@@ -3533,7 +3533,8 @@
     }
 
     .topic-body .read-state {
-        right: calc(-2 * var(--padding-post));
+        /* prettier-ignore */
+        right: calc(-2*var(--padding-post));
         top: calc(0px - var(--padding-post));
         transform: translate(-5px, 5px);
     }
