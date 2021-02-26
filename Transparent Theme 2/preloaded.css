@@ -3543,4 +3543,9 @@
         padding: var(--padding-post);
         transform: translate(calc(0px - var(--padding-post)), calc(0px - var(--padding-post)));
     }
+
+    section.post-menu-area {
+        margin-left: calc(0px - var(--padding-post)) !important;
+        padding-left: 0;
+    }
 }

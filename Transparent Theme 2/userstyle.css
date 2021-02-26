@@ -3549,4 +3549,9 @@
     nav.post-controls {
         transform: translatex(var(--padding-post));
     }
+
+    section.post-menu-area {
+        margin-left: calc(0px - var(--padding-post)) !important;
+        padding-left: 0;
+    }
 }
