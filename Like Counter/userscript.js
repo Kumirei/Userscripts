@@ -42,6 +42,7 @@
     // Update LC
     Promise.all([update_stored(), update_summary()]).then(update)
     setInterval(update_all, settings.update_interval * 60 * 1000, LC)
+    update_all()
     // Update the next like timer every second
     setInterval(update_next, 1000)
     // Install
