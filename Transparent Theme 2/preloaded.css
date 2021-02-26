@@ -7,9 +7,9 @@
 
     Name:           Forum Transparency 2.0
     Author:         Kumirei
-    Version:        2.1.23
-    Total lines:    3446
-    Latest update:  2021-02-21
+    Version:        2.1.24
+    Total lines:    3523
+    Latest update:  2021-02-26
 
     Forum post:     https://community.wanikani.com/t/userstyle-forum-transparency-20/32287
     Theme link:     https://userstyles.org/styles/163317/wanikani-forum-transparency-2-0
@@ -176,7 +176,7 @@
     *   [3348] Version 2.1.21
     *   [3358] Version 2.1.22
     *   [3429] Version 2.1.23
-
+    *   [3456] Version 2.1.24
 
 
 
@@ -3449,5 +3449,73 @@
 
     .user-bookmarks-link > .d-icon-bookmark {
         fill: var(--main-text);
+    }
+
+    /* Version 2.1.24
+    /*_____________________
+
+    Fixed: thread widths, some variables, search page improvements, edit count
+    */
+
+    .container.posts {
+        grid-template-columns: auto 147px;
+    }
+
+    .topic-navigation {
+        margin-left: 0 !important;
+    }
+
+    .posts .gap,
+    .posts .time-gap,
+    .posts .topic-post,
+    .posts .small-action,
+    .posts .small-action .small-action-desc,
+    .posts .loading-container .presence-users {
+        width: calc(100% - 2 * var(--padding-post) - var(--posts-margin)) !important;
+    }
+
+    .topic-body {
+        padding: 0 0 0 var(--padding-post) !important;
+    }
+
+    .topic-avatar {
+        padding-top: 0 !important;
+    }
+
+    .post-menu-area {
+        margin-bottom: 0;
+    }
+
+    .topic-post {
+        padding: var(--padding-post);
+        padding-bottom: 0;
+        width: 100% !important;
+    }
+
+    .topic-meta-data,
+    .topic-post .post-info.post-date,
+    nav.post-controls .actions button.create {
+        padding-right: 0 !important;
+    }
+
+    .container.posts > .row {
+        max-width: 100% !important;
+    }
+
+    :root {
+        --primary: var(--main-text);
+        --secondary: var(--main-dark);
+        --header_primary: var(--main-text);
+        --header_background: var(--header-background);
+        --primary-high: var(--main-text);
+        --primary-med-or-secondary-med: var(--main-text);
+    }
+
+    .search-page .search-advanced-sidebar .selected-name {
+        color: inherit;
+    }
+
+    .select-kit-body {
+        background-color: rgba(var(--main-trans), calc(var(--main-alpha) + 0.2)) !important;
     }
 }
