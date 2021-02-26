@@ -3473,7 +3473,8 @@
     .posts .small-action,
     .posts .small-action .small-action-desc,
     .posts .loading-container .presence-users {
-        width: calc(100% - 2 * var(--padding-post) - var(--posts-margin)) !important;
+        /* prettier-ignore */
+        width: calc(100% - 2*var(--padding-post) - var(--posts-margin)) !important;
     }
 
     .topic-body {
