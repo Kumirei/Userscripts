@@ -3454,7 +3454,8 @@
     /* Version 2.1.24
     /*_____________________
 
-    Fixed: thread widths, some variables, search page improvements, edit count
+    Fixed: thread widths, some variables, search page improvements, edit count,
+    post sizing, read state
     */
 
     .container.posts {
@@ -3471,7 +3472,8 @@
     .posts .small-action,
     .posts .small-action .small-action-desc,
     .posts .loading-container .presence-users {
-        width: calc(100% - 2 * var(--padding-post) - var(--posts-margin)) !important;
+        /* prettier-ignore */
+        width: calc(100% - 2*var(--padding-post) - var(--posts-margin)) !important;
     }
 
     .topic-body {
@@ -3526,5 +3528,11 @@
     .topic-body .cooked {
         width: auto;
         padding-right: 0;
+    }
+
+    .topic-body .read-state {
+        right: calc(-2 * var(--padding-post));
+        top: calc(0px - var(--padding-post));
+        transform: translate(-5px, 5px);
     }
 }
