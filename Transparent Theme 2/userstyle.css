@@ -3538,4 +3538,12 @@
         top: calc(0px - var(--padding-post));
         transform: translate(-5px, 5px);
     }
+
+    .topic-post .post-notice {
+        max-width: 100%;
+        left: 0;
+        width: 100%;
+        padding: var(--padding-post);
+        transform: translate(calc(0px - var(--padding-post)), calc(0px - var(--padding-post)));
+    }
 }
