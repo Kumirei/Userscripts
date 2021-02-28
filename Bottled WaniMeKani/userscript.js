@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/t/*
@@ -40,18 +40,7 @@
         const text = composer.value.toLowerCase()
         let actions = []
         // Process dice rolls
-        const rolls =
-            text
-                .match(/@wanimekani\W+roll\W+\d+d\d+/g)
-                ?.map((m) => m.match(/(\d+)d(\d+)/))
-                ?.map((m) => [m[1], m[2]]) || []
-        actions.push(...rolls.map((r) => `Rolling ${r.join('d')}\n> :game_die: ${roll(r[0], r[1]).join(', ')}`))
-        // Process 8ball
-        const balls = text.match(/@wanimekani\W+((8ball)|(fortune))/g) || []
-        actions.push(...balls.map((b) => `8Ball says\n> :crystal_ball: ${fortune()}`))
-        // Process quote
-        const quotes = text.match(/@wanimekani\W+quote(\W+\d+)?/g)?.map((m) => m.match(/\d+/)?.[0]) || []
-        actions.push(...quotes.map((q) => quote(q)))
+        actions.push(...create_rolls(text), ...create_fortunes(text), ...create_quotes(text))
         // Combine results
         const results =
             actions.length == 0
@@ -66,23 +55,37 @@
 
         return results
 
-        // Rolls a number of dice
-        function roll(dices, faces) {
-            return new Array(Number(dices)).fill(null).map((_) => random_int(1, faces))
+        // Detects rolls
+        function create_rolls(text) {
+            const roll = (dices, faces) => new Array(Number(dices)).fill(null).map((_) => random_int(1, faces))
+            const rolls = text.match(/@wanimekani\W+roll\W+\d+d\d+/g)?.map((m) => m.match(/(\d+)d(\d+)/))
+            const results =
+                rolls?.map((r) => `Rolling ${r.join('d')}\n> :game_die: ${roll(r[1], r[2]).join(', ')}`) || []
+            return results
         }
 
-        // Get random quote
-        function quote(n) {
-            if (!n) n = random_int(0, quote_list.length - 1)
-            return quote_list[n]
-                ? `Quote #${n}\n> :left_speech_bubble: ${quote_list[n].join(' – ')}`
-                : `There is no quote ${n}`
+        // Detects fortunes
+        function create_fortunes(text) {
+            const fortune = () => answer_list[random_int(0, answer_list.length - 1)]
+            const fortunes = text.match(/@wanimekani\W+((8ball)|(fortune))/g)
+            const results = fortunes?.map((b) => `8Ball says\n> :crystal_ball: ${fortune()}`) || []
+            return results
         }
 
-        // Get 8ball answer
-        function fortune() {
-            return answer_list[random_int(0, answer_list.length - 1)]
+        // Detects quotes
+        function create_quotes(text) {
+            const quote = (n) => {
+                n = n ? n : random_int(0, quote_list.length - 1)
+                return quote_list[n]
+                    ? `Quote #${n}\n> :left_speech_bubble: ${quote_list[n].join(' – ')}`
+                    : `There is no quote #${n}`
+            }
+            const quotes = text.match(/@wanimekani\W+quote(\W+\d+)?/g)?.map((m) => m.match(/\d+/)?.[0])
+            const results = quotes.map((q) => quote(q))
+            return results
         }
+
+        // TODO: coin flip, rick roll, roll rick,
     }
 
     // Get random integer in inclusive interval [min, max]
