@@ -7,9 +7,9 @@
 
     Name:           Forum Transparency 2.0
     Author:         Kumirei
-    Version:        2.1.24
-    Total lines:    3532
-    Latest update:  2021-02-26
+    Version:        2.1.25
+    Total lines:    3558
+    Latest update:  2021-02-28
 
     Forum post:     https://community.wanikani.com/t/userstyle-forum-transparency-20/32287
     Theme link:     https://userstyles.org/styles/163317/wanikani-forum-transparency-2-0
@@ -178,7 +178,7 @@
     *   [3358] Version 2.1.22
     *   [3429] Version 2.1.23
     *   [3456] Version 2.1.24
-
+    *   [3573] Version 2.1.24
 
 
 
@@ -3507,7 +3507,7 @@
 
     :root {
         --primary: var(--main-text);
-        --secondary: var(--main-dark);
+        d--secondary: var(--main-dark);
         --header_primary: var(--main-text);
         --header_background: var(--header-background);
         --primary-high: var(--main-text);
@@ -3553,5 +3553,21 @@
     section.post-menu-area {
         margin-left: calc(0px - var(--padding-post)) !important;
         padding-left: 0;
+    }
+
+    /* Version 2.1.25
+    /*_____________________
+
+    Fixed: bookmark colors, revert secondary variable
+    */
+
+    .d-icon-bookmark,
+    .d-icon-discourse-bookmark-clock {
+        fill: currentcolor;
+    }
+
+    .quick-access-panel .d-icon-bookmark,
+    .quick-access-panel .d-icon-discourse-bookmark-clock {
+        fill: rgba(var(--main-accent));
     }
 }
