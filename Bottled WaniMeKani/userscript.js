@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
+// @version      1.1.1
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/t/*
@@ -68,7 +68,7 @@
 
         // Rolls a number of dice
         function roll(dices, faces) {
-            return new Array(Number(dices)).fill(null).map((_) => random_int(0, faces))
+            return new Array(Number(dices)).fill(null).map((_) => random_int(1, faces))
         }
 
         // Get random quote
