@@ -229,11 +229,7 @@ which paralyze needed efforts to convert radicals into kanji.`,
         [`My heart rows as the cocoa flows`, `歌の心`],
         [`YOU SHALL NOT PASS to the next level`, `ガンダルフ, a great Kanji-sorcerer from 中地球`],
         [
-            `I am wiser than this fellow Turtle, for neither of us appears to know anything
-great and good; but he fancies he knows something, although he knows
-nothing; whereas I, as I do not know anything, so I do not fancy I do.
-In this trifling particular, then, I appear to be wiser than he, because
-I do not fancy I know what I do not know.`,
+            `I am wiser than this fellow Turtle, for neither of us appears to know anything great and good; but he fancies he knows something, although he knows nothing; whereas I, as I do not know anything, so I do not fancy I do. In this trifling particular, then, I appear to be wiser than he, because I do not fancy I know what I do not know.`,
             `The Apology of a Turtle, Forum Dialogue 29b-c`,
         ],
         [`I knew this`, `Override Script Abuser`],
