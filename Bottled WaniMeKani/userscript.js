@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.2.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
-// @include      https://community.wanikani.com/t/*
+// @include      https://community.wanikani.com/*
 // @grant        none
 // ==/UserScript==
 
@@ -21,7 +21,7 @@
         }
     }
 
-    // Wrape the save function with our own function
+    // Wrap the save function with our own function
     function inject(old_save) {
         const new_save = function (t) {
             const composer = document.querySelector('textarea.d-editor-input') // Reply box
@@ -37,10 +37,7 @@
     function results(composer, preview) {
         // Don't do anything if results are already present
         if (preview.querySelector('#heading--results')) return ''
-        const text = composer.value.toLowerCase()
-        let actions = []
-        // Process dice rolls
-        actions.push(...create_rolls(text), ...create_fortunes(text), ...create_quotes(text))
+        const text = composer.value.toLowerCase().replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gs, '')
         // Combine results
         const results =
             actions.length == 0
@@ -49,11 +46,22 @@
         <div class="title">
             <img alt="" width="20" height="20" src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar"> WaniMeKani:</div>
         <blockquote>
-                <p>\n\n${actions.join('\n\n')}\n</p>
+                <p>\n\n${responses(text).join('\n\n')}\n</p>
     </blockquote>
     </aside>`
 
         return results
+
+        // Create responses
+        function responses(text) {
+            return [
+                ...create_rolls(text),
+                ...create_fortunes(text),
+                ...create_quotes(text),
+                ...create_flips(text),
+                ...create_other(text),
+            ]
+        }
 
         // Detects rolls
         function create_rolls(text) {
@@ -85,7 +93,28 @@
             return results
         }
 
-        // TODO: coin flip, rick roll, roll rick,
+        // Flips a coin (table)
+        function create_flips(text) {
+            const flip = () => Math.round(Math.random())
+            const flips = text.match(/@wanimekani\W+((flip)|(coin))/g)
+            const results = flips.map(
+                (f) => `Flipping a ~~coin~~ table\n> ${flip() ? '(╯°□°）╯︵ ┻━┻' : '┬─┬ノ(ಠ_ಠノ)'}`,
+            )
+            return results
+        }
+
+        // Detects rick rolls, and more?
+        function create_other(text) {
+            const rolls = text.match(/@wanimekani\W+roll\W+rick/g)
+            const results = `Rolling rick\n> Never gonna give you up
+Never gonna let you down
+Never gonna run around and desert you
+Never gonna make you cry
+Never gonna say goodbye
+Never gonna tell a lie and hurt you`
+            setTimeout(() => (window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 10000)
+            return results
+        }
     }
 
     // Get random integer in inclusive interval [min, max]
@@ -520,11 +549,11 @@ Sect Yronwood: We Keep The Pace`,
             `Udon Rumsfeld, 2002`,
         ],
         [
-            `K 5oichi: Viet, our lives are in your hands and you have butterfingers?
+            `Koichi: Viet, our lives are in your hands and you have butterfingers?
 Viet Hoang: [laughs] I am totally unappreciated in my time. You can run this whole website from this room with minimal staff for up to 3 days. You think that kind of automation is easy? Or cheap? You know anybody who can migrate an entire forum and handle  2 million kanji reviews a day for what I bid for this job? Because if he can I’d like to see him try.
 …
-Koichi I don’t blame people for their review mistakes. But I do ask that they pay for them.
-Viet Thanks, Dad. `,
+Koichi: I don’t blame people for their review mistakes. But I do ask that they pay for them.
+Viet: Thanks, Dad. `,
             `Japanic Park, 1993`,
         ],
         [
