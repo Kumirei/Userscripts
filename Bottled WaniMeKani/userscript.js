@@ -107,15 +107,17 @@
         // Detects rick rolls, and more?
         function create_other(text) {
             const rolls = text.match(/@wanimekani\W+roll\W+rick/g)
-            const results = [
-                `Rolling rick\n> Never gonna give you up
+            const results = rolls
+                ? [
+                      `Rolling rick\n> Never gonna give you up
 Never gonna let you down
 Never gonna run around and desert you
 Never gonna make you cry
 Never gonna say goodbye
 Never gonna tell a lie and hurt you`,
-            ]
-            setTimeout(() => (window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 10000)
+                  ]
+                : []
+            if (rolls) setTimeout(() => (window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 10000)
             return results
         }
     }
