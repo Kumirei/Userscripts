@@ -1717,5 +1717,6 @@ Where the reviews have gone there will be nothing. Only kanji will remain.`,
             Anyway, so Koichi ended up being burned alive and redurtled by the durtlic church, and soon after we started getting these weird emails by some stalker. Needless to say we solved that one pretty quicky. Now B5 is something else`,
             `Rambles of a durthlic priest`,
         ],
+        [`eGoooott`, `B5`],
     ]
 })()
