@@ -37,7 +37,9 @@
     function results(composer, preview) {
         // Don't do anything if results are already present
         if (preview.querySelector('#heading--results')) return ''
+        // Get WaniMeKani responses
         const text = composer.value.toLowerCase().replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gs, '')
+        const actions = responses(text)
         // Combine results
         const results =
             actions.length == 0
@@ -46,7 +48,7 @@
         <div class="title">
             <img alt="" width="20" height="20" src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar"> WaniMeKani:</div>
         <blockquote>
-                <p>\n\n${responses(text).join('\n\n')}\n</p>
+                <p>\n\n${actions.join('\n\n')}\n</p>
     </blockquote>
     </aside>`
 
@@ -89,7 +91,7 @@
                     : `There is no quote #${n}`
             }
             const quotes = text.match(/@wanimekani\W+quote(\W+\d+)?/g)?.map((m) => m.match(/\d+/)?.[0])
-            const results = quotes.map((q) => quote(q))
+            const results = quotes?.map((q) => quote(q)) || []
             return results
         }
 
@@ -97,21 +99,22 @@
         function create_flips(text) {
             const flip = () => Math.round(Math.random())
             const flips = text.match(/@wanimekani\W+((flip)|(coin))/g)
-            const results = flips.map(
-                (f) => `Flipping a ~~coin~~ table\n> ${flip() ? '(╯°□°）╯︵ ┻━┻' : '┬─┬ノ(ಠ_ಠノ)'}`,
-            )
+            const results =
+                flips?.map((f) => `Flipping a ~~coin~~ table\n> ${flip() ? '(╯°□°）╯︵ ┻━┻' : '┬─┬ノ(ಠ_ಠノ)'}`) || []
             return results
         }
 
         // Detects rick rolls, and more?
         function create_other(text) {
             const rolls = text.match(/@wanimekani\W+roll\W+rick/g)
-            const results = `Rolling rick\n> Never gonna give you up
+            const results = [
+                `Rolling rick\n> Never gonna give you up
 Never gonna let you down
 Never gonna run around and desert you
 Never gonna make you cry
 Never gonna say goodbye
-Never gonna tell a lie and hurt you`
+Never gonna tell a lie and hurt you`,
+            ]
             setTimeout(() => (window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 10000)
             return results
         }
