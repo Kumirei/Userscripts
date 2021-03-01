@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.2.2
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -69,8 +69,7 @@
         function create_rolls(text) {
             const roll = (dices, faces) => new Array(Number(dices)).fill(null).map((_) => random_int(1, faces))
             const rolls = text.match(/@wanimekani\W+roll\W+\d+d\d+/g)?.map((m) => m.match(/(\d+)d(\d+)/))
-            const results =
-                rolls?.map((r) => `Rolling ${r.join('d')}\n> :game_die: ${roll(r[1], r[2]).join(', ')}`) || []
+            const results = rolls?.map((r) => `Rolling ${r[0]}\n> :game_die: ${roll(r[1], r[2]).join(', ')}`) || []
             return results
         }
 
