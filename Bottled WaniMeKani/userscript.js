@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -87,7 +87,7 @@
             const quote = (n) => {
                 n = n ? n : random_int(0, quote_list.length - 1)
                 return quote_list[n]
-                    ? `Quote #${n}\n> :left_speech_bubble: ${quote_list[n].join(' – ')}`
+                    ? `Quote #${n}\n[quote]\n:left_speech_bubble: ${quote_list[n].join(' – ')}\n[/quote]`
                     : `There is no quote #${n}`
             }
             const quotes = text.match(/@wanimekani\W+quote(\W+\d+)?/g)?.map((m) => m.match(/\d+/)?.[0])
