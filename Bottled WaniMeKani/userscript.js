@@ -59,6 +59,7 @@
             responses +
             '\n\n' +
             '<!-- END ANSWERS -->\n' +
+            // </p> and </blockquote> omitted because the Discourse parser wants to put them in a code block
             '</aside>\n'
         )
     }
