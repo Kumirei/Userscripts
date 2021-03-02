@@ -68,7 +68,7 @@
         // Extract the commands
         let words = 2
         let regx = new RegExp('@wanimekani(\\s+\\w+)' + '(\\s+\\w+)?'.repeat(words - 1), 'g')
-        let commands = text.match(regx).map((c) => c.split(' '))
+        let commands = text.match(regx)?.map((c) => c.split(' ')) || []
         // Process commands
         let results = []
         commands.forEach((command) => {
@@ -121,7 +121,7 @@
 
     // Rick roll the butt who issued the command
     function rick() {
-        setTimeout(() => window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 10000)
+        window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
         return `Never gonna give you up\nNever gonna let you down\nNever gonna run around and desert you\nNever gonna make you cry\nNever gonna say goodbye\nNever gonna tell a lie and hurt you`
     }
 
