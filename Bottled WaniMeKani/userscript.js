@@ -39,10 +39,10 @@
         // Don't do anything if results are already present
         if (text.match(/<!-- wanimekani reply -->/)) return ''
         // Get WaniMeKani responses
-        const actions = responses(text)
+        const responses = get_responses(text)
 
         // If no commands were found, don't modify the post
-        if (actions === '') return ''
+        if (responses === '') return ''
         // If commands were found, append a reply
         return (
             '\n\n' +
@@ -56,7 +56,7 @@
             '    <blockquote>\n' +
             '        <p>\n' +
             '<!-- START ANSWERS -->\n\n' +
-            actions +
+            responses +
             '\n\n' +
             '<!-- END ANSWERS -->\n' +
             '</aside>\n'
@@ -64,7 +64,7 @@
     }
 
     // Create responses to the commands
-    function responses(text) {
+    function get_responses(text) {
         // Extract the commands
         let words = 2
         let regx = new RegExp('@wanimekani(\\s+\\w+)' + '(\\s+\\w+)?'.repeat(words - 1), 'g')
@@ -106,7 +106,7 @@
         return results.join('\n\n')
     }
 
-    // Create a response
+    // Create a response listing
     function lister(title, icon, text) {
         return `${title}\n[quote]\n${icon} ${text}\n[/quote]`
     }
