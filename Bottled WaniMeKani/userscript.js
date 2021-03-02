@@ -26,7 +26,7 @@
         const new_save = function (t) {
             const composer = document.querySelector('textarea.d-editor-input') // Reply box
             const preview = document.getElementsByClassName('d-editor-preview')[0] // Preview box
-            composer.value += results(composer, preview) // Modify message
+            composer.value += commune(composer, preview) // Modify message
             composer.dispatchEvent(new Event('change', { bubbles: true, cancelable: true })) // Let Discourse know
             old_save.call(this, t) // Call regular save function
         }
@@ -34,91 +34,109 @@
     }
 
     // Grabs the text then returns the WaniMeKani answers
-    function results(composer, preview) {
+    function commune(composer, preview) {
         // Don't do anything if results are already present
         if (preview.querySelector('#heading--results')) return ''
         // Get WaniMeKani responses
         const text = composer.value.toLowerCase().replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gs, '')
         const actions = responses(text)
-        // Combine results
-        const results =
-            actions.length == 0
-                ? ''
-                : `\n\n---\n\n<h6 id="heading--results"></h6><aside class="quote">
-        <div class="title">
-            <img alt="" width="20" height="20" src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar"> WaniMeKani:</div>
-        <blockquote>
-                <p>\n\n${actions.join('\n\n')}\n</p>
-    </blockquote>
-    </aside>`
 
-        return results
+        // If no commands were found, don't modify the post
+        if (actions === '') return ''
+        // If commands were found, append a reply
+        return (
+            '\n\n' +
+            '<hr>\n' +
+            '<h6 id="heading--results"></h6>\n' +
+            '<aside class="quote">\n' +
+            '    <div class="title">\n' +
+            '        <img width="20" src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar"> WaniMeKani:\n' +
+            '    </div>\n' +
+            '    <blockquote>\n' +
+            '        <p>\n' +
+            '<!-- START ANSWERS -->\n\n' +
+            actions +
+            '\n\n' +
+            '<!-- END ANSWERS -->\n' +
+            '</aside>\n'
+        )
+    }
 
-        // Create responses
-        function responses(text) {
-            return [
-                ...create_rolls(text),
-                ...create_fortunes(text),
-                ...create_quotes(text),
-                ...create_flips(text),
-                ...create_other(text),
-            ]
-        }
-
-        // Detects rolls
-        function create_rolls(text) {
-            const roll = (dices, faces) => new Array(Number(dices)).fill(null).map((_) => random_int(1, faces))
-            const rolls = text.match(/@wanimekani\W+roll\W+\d+d\d+/g)?.map((m) => m.match(/(\d+)d(\d+)/))
-            const results = rolls?.map((r) => `Rolling ${r[0]}\n> :game_die: ${roll(r[1], r[2]).join(', ')}`) || []
-            return results
-        }
-
-        // Detects fortunes
-        function create_fortunes(text) {
-            const fortune = () => answer_list[random_int(0, answer_list.length - 1)]
-            const fortunes = text.match(/@wanimekani\W+((8ball)|(fortune))/g)
-            const results = fortunes?.map((b) => `8Ball says\n> :crystal_ball: ${fortune()}`) || []
-            return results
-        }
-
-        // Detects quotes
-        function create_quotes(text) {
-            const quote = (n) => {
-                n = n ? n : random_int(0, quote_list.length - 1)
-                return quote_list[n]
-                    ? `Quote #${n}\n[quote]\n:left_speech_bubble: ${quote_list[n].join(' – ')}\n[/quote]`
-                    : `There is no quote #${n}`
+    // Create responses to the commands
+    function responses(text) {
+        // Extract the commands
+        let words = 2
+        let regx = new RegExp('@wanimekani(\\s+\\w+)' + '(\\s+\\w+)?'.repeat(words - 1), 'g')
+        let commands = text.match(regx).map((c) => c.split(' '))
+        // Process commands
+        let results = []
+        commands.forEach((command) => {
+            let listing
+            switch (command[1]) {
+                // Roll dice
+                case 'roll':
+                    // Dice
+                    if (command[2]?.match(/^\d+d\d+$/)) {
+                        let [count, faces] = command[2].split('d')
+                        listing = lister(`Rolling ${command[2]}`, ':game_die:', dice(count, faces))
+                        // Rick roll
+                    } else if (command[2]?.match(/^rick$/)) {
+                        listing = lister(`Rolling rick`, '', rick())
+                    }
+                    break
+                // Tell your fortune
+                case 'fortune':
+                case '8ball':
+                    listing = lister(`8ball says`, ':crystal_ball:', fortune())
+                    break
+                // Get a quote
+                case 'quote':
+                    let n = command[2]?.match(/^\d+$/)?.[0] || random_int(0, quote_list.length - 1)
+                    listing = lister(`Quote #${n}`, ':left_speech_bubble:', quote(n))
+                    break
+                // Flip tables
+                case 'flip':
+                case 'coin':
+                case 'table':
+                    listing = lister(`Flipping a ~~coin~~ table`, '', table())
             }
-            const quotes = text.match(/@wanimekani\W+quote(\W+\d+)?/g)?.map((m) => m.match(/\d+/)?.[0])
-            const results = quotes?.map((q) => quote(q)) || []
-            return results
-        }
+            if (listing) results.push(listing)
+        })
+        return results.join('\n\n')
+    }
 
-        // Flips a coin (table)
-        function create_flips(text) {
-            const flip = () => Math.round(Math.random())
-            const flips = text.match(/@wanimekani\W+((flip)|(coin))/g)
-            const results =
-                flips?.map((f) => `Flipping a ~~coin~~ table\n> ${flip() ? '(╯°□°）╯︵ ┻━┻' : '┬─┬ノ(ಠ_ಠノ)'}`) || []
-            return results
-        }
+    // Create a response
+    function lister(title, icon, text) {
+        return `${title}\n[quote]\n${icon} ${text}\n[/quote]`
+    }
 
-        // Detects rick rolls, and more?
-        function create_other(text) {
-            const rolls = text.match(/@wanimekani\W+roll\W+rick/g)
-            const results = rolls
-                ? [
-                      `Rolling rick\n> Never gonna give you up
-Never gonna let you down
-Never gonna run around and desert you
-Never gonna make you cry
-Never gonna say goodbye
-Never gonna tell a lie and hurt you`,
-                  ]
-                : []
-            if (rolls) setTimeout(() => (window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 10000)
-            return results
-        }
+    // Roll some dice
+    function dice(count, faces) {
+        return new Array(Number(count))
+            .fill(null)
+            .map((_) => random_int(1, faces))
+            .join(', ')
+    }
+
+    // Rick roll the butt who issued the command
+    function rick() {
+        setTimeout(() => (window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 10000)
+        return `Never gonna give you up\nNever gonna let you down\nNever gonna run around and desert you\nNever gonna make you cry\nNever gonna say goodbye\nNever gonna tell a lie and hurt you`
+    }
+
+    // Tell someone's fortune
+    function fortune() {
+        return fortune_list[random_int(0, fortune_list.length - 1)]
+    }
+
+    // Pick quote number n
+    function quote(n) {
+        return quote_list[n]?.join(' – ') || `There is no quote #${n}`
+    }
+
+    // Flip a table
+    function table() {
+        return Math.random() < 0.5 ? '(╯°□°）╯︵ ┻━┻' : '┬─┬ノ(ಠ_ಠノ)'
     }
 
     // Get random integer in inclusive interval [min, max]
@@ -129,7 +147,7 @@ Never gonna tell a lie and hurt you`,
     }
 
     // 8ball answers
-    const answer_list = [
+    const fortune_list = [
         'It is certain',
         'It is decidedly so',
         'Without a doubt',
