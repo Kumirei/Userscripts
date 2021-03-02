@@ -121,7 +121,7 @@
 
     // Rick roll the butt who issued the command
     function rick() {
-        setTimeout(() => (window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 10000)
+        setTimeout(() => window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 10000)
         return `Never gonna give you up\nNever gonna let you down\nNever gonna run around and desert you\nNever gonna make you cry\nNever gonna say goodbye\nNever gonna tell a lie and hurt you`
     }
 
