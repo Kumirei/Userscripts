@@ -25,8 +25,7 @@
     function inject(old_save) {
         const new_save = function (t) {
             const composer = document.querySelector('textarea.d-editor-input') // Reply box
-            const preview = document.getElementsByClassName('d-editor-preview')[0] // Preview box
-            composer.value += commune(composer, preview) // Modify message
+            composer.value += commune(composer) // Modify message
             composer.dispatchEvent(new Event('change', { bubbles: true, cancelable: true })) // Let Discourse know
             old_save.call(this, t) // Call regular save function
         }
@@ -34,11 +33,12 @@
     }
 
     // Grabs the text then returns the WaniMeKani answers
-    function commune(composer, preview) {
-        // Don't do anything if results are already present
-        if (preview.querySelector('#heading--results')) return ''
-        // Get WaniMeKani responses
+    function commune(composer) {
+        // Get draft text, without quotes
         const text = composer.value.toLowerCase().replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gs, '')
+        // Don't do anything if results are already present
+        if (text.match(/<!-- wanimekani reply -->/)) return ''
+        // Get WaniMeKani responses
         const actions = responses(text)
 
         // If no commands were found, don't modify the post
@@ -47,7 +47,8 @@
         return (
             '\n\n' +
             '<hr>\n' +
-            '<h6 id="heading--results"></h6>\n' +
+            '<!-- WANIMEKANI REPLY -->\n' +
+            '<!-- do not edit the above line -->\n' +
             '<aside class="quote">\n' +
             '    <div class="title">\n' +
             '        <img width="20" src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar"> WaniMeKani:\n' +
