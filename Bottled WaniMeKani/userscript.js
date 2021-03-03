@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.3.2
+// @version      1.3.3
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -79,8 +79,8 @@
                 case 'roll':
                     // Dice
                     if (command[3]?.match(/^\d+d\d+$/)) {
-                        let [count, faces] = command[2].split('d')
-                        listing = lister(`Rolling ${command[2]}`, ':game_die:', dice(count, faces))
+                        let [count, faces] = command[3].split('d')
+                        listing = lister(`Rolling ${command[3]}`, ':game_die:', dice(count, faces))
                         // Rick roll
                     } else if (command[3]?.match(/^rick$/)) {
                         listing = lister(`Rolling rick`, '', rick())
