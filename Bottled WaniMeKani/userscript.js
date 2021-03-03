@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.3.1
+// @version      1.3.2
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -35,9 +35,9 @@
     // Grabs the text then returns the WaniMeKani answers
     function commune(composer) {
         // Get draft text, without quotes
-        const text = composer.value.toLowerCase().replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gs, '')
+        const text = composer.value.replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gis, '')
         // Don't do anything if results are already present
-        if (text.match(/<!-- wanimekani reply -->/)) return ''
+        if (text.match(/<!-- WANIMEKANI REPLY -->/i)) return ''
         // Get WaniMeKani responses
         const responses = get_responses(text)
 
@@ -67,22 +67,22 @@
     // Create responses to the commands
     function get_responses(text) {
         // Extract the commands
-        let words = 2
-        let regx = new RegExp('@wanimekani(\\s+\\w+)' + '(\\s+\\w+)?'.repeat(words - 1), 'g')
-        let commands = text.match(regx)?.map((c) => c.split(' ')) || []
+        // Each command is formatted as [whole line, @wanimekani, word1, word2, ...]
+        let regx = new RegExp('@wanimekani[^\n]+', 'gi')
+        let commands = text.match(regx)?.map((c) => [c, ...c.replace(/\s+/g, ' ').split(' ')]) || []
         // Process commands
         let results = []
         commands.forEach((command) => {
             let listing
-            switch (command[1]) {
+            switch (command[2]) {
                 // Roll dice
                 case 'roll':
                     // Dice
-                    if (command[2]?.match(/^\d+d\d+$/)) {
+                    if (command[3]?.match(/^\d+d\d+$/)) {
                         let [count, faces] = command[2].split('d')
                         listing = lister(`Rolling ${command[2]}`, ':game_die:', dice(count, faces))
                         // Rick roll
-                    } else if (command[2]?.match(/^rick$/)) {
+                    } else if (command[3]?.match(/^rick$/)) {
                         listing = lister(`Rolling rick`, '', rick())
                     }
                     break
@@ -93,7 +93,7 @@
                     break
                 // Get a quote
                 case 'quote':
-                    let n = command[2]?.match(/^\d+$/)?.[0] || random_int(0, quote_list.length - 1)
+                    let n = command[3]?.match(/^\d+$/)?.[0] || random_int(0, quote_list.length - 1)
                     listing = lister(`Quote #${n}`, ':left_speech_bubble:', quote(n))
                     break
                 // Flip tables
@@ -104,7 +104,8 @@
                     break
                 // Rate something
                 case 'rate':
-                    listing = lister(`Rating "${command[2] || 'nothing'}"`, '', rate())
+                    let subject = command[3]?.match(/^"/) ? command[0].match(/"([^"\n]+)"/)?.[1] : command[3]
+                    listing = lister(`Rating "${subject || 'nothing'}"`, '', rate())
                     break
             }
             if (listing) results.push(listing)
