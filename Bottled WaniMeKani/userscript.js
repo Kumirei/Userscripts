@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.3.0
+// @version      1.3.1
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -93,7 +93,7 @@
                     break
                 // Get a quote
                 case 'quote':
-                    let n = command[2]?.match(/^\d+$/)?.[0] || random_pick(quote_list)
+                    let n = command[2]?.match(/^\d+$/)?.[0] || random_int(0, quote_list.length - 1)
                     listing = lister(`Quote #${n}`, ':left_speech_bubble:', quote(n))
                     break
                 // Flip tables
