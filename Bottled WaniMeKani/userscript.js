@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.2.3
+// @version      1.3.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -93,7 +93,7 @@
                     break
                 // Get a quote
                 case 'quote':
-                    let n = command[2]?.match(/^\d+$/)?.[0] || random_int(0, quote_list.length - 1)
+                    let n = command[2]?.match(/^\d+$/)?.[0] || random_pick(quote_list)
                     listing = lister(`Quote #${n}`, ':left_speech_bubble:', quote(n))
                     break
                 // Flip tables
@@ -101,6 +101,11 @@
                 case 'coin':
                 case 'table':
                     listing = lister(`Flipping a ~~coin~~ table`, '', table())
+                    break
+                // Rate something
+                case 'rate':
+                    listing = lister(`Rating "${command[2] || 'nothing'}" for you`, '', rate())
+                    break
             }
             if (listing) results.push(listing)
         })
@@ -128,7 +133,7 @@
 
     // Tell someone's fortune
     function fortune() {
-        return fortune_list[random_int(0, fortune_list.length - 1)]
+        return random_pick(fortune_list)
     }
 
     // Pick quote number n
@@ -139,6 +144,16 @@
     // Flip a table
     function table() {
         return Math.random() < 0.5 ? '(╯°□°）╯︵ ┻━┻' : '┬─┬ノ(ಠ_ಠノ)'
+    }
+
+    // Rate something randomly
+    function rate() {
+        return random_pick(ratings_list)
+    }
+
+    // Picks a random item from an array
+    function random_pick(array) {
+        return array[random_int(0, array.length - 1)]
     }
 
     // Get random integer in inclusive interval [min, max]
@@ -170,6 +185,23 @@
         'My sources say no',
         'Outlook not so good',
         'Very doubtful',
+    ]
+
+    // Ratings
+    const ratings_list = [
+        'It is literally the worst. -1/10',
+        "It's trash! 0/10",
+        'Terrible! 1/10',
+        'Not worth it 2/10',
+        'I think you should reconsider 3/10',
+        'I guess it could be worse 4/10',
+        'MEH 5/10',
+        `${Math.random() < 0.5 ? 'Girl' : 'Boy'}, you can do better 6/10`,
+        'I like this 7/10',
+        "Whatever it is, it's great! 8/10",
+        'You should marry this thing before it gets away 9/10',
+        'Wow! 10/10',
+        'OMG I LOVE IT 11/10',
     ]
 
     // Quotes
