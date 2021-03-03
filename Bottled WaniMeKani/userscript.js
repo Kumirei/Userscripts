@@ -104,7 +104,7 @@
                     break
                 // Rate something
                 case 'rate':
-                    listing = lister(`Rating "${command[2] || 'nothing'}" for you`, '', rate())
+                    listing = lister(`Rating "${command[2] || 'nothing'}"`, '', rate())
                     break
             }
             if (listing) results.push(listing)
