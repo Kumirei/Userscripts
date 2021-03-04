@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.25
+// @version      3.0.26
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -562,6 +562,8 @@
         let position = [[".progress-and-forecast", 'beforebegin'], ['.progress-and-forecast', 'afterend'], ['.srs-progress', 'afterend'], ['.span12 .row:not(#leaderboard)', 'afterend'], ['.span12 .row:last-of-type', 'afterend']][settings.general.position];
         if (!document.getElementById('heatmap') || heatmap.getAttribute('position') != settings.general.position) document.querySelector(position[0]).insertAdjacentElement(position[1], heatmap);
         heatmap.setAttribute('position', settings.general.position);
+        // Fire event to let people know it's finished loading
+        fire_event('heatmap-loaded', heatmap)
     }
 
     // Creates the buttons at the top of the heatmap
@@ -1083,5 +1085,12 @@
             p2 = fcdf(items, m, sd);
         }
         return items;
+    }
+
+    // Fires a custom event on an element
+    function fire_event(event_name, elem) {
+        const event = document.createEvent('Event')
+        event.initEvent(event_name true, true)
+        elem.dispatchEvent(event)
     }
 })(window.wkof, window.review_cache, window.Heatmap);
