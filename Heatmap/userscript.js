@@ -1090,7 +1090,7 @@
     // Fires a custom event on an element
     function fire_event(event_name, elem) {
         const event = document.createEvent('Event')
-        event.initEvent(event_name true, true)
+        event.initEvent(event_name, true, true)
         elem.dispatchEvent(event)
     }
 })(window.wkof, window.review_cache, window.Heatmap);
