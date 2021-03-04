@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Wanikani: Kumi Reorder General
+// @name         Wanikani: Omega Reorder
 // @namespace    http://tampermonkey.net/
 // @version      0.1.0
 // @description  Reorders n stuff
@@ -7,441 +7,582 @@
 // @include      /^https://(www|preview).wanikani.com/(lesson|review)/session$/
 // @grant        none
 // ==/UserScript==
-/*jshint esversion: 8 */
 
-(function(wkof, $) {
-    /* eslint no-multi-spaces: "off" */
-
-    /* FEATURES
-    O Sort by type
-    O Sort by level
-    O Sort by overdue
-    O Sort by srs
-    O Set number of items
-    O Shuffle
-    O Prioritize sorts
-    O Display srs counts
-    O 1x1
-    O Reading/meaning first
-    Critical first
-    ARBITRARY REORDERING???
-    Presets
-    Custom active queue size
-    Accurate progress bar
-    */
-    let script_name = "Wanikani: Kumi Reorder General";
-    let script_title = "Reorder General";
-    let script_id = "reorder_general";
-    let srs_intervals = [4, 8, 23, 47, 167, 335, 719, 2879];
+;(function (wkof, $) {
+    // TODO: more comments
+    // TODO: TEST
+    // TODO: Reorder General --> Omega Reorder
+    // Script info
+    const script_name = 'Reorder General'
+    const script_id = 'reorder_general'
+    // SRS info
+    const srs_intervals = [4, 8, 23, 47, 167, 335, 719, 2879]
 
     // Make sure WKOF is installed
-    if (!wkof) {
-        let response = confirm(script_name+' requires WaniKani Open Framework.\n Click "OK" to be forwarded to installation instructions.');
-        if (response) {
-            window.location.href = 'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549';
-        }
-        return;
+    confirm_wkof(script_name).then(start)
+
+    // Startup
+    function start() {
+        wkof.include('Menu,Settings,ItemData')
+        wkof.ready('Menu,Settings,ItemData').then(load_settings).then(install).then(prepare_data).then(run)
     }
 
-    wkof.include('Menu,Settings,ItemData');
-    wkof.ready('Menu,Settings,ItemData')
-        .then(load_settings)
-        .then(install_menu)
-        .then(install_css)
-        .then(install_interface)
-        .then(install_back2back)
-        .then(install_priority)
-        .then(prepare_data)
-        .then(run);
+    /* ----------------------------------------------------------*/
+    // Start up
+    /* ----------------------------------------------------------*/
 
     // Load WKOF settings
     function load_settings() {
-        //delete wkof.settings[script_id];
-        //wkof.Settings.save(script_id);
-        let defaults = {
-            active: 0,
-            prioritize: "none",
+        //delete wkof.settings[script_id] // for testing purposes
+        //wkof.Settings.save(script_id) // for testing purposes
+        const defaults = {
+            active_sequence: 0,
+            prioritize: 'none',
             active_queue: 10,
             back2back: true,
-        };
-        return wkof.Settings.load(script_id, defaults).then(settings=>{
-            if (!settings.presets) settings.presets = [
-                {id: 1, name: 'Test 1', actions: [
-                    {id: 1, name: 'Action 1', invert: false, sort: 'Level', filter: 'None', filter_value: ''},
-                ],},
-                {id: 2, name: 'Test 2', actions: [
-                    {id: 1, name: 'Action 1', invert: false, sort: 'None', filter: 'Level', filter_value: ''},
-                    {id: 2, name: 'Action 2', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                ],},
-                {id: 3, name: 'Test 3', actions: [
-                    {id: 1, name: 'Action 1', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                    {id: 2, name: 'Action 2', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                    {id: 3, name: 'Action 3', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                ],},
-                {id: 4, name: 'Test 4', actions: [
-                    {id: 1, name: 'Action 1', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                    {id: 2, name: 'Action 2', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                    {id: 3, name: 'Action 3', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                    {id: 4, name: 'Action 4', invert: false, sort: 'None', filter: 'None', filter_value: ''},
-                ],},
-            ];
-        });
+            srs_breakdown: true,
+            streak: true,
+        }
+        return wkof.Settings.load(script_id, defaults).then((settings) => {
+            // Inject default sequences if user don't have any
+            if (!settings.sequences) settings.sequences = default_sequences
+        })
+    }
+
+    // Installs script items on page
+    function install() {
+        install_menu()
+        install_css()
+        install_back2back()
+        install_priority()
+        install_interface()
     }
 
     // Installs the options button in the menu
     function install_menu() {
-        let config = {
+        const config = {
             name: script_id,
             submenu: 'Settings',
-            title: script_title,
-            on_click: open_settings
-        };
-        wkof.Menu.insert_script_link(config);
-    }
-
-    function open_settings() {
-        let presets = {};
-        for (let p of wkof.settings[script_id].presets) presets[p.id] = p.name;
-        var config = {
-            script_id: script_id,
-            title: script_title,
-            pre_open: settings_pre_open,
-            on_save: settings_on_save,
-            on_close: new_queue(),
-            content: {
-                general: {type: 'page', label: 'General', content: {
-                    active: {type: 'dropdown', label: 'Active preset', content: presets,},
-                    prioritize: {type: 'dropdown', label: 'Prioritize', default: 'reading', content: {none: 'None', reading: 'Reading', meaning: 'Meaning'},},
-                    active_queue: {type: 'number', label: 'Active queue size', default: 10,},
-                    back2back: {type: 'checkbox', label: 'Back to back', default: true,},
-                },},
-                presets: {type: 'page', label: 'Edit Presets', content: {
-                    presets: {type: 'group', label: 'Presets', content: {
-                        buttons: {type: 'html', html: '<div class="presets"><div class="preset-buttons"><button class="new"><i class="icon-plus"></i></button><button class="up"><i class="icon-caret-up"></i></button><button class="down"><i class="icon-caret-down"></i></button><button class="delete"><i class="icon-trash"></i></button></div><div class="preset-right"><select class="presets" size="4"></select></div></div>'},
-                        divider: {type: 'divider'},
-                        section: {type: 'section', label: 'Preset settings'},
-                        name: {type: 'html', html: '<div class="name"><span class="label">Preset name</span><input class="preset-name" placeholder="Preset name"></input></div>'},
-                        actions: {type: 'group', label: 'Actions', content: {
-                            actions: {type: 'html', html: '<div class="presets actions"><div class="preset-buttons"><button class="new"><i class="icon-plus"></i></button><button class="up"><i class="icon-caret-up"></i></button><button class="down"><i class="icon-caret-down"></i></button><button class="delete"><i class="icon-trash"></i></button></div><div class="preset-right"><select class="actions" size="4"></select></div></div>'},
-                            divider: {type: 'divider'},
-                            section: {type: 'section', label: 'Action settings'},
-                            name: {type: 'html', html: '<div class="name"><span class="label">Action name</span><input class="action-name" placeholder="Action name"></input></div>'},
-                            invert: {type: 'html', html: '<div class="invert"><span class="label">Invert action</span><input class="invert" type="checkbox"></input></div>'},
-                            sort: {type: 'html', html: '<div class="sort"><span class="label">Sort</span><select class="sort">'+
-                                                            '<option name="None">None</option>'+
-                                                            '<option name="Type">Type</option>'+
-                                                            '<option name="Level">Level</option>'+
-                                                            '<option name="SRS">SRS</option>'+
-                                                            '<option name="Overdue">Overdue</option>'+
-                                                            '<option name="Critical">Critical</option>'+
-                                                            '<option name="Random">Random</option>'+
-                                                            '</select></div>'},
-                            filter: {type: 'html', html: '<div class="filter"><span class="label">Filter</span><select class="filter">'+
-                                                            '<option name="None">None</option>'+
-                                                            '<option name="Type">Type</option>'+
-                                                            '<option name="Level">Level</option>'+
-                                                            '<option name="SRS">SRS</option>'+
-                                                            '<option name="Overdue">Overdue</option>'+
-                                                            '<option name="Critical">Critical</option>'+
-                                                            '<option name="First">First</option>'+
-                                                            '</select>'+
-                                                            '<input class="filter-value" placeholder="Filter value"></input></div>'},
-                        },},
-                },},
-            },},
-        },
-        };
-        let dialog = new wkof.Settings(config);
-        dialog.open();
-    }
-
-    function settings_on_save(settings) {
-        settings.presets = document.getElementById('wkofs_reorder_general').presets;
-    }
-
-    function settings_pre_open(d) {
-        let presets = wkof.settings[script_id].presets.slice();
-        d[0].presets = presets; // For retrieval by saving function
-        // Useful variables
-        let presets_group = d[0].querySelector('#reorder_general_presets');
-        let presets_elem = presets_group.querySelector('select.presets');
-        let preset_name = presets_group.querySelector('.preset-name');
-        let action_name = presets_group.querySelector('.action-name');
-        let action_invert = presets_group.querySelector('.invert input');
-        let action_sort = presets_group.querySelector('select.sort');
-        let action_filter = presets_group.querySelector('select.filter');
-        let action_filter_value = presets_group.querySelector('input.filter-value');
-        // Populate presets
-        let options = "";
-        for (let preset of presets) options += `<option name="${preset.id}">${preset.name}</option>`;
-        presets_elem.innerHTML = options;
-        // Update active preset setting
-        function update_active_preset_setting() {
-            options = "";
-            for (let preset of presets) options += `<option name="${preset.id}">${preset.name}</option>`;
-            document.getElementById('reorder_general_active').innerHTML = options;
+            title: script_name,
+            on_click: open_settings,
         }
-        // Update settings on change
-        let preset = _=>presets.find(p=>p.id==presets_elem.querySelector('option:checked').getAttribute('name')); // Find selected preset
-        let action = _=>preset().actions.find(a=>a.id==presets_group.querySelector('.actions option:checked').getAttribute('name')); // Find selected action
-        presets_elem.value = presets[0].name; // Select first preset
-        presets_group.addEventListener('change', e=>{
-            // Selected preset changed
-            if (e.target.classList.contains('presets')) {
-                preset_name.value = preset().name; // Update name field
-                let actions = "";
-                for (let action of preset().actions) actions += `<option name="${action.id}">${action.name}</option>`;
-                let actions_elem = presets_group.querySelector('select.actions');
-                actions_elem.innerHTML = actions; // Update actions list
-                actions_elem.value = preset().actions[0].name; // Select action
-                fire_event(actions_elem, 'change'); // Fire change event for actions
-            }
-            // Preset name changed
-            else if (e.target.classList.contains('preset-name')) {
-                preset().name = e.target.value; // Update stored name
-                presets_group.querySelector('select.presets option:checked').innerText = e.target.value; // Update selection
-                update_active_preset_setting();
-            }
-            // Selected action changed
-            else if (e.target.classList.contains('actions')) {
-                let a = action();
-                // Update settings
-                action_name.value = a.name;
-                action_invert.checked = a.invert;
-                action_sort.value = a.sort;
-                action_filter.value = a.filter;
-                action_filter_value.value = a.filter_value;
-                // Disable sort/filter if the other is active
-                action_sort.disabled = a.filter != "None";
-                action_filter.disabled = a.sort != "None";
-                if (action_filter.disabled) action_filter.classList.add('none');
-            }
-            // Action name changed
-            else if (e.target.classList.contains('action-name')) {
-                action().name = e.target.value; // Update stored name
-                presets_group.querySelector('select.actions option:checked').innerText = e.target.value; // Update selection
-            }
-            // Invert setting toggled
-            else if (e.target.classList.contains('invert')) {
-                action().invert = action_invert.checked; // Update setting
-            }
-            // Sort type changed
-            else if (e.target.classList.contains('sort')) {
-                action().sort = action_sort.value; // Update stored setting
-                action_filter.disabled = action().sort != "None"; // Disable/enable filter setting
-            }
-            // Filter type changed
-            else if (e.target.classList.contains('filter')) {
-                action().filter = action_filter.value; // Update stored setting
-                action_sort.disabled = action().filter != "None"; // Disable/enable sort setting
-                if (action().filter != "None") action_filter.classList.remove('none'); // Hide/show filter value
-                else action_filter.classList.add('none');
-                action_filter_value.value = ""; // Set value to 0 whever filter type is changed
-            }
-            // Filter value changed
-            else if (e.target.classList.contains('filter-value')) {
-                action().filter_value = e.target.value; // Update value
-                // TODO: Validation
-            }
-        });
-        fire_event(presets_elem, 'change');
-        // Workaround for WK disabling backspace
-        presets_group.addEventListener('keydown', e => {if (e.target.nodeName == "INPUT" && e.keyCode == 8) e.target.value = e.target.value.slice(0, -1);});
-        // Add function to buttons
-        d[0].addEventListener('click', e=>{
-            if (e.target.nodeName !== "BUTTON") return; // Onlt hande button clicks
-            let select = e.target.parentElement.nextElementSibling.children[0];
-            let option = select.querySelector(`option:checked`);
-            let type = (e.target.parentElement.parentElement.classList.contains('actions') ? 'actions' : 'presets');
-            let list = (type == 'actions' ? preset().actions : presets);
-            let item = (type == 'actions' ? action() : preset());
-            switch (e.target.className) {
-                case 'new':
-                    let new_item = {id: list.reduce((a,b)=>a>b.id?a:b.id, 0)+1, name: 'New preset', actions: [{id: 0, name: 'New action', invert: false, sort: 'Level', filter: 'None', filter_value: ''},],};
-                    if (type == 'actions') new_item = {id: list.reduce((a,b)=>a>b.id?a:b.id, 0)+1, name: 'New action', invert: false, sort: 'Level', filter: 'None', filter_value: ''};
-                    select.insertAdjacentHTML('beforeend', `<option name="${new_item.id}">${new_item.name}</option>`);
-                    list.push(new_item);
-                    break;
-                case 'up':
-                    if (!option.previousElementSibling) break;
-                    option.previousElementSibling.insertAdjacentElement('beforebegin', option);
-                    var i = list.indexOf(item);
-                    list[i] = list[i-1];
-                    list[i-1] = item;
-                    break;
-                case 'down':
-                    if (!option.nextElementSibling) break;
-                    option.nextElementSibling.insertAdjacentElement('afterend', option);
-                    i = list.indexOf(item);
-                    list[i] = list[i+1];
-                    list[i+1] = item;
-                    break;
-                case 'delete':
-                    let parent = option.parentElement;
-                    option.remove();
-                    parent.value = parent.children[0].innerText;
-                    list.splice(list.indexOf(item), 1);
-                    fire_event(select, 'change');
-                    break;
-                default: update_active_preset_setting();
-            }
-        });
-    }
-
-    function fire_event(elem, event) {
-        let e = document.createEvent('HTMLEvents');
-        e.initEvent(event, true, true); // Type, bubbling, cancelable
-        return !elem.dispatchEvent(e);
+        wkof.Menu.insert_script_link(config)
     }
 
     // Install CSS
     function install_css() {
-        let css = `<style id="${script_id+'CSS'}"></style>`;
-        document.getElementsByTagName('head')[0].insertAdjacentHTML('beforeend', css);
+        // TODO: fetch from github with wkof
+        const css = `<style id="${script_id + 'CSS'}"></style>`
+        document.getElementsByTagName('head')[0].insertAdjacentHTML('beforeend', css)
     }
 
-    // Retrieves the current review queue
-    function get_queue() {
-        return [...$.jStorage.get('activeQueue'), ...$.jStorage.get('reviewQueue')];
+    // Set up back to back meaning/reading reviews
+    function install_back2back() {
+        const old_random = Math.random
+        const new_random = function () {
+            const re = /https:\/\/cdn.wanikani.com\/assets\/v03\/review\//
+            const match = re.exec(new Error().stack)
+            if (match && wkof.settings[script_id].back2back) return 0
+            return old_random()
+        }
+        Math.random = new_random
+    }
+
+    // Set up prioritization of reading or meaning
+    function install_priority() {
+        $.jStorage.listenKeyChange('currentItem', prioritize)
+
+        // Prioritize reading or meaning
+        function prioritize() {
+            const prio = wkof.settings[script_id].prioritize
+            const item = $.jStorage.get('currentItem')
+            // Skip if item does not yet have a UID, it is a radical, it is already
+            // the right question, or no priority is selected
+            if (!item.UID || item.rad || $.jStorage.get('questionType') == prio || 'none' == prio) return
+            const done = $.jStorage.get(item.UID)
+            // Change the question if no question has been answered yet,
+            // Or the priority question has not been answered correctly yet
+            if (!done || !done[prio == 'reading' ? 'rc' : 'mc']) {
+                $.jStorage.set('questionType', prio)
+                $.jStorage.set('currentItem', item)
+            }
+        }
     }
 
     // Installs the main interface
     function install_interface() {
+        const sequences = wkof.settings[script_id].sequences
+        const get_options = (list) => list.map((a) => `<option name="${a.id}">${a.name}</option>`).join()
+        const html = `<div id="rg_interface"><p>Sequence: </p><select>${get_options(sequences)}</select></div>`
+        document.getElementById('character').insertAdjacentHTML('beforeend', html)
+        const change_sequence = (event) => {
+            wkof.settings[script_id].active_sequence = event.target.querySelector(':checked').getAttribute('name')
+            wkof.Settings.save(script_id)
+            new_queue()
+        }
+        document.getElementById('rg_interface').addEventListener('change', change_sequence)
+        // TODO: Add SRS breakdown
+        // TODO: add streak
     }
 
     // Prepares the data
     async function prepare_data() {
-        let registry = await fetch_item_data();
-        let items = get_queue();
-        inject_data(items, registry);
-        inject_sort_indices(items);
-        return items;
-    }
-
-    // Create new queue from all reviews
-    function new_queue() {
-        run(get_queue());
-    }
-
-    // Create new queue
-    function run(items) {
-        items = process(items);
-        $.jStorage.set('reviewQueue', items.slice(10));
-        $.jStorage.set('activeQueue', items.slice(0, 10));
-        $.jStorage.set('currentItem', items[0]);
+        const registry = await fetch_item_data()
+        let items = get_queue()
+        // Add registry data to items
+        items.forEach((item) => {
+            Object.assign(item, registry[item.id])
+        })
+        calculate_indices(items)
+        return items
     }
 
     // Fetch item data from WKOF
     function fetch_item_data() {
-        return wkof.ItemData.get_items('assignments').then(items=>{
-            let registry = {};
-            items.forEach(item=>{
-                if (!item.assignments) return;
-                let critical = false;
-                if (item.level == wkof.user.level && item.object != "vocabulary" && (item.assignments && item.assignments.passed_at == null)) critical = true;
+        return wkof.ItemData.get_items('assignments').then((items) => {
+            let registry = {}
+            items.forEach((item) => {
+                if (!item.assignments) return
+                const critical = is_critical(item)
                 registry[item.id] = {
                     level: item.data.level,
-                    UID: item.object[0].toLowerCase()+item.id,
+                    UID: item.object[0].toLowerCase() + item.id,
                     available_at: item.assignments.available_at,
+                    object: item.object,
                     critical,
-                };
-            });
-            return registry;
-        });
+                }
+            })
+            return registry
+        })
     }
 
-    // Combines the two objects
-    function inject_data(items, registry) {
-        items.forEach(item=>{for (let key in registry[item.id]) item[key] = registry[item.id][key];});
+    // Checks whether the item is critical to level up
+    function is_critical(item) {
+        const { level, object, assignments } = item
+        return level == wkof.user.level && object != 'vocabulary' && assignments?.passed_at == null
     }
 
     // Calculates sorting indices and stores the data in the items
-    function inject_sort_indices(items) {
-        items.forEach(item=>{
-            let order = {r: 0, k: 1, v: 2};
-            item.type = order[item.UID[0]];
-            item.overdue = calculate_overdue(item);
-            item.critical = item.critical ? 0 : 1;
-            //item.random = Math.random();
-        });
-
-        // Calculates how overdue an item is
-        function calculate_overdue(item) {
-            return (Date.now()-Date.parse(item.available_at))/(1000*60*60)/srs_intervals[item.srs];
-        }
+    function calculate_indices(items) {
+        const order = { r: 0, k: 1, v: 2 }
+        items.forEach((item) => {
+            item.type = order[item.UID[0]]
+            item.overdue = calculate_overdue(item)
+            item.critical = item.critical ? 0 : 1
+            item.random = Math.random()
+        })
     }
 
+    // Calculates how overdue an item is
+    function calculate_overdue(item) {
+        return (Date.now() - Date.parse(item.available_at)) / (1000 * 60 * 60) / srs_intervals[item.srs - 1]
+    }
 
-    // Sort the itmes
+    /* ----------------------------------------------------------*/
+    // Sorting & Filtering
+    /* ----------------------------------------------------------*/
+
+    // Create new queue
+    function run(items) {
+        items = process(items)
+        $.jStorage.set('reviewQueue', items.slice(10))
+        $.jStorage.set('activeQueue', items.slice(0, 10))
+        $.jStorage.set('currentItem', items[0])
+    }
+
+    // Sort and filters according to settings
     function process(items) {
-        let settings = wkof.settings[script_id];
-        let preset = settings.presets.find(p=>p.id==settings.active);
-        let key, invert, sorter = (a, b) => a[key] > b[key] ? (invert?-1:1) : (invert?1:-1);
-        let sort_actions = preset.actions.filter(a=>a.sort != "None").length;
-        let sort_count = 0;
-        for (let action of preset.actions) {
-            invert = !action.invert;
-            let type;
-            if (action.sort != "None") type = 'sort';
-            else if (action.filter != "None") type = 'filter';
-            key = action[type].toLowerCase();
-            if (type == "sort") {
-                items.sort(sorter);
-                sort_count++;
-            } else if (type == "filter") {
-                let value = action.filter_value;
-                switch (action.filter) {
-                    case "Type":
-                        break;
-                    case "Level":
-                        break;
-                    case "SRS":
-                        break;
-                    case "Overdue":
-                        break;
-                    case "Critical":
-                        break;
-                    case "First":
-                        if (!invert) items.splice(value);
-                        else items.splice(0, items.length-value);
-                        break;
-                }
+        console.log(items)
+        const settings = wkof.settings[script_id]
+        const active_sequence = settings.sequences.find((sequence) => sequence.id == settings.active_sequence)
+        active_sequence.actions.forEach((action) => {
+            switch (action.type) {
+                case 'Sort':
+                    console.log('sort', action.option)
+                    sort(items, action.option.toLowerCase(), !action.invert)
+                    break
+                case 'Filter':
+                    console.log('filter', action.option)
+                    filter(items, action.option.toLowerCase(), action.invert, action.value)
+                    break
+                case 'None':
+                default:
+                    break
             }
-        }
-        items.reverse();
-        return items;
+        })
+        items.reverse()
+        return items
     }
 
-    // Set up prioritisation of reading or meaning
-    function install_priority() {
-        $.jStorage.listenKeyChange('currentItem', prioritize);
+    // Sort queue
+    function sort(items, key, invert) {
+        const sorter = (a, b) => (a[key] > b[key] ? (invert ? -1 : 1) : invert ? 1 : -1)
+        items.sort(sorter)
+    }
 
-        // Prioritize reading or meaning
-        function prioritize() {
-            let prio = wkof.settings[script_id].prioritize;
-            let item = $.jStorage.get('currentItem');
-            // Skip if item does not yet have a UID, it is a radical, it is already
-            // the right question, or no priority is selected
-            if (!item.UID || item.rad || $.jStorage.get('questionType') == prio || "none" == prio) return;
-            let done = $.jStorage.get(item.UID);
-            // Change the question if no question has been answered yet,
-            // Or the priority question has not been answered correctly yet
-            if (!done || !done[prio=="reading"?"rc":"mc"]) {
-                $.jStorage.set('questionType', prio);
-                $.jStorage.set('currentItem', item);
+    // Filters queue
+    function filter(items, key, invert, value) {
+        const filters = wkof.ItemData.registry.sources.wk_items.filters
+        const item_types = ['radical', 'kanji', 'vocabulary']
+        let filtered = items.slice()
+        // TODO: add filters
+        let filter_func = () => true
+        let value_map = (_) => _
+        switch (key) {
+            case 'type':
+                // Possible values: rad(icals), kan(ji), voc(abulary)
+                filter_func = (filter_value, item) => !filter_value[item.object] === invert
+                value_map = filters.item_type.filter_value_map
+                break
+            case 'level':
+                // Possible values: 1-60
+                filter_func = (filter_value, item) => !filter_value[item.level] === invert
+                value_map = filters.level.filter_value_map
+                break
+            case 'srs':
+                // Possible values: ???
+                filter_func = (filter_value, item) => filter_value[item.srs] === true
+                value_map = filters.srs.filter_value_map
+                break
+            case 'overdue':
+                // Possible values: percentage
+                filter_func = (filter_value, item) => (filter_value > item.overdue ? !invert : invert)
+                value_map = (filter_value) => filter_value / 100
+                break
+            case 'critical':
+                // Possible values: yes, no
+                filter_func = (filter_value, item) => !item.critical === invert
+                value_map = (filter_value) => !!filter_value.match(/yes/i)
+                break
+            case 'first':
+                // Possible values: number
+                filtered.splice(invert ? 0 : value, invert ? value : filtered.length)
+                break
+            default:
+                break
+        }
+        filtered = filtered.filter((item) => filter_func(value_map(value), item))
+        // Ugh, the way I designed this is that the list has been mutated...
+        // TODO: find better way to do this
+        items.splice(0, items.length, ...filtered)
+    }
+
+    // Retrieves the current review queue
+    function get_queue() {
+        return [...$.jStorage.get('activeQueue'), ...$.jStorage.get('reviewQueue')]
+    }
+
+    // Create new queue from all reviews
+    function new_queue() {
+        run(get_queue())
+    }
+
+    /* ----------------------------------------------------------*/
+    // Helper functions
+    /* ----------------------------------------------------------*/
+
+    // Makes sure that WKOF is installed
+    async function confirm_wkof(script_name) {
+        if (!wkof) {
+            let response = confirm(
+                `${script_name} requires WaniKani Open Framework.\nClick "OK" to be forwarded to installation instructions.`,
+            )
+            if (response) {
+                window.location.href =
+                    'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549'
             }
+            return
         }
     }
 
-    // back to back reviews
-    function install_back2back() {
-        let old_random = Math.random;
-        let new_random = function(){
-            let re = /https:\/\/cdn.wanikani.com\/assets\/v03\/review\//;
-            let match = re.exec(new Error().stack);
-            if (match && wkof.settings[script_id].back2back) return 0;
-            return old_random();
-        };
-        Math.random = new_random;
+    // Fires an event on a target element
+    function fire_event(elem, event) {
+        let e = document.createEvent('HTMLEvents')
+        e.initEvent(event, true, true) // Type, bubbling, cancelable
+        return !elem.dispatchEvent(e)
     }
-})(window.wkof, window.jQuery);
+
+    /* ----------------------------------------------------------*/
+    // Settings
+    /* ----------------------------------------------------------*/
+
+    // Default sequences object
+    // TODO: Proper defaults
+    const default_sequences = [
+        {
+            id: 1,
+            name: 'Test 1',
+            actions: [{ id: 1, name: 'Action 1', invert: false, type: 'Level', option: 'None', value: '' }],
+        },
+        {
+            id: 2,
+            name: 'Test 2',
+            actions: [
+                { id: 1, name: 'Action 1', invert: false, type: 'None', option: 'None', value: '' },
+                { id: 2, name: 'Action 2', invert: false, type: 'None', option: 'None', value: '' },
+            ],
+        },
+        {
+            id: 3,
+            name: 'Test 3',
+            actions: [
+                { id: 1, name: 'Action 1', invert: false, type: 'None', option: 'None', value: '' },
+                { id: 2, name: 'Action 2', invert: false, type: 'None', option: 'None', value: '' },
+                { id: 3, name: 'Action 3', invert: false, type: 'None', option: 'None', value: '' },
+            ],
+        },
+        {
+            id: 4,
+            name: 'Test 4',
+            actions: [
+                { id: 1, name: 'Action 1', invert: true, type: 'Sort', option: 'Type', value: '' },
+                { id: 2, name: 'Action 2', invert: false, type: 'Filter', option: 'First', value: '100' },
+                { id: 3, name: 'Action 3', invert: true, type: 'None', option: 'Level', value: '' },
+                { id: 4, name: 'Action 4', invert: false, type: 'Sort', option: 'None', value: '' },
+            ],
+        },
+    ]
+
+    // Opens settings dialogue when button is pressed
+    function open_settings() {
+        let sequences = {}
+        for (let sequence of wkof.settings[script_id].sequences) sequences[sequence.id] = sequence.name
+        let config = {
+            script_id: script_id,
+            title: script_name,
+            pre_open: settings_pre_open,
+            on_save: settings_on_save,
+            on_close: new_queue,
+            content: {
+                general: {
+                    type: 'page',
+                    label: 'General',
+                    content: {
+                        active_sequence: { type: 'dropdown', label: 'Active sequence', content: sequences },
+                        prioritize: {
+                            type: 'dropdown',
+                            label: 'Prioritize',
+                            default: 'reading',
+                            content: { none: 'None', reading: 'Reading', meaning: 'Meaning' },
+                        },
+                        active_queue: { type: 'number', label: 'Active queue size', default: 10 },
+                        back2back: { type: 'checkbox', label: 'Back to back', default: true },
+                        srs_breakdown: { type: 'checkbox', label: 'SRS Breakdown', default: true },
+                        streak: { type: 'checkbox', label: 'Streak', default: true },
+                    },
+                },
+                sequences: {
+                    type: 'page',
+                    label: 'Edit Sequences',
+                    content: {
+                        sequences: {
+                            type: 'group',
+                            label: 'Sequences',
+                            content: {
+                                buttons: {
+                                    type: 'html',
+                                    html:
+                                        '<div class="presets sequences"><div class="preset-buttons"><button class="new"><i class="icon-plus"></i></button><button class="up"><i class="icon-caret-up"></i></button><button class="down"><i class="icon-caret-down"></i></button><button class="delete"><i class="icon-trash"></i></button></div><div class="preset-right"><select class="presets" size="4"></select></div></div>',
+                                },
+                                divider: { type: 'divider' },
+                                section: { type: 'section', label: 'Sequence settings' },
+                                name: {
+                                    type: 'html',
+                                    html:
+                                        '<div class="name"><span class="label">Sequence name</span><input class="sequence-name" placeholder="Sequence name"></input></div>',
+                                },
+                                actions: {
+                                    type: 'group',
+                                    label: 'Actions',
+                                    content: {
+                                        actions: {
+                                            type: 'html',
+                                            html:
+                                                '<div class="presets actions"><div class="preset-buttons"><button class="new"><i class="icon-plus"></i></button><button class="up"><i class="icon-caret-up"></i></button><button class="down"><i class="icon-caret-down"></i></button><button class="delete"><i class="icon-trash"></i></button></div><div class="preset-right"><select class="actions" size="4"></select></div></div>',
+                                        },
+                                        divider: { type: 'divider' },
+                                        section: { type: 'section', label: 'Action settings' },
+                                        name: {
+                                            type: 'html',
+                                            html:
+                                                '<div class="name"><span class="label">Action name</span><input class="action-name" placeholder="Action name"></input></div>',
+                                        },
+                                        invert: {
+                                            type: 'html',
+                                            html:
+                                                '<div class="invert"><span class="label">Invert action</span><input class="invert" type="checkbox"></input></div>',
+                                        },
+                                        type: {
+                                            type: 'html',
+                                            html:
+                                                '<div class="type"><span class="label">Type</span><select class="type">' +
+                                                '<option name="Sort">Sort</option>' +
+                                                '<option name="Filter">Filter</option>' +
+                                                '</select></div>',
+                                        },
+                                        option: {
+                                            type: 'html',
+                                            html:
+                                                '<div class="option"><span class="label">Option</span><select class="option">' +
+                                                '<option name="None">None</option>' +
+                                                '<option name="Type">Type</option>' +
+                                                '<option name="Level">Level</option>' +
+                                                '<option name="SRS">SRS</option>' +
+                                                '<option name="Overdue">Overdue</option>' +
+                                                '<option name="Critical">Critical</option>' +
+                                                '<option name="First">First</option>' +
+                                                '<option name="Random">Random</option>' +
+                                                '</select></div>',
+                                        },
+                                        value: {
+                                            type: 'html',
+                                            html:
+                                                '<div class="value"><span class="label">Value</span><input class="filter-value" placeholder="Filter value"></input></div>',
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        }
+        let dialog = new wkof.Settings(config)
+        dialog.open()
+    }
+
+    // Saves settings
+    function settings_on_save(settings) {
+        settings.sequences = document.getElementById('wkofs_reorder_general').sequences
+    }
+
+    function settings_pre_open(dialogue) {
+        let sequences = wkof.settings[script_id].sequences.slice()
+        dialogue[0].sequences = sequences // For retrieval by saving function
+        // Elements observed for changes
+        const sequences_list = dialogue[0].querySelector('#reorder_general_sequences select')
+        const sequences_name = dialogue[0].querySelector('#reorder_general_sequences > .name input')
+        const actions_set = dialogue[0].querySelector('#reorder_general_actions')
+        const actions_list = dialogue[0].querySelector('#reorder_general_actions select')
+        const actions_name = dialogue[0].querySelector('#reorder_general_actions > .name input')
+        // Help functions
+        const get_selected = (options) => options.querySelector('option:checked')
+        const get_sequence = () =>
+            sequences.find((s) => s.id == (get_selected(sequences_list)?.getAttribute('name') || s.id))
+        const get_action = () =>
+            get_sequence().actions.find((a) => a.id == (get_selected(actions_list)?.getAttribute('name') || a.id))
+        const get_options = (list) => list.map((a) => `<option name="${a.id}">${a.name}</option>`).join()
+        // Event listener callbacks
+        const sequence_list_change = () => {
+            sequences_name.value = sequences_list.querySelector('option:checked').innerText
+            actions_list.innerHTML = get_options(get_sequence().actions)
+            actions_list.value = get_sequence().actions[0].name
+            fire_event(actions_list, 'change')
+        }
+        const sequence_name_change = () => {
+            const sequence = get_sequence()
+            const name = sequences_name.value
+            // Update sequence list
+            sequence.name = name
+            sequences_list.querySelector('option:checked').innerText = name
+            // Update active sequence list
+            dialogue[0].querySelector(`#reorder_general_active_sequence [name="${sequence.id}"`).innerText = name
+        }
+        const actions_set_change = () => {
+            // If action was changed, ignore it
+            if (event.target.classList.contains('actions')) return
+            // Update type for CSS
+            const type = actions_set.querySelector('.type select').value.toLowerCase()
+            actions_set.setAttribute('type', type)
+            // Update settings
+            const action = get_action()
+            action.name = actions_name.value
+            actions_list.querySelector('option:checked').innerText = actions_name.value
+            action.invert = actions_set.querySelector('.invert input').checked
+            action.type = actions_set.querySelector('.type select').value
+            action.option = actions_set.querySelector('.option select').value
+            action.value = actions_set.querySelector('.value input').value
+        }
+        const actions_list_change = () => {
+            const action = get_action()
+            actions_name.value = actions_list.querySelector('option:checked').innerText
+            actions_set.querySelector('.invert input').checked = action.invert
+            actions_set.querySelector('.type select').value = action.type
+            actions_set.querySelector('.option select').value = action.option
+            actions_set.querySelector('.value input').value = action.value
+            fire_event(actions_set, 'change')
+        }
+        const actions_name_change = () => {
+            actions_list.querySelector('option:checked').innerText = actions_name.value
+        }
+        // Add event listeners
+        sequences_list.addEventListener('change', sequence_list_change)
+        sequences_name.addEventListener('change', sequence_name_change)
+        actions_set.addEventListener('change', actions_set_change)
+        actions_list.addEventListener('change', actions_list_change)
+        actions_name.addEventListener('change', actions_name_change)
+        // Populate sequences
+        sequences_list.innerHTML = get_options(sequences)
+        sequences_list.value = sequences[0].name
+        sequence_list_change()
+        // Button functions
+        const target = dialogue[0].querySelector('#reorder_general_sequences')
+        target.addEventListener('click', (event) => {
+            // Only handle button clicks
+            if (event.target.nodeName !== 'BUTTON') return
+            const is_sequence = event.target.closest('.presets').classList.contains('sequences')
+            const sequence = get_sequence()
+            const item = is_sequence ? sequence : get_action()
+            const list = is_sequence ? sequences : sequence.actions
+            const i = list.indexOf(item)
+            let new_index = i
+            switch (event.target.className) {
+                case 'new':
+                    let new_item = is_sequence ? new_sequence(sequences) : new_action(sequence)
+                    list.push(new_item)
+                    new_index = list.length - 1
+                    break
+                case 'up':
+                    swap_in_array(list, i, i - 1)
+                    new_index--
+                    break
+                case 'down':
+                    swap_in_array(list, i, i + 1)
+                    new_index++
+                    break
+                case 'delete':
+                    list.splice(i, 1)
+                    break
+            }
+            // Refresh list
+            const list_element = is_sequence ? sequences_list : actions_list
+            const updater = is_sequence ? sequence_list_change : actions_list_change
+            list_element.innerHTML = get_options(list)
+            list_element.value = list[new_index]?.name || list[0]?.name
+            updater()
+        })
+    }
+
+    function new_sequence(sequences) {
+        return {
+            id: sequences.reduce((a, b) => (a > b.id ? a : b.id), -1) + 1,
+            name: 'New sequence',
+            actions: [new_action()],
+        }
+    }
+
+    function new_action(sequence) {
+        return {
+            id: sequence?.actions.reduce((a, b) => (a > b.id ? a : b.id), -1) + 1 || 0,
+            name: 'New action',
+            invert: false,
+            type: 'Sort',
+            option: 'None',
+            value: '',
+        }
+    }
+
+    function swap_in_array(array, i, j) {
+        if (array[i] && array[j]) [array[i], array[j]] = [array[j], array[i]]
+    }
+})(window.wkof, window.jQuery)
