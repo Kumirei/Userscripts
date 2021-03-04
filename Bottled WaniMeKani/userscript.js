@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.3.3
+// @version      1.3.4
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -9,6 +9,7 @@
 // ==/UserScript==
 
 ;(function () {
+    let rng_timestamp
     // Wait until the save function is defined
     const i = setInterval(tryInject, 100)
 
@@ -55,9 +56,9 @@
             '    </div>\n' +
             '    <blockquote>\n' +
             '        <p>\n' +
+            `<!-- ${rng_timestamp} -->\n` +
             '<!-- START ANSWERS -->\n\n' +
-            responses +
-            '\n\n' +
+            `${responses}\n\n` +
             '<!-- END ANSWERS -->\n' +
             // </p> and </blockquote> omitted because the Discourse parser wants to put them in a code block
             '</aside>\n'
@@ -70,6 +71,7 @@
         // Each command is formatted as [whole line, @wanimekani, word1, word2, ...]
         let regx = new RegExp('@wanimekani[^\n]+', 'gi')
         let commands = text.match(regx)?.map((c) => [c, ...c.replace(/\s+/g, ' ').split(' ')]) || []
+        const rand = prng(text)
         // Process commands
         let results = []
         commands.forEach((command) => {
@@ -80,7 +82,7 @@
                     // Dice
                     if (command[3]?.match(/^\d+d\d+$/)) {
                         let [count, faces] = command[3].split('d')
-                        listing = lister(`Rolling ${command[3]}`, ':game_die:', dice(count, faces))
+                        listing = lister(`Rolling ${command[3]}`, ':game_die:', dice(count, faces, rand))
                         // Rick roll
                     } else if (command[3]?.match(/^rick$/)) {
                         listing = lister(`Rolling rick`, '', rick())
@@ -119,10 +121,10 @@
     }
 
     // Roll some dice
-    function dice(count, faces) {
+    function dice(count, faces, rng) {
         return new Array(Number(count))
             .fill(null)
-            .map((_) => random_int(1, faces))
+            .map((_) => random_int(1, faces, rng))
             .join(', ')
     }
 
@@ -158,10 +160,39 @@
     }
 
     // Get random integer in inclusive interval [min, max]
-    function random_int(min, max) {
+    function random_int(min, max, rand = Math.random) {
         min = Math.ceil(min)
         max = Math.floor(max)
-        return Math.floor(Math.random() * (max - min + 1)) + min
+        return Math.floor(rand() * (max - min + 1)) + min
+    }
+
+    // Creates a new PRNG
+    function prng(seed_string) {
+        rng_timestamp = Date.now()
+        const seeder = xmur3(seed_string + rng_timestamp)
+        const new_prng = mulberry32(seeder())
+        return new_prng
+    }
+
+    // Seed generator for PRNG
+    function xmur3(str) {
+        for (var i = 0, h = 1779033703 ^ str.length; i < str.length; i++)
+            (h = Math.imul(h ^ str.charCodeAt(i), 3432918353)), (h = (h << 13) | (h >>> 19))
+        return function () {
+            h = Math.imul(h ^ (h >>> 16), 2246822507)
+            h = Math.imul(h ^ (h >>> 13), 3266489909)
+            return (h ^= h >>> 16) >>> 0
+        }
+    }
+
+    // Seedable PRNG
+    function mulberry32(a) {
+        return function () {
+            var t = (a += 0x6d2b79f5)
+            t = Math.imul(t ^ (t >>> 15), t | 1)
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+        }
     }
 
     // 8ball answers
