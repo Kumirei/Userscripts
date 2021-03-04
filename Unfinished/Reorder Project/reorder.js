@@ -12,6 +12,9 @@
     // TODO: more comments
     // TODO: TEST
     // TODO: Reorder General --> Omega Reorder
+    // TODO: Add prefix to custom properties in queue items
+    // TODO: Improve styling (esp different item types)
+    // TODO: Type --> item type (settings)
     // Script info
     const script_name = 'Reorder General'
     const script_id = 'reorder_general'
@@ -258,6 +261,10 @@
                 // Possible values: number
                 filtered.splice(invert ? 0 : value, invert ? value : filtered.length)
                 break
+            case 'random':
+                // Possible values: ignored
+                filter_func = (filter_value, item) => item.random < 0.5
+                break
             default:
                 break
         }
@@ -265,6 +272,7 @@
         // Ugh, the way I designed this is that the list has been mutated...
         // TODO: find better way to do this
         items.splice(0, items.length, ...filtered)
+        console.log(items)
     }
 
     // Retrieves the current review queue
@@ -487,6 +495,8 @@
             sequences_list.querySelector('option:checked').innerText = name
             // Update active sequence list
             dialogue[0].querySelector(`#reorder_general_active_sequence [name="${sequence.id}"`).innerText = name
+            // Update interface list
+            document.querySelector(`#rg_interface [name="${sequence.id}"`).innerText = name
         }
         const actions_set_change = () => {
             // If action was changed, ignore it
