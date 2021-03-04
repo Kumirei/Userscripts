@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        WaniKani Stroke Order
 // @namespace   japanese
-// @version     1.1.6
+// @version     1.1.7
 // @description Shows a kanji's stroke order on its page and during lessons and reviews.
 // @license     GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 // @include     http*://*wanikani.com/kanji/*
@@ -10,10 +10,11 @@
 // @include     http*://*wanikani.com/lesson/session
 // @author      Looki, maintained by Kumirei
 // @grant       GM_xmlhttpRequest
+// @connect     jisho.org
+// @connect     cloudfront.net
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js
 // @require     https://cdnjs.cloudflare.com/ajax/libs/snap.svg/0.5.1/snap.svg-min.js
 // ==/UserScript==
-/*jshint esversion: 8 */
 
 /*
  * Thanks a lot to ...
