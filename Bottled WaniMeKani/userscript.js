@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.3.4
+// @version      1.4.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -109,6 +109,17 @@
                     let subject = command[3]?.match(/^"/) ? command[0].match(/"([^"\n]+)"/)?.[1] : command[3]
                     listing = lister(`Rating "${subject || 'nothing'}"`, '', rate())
                     break
+                // Echo something the user said
+                case 'echo':
+                case 'say':
+                    let say = command[3]?.match(/^"/) ? command[0].match(/"([^"\n]+)"/)?.[1] : command[3]
+                    listing = lister('', ':robot:', echo(say))
+                    break
+                // Tells a user something
+                case 'tell':
+                    let tell = command[4]?.match(/^"/) ? command[0].match(/"([^"\n]+)"/)?.[1] : command[4]
+                    listing = lister('', ':lips:', tell(command[3], tell))
+                    break
             }
             if (listing) results.push(listing)
         })
@@ -152,6 +163,16 @@
     // Rate something randomly
     function rate() {
         return random_pick(ratings_list)
+    }
+
+    // Repeat what the user said
+    function echo(text) {
+        return text || ''
+    }
+
+    // Repeat what a user said, to another user
+    function tell(user, text) {
+        return `@${user} ${tell || ''}`
     }
 
     // Picks a random item from an array
