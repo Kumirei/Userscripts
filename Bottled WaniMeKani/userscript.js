@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.4.0
+// @version      1.4.1
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -112,13 +112,13 @@
                 // Echo something the user said
                 case 'echo':
                 case 'say':
-                    let say = command[3]?.match(/^"/) ? command[0].match(/"([^"\n]+)"/)?.[1] : command[3]
-                    listing = lister('', ':robot:', echo(say))
+                    let say_txt = command[3]?.match(/^"/) ? command[0].match(/"([^"\n]+)"/)?.[1] : command[3]
+                    listing = lister('', ':robot:', echo(say_txt))
                     break
                 // Tells a user something
                 case 'tell':
-                    let tell = command[4]?.match(/^"/) ? command[0].match(/"([^"\n]+)"/)?.[1] : command[4]
-                    listing = lister('', ':lips:', tell(command[3], tell))
+                    let tell_txt = command[4]?.match(/^"/) ? command[0].match(/"([^"\n]+)"/)?.[1] : command[4]
+                    listing = lister('', ':lips:', tell(command[3], tell_txt))
                     break
             }
             if (listing) results.push(listing)
