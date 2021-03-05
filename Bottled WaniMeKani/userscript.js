@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.4.1
+// @version      1.4.3
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -80,9 +80,9 @@
                 // Roll dice
                 case 'roll':
                     // Dice
-                    if (command[3]?.match(/^\d+d\d+$/)) {
-                        let [count, faces] = command[3].split('d')
-                        listing = lister(`Rolling ${command[3]}`, ':game_die:', dice(count, faces, rand))
+                    if (command[3]?.match(/^\d+d\d+/i)) {
+                        let [roll, count, faces] = command[3].match(/^(\d+)d(\d+)/i)
+                        listing = lister(`Rolling ${roll}`, ':game_die:', dice(count, faces, rand))
                         // Rick roll
                     } else if (command[3]?.match(/^rick$/)) {
                         listing = lister(`Rolling rick`, '', rick())
@@ -172,7 +172,7 @@
 
     // Repeat what a user said, to another user
     function tell(user, text) {
-        return `@${user} ${tell || ''}`
+        return `@${user} ${text || ''}`
     }
 
     // Picks a random item from an array
