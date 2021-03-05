@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.4.3
+// @version      1.4.4
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -106,18 +106,19 @@
                     break
                 // Rate something
                 case 'rate':
-                    let subject = command[3]?.match(/^"/) ? command[0].match(/"([^"\n]+)"/)?.[1] : command[3]
+                    let subject = match_string(command[0], command[3])
                     listing = lister(`Rating "${subject || 'nothing'}"`, '', rate())
                     break
                 // Echo something the user said
                 case 'echo':
                 case 'say':
-                    let say_txt = command[3]?.match(/^"/) ? command[0].match(/"([^"\n]+)"/)?.[1] : command[3]
+                    let say_txt = match_string(command[0], command[3])
+                    console.log(say_txt, command)
                     listing = lister('', ':robot:', echo(say_txt))
                     break
                 // Tells a user something
                 case 'tell':
-                    let tell_txt = command[4]?.match(/^"/) ? command[0].match(/"([^"\n]+)"/)?.[1] : command[4]
+                    let tell_txt = match_string(command[0], command[4])
                     listing = lister('', ':lips:', tell(command[3], tell_txt))
                     break
             }
@@ -167,7 +168,7 @@
 
     // Repeat what the user said
     function echo(text) {
-        return text || ''
+        return text || 'ERROR: YOU ARE A BUTT'
     }
 
     // Repeat what a user said, to another user
@@ -178,6 +179,11 @@
     // Picks a random item from an array
     function random_pick(array) {
         return array[random_int(0, array.length - 1)]
+    }
+
+    // Matches a quoted string in a string
+    function match_string(string, fallback) {
+        return fallback?.match(/^["“”„”«»]/) ? string.match(/["“”„”«»]([^"“”„”«»\n]+)["“”„”«»]/i)?.[1] : fallback
     }
 
     // Get random integer in inclusive interval [min, max]
