@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.4.4
+// @version      1.5.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -113,13 +113,26 @@
                 case 'echo':
                 case 'say':
                     let say_txt = match_string(command[0], command[3])
-                    console.log(say_txt, command)
                     listing = lister('', ':robot:', echo(say_txt))
                     break
                 // Tells a user something
                 case 'tell':
                     let tell_txt = match_string(command[0], command[4])
                     listing = lister('', ':lips:', tell(command[3], tell_txt))
+                    break
+                // It's not like the bot likes you or anything!!
+                case 'tsun':
+                case 'tsundere':
+                case 'tsuntsun': // because it's cute, ok
+                    listing = lister(`WaniMeKani says`, ':anger:', tsundere())
+                    break
+                // More complex commands
+                default:
+                    // I love you
+                    if (command[0].match(/@WaniMeKani\s+i\s+love\s+you/i)) {
+                        listing = lister('Requiting love', ':kiss:', confession())
+                        break
+                    }
                     break
             }
             if (listing) results.push(listing)
@@ -174,6 +187,16 @@
     // Repeat what a user said, to another user
     function tell(user, text) {
         return `@${user}: ${text || ''}`
+    }
+
+    // Repeat what a user said, to another user
+    function tsundere() {
+        return random_pick(tsundere_list)
+    }
+
+    // Responds to someone's confession
+    function confession() {
+        return random_pick(confession_list)
     }
 
     // Picks a random item from an array
@@ -261,6 +284,46 @@
         'You should marry this thing before it gets away 9/10',
         'Wow! 10/10',
         'OMG I LOVE IT 11/10',
+    ]
+
+    // Tsundere comments
+    const tsundere_list = [
+        'B-Baka!',
+        "I'm not a tsundere!",
+        'Urusai, urusai, urusai!!',
+        'ANTA BAKA',
+        'BAKA CHI',
+        'What are you, stupid?',
+        "I-It's not like I do this for you! I do this because I have freetime, that's all! ┐(￣ヘ￣;)┌",
+        'I like you, you idiot!',
+        "BAKAAAAAAAAAAAAAAA!!!!! YOU'RE A BAKAAAAAAA!!!!",
+        "I'm just here because I had nothing else to do!",
+        'I hate you!',
+        'Are you stupid?',
+        "You should be grateful I'm even responding to you!",
+        "Don't misunderstand, it's not like I like you or anything...",
+        'H-Hey.... (//・.・//)',
+        '....T-Thanks.....',
+        'T-Tch! S-Shut up!',
+        'Can you be ANY MORE CLUELESS?',
+        "HEY! It's a privilege to even be able to talk to me! You should be honored!",
+    ]
+
+    // Responses to confessions of love
+    const confession_list = [
+        'I love you too!!!',
+        'Uhhh',
+        'What?',
+        'Um, no',
+        "I don't want to ruin our friendship",
+        'Not now',
+        "When's our first date? :)",
+        'Is it April 1st?',
+        'Do I know you?',
+        'Omg, I thought it was one sided!',
+        "I'm married",
+        "I'll marry you for a green card",
+        'i like you too :blush: :hug:',
     ]
 
     // Quotes
