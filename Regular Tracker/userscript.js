@@ -1,13 +1,12 @@
 // ==UserScript==
 // @name         Wanikani Forum: Regular Tracker
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.3
 // @description  Tracks how regular you are
 // @author       Kumirei
 // @include      *community.wanikani.com*
 // @grant        none
 // ==/UserScript==
-/*jshint esversion: 8 */
 
 (function() {
     // Settings object. Configure your settings here
@@ -20,6 +19,7 @@
         last_fetch: 0,         // Timestamp of when summary and category data was last fetched
         history: [],           // Contains all fetches of the summary and category data going back 100 days
         streak: [0, 0],        // Last date visited and the current streak
+        visited: [],            // List of visited dates [date1, date2, ...]
         unique_topics: 0,      // Not interested in going through the trouble of tracking this right now
         flags_received: 0,     // No way to detect this as far as I am aware
         suspended: false,      // No way to detect this as far as I am aware
@@ -75,11 +75,16 @@
             posts_30d: stats.posts_30_days,
         });
         tracker.regular = summary_data.badges[0].id==3; // Regular has badge ID 3
-        let date_string = new Date().toDateString();
-        let today = (new Date()).toDateString();
-        let [last, streak] = tracker.streak;
-        if (last != today) streak = ((new Date(Date.parse(last)+1.5*msday)).toDateString() == today) ? streak+1 : 0;
-        tracker.streak = [today, streak];
+        const get_date = (date) => new Date(date).toISOString().slice(0, 10)
+        tracker.visited.push(get_date(Date.now())) // Append today's date
+        tracker.visited.sort()
+        tracker.visited = tracker.visited.filter((d, i)=>{ // filter out old visits
+            if (!tracker.visited[i+1]) return true // Keep last
+            const date = new Date(d) // Get next day
+            date.setDate(date.getDate()+1)
+            return get_date(date.getTime()) == get_date(tracker.visited[i+1])
+        })
+        tracker.streak = [null, tracker.visited.length];
         save();
         update_display();
     }
