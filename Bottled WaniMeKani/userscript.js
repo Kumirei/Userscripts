@@ -172,7 +172,7 @@
 
     // Repeat what a user said, to another user
     function tell(user, text) {
-        return `@${user} ${text || ''}`
+        return `@${user}: ${text || ''}`
     }
 
     // Picks a random item from an array
