@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.7.4
+// @version      1.8.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -99,11 +99,11 @@
                 case 'flip':
                 case 'coin':
                 case 'table':
-                    listing = lister(`Flipping a ~~coin~~ table`, '', random_pick(list.table))
+                    listing = lister(`Flipping a ~~coin~~ table`, '', random_pick(lists.table))
                     break
                 // Rate something
                 case 'rate':
-                    listing = lister(`Rating "${phrase || 'nothing'}"`, '', random_pick(list.rate))
+                    listing = lister(`Rating "${phrase || 'nothing'}"`, '', random_pick(lists.rate))
                     break
                 // Echo something the user said
                 case 'echo':
@@ -118,7 +118,7 @@
                 case 'tsun':
                 case 'tsundere':
                 case 'tsuntsun': // because it's cute, ok
-                    listing = lister(`WaniMeKani says`, ':anger:', random_pick(list.tsundere))
+                    listing = lister(`WaniMeKani says`, ':anger:', random_pick(lists.tsundere))
                     break
                 // Get a wikipedia article
                 case 'wikipedia':
@@ -163,6 +163,14 @@
                 case '6d6button':
                     listing = `Want a button to do the rolling for you? Use this\n\nhttps://greasyfork.org/en/scripts/422733-wanikani-forums-roll-6d6`
                     break
+                // Quotes a random post from the say something threads
+                case 'say-something':
+                    listing = `In a thread far far away...\n${await say_something()}`
+                    break
+                // Gets a random OOQ from the OOQ thread
+                case 'oocq':
+                    listing = `Guess the context!\n${await oocq()}`
+                    break
                 // More general commands
                 default:
                     // I love you
@@ -200,6 +208,8 @@
         'Trunkify <word / "phrase">: Meows things',
         'Poll: Do @WaniMeKani poll? for more info',
         'Install: Links the installation thread',
+        'Say-something: Quotes a random post from the Say Something About The Person Above You thread',
+        'OOCQ: Quotes a random post from the Out Of Context Quotes thread',
     ]
 
     // Create a response listing
@@ -251,11 +261,6 @@
     async function mal(type, query) {
         const result = await fetch(`https://api.jikan.moe/v3/search/${type}?q=${query}`).then((r) => r.json())
         return result?.results?.[0]?.url || '<blockquote>No results</blockquote>'
-    }
-
-    // Picks a random item from an array
-    function random_pick(array) {
-        return array[random_int(0, array.length - 1)]
     }
 
     // Factorizes sillily
@@ -318,9 +323,34 @@
         return response
     }
 
+    // Finds a random post from the say something threads
+    async function say_something() {
+        const post = await random_post(30543)
+        return `[quote="${post.username}"]\n${post.raw}\n[/quote]`
+    }
+
+    // Finds a random post from the say something threads
+    async function oocq() {
+        const post = await random_post(30523)
+        const text = post.raw.match(/\[quote.*\]([^\[]*)\[\/quote\]/i)[0].replace(/, post.*"\]/i, '"]')
+        return text || '> No quote found, try again'
+    }
+
+    // Finds a random post from a thread
+    async function random_post(topic_id) {
+        const thread = await fetch(`/t/${topic_id}.json`).then((r) => r.json())
+        const post = await fetch('/posts/' + random_pick(thread.post_stream.stream) + '.json').then((r) => r.json())
+        return post
+    }
+
     // Matches a quoted string in a string
     function match_phrase(string, fallback) {
         return fallback?.match(/^["“”„”«»]/) ? string.match(/["“„«]([^"””»\n]+)["””»]/i)?.[1] : fallback
+    }
+
+    // Picks a random item from an array
+    function random_pick(array) {
+        return array[random_int(0, array.length - 1)]
     }
 
     // Get random integer in inclusive interval [min, max]
