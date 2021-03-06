@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.7.1
+// @version      1.7.2
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -154,6 +154,10 @@
                 // Provides info on how to poll
                 case 'poll?':
                     listing = lister(`Here's how you create a poll with WaniMeKani`, '', poll_help())
+                    break
+                // Links the bot thread
+                case 'install':
+                    listing = `To install WaniMeKani visit this thread\nhttps://community.wanikani.com/t/userscript-forums-bottled-wanimekani/49785/1`
                     break
                 // More general commands
                 default:
