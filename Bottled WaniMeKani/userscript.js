@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.7.2
+// @version      1.7.3
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -158,6 +158,10 @@
                 // Links the bot thread
                 case 'install':
                     listing = `To install WaniMeKani visit this thread\nhttps://community.wanikani.com/t/userscript-forums-bottled-wanimekani/49785/1`
+                    break
+                // Links the 6d6 button script
+                case '6d6button':
+                    listing = `Want a button to do the rolling for you? Use this\nhttps://greasyfork.org/en/scripts/422733-wanikani-forums-roll-6d6`
                     break
                 // More general commands
                 default:
