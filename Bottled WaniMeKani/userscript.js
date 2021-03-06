@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.5.0
+// @version      1.6.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -46,17 +46,7 @@
         if (responses === '') return ''
         // If commands were found, append a reply
         return (
-            '\n\n' +
-            '<hr>\n' +
-            '<!-- WANIMEKANI REPLY -->\n' +
-            '<!-- do not edit the above line -->\n' +
-            '<aside class="quote">\n' +
-            '    <div class="title">\n' +
-            '        <img width="20" src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar"> WaniMeKani:\n' +
-            '    </div>\n' +
-            '    <blockquote>\n' +
-            '        <p>\n' +
-            `<!-- ${rng_timestamp} -->\n` +
+            `\n\n<hr><!-- WANIMEKANI REPLY --><aside class="quote"><div class="title"><img width="20" src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar"> WaniMeKani:</div><blockquote><p><!-- ${rng_timestamp} -->\n` +
             '<!-- START ANSWERS -->\n\n' +
             `${responses}\n\n` +
             '<!-- END ANSWERS -->\n' +
@@ -78,6 +68,11 @@
             let command = commands[i]
             let listing
             switch (command[2]) {
+                case 'help':
+                case 'list':
+                case 'commands':
+                    listing = `Listing all commands\n${list_commands()}`
+                    break
                 // Roll dice
                 case 'roll':
                     // Dice
@@ -134,6 +129,13 @@
                     let wiki_query = match_string(command[0], command[3])
                     listing = `Searching Wikipedia for "${wiki_query}"\n${await wikipedia(wiki_query)}`
                     break
+                // Searches MAL for anime and manga
+                case 'anime':
+                case 'manga':
+                    let mal_query = match_string(command[0], command[3])
+                    console.log('anime', mal_query)
+                    listing = await mal(command[2], mal_query)
+                    break
                 // More complex commands
                 default:
                     // I love you
@@ -147,6 +149,25 @@
         }
         return results.join('\n\n')
     }
+
+    // All the commands
+    const command_list = [
+        'Help / list / commands: List all the commands',
+        'Roll <dice>d<faces>: Rolls a number of dice with a chosen number of faces',
+        'Roll rick: ???',
+        'Fortune / 8ball: Gives you a random fortune',
+        'Quote: Gives you a random quote',
+        'Quote <number>: Gives you a specific quote',
+        'Flip / coin / table: Flips a coin (table)',
+        'Rate <word / "phrase">: Rates your word or phrase',
+        'Echo / say <word / "phrase">: Makes WaniMeKani repeat something',
+        'Tell <user> <word / "phrase">: Makes WaniMeKani @mention a user and tell them something',
+        'Tsundere: Makes WaniMeKani a tsundere',
+        'Wikipedia <word / "phrase">: Search Wikipedia for something',
+        'I love you: Makes WaniMeKani respond to your confession',
+        'Anime <word / "phrase">: Searched MyAnimeList for an anime',
+        'Manga <word / "phrase">: Searched MyAnimeList for an anime',
+    ]
 
     // Create a response listing
     function lister(title, icon, text) {
@@ -221,6 +242,17 @@
         const res = await fetch(url).then((r) => r.json())
         const title = res.query.search[0].title.replace(/ /g, '_')
         return `https://en.wikipedia.org/wiki/${title}`
+    }
+
+    // Lists all the available commands (hopefully)
+    function list_commands() {
+        return `\`\`\`http\n${command_list.join('\n')}\n\`\`\``
+    }
+
+    // Searcher MyAnimeList for manga and anime
+    async function mal(type, query) {
+        const result = await fetch(`https://api.jikan.moe/v3/search/${type}?q=${query}`).then((r) => r.json())
+        return result.results[0].url
     }
 
     // Picks a random item from an array
