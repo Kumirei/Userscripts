@@ -38,7 +38,7 @@
         // Get draft text, without quotes
         const text = composer.value.replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gis, '')
         // Don't do anything if results are already present
-        if (text.match(/<!-- WANIMEKANI REPLY -->/i)) return ''
+        if (text.match(/<wmki>/i)) return ''
         // Get WaniMeKani responses
         const responses = await get_responses(text)
 
@@ -46,7 +46,7 @@
         if (responses === '') return ''
         // If commands were found, append a reply
         return (
-            `\n\n<hr><!-- WANIMEKANI REPLY --><aside class="quote"><div class="title"><img src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar" width="20"> WaniMeKani:</div><blockquote><p><!-- ${rng_timestamp} -->\n` +
+            `\n\n<hr><wmki><aside class="quote"><div class="title"><img src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar" width="20"> WaniMeKani:</div><blockquote><p><!-- ${rng_timestamp} -->\n` +
             '<!-- START ANSWERS -->\n\n' +
             `${responses}\n\n` +
             '<!-- END ANSWERS -->\n' +
