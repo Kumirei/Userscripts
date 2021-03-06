@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.8.1
+// @version      1.8.2
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -284,11 +284,12 @@
             public: !line.match(/!private/i),
             hours: line.match(/!close(\d+)/i)?.[1] || 0,
         }
-        config.close = new Date(Date.now() + Number(config.hours) * 60 * 60 * 1000).toISOString()
+        if (config.close) config.close = new Date(Date.now() + Number(config.hours) * 60 * 60 * 1000).toISOString()
         // Find poll options
         line = line.replace(/!\w+(=["“„«]([^"””»\n]+)["””»])?/gi, '') // Remove configs
         const options = line.match(/(["“„«][^"””»\n]+["””»])|(\S+)/g).map((o) => `* ${o.replace(/["“”„”«»]/g, '')}`) // Match options
 
+        console.log('close', config.close)
         // Build poll
         return (
             `[poll name=MekaniPOLL-${Date.now()} type=${config.type} results=${config.result} ` +
