@@ -38,7 +38,7 @@
         // Get draft text, without quotes
         const text = composer.value.replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gis, '')
         // Don't do anything if results are already present
-        if (text.match(/<wmki>/i)) return ''
+        if (text.match(/((<!-- WANIMEKANI REPLY -->)|(<wmki>))/i)) return ''
         // Get WaniMeKani responses
         const responses = await get_responses(text)
 
