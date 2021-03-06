@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.6.0
+// @version      1.6.1
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -133,8 +133,7 @@
                 case 'anime':
                 case 'manga':
                     let mal_query = match_string(command[0], command[3])
-                    console.log('anime', mal_query)
-                    listing = await mal(command[2], mal_query)
+                    listing = `Searching MAL for ${mal_query} ${command[3]}\n${await mal(command[2], mal_query) || 'No results'}
                     break
                 // More complex commands
                 default:
