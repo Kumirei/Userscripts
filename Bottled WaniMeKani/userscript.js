@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.8.0
+// @version      1.8.1
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -293,7 +293,7 @@
         return (
             `[poll name=MekaniPOLL-${Date.now()} type=${config.type} results=${config.result} ` +
             `min=${config.min} max=${config.max} step=${config.step} chartType=${config.chart} ` +
-            `public=${config.public}` +
+            `public=${config.public} ` +
             (config.close ? `close=${config.close}` : '') +
             `]\n` +
             (config.title ? `# <big><b>${config.title}</b></big>\n` : '') +
