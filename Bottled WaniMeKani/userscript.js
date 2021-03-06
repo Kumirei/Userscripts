@@ -46,7 +46,7 @@
         if (responses === '') return ''
         // If commands were found, append a reply
         return (
-            `\n\n<hr><!-- WANIMEKANI REPLY --><aside class="quote"><div class="title"><img width="20" src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar"> WaniMeKani:</div><blockquote><p><!-- ${rng_timestamp} -->\n` +
+            `\n\n<hr><!-- WANIMEKANI REPLY --><aside class="quote"><div class="title"><img src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar" width="20"> WaniMeKani:</div><blockquote><p><!-- ${rng_timestamp} -->\n` +
             '<!-- START ANSWERS -->\n\n' +
             `${responses}\n\n` +
             '<!-- END ANSWERS -->\n' +
@@ -133,7 +133,7 @@
                 case 'anime':
                 case 'manga':
                     let mal_query = match_string(command[0], command[3])
-                    listing = `Searching MAL for ${mal_query} ${command[3]}\n${await mal(command[2], mal_query) || 'No results'}
+                    listing = `Searching MAL for "${mal_query}" ${command[2]}\n${await mal(command[2], mal_query)}`
                     break
                 // More complex commands
                 default:
@@ -251,7 +251,7 @@
     // Searcher MyAnimeList for manga and anime
     async function mal(type, query) {
         const result = await fetch(`https://api.jikan.moe/v3/search/${type}?q=${query}`).then((r) => r.json())
-        return result.results[0].url
+        return result?.results?.[0]?.url || '<blockquote>No results</blockquote>'
     }
 
     // Picks a random item from an array
