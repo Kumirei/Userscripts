@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.7.3
+// @version      1.7.4
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -167,7 +167,7 @@
                 default:
                     // I love you
                     if (command[0].match(/@WaniMeKani\s+i\s+love\s+you/i)) {
-                        listing = lister('Requiting love', ':kiss:', random_pick(confession_list))
+                        listing = lister('Requiting love', ':kiss:', random_pick(lists.love))
                         break
                     }
                     break
@@ -419,7 +419,7 @@
             'Can you be ANY MORE CLUELESS?',
             "HEY! It's a privilege to even be able to talk to me! You should be honored!",
         ],
-        confession: [
+        love: [
             'I love you too!!!',
             'Uhhh',
             'What?',
