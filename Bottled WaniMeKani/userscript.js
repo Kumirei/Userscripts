@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.8.2
+// @version      1.8.3
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -61,7 +61,7 @@
         // Each command is formatted as [whole line, @wanimekani, word1, word2, ...]
         let regx = new RegExp('@wanimekani[^\n]+', 'gi')
         let commands = text.match(regx)?.map((c) => [c, ...c.replace(/\s+/g, ' ').split(' ')]) || []
-        const rand = prng(text)
+        const rand = prng()
         // Process commands
         let results = []
         for (let i = 0; i < commands.length; i++) {
@@ -362,9 +362,9 @@
     }
 
     // Creates a new PRNG
-    function prng(seed_string) {
-        rng_timestamp = Date.now()
-        const seeder = xmur3(seed_string + rng_timestamp)
+    function prng() {
+        rng_timestamp = String(Date.now())
+        const seeder = xmur3(rng_timestamp)
         const new_prng = mulberry32(seeder())
         return new_prng
     }
