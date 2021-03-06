@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.8.3
+// @version      1.8.5
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -233,7 +233,7 @@
 
     // Pick quote number n
     function quote(n) {
-        return quote_list[n]?.join(' – ') || `There is no quote #${n}`
+        return lists.quote[n]?.join(' – ') || `There is no quote #${n}`
     }
 
     // Searches for a wikipedia article
