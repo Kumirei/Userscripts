@@ -24,9 +24,9 @@
 
     // Wrap the save function with our own function
     function inject(old_save) {
-        const new_save = function (t) {
+        const new_save = async function (t) {
             const composer = document.querySelector('textarea.d-editor-input') // Reply box
-            composer.value += commune(composer) // Modify message
+            composer.value += await commune(composer) // Modify message
             composer.dispatchEvent(new Event('change', { bubbles: true, cancelable: true })) // Let Discourse know
             old_save.call(this, t) // Call regular save function
         }
@@ -34,13 +34,13 @@
     }
 
     // Grabs the text then returns the WaniMeKani answers
-    function commune(composer) {
+    async function commune(composer) {
         // Get draft text, without quotes
         const text = composer.value.replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gis, '')
         // Don't do anything if results are already present
         if (text.match(/<!-- WANIMEKANI REPLY -->/i)) return ''
         // Get WaniMeKani responses
-        const responses = get_responses(text)
+        const responses = await get_responses(text)
 
         // If no commands were found, don't modify the post
         if (responses === '') return ''
@@ -66,7 +66,7 @@
     }
 
     // Create responses to the commands
-    function get_responses(text) {
+    async function get_responses(text) {
         // Extract the commands
         // Each command is formatted as [whole line, @wanimekani, word1, word2, ...]
         let regx = new RegExp('@wanimekani[^\n]+', 'gi')
@@ -74,7 +74,8 @@
         const rand = prng(text)
         // Process commands
         let results = []
-        commands.forEach((command) => {
+        for (let i = 0; i < commands.length; i++) {
+            let command = commands[i]
             let listing
             switch (command[2]) {
                 // Roll dice
@@ -126,6 +127,13 @@
                 case 'tsuntsun': // because it's cute, ok
                     listing = lister(`WaniMeKani says`, ':anger:', tsundere())
                     break
+                // Get a wikipedia article
+                case 'wikipedia':
+                case 'wiki':
+                case 'pedia': // Rose why
+                    let wiki_query = match_string(command[0], command[3])
+                    listing = `Searching Wikipedia for "${wiki_query}"\n${await wikipedia(wiki_query)}`
+                    break
                 // More complex commands
                 default:
                     // I love you
@@ -136,7 +144,7 @@
                     break
             }
             if (listing) results.push(listing)
-        })
+        }
         return results.join('\n\n')
     }
 
@@ -197,6 +205,22 @@
     // Responds to someone's confession
     function confession() {
         return random_pick(confession_list)
+    }
+
+    // Searches for a wikipedia article
+    async function wikipedia(query) {
+        let url = 'https://en.wikipedia.org/w/api.php?origin=*'
+        const params = {
+            action: 'query',
+            list: 'search',
+            srsearch: query,
+            srlimit: 1,
+            format: 'json',
+        }
+        Object.entries(params).forEach(([key, param]) => (url += `&${key}=${param}`))
+        const res = await fetch(url).then((r) => r.json())
+        const title = res.query.search[0].title.replace(/ /g, '_')
+        return `https://en.wikipedia.org/wiki/${title}`
     }
 
     // Picks a random item from an array
