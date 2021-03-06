@@ -108,7 +108,7 @@
                 // Echo something the user said
                 case 'echo':
                 case 'say':
-                    listing = lister('', ':robot:', text || 'ERROR: YOU ARE A BUTT')
+                    listing = lister('', ':robot:', phrase || 'ERROR: YOU ARE A BUTT')
                     break
                 // Tells a user something
                 case 'tell':
