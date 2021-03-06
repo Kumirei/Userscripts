@@ -161,7 +161,7 @@
                     break
                 // Links the 6d6 button script
                 case '6d6button':
-                    listing = `Want a button to do the rolling for you? Use this\nhttps://greasyfork.org/en/scripts/422733-wanikani-forums-roll-6d6`
+                    listing = `Want a button to do the rolling for you? Use this\n\nhttps://greasyfork.org/en/scripts/422733-wanikani-forums-roll-6d6`
                     break
                 // More general commands
                 default:
