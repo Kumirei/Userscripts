@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.7.0
+// @version      1.7.1
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -251,7 +251,7 @@
 
     // Factorizes sillily
     function guzinda(factor, n) {
-        return factor > n ? 'no guzinda' : `${factor} guzinda ${n} ${Math.floor(n / factor)} times`
+        return Number(factor) > Number(n) ? 'no guzinda' : `${factor} guzinda ${n} ${Math.floor(n / factor)} thymes`
     }
 
     // Creates a poll from nothing
