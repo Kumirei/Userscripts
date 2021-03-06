@@ -195,6 +195,7 @@
         'Guzinda <number> <number>: What guzinda number???',
         'Trunkify <word / "phrase">: Meows things',
         'Poll: Do @WaniMeKani poll? for more info',
+        'Install: Links the installation thread',
     ]
 
     // Create a response listing
