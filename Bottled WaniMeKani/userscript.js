@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.8.5
+// @version      1.8.6
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -68,7 +68,7 @@
             let command = commands[i]
             let listing
             let phrase = match_phrase(command[0], command[3])
-            switch (command[2]) {
+            switch (command[2].toLowerCase()) {
                 case 'help':
                 case 'list':
                 case 'commands':
