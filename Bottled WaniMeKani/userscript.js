@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.8.6
+// @version      1.9.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -38,7 +38,7 @@
         // Get draft text, without quotes
         const text = composer.value.replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gis, '')
         // Don't do anything if results are already present
-        if (text.match(/((<!-- WANIMEKANI REPLY -->)|(<wmki>))/i)) return ''
+        if (text.match(/(<!-- WANIMEKANI REPLY -->|<wmki>)/i)) return ''
         // Get WaniMeKani responses
         const responses = await get_responses(text)
 
@@ -46,7 +46,7 @@
         if (responses === '') return ''
         // If commands were found, append a reply
         return (
-            `\n\n<hr><wmki><aside class="quote"><div class="title"><img src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar" width="20"> WaniMeKani:</div><blockquote><p><!-- ${rng_timestamp} -->\n` +
+            `\n\n<hr><wmki><aside class="quote"><div class="title"><img src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar" width="20" height="20"> WaniMeKani:</div><blockquote><p><!-- ${rng_timestamp} -->\n` +
             '<!-- START ANSWERS -->\n\n' +
             `${responses}\n\n` +
             '<!-- END ANSWERS -->\n' +
@@ -112,7 +112,7 @@
                     break
                 // Tells a user something
                 case 'tell':
-                    listing = lister('', ':lips:', `@${command[3]}: ${match_phrase(command[0], command[4]) || ''}`)
+                    listing = lister('', ':robot:', `${command[3]}: ${match_phrase(command[0], command[4]) || ''}`)
                     break
                 // It's not like the bot likes you or anything!!
                 case 'tsun':
@@ -145,7 +145,7 @@
                     break
                 // Mewos things!?
                 case 'trunkify': // Rose why
-                    listing = lister('As Trunklayer would put it', '', `Meow Meow Meow ${phrase} Meow`)
+                    listing = lister('As Trunklayer would put it', '', trunkify(phrase))
                     break
                 // Makes a poll
                 case 'poll': // Rose why
@@ -275,8 +275,8 @@
         // Find optional configs
         const config = {
             title: line.match(/!title=["“„«]([^"””»\n]+)["””»]/i)?.[1] || '',
-            type: (line.match(/!((multi)|(number))/i)?.[1] || 'regular').replace(/multi/, 'multiple'),
-            result: (line.match(/!((onvote)|(onclose))/i)?.[1] || 'always').replace(/on/, 'on_'),
+            type: (line.match(/!(multi|number)/i)?.[1] || 'regular').replace(/multi/, 'multiple'),
+            result: (line.match(/!(onvote|onclose)/i)?.[1] || 'always').replace(/on/, 'on_'),
             min: line.match(/!min(\d+)/i)?.[1] || 1,
             max: line.match(/!max(\d+)/i)?.[1] || 10,
             step: line.match(/!step(\d+)/i)?.[1] || 1,
@@ -289,7 +289,6 @@
         line = line.replace(/!\w+(=["“„«]([^"””»\n]+)["””»])?/gi, '') // Remove configs
         const options = line.match(/(["“„«][^"””»\n]+["””»])|(\S+)/g).map((o) => `* ${o.replace(/["“”„”«»]/g, '')}`) // Match options
 
-        console.log('close', config.close)
         // Build poll
         return (
             `[poll name=MekaniPOLL-${Date.now()} type=${config.type} results=${config.result} ` +
@@ -342,6 +341,62 @@
         const thread = await fetch(`/t/${topic_id}.json`).then((r) => r.json())
         const post = await fetch('/posts/' + random_pick(thread.post_stream.stream) + '.json').then((r) => r.json())
         return post
+    }
+
+    //Processes the replacable substrings into a valid case-correct replacement
+    function trunkify_get_subst(phrase) {
+        let result = ''
+        //Basic replacement
+        switch (phrase.toLowerCase()) {
+            case 'nice':
+                results = trunkify_get_subst('ni') + 'ice'
+                break
+            case 'ni':
+            case 'na':
+                result = 'nya' + 'a'.repeat(random_int(0, 3))
+                break
+            case 'ma':
+                result = 'meow'
+                break
+            case 'per':
+                result = 'purr' + 'r'.repeat(random_int(0, 3))
+                break
+            case 'cat':
+                result = '**cat**'
+                break
+            case 'now':
+                result = 'meow'
+                break
+        }
+
+        //Match case (all uppercase, first letter capitalized, all lowercase)
+        if (phrase === phrase.toUpperCase()) return result.toUpperCase()
+        else if (phrase[0] === phrase[0].toUpperCase()) return result[0].toUpperCase() + result.slice(1)
+        return result
+    }
+
+    //Trunkifies the input text
+    function trunkify(txt) {
+        //Simple regex to get the first trunkifyable phrase from every word
+        let regex = /(nice|ni|na|ma|per|cat|now)\w*/gi
+
+        let matches = txt.matchAll(regex)
+
+        //Substitution loop
+        let offset = 0
+        let result = txt
+        for (let match of matches) {
+            let matched_txt = match[1]
+            let subst_str = trunkify_get_subst(matched_txt)
+            result =
+                result.slice(0, match.index + offset) +
+                subst_str +
+                result.slice(match.index + offset + matched_txt.length)
+
+            offset += subst_str.length - matched_txt.length
+        }
+
+        return result
     }
 
     // Matches a quoted string in a string
