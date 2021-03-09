@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.10.1
+// @version      1.11.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -180,6 +180,9 @@
                 case 'spell':
                     listing = lister(`"${phrase}" is spelled`, ':memo:', Array.from(phrase.toUpperCase()).join('&#45;'))
                     break
+                case 'morse':
+                    const is_morse = !phrase.match(/[^.-\s\/]/)
+                    listing = lister(is_morse ? `<pre>${phrase}</pre>` : `"${phrase}" is`, '', morse(is_morse, phrase))
                 // More general commands
                 default:
                     // I love you
@@ -220,6 +223,7 @@
         'OOCQ: Quotes a random post from the Out Of Context Quotes thread',
         'xkcd <number?>: Gives you a random or specific xkcd comic',
         'Spell <word / "phrase">: Teaches you how to combine letters into words',
+        'Morse <word / "phrase">: Translates to and from morse code',
     ]
 
     // Create a response listing
@@ -407,6 +411,12 @@
         return result
     }
 
+    // Morse code interpreter
+    function morse(is_morse, text) {
+        if (is_morse) return text.replace(/([.-][.-]*|\/|\s)/g, (_, x) => lists.morse.decode[x])
+        else return '<pre>' + text.toLowerCase().replace(/./g, (x) => (lists.morse.encode[x] || x) + ' ') + '</pre>'
+    }
+
     // Matches a quoted string in a string
     function match_phrase(string, fallback) {
         return fallback?.match(/^["“”„”«»]/) ? string.match(/["“„«]([^"””»\n]+)["””»]/i)?.[1] : fallback
@@ -528,6 +538,98 @@
             "I'll marry you for a green card",
             'i like you too :blush: :hug:',
         ],
+        morse: {
+            decode: {
+                '-----': '0',
+                '.----': '1',
+                '..---': '2',
+                '...--': '3',
+                '....-': '4',
+                '.....': '5',
+                '-....': '6',
+                '--...': '7',
+                '---..': '8',
+                '----.': '9',
+                '.-': 'a',
+                '-...': 'b',
+                '-.-.': 'c',
+                '-..': 'd',
+                '.': 'e',
+                '..-.': 'f',
+                '--.': 'g',
+                '....': 'h',
+                '..': 'i',
+                '.---': 'j',
+                '-.-': 'k',
+                '.-..': 'l',
+                '--': 'm',
+                '-.': 'n',
+                '---': 'o',
+                '.--.': 'p',
+                '--.-': 'q',
+                '.-.': 'r',
+                '...': 's',
+                '-': 't',
+                '..-': 'u',
+                '...-': 'v',
+                '.--': 'w',
+                '-..-': 'x',
+                '-.--': 'y',
+                '--..': 'z',
+                '-.-.--': '!',
+                '.-.-.-': '.',
+                '--..--': ',',
+                '..--..': '?',
+                '/': ' ',
+                ' ': '',
+            },
+            encode: {
+                '!': '-.-.--',
+                ',': '--..--',
+                '.': '.-.-.-',
+                '!': '-.-.--',
+                ',': '--..--',
+                '.': '.-.-.-',
+                ' ': '/',
+                '?': '..--..',
+                0: '-----',
+                1: '.----',
+                2: '..---',
+                3: '...--',
+                4: '....-',
+                5: '.....',
+                6: '-....',
+                7: '--...',
+                8: '---..',
+                9: '----.',
+                a: '.-',
+                b: '-...',
+                c: '-.-.',
+                d: '-..',
+                e: '.',
+                f: '..-.',
+                g: '--.',
+                h: '....',
+                i: '..',
+                j: '.---',
+                k: '-.-',
+                l: '.-..',
+                m: '--',
+                n: '-.',
+                o: '---',
+                p: '.--.',
+                q: '--.-',
+                r: '.-.',
+                s: '...',
+                t: '-',
+                u: '..-',
+                v: '...-',
+                w: '.--',
+                x: '-..-',
+                y: '-.--',
+                z: '--..',
+            },
+        },
         quote: [
             [`In the middle of every difficulty lies opportunity`, `Albert Einstein`],
             [`Freedom is not worth having if it does not connote freedom to err.`, `Mahatma Gandhi`],
