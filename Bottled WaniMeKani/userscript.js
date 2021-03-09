@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.10.0
+// @version      1.10.1
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -178,7 +178,7 @@
                     break
                 // Spells things for you?
                 case 'spell':
-                    listing = lister(`"${command[3]}" is spelled`, ':memo:', Array.from(phrase.toUpperCase()).join('-'))
+                    listing = lister(`"${phrase}" is spelled`, ':memo:', Array.from(phrase.toUpperCase()).join('&#45;'))
                     break
                 // More general commands
                 default:
