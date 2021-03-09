@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.9.0
+// @version      1.10.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -66,7 +66,7 @@
         let results = []
         for (let i = 0; i < commands.length; i++) {
             let command = commands[i]
-            let listing
+            let listing, n
             let phrase = match_phrase(command[0], command[3])
             switch (command[2].toLowerCase()) {
                 case 'help':
@@ -92,8 +92,8 @@
                     break
                 // Get a quote
                 case 'quote':
-                    let n = command[3]?.match(/^\d+$/)?.[0] || random_int(0, lists.quote.length - 1)
-                    listing = lister(`Quote #${n}`, ':left_speech_bubble:', quote(n))
+                    n = command[3]?.match(/^\d+$/)?.[0] || random_int(0, lists.quote.length - 1)
+                    listing = lister(`Quote #${n}`, '', quote(n))
                     break
                 // Flip tables
                 case 'flip':
@@ -171,6 +171,15 @@
                 case 'oocq':
                     listing = `Guess the context!\n${await oocq()}`
                     break
+                // Gets a random xkcd comic
+                case 'xkcd':
+                    n = command[3]?.match(/^\d+$/)?.[0] || random_int(1, 2434)
+                    listing = `XKCD #${n}\nhttps://xkcd.com/${n}`
+                    break
+                // Spells things for you?
+                case 'spell':
+                    listing = lister(`"${command[3]}" is spelled`, ':memo:', Array.from(phrase.toUpperCase()).join('-'))
+                    break
                 // More general commands
                 default:
                     // I love you
@@ -191,8 +200,7 @@
         'Roll <dice>d<faces>: Rolls a number of dice with a chosen number of faces',
         'Roll rick: ???',
         'Fortune / 8ball: Gives you a random fortune',
-        'Quote: Gives you a random quote',
-        'Quote <number>: Gives you a specific quote',
+        'Quote <number?>: Gives you a random or specific quote',
         'Flip / coin / table: Flips a coin (table)',
         'Rate <word / "phrase">: Rates your word or phrase',
         'Echo / say <word / "phrase">: Makes WaniMeKani repeat something',
@@ -210,6 +218,8 @@
         'Install: Links the installation thread',
         'Say-something: Quotes a random post from the Say Something About The Person Above You thread',
         'OOCQ: Quotes a random post from the Out Of Context Quotes thread',
+        'xkcd <number?>: Gives you a random or specific xkcd comic',
+        'Spell <word / "phrase">: Teaches you how to combine letters into words',
     ]
 
     // Create a response listing
@@ -349,13 +359,14 @@
         //Basic replacement
         switch (phrase.toLowerCase()) {
             case 'nice':
-                results = trunkify_get_subst('ni') + 'ice'
+                result = trunkify_get_subst('ni') + 'aaaaaaaaaice'
                 break
             case 'ni':
             case 'na':
                 result = 'nya' + 'a'.repeat(random_int(0, 3))
                 break
             case 'ma':
+            case 'now':
                 result = 'meow'
                 break
             case 'per':
@@ -363,9 +374,6 @@
                 break
             case 'cat':
                 result = '**cat**'
-                break
-            case 'now':
-                result = 'meow'
                 break
         }
 
@@ -417,8 +425,8 @@
     }
 
     // Creates a new PRNG
-    function prng() {
-        rng_timestamp = String(Date.now())
+    function prng(time) {
+        rng_timestamp = String(time || Date.now())
         const seeder = xmur3(rng_timestamp)
         const new_prng = mulberry32(seeder())
         return new_prng
