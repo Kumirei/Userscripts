@@ -12,8 +12,8 @@
     window.validate_dice = validate_dice
 
     // Validation
-    function validate_dice(text, time, count, faces) {
-        let random = prng(text, time)
+    function validate_dice(time, count, faces) {
+        let random = prng(time)
         console.log('Dice roll validation', dice(count, faces, random))
     }
 
@@ -33,8 +33,8 @@
     }
 
     // Creates a new PRNG
-    function prng(seed_string, time) {
-        const seeder = xmur3(seed_string + time)
+    function prng(time) {
+        const seeder = xmur3(String(time))
         const new_prng = mulberry32(seeder())
         return new_prng
     }
