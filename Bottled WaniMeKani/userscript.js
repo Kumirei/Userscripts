@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.12.0
+// @version      1.12.1
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -303,7 +303,11 @@
         if (config.close) config.close = new Date(Date.now() + Number(config.hours) * 60 * 60 * 1000).toISOString()
         // Find poll options
         line = line.replace(/!\w+(=["“„«]([^"””»\n]+)["””»])?/gi, '') // Remove configs
-        const options = line.match(/(["“„«][^"””»\n]+["””»])|(\S+)/g).map((o) => `* ${o.replace(/["“”„”«»]/g, '')}`) // Match options
+        const options = line
+            .match(/(["“„«][^"””»\n]+["””»])|(\S+)/g)
+            .map((o) => `* ${o.replace(/["“”„”«»]/g, '')}`)
+            .slice(0, 20) // Match options, max 20
+        if (config.type != 'regular') config.max = options.length // Default max for multiple choice
 
         // Build poll
         return (
@@ -313,7 +317,7 @@
             (config.close ? `close=${config.close}` : '') +
             `]\n` +
             (config.title ? `# <big><b>${config.title}</b></big>\n` : '') +
-            (config.type == 'number' ? '' : options.slice(0, 20).join('\n')) +
+            (config.type == 'number' ? '' : options.join('\n')) +
             `\n[/poll]`
         )
     }
