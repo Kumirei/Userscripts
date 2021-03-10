@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.11.0
+// @version      1.12.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
-// @grant        none
+// @grant        GM.xmlHttpRequest
+// @connect      relevant-xkcd-backend.herokuapp.com
+// @connect      jisho.org
 // ==/UserScript==
 
 ;(function () {
@@ -15,7 +17,7 @@
 
     // Inject if the save function is defined
     function tryInject() {
-        const old_save = window.require('discourse/controllers/composer').default.prototype.save
+        const old_save = unsafeWindow.require('discourse/controllers/composer').default.prototype.save
         if (old_save) {
             clearInterval(i)
             inject(old_save)
@@ -30,7 +32,7 @@
             composer.dispatchEvent(new Event('change', { bubbles: true, cancelable: true })) // Let Discourse know
             old_save.call(this, t) // Call regular save function
         }
-        window.require('discourse/controllers/composer').default.prototype.save = new_save // Inject
+        unsafeWindow.require('discourse/controllers/composer').default.prototype.save = new_save // Inject
     }
 
     // Grabs the text then returns the WaniMeKani answers
@@ -171,10 +173,9 @@
                 case 'oocq':
                     listing = `Guess the context!\n${await oocq()}`
                     break
-                // Gets a random xkcd comic
+                // Gets a random or specific xkcd comic, or searches
                 case 'xkcd':
-                    n = command[3]?.match(/^\d+$/)?.[0] || random_int(1, 2434)
-                    listing = `XKCD #${n}\nhttps://xkcd.com/${n}`
+                    listing = await xkcd(command)
                     break
                 // Spells things for you?
                 case 'spell':
@@ -207,7 +208,7 @@
         'Flip / coin / table: Flips a coin (table)',
         'Rate <word / "phrase">: Rates your word or phrase',
         'Echo / say <word / "phrase">: Makes WaniMeKani repeat something',
-        'Tell <user> <word / "phrase">: Makes WaniMeKani @mention a user and tell them something',
+        'Tell @<user> <word / "phrase">: Makes WaniMeKani @mention a user and tell them something',
         'Tsundere: Makes WaniMeKani a tsundere',
         'Wikipedia <word / "phrase">: Search Wikipedia for something',
         'I love you: Makes WaniMeKani respond to your confession',
@@ -222,6 +223,7 @@
         'Say-something: Quotes a random post from the Say Something About The Person Above You thread',
         'OOCQ: Quotes a random post from the Out Of Context Quotes thread',
         'xkcd <number?>: Gives you a random or specific xkcd comic',
+        'xkcd search <word / "phrase">: Searches for a relevant xkcd comic',
         'Spell <word / "phrase">: Teaches you how to combine letters into words',
         'Morse <word / "phrase">: Translates to and from morse code',
     ]
@@ -241,7 +243,7 @@
 
     // Rick roll the butt who issued the command
     function rick() {
-        window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+        unsafeWindow.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
         return `Never gonna give you up\nNever gonna let you down\nNever gonna run around and desert you\nNever gonna make you cry\nNever gonna say goodbye\nNever gonna tell a lie and hurt you`
     }
 
@@ -415,6 +417,37 @@
     function morse(is_morse, text) {
         if (is_morse) return text.replace(/([.-][.-]*|\/|\s)/g, (_, x) => lists.morse.decode[x])
         else return '<pre>' + text.toLowerCase().replace(/./g, (x) => (lists.morse.encode[x] || x) + ' ') + '</pre>'
+    }
+
+    // Can either search for a comic, get a specific comic (number), or a random comic
+    async function xkcd(command) {
+        if (command[3].toLowerCase() == 'search') {
+            const query = match_phrase(command[0], command[4])
+            return `Searching XKCD for "${query}"\n${await xkcd_search(query)}`
+        } else {
+            const n = command[3]?.match(/^\d+$/)?.[0] || random_int(1, 2434)
+            return `XKCD #${n}\nhttps://xkcd.com/${n}`
+        }
+    }
+
+    // Searches for an XKCD comic
+    function xkcd_search(query) {
+        query = unsafeWindow.encodeURI(query.replace(/\s+/g, '+'))
+        const promise = new Promise((res, rej) => {
+            GM.xmlHttpRequest({
+                method: 'POST',
+                url: new URL('https://relevant-xkcd-backend.herokuapp.com/search'),
+                data: 'search=' + query,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                },
+                onload: function (xhr) {
+                    const first_result = JSON.parse(xhr.responseText).results[0].url
+                    res(first_result)
+                },
+            })
+        })
+        return promise
     }
 
     // Matches a quoted string in a string
