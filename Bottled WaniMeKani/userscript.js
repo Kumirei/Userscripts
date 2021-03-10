@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.12.1
+// @version      1.13.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -184,6 +184,11 @@
                 case 'morse':
                     const is_morse = !phrase.match(/[^.-\s\/]/)
                     listing = lister(is_morse ? `<pre>${phrase}</pre>` : `"${phrase}" is`, '', morse(is_morse, phrase))
+                    break
+                // Responds with the version and update date
+                case 'version':
+                    listing = lister(`You are running`, '', version())
+                    break
                 // More general commands
                 default:
                     // I love you
@@ -452,6 +457,12 @@
             })
         })
         return promise
+    }
+
+    // Returns the version and update date
+    function version() {
+        const info = GM_info.script
+        return `Version ${info.version}, updated on ${new Date(info.lastModified).toDateString().slice(4)}`
     }
 
     // Matches a quoted string in a string
