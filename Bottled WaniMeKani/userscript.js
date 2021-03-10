@@ -187,7 +187,7 @@
                     break
                 // Responds with the version and update date
                 case 'version':
-                    listing = lister(`You are running`, '', version())
+                    listing = lister(`You are running`, '', `Version ${GM_info.script.version}`)
                     break
                 // More general commands
                 default:
@@ -457,12 +457,6 @@
             })
         })
         return promise
-    }
-
-    // Returns the version and update date
-    function version() {
-        const info = GM_info.script
-        return `Version ${info.version}, updated on ${new Date(info.lastModified).toDateString().slice(4)}`
     }
 
     // Matches a quoted string in a string
