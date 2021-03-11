@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.13.3
+// @version      1.13.4
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -429,22 +429,26 @@
 
     // Can either search for a comic, get a specific comic (number), or a random comic
     async function xkcd(command) {
-        if (command[3].toLowerCase() == 'search') {
+        if (command[3]?.toLowerCase() == 'search') {
             const query = match_phrase(command[0], command[4])
             return `Searching XKCD for "${query}"\n${await xkcd_search(query)}`
-        } else if (command[3].toLowerCase() == 'latest') {
-            const latest = await new Promise((res, rej) => {
-                GM.xmlHttpRequest({
-                    method: 'GET',
-                    url: 'https://xkcd.com/info.0.json',
-                    onload: (xhr) => res('https://xkcd.com/' + JSON.parse(xhr.responseText).num),
-                })
-            })
-            return latest
+        } else if (command[3]?.toLowerCase() == 'latest') {
+            return `https://xkcd.com/${await latest_xkcd()}`
         } else {
-            const n = command[3]?.match(/^\d+$/)?.[0] || random_int(1, 2434)
+            const n = command[3]?.match(/^\d+$/)?.[0] || random_int(1, await latest_xkcd())
             return `XKCD #${n}\nhttps://xkcd.com/${n}`
         }
+    }
+
+    // Promise the number of the latest xkcd comic
+    function latest_xkcd() {
+        return new Promise((res, rej) => {
+            GM.xmlHttpRequest({
+                method: 'GET',
+                url: 'https://xkcd.com/info.0.json',
+                onload: (xhr) => res(JSON.parse(xhr.responseText).num),
+            })
+        })
     }
 
     // Searches for an XKCD comic
