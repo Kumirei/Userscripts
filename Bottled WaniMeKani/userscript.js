@@ -7,6 +7,7 @@
 // @include      https://community.wanikani.com/*
 // @grant        GM.xmlHttpRequest
 // @connect      relevant-xkcd-backend.herokuapp.com
+// @connect      xkcd.com
 // @connect      jisho.org
 // ==/UserScript==
 
