@@ -331,11 +331,11 @@
     function poll_help() {
         const config_list = [
             `title="<phrase>": Puts a title on your poll`,
-            `multi / number: Make the poll MULTIple choice or number type poll. Omit for single choice`,
+            `multi / number: Make the poll multiple choice or number type poll. Omit for single choice`,
             `onvote / onclose: Decide when to show results, either after voting or after the poll closes. Omit to always show`,
             `min<number>: The minimum number of options to choose in a !multi, or the lowest number in a !number poll. Omit for min 1`,
-            `max<number>: Same as min, but max`,
-            `step<number>: The step between numbers in a !number poll. Omit for step 1`,
+            `max<number>: Same as min, but default is the number of poll options you specified`,
+            `step<number>: The step between numbers in a number poll. Omit for step 1`,
             `pie: Make the chart a pie chart. Omit for bar chart`,
             `private: Don't show who voted. Omit for public votes`,
             `close<number>: Close the poll after a number of hours. Omit to never close`,
