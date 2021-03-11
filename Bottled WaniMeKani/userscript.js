@@ -227,8 +227,7 @@
         'Install: Links the installation thread',
         'Say-something: Quotes a random post from the Say Something About The Person Above You thread',
         'OOCQ: Quotes a random post from the Out Of Context Quotes thread',
-        'xkcd <number?>: Gives you a random or specific xkcd comic',
-        'xkcd search <word / "phrase">: Searches for a relevant xkcd comic',
+        'xkcd <number?>/latest/search <word / "phrase">: Gives you the a random, a specific, the latest, or a searched for xkcd comic',
         'Spell <word / "phrase">: Teaches you how to combine letters into words',
         'Morse <word / "phrase">: Translates to and from morse code',
     ]
@@ -433,6 +432,15 @@
         if (command[3].toLowerCase() == 'search') {
             const query = match_phrase(command[0], command[4])
             return `Searching XKCD for "${query}"\n${await xkcd_search(query)}`
+        } else if (command[3].toLowerCase() == 'latest') {
+            const latest = await new Promise((res, rej) => {
+                GM.xmlHttpRequest({
+                    method: 'GET',
+                    url: 'https://xkcd.com/info.0.json',
+                    onload: (xhr) => res('https://xkcd.com/' + JSON.parse(xhr.responseText).num),
+                })
+            })
+            return latest
         } else {
             const n = command[3]?.match(/^\d+$/)?.[0] || random_int(1, 2434)
             return `XKCD #${n}\nhttps://xkcd.com/${n}`
