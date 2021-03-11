@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.13.0
+// @version      1.13.3
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -299,7 +299,6 @@
             type: (line.match(/!(multi|number)/i)?.[1] || 'regular').replace(/multi/, 'multiple'),
             result: (line.match(/!(onvote|onclose)/i)?.[1] || 'always').replace(/on/, 'on_'),
             min: line.match(/!min(\d+)/i)?.[1] || 1,
-            max: line.match(/!max(\d+)/i)?.[1] || 10,
             step: line.match(/!step(\d+)/i)?.[1] || 1,
             chart: !!line.match(/!pie/i) ? 'pie' : 'bar',
             public: !line.match(/!private/i),
@@ -307,12 +306,13 @@
         }
         if (config.close) config.close = new Date(Date.now() + Number(config.hours) * 60 * 60 * 1000).toISOString()
         // Find poll options
-        line = line.replace(/!\w+(=["“„«]([^"””»\n]+)["””»])?/gi, '') // Remove configs
-        const options = line
-            .match(/(["“„«][^"””»\n]+["””»])|(\S+)/g)
-            .map((o) => `* ${o.replace(/["“”„”«»]/g, '')}`)
-            .slice(0, 20) // Match options, max 20
-        if (config.type != 'regular') config.max = options.length // Default max for multiple choice
+        const options_line = line.replace(/!\w+(=["“„«]([^"””»\n]+)["””»])?/gi, '') // Remove configs
+        const options =
+            options_line
+                .match(/(["“„«][^"””»\n]+["””»])|(\S+)/g)
+                ?.map((o) => `* ${o.replace(/["“”„”«»]/g, '')}`)
+                ?.slice(0, 20) || [] // Match options, max 20
+        config.max = line.match(/!max(\d+)/i)?.[1] || options.length || 10 // Default max for multiple choice
 
         // Build poll
         return (
