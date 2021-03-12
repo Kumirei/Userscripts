@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.13.5
+// @version      1.13.6
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -189,6 +189,10 @@
                 // Responds with the version and update date
                 case 'version':
                     listing = lister(`You are running`, '', `Version ${GM_info.script.version}`)
+                    break
+                // Links the visual guide to installing scripts
+                case 'scripts?':
+                    listing = `Don't know what a script is? Have a look at this thread\nhttps://community.wanikani.com/t/visual-guide-on-how-to-install-a-userscript/12136`
                     break
                 // More general commands
                 default:
