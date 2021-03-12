@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.13.4
+// @version      1.13.5
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -637,6 +637,7 @@
                 '..--..': '?',
                 '/': ' ',
                 ' ': '',
+                '.----.': `'`,
             },
             encode: {
                 '!': '-.-.--',
@@ -647,6 +648,7 @@
                 '.': '.-.-.-',
                 ' ': '/',
                 '?': '..--..',
+                "'": '.----.',
                 0: '-----',
                 1: '.----',
                 2: '..---',
