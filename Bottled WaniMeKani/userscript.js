@@ -192,7 +192,7 @@
                     break
                 // Links the visual guide to installing scripts
                 case 'scripts?':
-                    listing = `Don't know what a script is? Have a look at this thread\nhttps://community.wanikani.com/t/visual-guide-on-how-to-install-a-userscript/12136`
+                    listing = `Don't know how to install scripts? Have a look at this thread\nhttps://community.wanikani.com/t/visual-guide-on-how-to-install-a-userscript/12136`
                     break
                 // More general commands
                 default:
