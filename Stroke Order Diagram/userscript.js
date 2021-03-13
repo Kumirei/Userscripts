@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        WaniKani Stroke Order
 // @namespace   japanese
-// @version     1.1.7
+// @version     1.1.8
 // @description Shows a kanji's stroke order on its page and during lessons and reviews.
 // @license     GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 // @include     http*://*wanikani.com/kanji/*
@@ -36,7 +36,7 @@
      */
     var PageEnum = Object.freeze({ unknown: 0, kanji: 1, reviews: 2, lessons: 3 })
     var curPage = PageEnum.unknown
-    var JISHO = 'http://jisho.org'
+    var JISHO = 'https://jisho.org'
     var strokeOrderCss =
         "<style type='text/css'>" +
         '.stroke_order_diagram--bounding_box {fill: none;stroke: #ddd; stroke-width: 2; stroke-linecap: square;stroke-linejoin: square;}' +
@@ -134,7 +134,7 @@
 
             switch (curPage) {
                 case PageEnum.kanji:
-                    $(sectionHTML).insertAfter('#information')
+                    $(sectionHTML).insertAfter('.span12 header')
                     break
                 case PageEnum.reviews:
                     console.log('prepend')
