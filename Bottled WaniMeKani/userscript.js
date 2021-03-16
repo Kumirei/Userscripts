@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.13.6
+// @version      1.14.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -60,6 +60,9 @@
 
     // Create responses to the commands
     async function get_responses(text) {
+        // Get stored data
+        const cache = get_local()
+        if (cache.off && !text.match(/@WaniMeKani\s+(on|hello|hi)/i)) return ''
         // Extract the commands
         // Each command is formatted as [whole line, @wanimekani, word1, word2, ...]
         let regx = new RegExp('@wanimekani[^\n]+', 'gi')
@@ -194,6 +197,42 @@
                 case 'scripts?':
                     listing = `Don't know how to install scripts? Have a look at this thread\nhttps://community.wanikani.com/t/visual-guide-on-how-to-install-a-userscript/12136`
                     break
+                // Links the visual guide to installing scripts
+                case 'remind':
+                case 'remindme':
+                case 'reminder':
+                    const [reminder, rem_text] = set_reminder(cache, command[3], match_phrase(command[0], command[4]))
+                    listing = lister(
+                        `Setting a reminder for ${reminder}`,
+                        ':timer_clock:',
+                        `You will be reminded after ${rem_text}`,
+                    )
+                    break
+                // Plays a slot machine game
+                // TODO: make betterer
+                case 'slot':
+                    listing = lister(`:slot_machine:`, '', slot_machine())
+                    break
+                // Turns the bot off
+                case 'off':
+                case 'shut': // up, off, it, pancakes
+                case 'silence':
+                    cache.off = true
+                    listing = 'Power off...'
+                    break
+                // Greeting
+                case 'hello':
+                case 'hi':
+                    listing = 'Hello there!'
+                // Turn the bot on
+                case 'on':
+                    cache.off = false
+                    break
+                // Thank the bot
+                case 'thank':
+                case 'thanks':
+                    listing = 'You are welcome :robot:'
+                    break
                 // More general commands
                 default:
                     // I love you
@@ -205,6 +244,8 @@
             }
             if (listing) results.push(listing)
         }
+        results.push(...get_reminders(cache))
+        set_local(cache)
         return results.join('\n\n')
     }
 
@@ -476,6 +517,67 @@
         return promise
     }
 
+    // Creates a reminder
+    function set_reminder(cache, rel_time, text) {
+        const times = parse_rel_time(rel_time)
+        // Reduce to ms
+        const ms_day = 24 * 60 * 60 * 1000
+        const ms_map = [365 * ms_day, 31 * ms_day, 7 * ms_day, ms_day, ms_day / 24, 60 * 1000, 1000]
+        const ms = times.map((item, i) => item * ms_map[i]).reduce((a, b) => a + b, 0)
+        // Set reminder
+        const date = Date.now() + ms
+        cache.reminders.push([date, text])
+        // Return strings
+        const time_map = ['y', 'mon', 'w', 'd', 'h', 'm', 's']
+        const rel = times
+            .map((item, i) => (item ? item + time_map[i] : 0))
+            .filter((a) => !!a)
+            .join('')
+        const msg = new Date(date).toLocaleString()
+        return [rel, msg]
+    }
+
+    // Parses relative time
+    function parse_rel_time(str) {
+        const times = [0, 0, 0, 0, 0, 0, 0] // [years, months, weeks, days, hours, minutes, seconds]
+        const matches = str.matchAll(/(\d+)y|(\d+)mon|(\d+)w|(\d+)d|(\d+)h|(\d+)m|(\d+)s/gi)
+        Array.from(matches).forEach((match) => {
+            for (let i = 1; i <= 7; i++) times[i - 1] = times[i - 1] || Number(match[i]) || 0
+        })
+        return times
+    }
+
+    // Gets expired reminders
+    function get_reminders(cache) {
+        const date = Date.now()
+        const listings = []
+        cache.reminders
+            .filter((r) => r[0] < date)
+            .forEach((r) => {
+                const r_date = new Date(r[0]).toLocaleString()
+                listings.push(lister(`REMINDER FOR ${r_date}`, ':timer_clock:', r[1] || `You did not set a message`))
+            })
+        cache.reminders = cache.reminders.filter((r) => r[0] > date)
+        return listings
+    }
+
+    // Fetch local storage cache
+    function get_local() {
+        return JSON.parse(localStorage.getItem('WMKI') || '{ "reminders": [] }')
+    }
+
+    // Saves to local storage
+    function set_local(cache) {
+        localStorage.setItem('WMKI', JSON.stringify(cache))
+    }
+
+    // Does a slotty slot
+    function slot_machine() {
+        const slot_item = () => `![image|50x50](upload://${random_pick(lists.slot)}.png)`
+        const slot_row = () => slot_item() + slot_item() + slot_item() + '\n'
+        return slot_row() + slot_row() + slot_row()
+    }
+
     // Matches a quoted string in a string
     function match_phrase(string, fallback) {
         return fallback?.match(/^["“”„”«»]/) ? string.match(/["“„«]([^"””»\n]+)["””»]/i)?.[1] : fallback
@@ -691,6 +793,30 @@
                 z: '--..',
             },
         },
+        slot: [
+            `zmzm1HU4TpWujqV4Bca6nt2Rztq`,
+            `mOEUSid4owlDYDPB2grNETMb5sL`,
+            `cTJtuGX9Kra2nVzkV0DOtgqwsgi`,
+            `jHiXb5LKZIfuqtYJsvmTurafG0l`,
+            `2byFtD33Qs8jRQ3KADw2UfDuHAo`,
+            `3Ir7ZX8JIfEVsdZYGoQsVWeXvOw`,
+            `i2OPKunXTyXP8bwicsL2VuDWfo3`,
+            `jaLSZDS1OeWqm16cBr4VJSBkzfK`,
+            `lkKQdF9e59B8svfGKYJsVGJBpug`,
+            `o78II7QewaNL854kkadrllyESjb`,
+            `5LXUspgVc43bg0fkSypYjBbmIqr`,
+            `FGlfuxnsb0zTHTv1ziCNC6jaEV`,
+            `k1RCNGuJsWt6h1rwk0xw6XmabQ9`,
+            `90dipQgYpmI7aeSi3v7X4RdTGqC`,
+            `ss0tf2pTbWlLZtpCeHFokyuNm3o`,
+            `bpeoTG7tCF6xkJXTS7kHDq10NCS`,
+            `eF3fe6BL4c33xylT8Tq5yrTNHZ6`,
+            `A8POKmGHQltyXZOv8lx1K0b9BEz`,
+            `icsvWh3HHW7T2vLyN0sBVjMeE8Q`,
+            `eKI1hnHmyC3uFwSa2lrb0Mts6Gn`,
+            `9FngeGMo7HV7M6596OBx9Fpbvm8`,
+            `wyG64i3lTq2NmvJXA3TChMo3VkQ`,
+        ],
         quote: [
             [`In the middle of every difficulty lies opportunity`, `Albert Einstein`],
             [`Freedom is not worth having if it does not connote freedom to err.`, `Mahatma Gandhi`],
