@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.14.0
+// @version      1.14.1
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -276,6 +276,9 @@
         'xkcd <number?>/latest/search <word / "phrase">: Gives you the a random, a specific, the latest, or a searched for xkcd comic',
         'Spell <word / "phrase">: Teaches you how to combine letters into words',
         'Morse <word / "phrase">: Translates to and from morse code',
+        'Remindme <num?>y<num?>mon<num?>w<num?>d<num?>h<num?>s <word / "phrase">: Sets a reminder for a relative time in the future',
+        'Off: Makes the bot ignore you',
+        'On: Makes the bot not ignore you',
     ]
 
     // Create a response listing
