@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.14.1
+// @version      1.15.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -74,7 +74,8 @@
             let command = commands[i]
             let listing, n
             let phrase = match_phrase(command[0], command[3])
-            switch (command[2].toLowerCase()) {
+            let word = command[2].toLowerCase()
+            switch (word) {
                 case 'help':
                 case 'list':
                 case 'commands':
@@ -135,7 +136,7 @@
                 // Searches MAL for anime and manga
                 case 'anime':
                 case 'manga':
-                    listing = `Searching MAL for "${phrase}" ${command[2]}\n${await mal(command[2], phrase)}`
+                    listing = `Searching MAL for "${phrase}" ${word}\n${await mal(word, phrase)}`
                     break
                 // Searches Jisho
                 case 'jisho':
@@ -171,7 +172,7 @@
                     break
                 // Quotes a random post from the say something threads
                 case 'say-something':
-                    listing = `In a thread far far away...\n${await say_something()}`
+                    listing = `In a thread far far away...\n${await quote_random_post(30543)}`
                     break
                 // Gets a random OOQ from the OOQ thread
                 case 'oocq':
@@ -233,16 +234,45 @@
                 case 'thanks':
                     listing = 'You are welcome :robot:'
                     break
+                // Quotes a random dog thread post
+                case 'dog':
+                case 'doggie':
+                case 'doggo':
+                case '犬':
+                case 'いぬ':
+                    listing = `:dog: Is this a dog?\n${await quote_random_post(18157)}`
+                    break
+                // Quotes a random cat thread post
+                case 'cat':
+                case 'kitten':
+                case 'kitty':
+                case 'glias':
+                    listing = `:cat: Is this a cat?\n${await quote_random_post(13057)}`
+                    break
+                // Quotes a random meme thread post
+                case 'meme':
+                    listing = `:robot: HA HA HA\n${await quote_random_post(15657)}`
+                    break
+                // Get stats
+                case 'stats':
+                    const stats = Object.entries(cache.stats)
+                        .map((a) => a.join(': '))
+                        .join('\n')
+                    listing = lister(`Here are your stats`, '', stats)
                 // More general commands
                 default:
                     // I love you
                     if (command[0].match(/@WaniMeKani\s+i\s+love\s+you/i)) {
+                        word = 'love'
                         listing = lister('Requiting love', ':kiss:', random_pick(lists.love))
                         break
                     }
                     break
             }
-            if (listing) results.push(listing)
+            if (listing) {
+                results.push(listing)
+                cache.stats = Object.assign(cache.stats || {}, { [word]: cache.stats + 1 || 1 }) // Update stats
+            }
         }
         results.push(...get_reminders(cache))
         set_local(cache)
@@ -397,16 +427,16 @@
     }
 
     // Finds a random post from the say something threads
-    async function say_something() {
-        const post = await random_post(30543)
-        return `[quote="${post.username}"]\n${post.raw}\n[/quote]`
-    }
-
-    // Finds a random post from the say something threads
     async function oocq() {
         const post = await random_post(30523)
         const text = post.raw.match(/\[quote.*\]([^\[]*)\[\/quote\]/i)[0].replace(/, post.*"\]/i, '"]')
         return text || '> No quote found, try again'
+    }
+
+    // Quotes a random post from a thread
+    async function quote_random_post(thread_id) {
+        const post = await random_post(thread_id)
+        return `[quote="${post.username}"]\n${post.raw}\n[/quote]`
     }
 
     // Finds a random post from a thread
