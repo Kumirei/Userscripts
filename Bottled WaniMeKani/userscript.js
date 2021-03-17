@@ -529,6 +529,7 @@
         const ms = times.map((item, i) => item * ms_map[i]).reduce((a, b) => a + b, 0)
         // Set reminder
         const date = Date.now() + ms
+        text = text || document.querySelector('.reply-to .user-link')?.href || ''
         cache.reminders.push([date, text])
         // Return strings
         const time_map = ['y', 'mon', 'w', 'd', 'h', 'm', 's']
