@@ -309,6 +309,10 @@
         'Remindme <num?>y<num?>mon<num?>w<num?>d<num?>h<num?>s <word / "phrase">: Sets a reminder for a relative time in the future',
         'Off: Makes the bot ignore you',
         'On: Makes the bot not ignore you',
+        'Dog: Quotes a random post from the dog thread',
+        'Cat: Quotes a random post from the cat thread',
+        'Meme: Quotes a random post from the memes thread',
+        'Stats: Lists your usage of the commands',
     ]
 
     // Create a response listing
