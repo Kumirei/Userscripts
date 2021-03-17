@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.15.0
+// @version      1.15.1
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -255,6 +255,7 @@
                     break
                 // Get stats
                 case 'stats':
+                    console.log(cache.stats)
                     const stats = Object.entries(cache.stats)
                         .map((a) => a.join(': '))
                         .join('\n')
@@ -271,7 +272,8 @@
             }
             if (listing) {
                 results.push(listing)
-                cache.stats = Object.assign(cache.stats || {}, { [word]: cache.stats + 1 || 1 }) // Update stats
+                if (typeof Object.values(cache.stats)[0] == 'string') cache.stats = {} // Fixing and oops
+                cache.stats = Object.assign(cache.stats || {}, { [word]: cache.stats[word] + 1 || 1 }) // Update stats
             }
         }
         results.push(...get_reminders(cache))
