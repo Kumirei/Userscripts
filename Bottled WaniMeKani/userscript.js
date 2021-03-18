@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.15.1
+// @version      1.15.2
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -272,7 +272,7 @@
             }
             if (listing) {
                 results.push(listing)
-                if (typeof Object.values(cache.stats)[0] == 'string') cache.stats = {} // Fixing and oops
+                if (typeof Object.values(cache.stats || {})[0] == 'string') cache.stats = {} // Fixing an oops
                 cache.stats = Object.assign(cache.stats || {}, { [word]: cache.stats[word] + 1 || 1 }) // Update stats
             }
         }
