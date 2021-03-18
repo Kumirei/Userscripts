@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.15.3
+// @version      1.16.0
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -255,14 +255,13 @@
                     break
                 // Get stats
                 case 'stats':
-                    console.log(cache.stats)
                     const stats = Object.entries(cache.stats)
                         .map((a) => a.join(': '))
                         .join('\n')
                     listing = lister(`Here are your stats`, '', stats)
                 // Get user info
                 case 'user':
-                case 'summary':
+                    listing = lister(`Here is some info about ${phrase}`, '', await user(phrase))
                     break
                 // More general commands
                 default:
@@ -319,6 +318,7 @@
         'Cat: Quotes a random post from the cat thread',
         'Meme: Quotes a random post from the memes thread',
         'Stats: Lists your usage of the commands',
+        'User <username>: Returns info about the user',
     ]
 
     // Create a response listing
@@ -603,6 +603,66 @@
             })
         cache.reminders = cache.reminders.filter((r) => r[0] > date)
         return listings
+    }
+
+    // Fetches user data
+    async function user(user) {
+        const user_data = fetch(`/u/${user}.json`).then((r) => r.json())
+        const user_summary = fetch(`/u/${user}/summary.json`).then((r) => r.json())
+        let [data, summary] = await Promise.all([user_data, user_summary])
+        user = data.user
+        summary = summary.user_summary
+        const now = Date.now()
+        const heart = `<img class="emoji" src="https://emoji.discourse-cdn.com/apple/purple_heart.png?v=9">`
+        const users_map = (u) => [u.avatar_template.replace(/{size}/, '20'), u.username, u.count]
+        const liked_by = summary.most_liked_by_users.map(users_map)
+        const liked = summary.most_liked_users.map(users_map)
+        const replied = summary.most_replied_to_users.map(users_map)
+        const users_item = (l, i) => `<td><img class="avatar" src="${l[i][0]}"> ${l[i][1]}<td>${l[i][2].toSeparated()}`
+        const users_row = (i) => `<tr>` + users_item(liked, i) + users_item(liked_by, i) + users_item(replied, i)
+        const users_rows = () =>
+            new Array(6)
+                .fill(null)
+                .map((_, i) => users_row(i))
+                .join('\n')
+        const html =
+            `<div align="center">` +
+            `<img class="avatar" src="${user.avatar_template.replace(/{size}/, '40')}">` +
+            `<b>&nbsp; ${user.username}</b> - ${user.title || ''}\n\n${user.bio_raw || ''}` +
+            `<hr><table><thead><tr><th>Featured<td><a href="/t/x/${user.featured_topic?.id || ''}">` +
+            `${user.featured_topic?.title || ''}<th>Level<td>${user.primary_group_name.split('-')[1] || ''}` +
+            `<tr><th>Website<td><a href="${user.website || ''}">${user.website_name || ''}` +
+            `<th>Location<td>${user.location || 'Durtle Hell'}</table>` +
+            `<hr><table><thead><tr><th>Joined<td>${user.created_at.slice(0, 10)}` +
+            `<th>Seen<td>${rel_time(user.last_seen_at, now)}<th>Posted<td>${rel_time(user.last_posted_at, now)}` +
+            `<tr><th>Posts<td>${summary.post_count.toSeparated()}<th>Topics<td>` +
+            `${summary.topic_count.toSeparated()}<th>Read<td>${rel_time(0, summary.time_read)}` +
+            `<tr><th>Visits<td>${summary.days_visited.toSeparated()}<th>Views` +
+            `<td>${user.profile_view_count.toSeparated()}<th>Badges<td>${user.badge_count}` +
+            `<tr><th>Given<td>${summary.likes_given.toSeparated()} ${heart}<th>Received<td>` +
+            `${summary.likes_received.toSeparated()} ${heart}</table><hr>` +
+            `<table><thead><tr><th>Most Liked<th><th>Most Liked By<th><th>Most Replied To<th>` +
+            `</thead>` +
+            users_rows() +
+            `</table>`
+        return html
+    }
+
+    // Gets a relative time difference
+    function rel_time(t0, t1) {
+        t0 = new Date(t0).getTime()
+        t1 = new Date(t1).getTime()
+        const diff = t1 - t0
+        const time_map = [31536000000, 2592000000, 86400000, 3600000, 60000, 1000] // ms in year, month, day, hour, minute, second
+        const rel = time_map.map((d, i) => Math.floor((i > 0 ? diff % time_map[i - 1] : diff) / d))
+        const times = ['y', 'mon', 'd', 'h', 'm', 's']
+        const i = rel.findIndex((a) => a !== 0)
+        return rel[i] + times[i] + ' ' + (i < times.length - 2 ? rel[i + 1] + times[i + 1] : '')
+    }
+
+    // Adds thousand separators to numbers. 1000000 → "1,000,000"
+    Number.prototype.toSeparated = function (separator = ',') {
+        return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator)
     }
 
     // Fetch local storage cache
