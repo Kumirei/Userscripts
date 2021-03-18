@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.16.1
+// @version      1.16.2
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -259,6 +259,7 @@
                         .map((a) => a.join(': '))
                         .join('\n')
                     listing = lister(`Here are your stats`, '', stats)
+                    break
                 // Get user info
                 case 'user':
                     listing = lister(`Here is some info about ${phrase}`, '', await user(phrase))
