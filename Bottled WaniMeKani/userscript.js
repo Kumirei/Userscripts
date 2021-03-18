@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.16.0
+// @version      1.16.1
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -636,7 +636,7 @@
             `<hr><table><thead><tr><th>Joined<td>${user.created_at.slice(0, 10)}` +
             `<th>Seen<td>${rel_time(user.last_seen_at, now)}<th>Posted<td>${rel_time(user.last_posted_at, now)}` +
             `<tr><th>Posts<td>${summary.post_count.toSeparated()}<th>Topics<td>` +
-            `${summary.topic_count.toSeparated()}<th>Read<td>${rel_time(0, summary.time_read)}` +
+            `${summary.topic_count.toSeparated()}<th>Read<td>${rel_time(0, summary.time_read * 1000)}` +
             `<tr><th>Visits<td>${summary.days_visited.toSeparated()}<th>Views` +
             `<td>${user.profile_view_count.toSeparated()}<th>Badges<td>${user.badge_count}` +
             `<tr><th>Given<td>${summary.likes_given.toSeparated()} ${heart}<th>Received<td>` +
