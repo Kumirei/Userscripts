@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.15.2
+// @version      1.15.3
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -260,6 +260,10 @@
                         .map((a) => a.join(': '))
                         .join('\n')
                     listing = lister(`Here are your stats`, '', stats)
+                // Get user info
+                case 'user':
+                case 'summary':
+                    break
                 // More general commands
                 default:
                     // I love you
@@ -273,7 +277,7 @@
             if (listing) {
                 results.push(listing)
                 if (typeof Object.values(cache.stats || {})[0] == 'string') cache.stats = {} // Fixing an oops
-                cache.stats = Object.assign(cache.stats || {}, { [word]: cache.stats[word] + 1 || 1 }) // Update stats
+                cache.stats = Object.assign(cache.stats || {}, { [word]: cache.stats?.[word] + 1 || 1 }) // Update stats
             }
         }
         results.push(...get_reminders(cache))
