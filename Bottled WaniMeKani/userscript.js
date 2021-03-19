@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 ;(function () {
-    let rng_timestamp
+    let rng
     // Wait until the save function is defined
     const i = setInterval(tryInject, 100)
 
@@ -38,6 +38,8 @@
 
     // Grabs the text then returns the WaniMeKani answers
     async function commune(composer) {
+        rng_timestamp = String(Date.now())
+        rng = prng(rng_timestamp)
         // Get draft text, without quotes
         const text = composer.value.replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gis, '')
         // Don't do anything if results are already present
@@ -67,7 +69,6 @@
         // Each command is formatted as [whole line, @wanimekani, word1, word2, ...]
         let regx = new RegExp('@wanimekani[^\n]+', 'gi')
         let commands = text.match(regx)?.map((c) => [c, ...c.replace(/\s+/g, ' ').split(' ')]) || []
-        const rand = prng()
         // Process commands
         let results = []
         for (let i = 0; i < commands.length; i++) {
@@ -86,7 +87,7 @@
                     // Dice
                     if (command[3]?.match(/^\d+d\d+/i)) {
                         let [roll, count, faces] = command[3].match(/^(\d+)d(\d+)/i)
-                        listing = lister(`Rolling ${roll}`, ':game_die:', dice(count, faces, rand))
+                        listing = lister(`Rolling ${roll}`, ':game_die:', dice(count, faces))
                         // Rick roll
                     } else if (command[3]?.match(/^rick$/)) {
                         listing = lister(`Rolling rick`, '', rick())
@@ -328,10 +329,10 @@
     }
 
     // Roll some dice
-    function dice(count, faces, rng) {
+    function dice(count, faces) {
         return new Array(Number(count))
             .fill(null)
-            .map((_) => random_int(1, faces, rng))
+            .map((_) => random_int(1, faces))
             .join(', ')
     }
 
@@ -694,16 +695,15 @@
     }
 
     // Get random integer in inclusive interval [min, max]
-    function random_int(min, max, rand = Math.random) {
+    function random_int(min, max) {
         min = Math.ceil(min)
         max = Math.floor(max)
-        return Math.floor(rand() * (max - min + 1)) + min
+        return Math.floor(rng() * (max - min + 1)) + min
     }
 
     // Creates a new PRNG
-    function prng(time) {
-        rng_timestamp = String(time || Date.now())
-        const seeder = xmur3(rng_timestamp)
+    function prng(seed) {
+        const seeder = xmur3(seed)
         const new_prng = mulberry32(seeder())
         return new_prng
     }
