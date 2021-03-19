@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.16.5
+// @version      1.16.6
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -631,8 +631,8 @@
                 .join('\n')
         const html =
             `<div align="center">` +
-            `<img class="avatar" src="${user.avatar_template.replace(/{size}/, '40')}">` +
-            `<b>&nbsp; ${user.username}</b> - ${user.title || ''}\n\n${user.bio_raw || ''}` +
+            `<img class="avatar" src="${user.avatar_template.replace(/{size}/, '40')}" height=40 width=40>` +
+            `<b>&nbsp; ${user.username}</b> - ${user.title || 'Guppies'}\n\n${user.bio_raw || ''}` +
             `<hr><table><thead><tr><th>Featured<td><a href="/t/x/${user.featured_topic?.id || ''}">` +
             `${user.featured_topic?.title || ''}<th>Level<td>${user.primary_group_name?.split('-')[1] || ''}` +
             `<tr><th>Website<td><a href="${user.website || ''}">${user.website_name || ''}` +
