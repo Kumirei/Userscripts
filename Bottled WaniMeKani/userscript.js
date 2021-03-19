@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.16.6
+// @version      1.16.7
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -609,9 +609,10 @@
 
     // Fetches user data
     async function user(user) {
-        const user_data = fetch(`/u/${user}.json`).then((r) => r.json())
-        const user_summary = fetch(`/u/${user}/summary.json`).then((r) => r.json())
+        const user_data = fetch(`/u/${user}.json`).then((r) => r?.json())
+        const user_summary = fetch(`/u/${user}/summary.json`).then((r) => r?.json())
         let [data, summary] = await Promise.all([user_data, user_summary])
+        if (summary.errors) return `:robot: Error: user profile is hidden`
         user = data.user
         summary = summary.user_summary
         const now = Date.now()
