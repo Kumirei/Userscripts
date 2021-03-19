@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.16.3
+// @version      1.16.4
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -633,7 +633,7 @@
             `<img class="avatar" src="${user.avatar_template.replace(/{size}/, '40')}">` +
             `<b>&nbsp; ${user.username}</b> - ${user.title || ''}\n\n${user.bio_raw || ''}` +
             `<hr><table><thead><tr><th>Featured<td><a href="/t/x/${user.featured_topic?.id || ''}">` +
-            `${user.featured_topic?.title || ''}<th>Level<td>${user.primary_group_name.split('-')[1] || ''}` +
+            `${user.featured_topic?.title || ''}<th>Level<td>${user.primary_group_name?.split('-')[1] || ''}` +
             `<tr><th>Website<td><a href="${user.website || ''}">${user.website_name || ''}` +
             `<th>Location<td>${user.location || 'Durtle Hell'}</table>` +
             `<hr><table><thead><tr><th>Joined<td>${user.created_at.slice(0, 10)}` +
