@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.16.4
+// @version      1.16.5
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -621,7 +621,8 @@
         const liked = summary.most_liked_users.map(users_map)
         const replied = summary.most_replied_to_users.map(users_map)
         const users_item = (l, i) =>
-            `<td><img class="avatar" src="${l[i][0]}" width=20 height=20> ${l[i][1]}<td>${l[i][2].toSeparated()}`
+            `<td><img class="avatar" src="${l[i]?.[0] || ''}" width=20 height=20> ` +
+            `${l[i]?.[1] || ''}<td>${(l[i]?.[2] || 0).toSeparated()}`
         const users_row = (i) => `<tr>` + users_item(liked, i) + users_item(liked_by, i) + users_item(replied, i)
         const users_rows = () =>
             new Array(6)
