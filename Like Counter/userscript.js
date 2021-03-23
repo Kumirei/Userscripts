@@ -1,36 +1,36 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.1.2
+// @version      3.1.3
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
 // @grant        none
 // ==/UserScript==
-
 ;(function ($) {
     // SETTINGS
     const settings = {
-        update_interval: 1, // Interval (minutes) for fetching summary page data and likes
+        update_interval: 10, // Interval (minutes) for fetching summary page data and likes
         lifetime_purple: false, // Set to true for purple info bubbles
     }
 
     // Global variable
     let LC = {
-        summary: {
-            last_update: '1970-01-01T00:00:00.000Z',
-            likes_given: 0,
-            likes_received: 0,
-            days_visited: 0,
-            max: 200, // 200 is default for *regulars*
-        },
-        day: {
-            given: [],
-            received: [],
-        },
         stored: {
             zero: [],
             full: [],
+            received: [],
+            summary: {
+                last_update: '1970-01-01T00:00:00.000Z',
+                likes_given: 0,
+                likes_received: 0,
+                days_visited: 0,
+                max: 200, // 200 is default for *regulars*
+            },
+            day: {
+                given: [],
+                received: 0,
+            },
         },
         elems: {
             received: null,
@@ -64,6 +64,7 @@
     // Fetches the data of LC.stored from localStorage
     function update_stored() {
         LC.stored = Object.assign(LC.stored, JSON.parse(localStorage.getItem('LCstored')) || {})
+        console.log(LC)
     }
 
     // Saves the LC.stored data to localStorage
@@ -73,10 +74,15 @@
 
     // Updates summary info and likes used/received
     async function update_all() {
-        await update_summary()
-        await update_day()
-        save_stored()
-        update_display()
+        update_stored()
+        const now = new Date(Date.now() - settings.update_interval * 60 * 1000).toISOString()
+        if (LC.stored.summary.last_update < now) {
+            //alert('Updating' + new Date().toISOString() + '\n\n' + LC.stored.summary.last_update)
+            await update_summary()
+            await update_day()
+            save_stored()
+            update_display()
+        }
     }
 
     // Updates the LC variable with info from the summary page
@@ -92,7 +98,16 @@
             const data = await f.json()
             const max = 50 * (1 + data.badges[0].id)
             const { likes_given, likes_received, days_visited } = data.user_summary
-            LC.summary = { likes_given, likes_received, days_visited, max, last_update: new Date().toISOString() }
+            LC.stored.summary = {
+                likes_given,
+                likes_received,
+                days_visited,
+                max,
+                last_update: new Date().toISOString(),
+            }
+            const now = Date.now()
+            LC.stored.received.push([now, likes_received])
+            LC.stored.received = LC.stored.received.filter((a) => a[0] >= now - 24 * 60 * 60 * 1000)
         } else console.warn(`[LIKE COUNTER] Error ${f.status}: There was an error fetching user summary`)
     }
 
@@ -101,12 +116,15 @@
         const msday = 24 * 60 * 60 * 1000
         const now = Date.now()
         const username = $('#current-user a').attr('href').split('/u/')[1]
-        LC.day.given = (await fetch_likes(username, 1, 24)).reverse()
-        LC.day.received = (await fetch_likes(username, 2, 24)).reverse()
-        if (LC.day.given.length === LC.summary.max && (LC.stored.zero[LC.stored.zero.length - 1] || 0) < now - msday) {
+        const summary = LC.stored.summary
+        const day = LC.stored.day
+        day.given = (await fetch_likes(username, 1, 24)).reverse()
+        //day.received = (await fetch_likes(username, 2, 24)).reverse()
+        day.received = LC.stored.received[LC.stored.received[0].length] - LC.stored.received[0] || 0
+        if (day.given.length === summary.max && (LC.stored.zero[LC.stored.zero.length - 1] || 0) < now - msday) {
             LC.stored.zero.push(now)
         }
-        if (LC.day.given.length === 0 && (LC.stored.full[LC.stored.full.length - 1] || 0) < now - msday) {
+        if (day.given.length === 0 && (LC.stored.full[LC.stored.full.length - 1] || 0) < now - msday) {
             LC.stored.full.push(now)
         }
     }
@@ -182,25 +200,25 @@
         const msh = msday / 24
         const now = Date.now()
         const { received, given, next } = LC.elems
+        const summary = LC.stored.summary
+        const day = LC.stored.day
         // Update counts
-        received.children().text(LC.day.received.length)
-        given.children().text(LC.summary.max - LC.day.given.length)
-        next.children().text(time_left(LC.day.given[0] + msday))
-        LC.day.given.length < LC.summary.max ? $('body').removeClass('no-likes') : $('body').addClass('no-likes')
+        received.children().text(day.received)
+        given.children().text(summary.max - day.given.length)
+        next.children().text(time_left(day.given[0] + msday))
+        day.given.length < summary.max ? $('body').removeClass('no-likes') : $('body').addClass('no-likes')
         // Update hover info
         received.attr(
             'title',
-            `${comma(LC.day.received.length)} likes received in past 24h` +
-                `\n${comma(
-                    Math.round(LC.summary.likes_received / LC.summary.days_visited),
-                )} likes received per day visited` +
-                `\n${comma(LC.summary.likes_received)} total likes received`,
+            `${comma(day.received)} likes received in past 24h` +
+                `\n${comma(Math.round(summary.likes_received / summary.days_visited))} likes received per day visited` +
+                `\n${comma(summary.likes_received)} total likes received`,
         )
         given.attr(
             'title',
-            `${comma(LC.day.given.length)} likes given in past 24h` +
-                `\n${comma(Math.round(LC.summary.likes_given / LC.summary.days_visited))} likes given per day visited` +
-                `\n${comma(LC.summary.likes_given)} total likes given` +
+            `${comma(day.given.length)} likes given in past 24h` +
+                `\n${comma(Math.round(summary.likes_given / summary.days_visited))} likes given per day visited` +
+                `\n${comma(summary.likes_given)} total likes given` +
                 `\n\n${comma(LC.stored.zero.length)} times have you ran out` +
                 `\n${comma(
                     Math.floor((now - (LC.stored.zero[LC.stored.zero.length - 1] || now)) / msday),
@@ -214,10 +232,10 @@
             .fill(0)
             .map(
                 (_, i) =>
-                    LC.day.given.filter((like) => like + msday > now + i * msh && like + msday < now + (i + 1) * msh)
+                    day.given.filter((like) => like + msday > now + i * msh && like + msday < now + (i + 1) * msh)
                         .length,
             )
-        const next_like = new Date(LC.day.given[0] + msday)
+        const next_like = new Date(day.given[0] + msday)
         next.attr(
             'title',
             `Next like at ${next_like.getHours()}:${
@@ -230,12 +248,13 @@
     function update_next() {
         const msday = 24 * 60 * 60 * 1000
         const yesterday = Date.now() - msday
-        const given = LC.day.given.length
-        LC.day.given = LC.day.given.filter((t) => t > yesterday)
+        const day = LC.stored.day
+        const given = day.given.length
+        day.given = day.given.filter((t) => t > yesterday)
         // If likes have been used or expired update whole display
-        if (given !== LC.day.given.length) update_display()
+        if (given !== day.given.length) update_display()
         // Else just update the timer
-        else LC.elems.next.children().text(time_left(LC.day.given[0] + msday))
+        else LC.elems.next.children().text(time_left(day.given[0] + msday))
     }
 
     // Adds the CSS
