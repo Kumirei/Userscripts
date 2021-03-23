@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.1.3
+// @version      3.1.6
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -64,7 +64,6 @@
     // Fetches the data of LC.stored from localStorage
     function update_stored() {
         LC.stored = Object.assign(LC.stored, JSON.parse(localStorage.getItem('LCstored')) || {})
-        console.log(LC)
     }
 
     // Saves the LC.stored data to localStorage
@@ -120,7 +119,7 @@
         const day = LC.stored.day
         day.given = (await fetch_likes(username, 1, 24)).reverse()
         //day.received = (await fetch_likes(username, 2, 24)).reverse()
-        day.received = LC.stored.received[LC.stored.received[0].length] - LC.stored.received[0] || 0
+        day.received = LC.stored.received[LC.stored.received.length - 1][1] - LC.stored.received[0][1] || 0
         if (day.given.length === summary.max && (LC.stored.zero[LC.stored.zero.length - 1] || 0) < now - msday) {
             LC.stored.zero.push(now)
         }
