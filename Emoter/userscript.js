@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Emoter
 // @namespace    http://tampermonkey.net/
-// @version      1.1.4
+// @version      1.1.5
 // @description  Custom emote handler
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -73,6 +73,7 @@
                 if (value) emotes[name] = { url: value }
                 break
             case 'size': // !emote size NAME "SIZE"
+                if (value && !value.match(/\d+x\d+/i)) break
                 if (name === 'default') cache.size = value
             case 'url': // !emote url NAME "URL"
                 if (value && emotes[name]) emotes[name][word] = value
@@ -92,7 +93,9 @@
 
     // Creates an image for the emote
     function get_image(url, name, size) {
-        return `![${name}|${size}x${size}](${url})`
+        let w = (h = size)
+        if (size.match && size.match(/\d+x\d+/i)) [w, h] = size.split('x')
+        return `![${name}|${w}x${h}](${url})`
     }
 
     // Replaces :emotes: with images and !emotelist with the list
