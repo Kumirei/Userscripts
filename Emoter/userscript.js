@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Emoter
 // @namespace    http://tampermonkey.net/
-// @version      1.1.5
+// @version      1.1.6
 // @description  Custom emote handler
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -73,7 +73,7 @@
                 if (value) emotes[name] = { url: value }
                 break
             case 'size': // !emote size NAME "SIZE"
-                if (value && !value.match(/\d+x\d+/i)) break
+                if (value && !value.match(/\d+(x\d+)?/i)) break
                 if (name === 'default') cache.size = value
             case 'url': // !emote url NAME "URL"
                 if (value && emotes[name]) emotes[name][word] = value
