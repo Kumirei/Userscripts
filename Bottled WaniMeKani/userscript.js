@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.16.7
+// @version      1.16.8
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -359,8 +359,8 @@
         }
         Object.entries(params).forEach(([key, param]) => (url += `&${key}=${param}`))
         const res = await fetch(url).then((r) => r.json())
-        const title = res.query.search[0].title.replace(/ /g, '_')
-        return `https://en.wikipedia.org/wiki/${title}`
+        const title = res.query.search[0]?.title.replace(/ /g, '_')
+        return title ? `https://en.wikipedia.org/wiki/${title}` : `[quote]\nNo results\n[/quote]`
     }
 
     // Lists all the available commands (hopefully)
