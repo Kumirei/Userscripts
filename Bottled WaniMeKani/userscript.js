@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.16.8
+// @version      1.16.9
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -263,7 +263,9 @@
                     break
                 // Get user info
                 case 'user':
-                    listing = lister(`Here is some info about ${phrase}`, '', await user(phrase))
+                    listing =
+                        `[details="Here is some info about ${phrase}"]\n` +
+                        `[quote]\n${await user(phrase)}\n[/quote]\n[/details]`
                     break
                 // More general commands
                 default:
