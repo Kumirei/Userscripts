@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.16.9
+// @version      1.17.0.
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -266,6 +266,12 @@
                     listing =
                         `[details="Here is some info about ${phrase}"]\n` +
                         `[quote]\n${await user(phrase)}\n[/quote]\n[/details]`
+                    break
+                // Takes you to the greasyfork page
+                case 'update':
+                    const gf_link = 'https://greasyfork.org/en/scripts/422428-wanikani-forums-bottled-wanimekani'
+                    listing = `Opening the [GreasyFork page](${gf_link})...`
+                    unsafeWindow.open(gf_link)
                     break
                 // More general commands
                 default:
