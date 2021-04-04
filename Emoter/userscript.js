@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Emoter
 // @namespace    http://tampermonkey.net/
-// @version      1.1.6
+// @version      1.1.7
 // @description  Custom emote handler
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -95,7 +95,7 @@
     function get_image(url, name, size) {
         let w = (h = size)
         if (size.match && size.match(/\d+x\d+/i)) [w, h] = size.split('x')
-        return `![${name}|${w}x${h}](${url})`
+        return `<a title="${name}">![${name}|${w}x${h}](${url})</a>`
     }
 
     // Replaces :emotes: with images and !emotelist with the list
