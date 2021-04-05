@@ -95,7 +95,7 @@
     function get_image(url, name, size) {
         let w = (h = size)
         if (size.match && size.match(/\d+x\d+/i)) [w, h] = size.split('x')
-        return `<a title="${name}">![${name}|${w}x${h}](${url})</a>`
+        return `<abbr title="${name}">![${name}|${w}x${h}](${url})</abbr>`
     }
 
     // Replaces :emotes: with images and !emotelist with the list
