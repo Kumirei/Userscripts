@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.0.9
+// @version      1.0.10
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // ==/UserScript==
 
 (function(wkof) {
     // Reveal functions to window
-    window.review_cache = {get_reviews, reload,};
+    if (!window.review_cache || !window.review_cache.version || window.review_cache.version < GM_info.script.version) {
+        window.review_cache = {get_reviews, reload, version: GM_info.script.version};
+    }
 
     // Fetch reviews from storage
     function get_reviews() {
