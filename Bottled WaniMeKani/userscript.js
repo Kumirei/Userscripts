@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.17.0.
+// @version      1.18.0.
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -51,7 +51,7 @@
         if (responses === '') return ''
         // If commands were found, append a reply
         return (
-            `\n\n<hr><wmki><aside class="quote"><div class="title"><img src="https://sjc3.discourse-cdn.com/business5/user_avatar/community.wanikani.com/wanimekani/120/69503_2.png" class="avatar" width="20" height="20"> WaniMeKani:</div><blockquote><p><!-- ${rng_timestamp} -->\n` +
+            `\n\n<hr><wmki><aside class="quote"><div class="title"><img src="hhttps://sjc3.discourse-cdn.com/wanikanicommunity/user_avatar/community.wanikani.com/wanimekani/45/69503_2.png" class="avatar" width="20" height="20"> WaniMeKani:</div><blockquote><p><!-- ${rng_timestamp} -->\n` +
             '<!-- START ANSWERS -->\n\n' +
             `${responses}\n\n` +
             '<!-- END ANSWERS -->\n' +
@@ -233,7 +233,7 @@
                 // Thank the bot
                 case 'thank':
                 case 'thanks':
-                    listing = 'You are welcome :robot:'
+                    listing = lister('', ':high_touch:', `Thank you ${command[3]}!`)
                     break
                 // Quotes a random dog thread post
                 case 'dog':
