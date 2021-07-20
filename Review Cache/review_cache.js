@@ -1,11 +1,14 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.0.7
+// @version      1.0.8
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // ==/UserScript==
 
 (function(wkof) {
+    // Reload if cache is older than this date
+    const stale_cache_date = '2021-07-20T19:00:00.000Z'
+
     // Reveal functions to window
     window.review_cache = {get_reviews, reload,};
 
@@ -46,6 +49,7 @@
 
     // Updates the cache
     async function update_data(data) {
+        if (stale_cache_date > wkof.file_cache.dir.review_cache.added) data = {date: "1970-01-01T00:00:00.000Z", reviews: [],}
         let [date, new_reviews] = await fetch_new_reviews(data.date);
         if (new_reviews.length) {
             for (let new_review of new_reviews) data.reviews.push(new_review);
