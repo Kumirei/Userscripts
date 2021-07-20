@@ -7,9 +7,9 @@
 
     Name:           Forum Transparency 2.0
     Author:         Kumirei
-    Version:        2.1.25
-    Total lines:    3558
-    Latest update:  2021-02-28
+    Version:        2.1.27
+    Total lines:    3661
+    Latest update:  2021-07-20
 
     Forum post:     https://community.wanikani.com/t/userstyle-forum-transparency-20/32287
     Theme link:     https://userstyles.org/styles/163317/wanikani-forum-transparency-2-0
@@ -179,8 +179,8 @@
     *   [3429] Version 2.1.23
     *   [3456] Version 2.1.24
     *   [3573] Version 2.1.25
-
-
+    *   [3574] Version 2.1.26
+    *   [3631] Version 2.1.27
 
 
 
@@ -3569,5 +3569,93 @@
     .quick-access-panel .d-icon-bookmark,
     .quick-access-panel .d-icon-discourse-bookmark-clock {
         fill: rgba(var(--main-accent));
+    }
+
+    /* Version 2.1.26
+    /*_____________________
+
+    Fixed: Topic bottom gaps, presence, suggested topics heat
+    */
+
+    .post-stream {
+        padding-bottom: 0;
+    }
+
+    .topic-timer-info .topic-timer-heading {
+        padding: 0;
+    }
+
+    .topic-timer-info {
+        /* prettier-ignore */
+        max-width: calc(100% - 2*var(--padding-post) - var(--posts-margin));
+        width: 100%;
+    }
+
+    .loading-container {
+        width: 100% !important;
+    }
+
+    .topic-timer-info::after {
+        content: '';
+    }
+
+    .topic-timer-info:empty {
+        display: none;
+    }
+
+    .presence {
+        margin: 0 !important;
+        min-height: 0 !important;
+        width: calc(100% - var(--posts-margin));
+    }
+
+    .presence > div:empty {
+        display: none;
+    }
+
+    .timeline-container.timeline-docked-bottom {
+        margin-bottom: 0;
+    }
+
+    .suggested-topics {
+        margin-top: 3px;
+    }
+
+    .heatmap-high,
+    .heatmap-high a,
+    .heatmap-high .d-icon,
+    .heatmap-high .d-button-label {
+        color: #fe7a15 !important;
+    }
+
+    /* Version 2.1.27
+    /*_____________________
+
+    Fixed: Failed mentions, last visit,
+    */
+
+    .mention {
+        background-color: transparent !important;
+        color: var(--main-text) !important;
+    }
+
+    .mention[href] {
+        background-color: var(--main-text) !important;
+        color: var(--main-grey) !important;
+    }
+
+    .post-stream .small-action.topic-post-visited {
+        background-color: var(--content-background);
+        padding-right: var(--padding-post);
+        margin-top: var(--posts-margin);
+    }
+
+    .post-stream .small-action.topic-post-visited .topic-post-visited-line {
+        border-color: rgba(var(--main-accent));
+    }
+
+    .post-stream .small-action.topic-post-visited .topic-post-visited-message {
+        background-color: rgba(var(--main-accent));
+        color: var(--main-text);
     }
 }
