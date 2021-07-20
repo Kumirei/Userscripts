@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Progress Percentages
 // @namespace    http://tampermonkey.net/
-// @version      1.2.5
+// @version      1.2.6
 // @description  Calculates the percentage of known kanji for each JLPT level, Joyo grade, Frequency bracket, and various other sources.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -256,7 +256,7 @@ function display_data(percentages) {
     </style>`);}
     // Add elements
     var section = document.createElement('section');
-    section.className = 'progress_percentages';
+    section.className = 'progress_percentages span12';
 
     var active_set = localStorage.getItem('WKProgressPercentagesActiveSet') || "jlpt";
     var [next, prev] = get_new_sets(active_set);
