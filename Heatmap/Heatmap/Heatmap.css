@@ -160,7 +160,7 @@
     background-color: var(--hover-background-color);
 	color: rgb(240, 240, 240) !important;
     padding: 5px;
-    border-radius: 3px;
+    border-radius: 5px;
     font-size: 12px;
     font-weight: normal;
     width: max-content;
