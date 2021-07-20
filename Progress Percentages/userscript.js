@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Progress Percentages
 // @namespace    http://tampermonkey.net/
-// @version      1.2.6
+// @version      1.2.7
 // @description  Calculates the percentage of known kanji for each JLPT level, Joyo grade, Frequency bracket, and various other sources.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -9,7 +9,6 @@
 // @license      MIT; http://opensource.org/licenses/MIT
 // @grant        none
 // ==/UserScript==
-/*jshint esversion: 8 */
 
 (function() {
     // Make sure WKOF is installed
@@ -102,6 +101,7 @@
                     },
                     on_change: (setting, value)=>{
                         let elem = $('.progress_percentages');
+                        elem.toggleClass('span12', value == "top")
                         if (value=="top") $('#search-form').before(elem);
                         if (value=="below_srs") $('.srs-progress').append(elem);
                     },
@@ -256,7 +256,7 @@ function display_data(percentages) {
     </style>`);}
     // Add elements
     var section = document.createElement('section');
-    section.className = 'progress_percentages span12';
+    section.className = 'progress_percentages';
 
     var active_set = localStorage.getItem('WKProgressPercentagesActiveSet') || "jlpt";
     var [next, prev] = get_new_sets(active_set);
@@ -288,7 +288,10 @@ function display_data(percentages) {
     section.appendChild(prev_button);
     section.appendChild(list);
     section.appendChild(next_button);
-    if (wkof.settings.progress_percentages.position == "top") $('#search-bar').before(section);
+    if (wkof.settings.progress_percentages.position == "top") {
+        section.className += ' span12'
+        $('#search-bar').before(section);
+    }
     else if (wkof.settings.progress_percentages.position == "below_srs") $(".srs-progress").append(section);
     else $('#search-bar').before(section);
 }
