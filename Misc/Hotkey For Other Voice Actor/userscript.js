@@ -3,7 +3,7 @@
 // @description Binds the I key to play the audio from the other vocie actor
 // @include     *wanikani.com/review/session*
 // @include     *wanikani.com/lesson/session*
-// @version     1.1.4
+// @version     1.1.5
 // @author      Kumirei
 // @license     MIT; http://opensource.org/licenses/MIT
 // @run-at      document-end
@@ -23,7 +23,12 @@
     function play_other_voice() {
         let audio = new Audio()
         let audios = $.jStorage.get('currentItem').aud
+        if ($('#lessons').length) {
+            audios = $.jStorage.get('l/currentLesson').aud
+            if ($.jStorage.get('l/quizActive')) audios = $.jStorage.get('l/currentQuizItem').aud
+        }
         let vaAudio = audios.filter((a) => a.voice_actor_id == (window.WaniKani.default_voice_actor_id % 2) + 1)
+        console.log(vaAudio);
         vaAudio.forEach((a) =>
             audio.insertAdjacentHTML('beforeend', `<source src="${a.url}" type+"${a.content_type}">`),
         )
