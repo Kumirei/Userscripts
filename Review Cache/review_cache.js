@@ -1,10 +1,9 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.0.6
+// @version      1.0.7
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // ==/UserScript==
-/*jshint esversion: 8 */
 
 (function(wkof) {
     // Reveal functions to window
@@ -38,7 +37,7 @@
     function press(com, data) {
         let last = 0;
         let pressed = data.reviews.map(item => {
-                let map = [com ? (item[0]-last)/60000 : (last+item[0])*60000, ...item.slice(1)];
+                let map = [com ? (item[0]-last) : (last+item[0]), ...item.slice(1)];
                 last = com ? item[0] : last+item[0];
                 return map;
             });
@@ -62,7 +61,7 @@
         let updated_reviews = await wkof.Apiv2.fetch_endpoint('reviews', {filters: {updated_after: last_fetch}});
         let new_reviews = updated_reviews.data.filter(item => last_fetch<item.data.created_at);
         new_reviews = new_reviews.map(item => [
-            Math.floor(Date.parse(item.data.created_at)/60000)*60000,
+            Date.parse(item.data.created_at),
             item.data.subject_id,
             item.data.starting_srs_stage,
             item.data.incorrect_meaning_answers,
