@@ -128,8 +128,8 @@
         // For jQuery Datepicker
         wkof.load_css('//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');
         // Heatmap CSS
-        wkof.load_css('//raw.githubusercontent.com/Kumirei/Wanikani/198dd9ffbe56234bf97d6b71db03912071ad696c/Heatmap/Heatmap/Heatmap.css', true);
-        wkof.load_css('//raw.githubusercontent.com/Kumirei/Wanikani/2742e8764a4c2683646b66004565ada7923ebc05/Heatmap/heatmap3.css', true);
+        wkof.load_css('//raw.githubusercontent.com/Kumirei/Wanikani/a8319f669a9a3c8d9d545293ce1bdec406b7e0ec/Heatmap/Heatmap/Heatmap.css', true);
+        wkof.load_css('//raw.githubusercontent.com/Kumirei/Wanikani/a8319f669a9a3c8d9d545293ce1bdec406b7e0ec/Heatmap/heatmap3.css', true);
     }
 
     // Installs the settings button in the menu
