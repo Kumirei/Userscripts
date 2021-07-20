@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.0.8
+// @version      1.0.9
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // ==/UserScript==
