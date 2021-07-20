@@ -1,11 +1,14 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.0.10
+// @version      1.0.11
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // ==/UserScript==
 
 (function(wkof) {
+    // Manually increment to initiate reload for all users
+    const cache_version = 1
+
     // Reveal functions to window
     if (!window.review_cache || !window.review_cache.version || window.review_cache.version < GM_info.script.version) {
         window.review_cache = {get_reviews, reload, version: GM_info.script.version};
@@ -24,7 +27,7 @@
 
     // Loads data from cache
     function load_data() {
-        return wkof.file_cache.load('review_cache').then(decompress, _=>{return {date: "1970-01-01T00:00:00.000Z", reviews: [],};});
+        return wkof.file_cache.load('review_cache').then(decompress, _=>{return {cache_version, date: "1970-01-01T00:00:00.000Z", reviews: [],};});
     }
 
     // Save cache
@@ -43,11 +46,12 @@
                 last = com ? item[0] : last+item[0];
                 return map;
             });
-        return {date: data.date, reviews: pressed};
+        return {cache_version: data.cache_version, date: data.date, reviews: pressed};
     }
 
     // Updates the cache
     async function update_data(data) {
+        if (!data.cache_version || data.cache_version < cache_version) data = {cache_version, date: "1970-01-01T00:00:00.000Z", reviews: [],}
         let [date, new_reviews] = await fetch_new_reviews(data.date);
         if (new_reviews.length) {
             for (let new_review of new_reviews) data.reviews.push(new_review);
