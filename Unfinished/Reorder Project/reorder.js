@@ -15,6 +15,7 @@
     // TODO: Add prefix to custom properties in queue items
     // TODO: Improve styling (esp different item types)
     // TODO: Type --> item type (settings)
+    // TODO: Add leech sort/filter
     // Script info
     const script_name = 'Reorder General'
     const script_id = 'reorder_general'
