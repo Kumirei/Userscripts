@@ -141,16 +141,6 @@
     font-size: 16px;
 }
 
-#heatmap #popper.reviews .count::after {
-    content: ' reviews';
-}
-#heatmap #popper.forecast .count::after {
-    content: ' upcoming reviews';
-}
-#heatmap #popper.lessons .count::after {
-    content: ' lessons';
-}
-
 #heatmap #popper .minimap {
     text-align: center;
     margin-bottom: 10px;
