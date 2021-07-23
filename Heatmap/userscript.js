@@ -875,11 +875,14 @@
                 create_elem({type: 'a', class: "characters", child: item.data.characters || create_elem({type: 'img', class: 'radical-svg', src: item.data.character_images.find(a=>a.content_type=="image/svg+xml"&&a.metadata.inline_styles).url})})
             ]}));
         }
+        let time_str = ms_to_hms(time);
+        let count = info.lists[type+'-ids'].length;
+        let count_str = (type === 'forecast' ? 'upcoming review' : type.slice(0, type.length-1)) + (count === 1 ? '' : 's')
         // Populate popper
         popper.className = type;
         popper.querySelector('.date').innerText = title;
-        popper.querySelector('.count').innerText = info.lists[type+'-ids'].length.toSeparated();
-        popper.querySelector('.time').innerText = type=="forecast" ? "" : ' ('+ms_to_hms(time)+')';
+        popper.querySelector('.count').innerText = count.toSeparated() + ' ' + count_str;
+        popper.querySelector('.time').innerText = type=="forecast" ? "" : time_str ? ' ('+time_str+')' : '';
         popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff.toSeparated();
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
         popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i].toSeparated(); e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.slice(1).map((a,j)=>[j+1, a.toSeparated()]).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)));});
