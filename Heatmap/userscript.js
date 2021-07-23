@@ -129,7 +129,7 @@
         wkof.load_css('//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');
         // Heatmap CSS
         wkof.load_css('//raw.githubusercontent.com/Kumirei/Wanikani/a8319f669a9a3c8d9d545293ce1bdec406b7e0ec/Heatmap/Heatmap/Heatmap.css', true);
-        wkof.load_css('//raw.githubusercontent.com/Kumirei/Wanikani/a8319f669a9a3c8d9d545293ce1bdec406b7e0ec/Heatmap/heatmap3.css', true);
+        wkof.load_css('//raw.githubusercontent.com/Kumirei/Wanikani/0d2ab85aa6fa8890650700700011278fbac28c28/Heatmap/heatmap3.css', true);
     }
 
     // Installs the settings button in the menu
