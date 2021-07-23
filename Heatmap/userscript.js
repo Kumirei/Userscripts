@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.32
+// @version      3.0.33
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -604,7 +604,7 @@
             id: type,
             week_start: settings.general.week_start,
             day_start: settings.general.day_start,
-            first_date: Math.max(new Date(settings.general.start_day).getTime(), first_date)-settings.general.day_start*60*60*1000,
+            first_date: Math.max(new Date(settings.general.start_day).getTime(), first_date)-settings.general.day_start*msh,
             last_date: last_date,
             segment_years: settings.general.segment_years,
             zero_gap: settings.general.zero_gap,
@@ -879,7 +879,7 @@
         popper.className = type;
         popper.querySelector('.date').innerText = title;
         popper.querySelector('.count').innerText = info.lists[type+'-ids'].length.toSeparated();
-        popper.querySelector('.time').innerText = type=="forecast" ? "" : ' ('+time.toSeparated()+' min)';
+        popper.querySelector('.time').innerText = type=="forecast" ? "" : ' ('+ms_to_hms(time)+')';
         popper.querySelector('.score > span').innerText = (srs_diff<0?'':'+')+srs_diff.toSeparated();
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach(e=>e.remove());
         popper.querySelectorAll('.levels > tr > td').forEach((e, i)=>{e.innerText = levels[0][i].toSeparated(); e.parentElement.setAttribute('data-count', levels[0][i]); e.parentElement.children[0].append(create_table('left', levels.slice(1).map((a,j)=>[j+1, a.toSeparated()]).filter(a=>Math.floor((a[0]-1)/10)==i&&a[1]!=0)));});
@@ -901,6 +901,7 @@
     // Returns the function that handles clicks on days. Wrapped for data storage
     function day_click(data) {
         function event_handler(event) {
+            let settings = wkof.settings[script_id];
             let elem = event.target;
             if (elem.classList.contains('day')) {
                 let date = elem.getAttribute('data-date').split('-');
@@ -913,7 +914,7 @@
                     let day_data = data[type].filter(a=>a[0]>=date.getTime()+offset&&a[0]<date.getTime()+msd+offset);
                     let minimap_data = cook_data(type, day_data);
                     let burns = day_data.filter(item => item[2] === 8 && item[3]+item[4] === 0).map(item => item[1]);
-                    let time = minimap_data.map((a,i)=>Math.floor((a[0]-(minimap_data[i-1]||[0])[0])/(60*1000))).filter(a=>a<10).reduce((a,b)=>a+b, 0);
+                    let time = minimap_data.map((a,i)=>(a[0]-(minimap_data[i-1]||[0])[0])).filter(a=>a<settings.general.session_limit*60*1000).reduce((a,b)=>a+b, 0);
                     update_popper(event, type, title, elem.info, minimap_data, burns, time);
                 }
             }
@@ -1039,6 +1040,11 @@
     function kanji_day(day) {return ['日', '月', '火', '水', '木', '金', '土'][day];}
     // Converts minutes to a timestamp string "#h #m"
     function m_to_hm(minutes) {return Math.floor(minutes/60)+'h '+Math.floor(minutes%60)+'m';}
+    // Converts ms to a timestamp string "#h #m #s" where only the first two non-zero values are included
+    function ms_to_hms(ms) {
+        const hms = [[ms+1, msh, 'h'], [msh, 60*1000, 'm'], [60*1000, 1000, 's']];
+        return hms.map((a)=>Math.floor(ms % a[0] / a[1]) + a[2]).filter(a=>a[0] !== "0").slice(0, 2).join(' ');
+    }
     // Adds thousand separators to numbers. 1000000 → "1,000,000"
     Number.prototype.toSeparated = function(separator=",") {return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator);};
     // Capitalizes the first character in a string. "proper" → "Proper"
