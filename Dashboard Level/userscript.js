@@ -1,13 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Dashboard Level
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.2.2
 // @description  Adds level back to the dashboard header
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @grant        none
 // ==/UserScript==
-/*jshint esversion: 8 */
 
 (function(wkof) {
     // If wkof is installed, then add settings
@@ -68,15 +67,17 @@
 
     // Adds the traditional level display
     function add_regular_level(level) {
-        let levels_btn = document.getElementsByClassName('sitemap__section-header')[0];
+        let levels_btn = document.querySelector('.sitemap__section-header[aria-controls="sitemap__levels"]:not(.sitemap__section-header--help)');
         levels_btn.children.forEach(span=>{span.insertAdjacentHTML('afterBegin', '<span class="dashboard-level">'+level+'</span>');});
         document.getElementsByTagName('head')[0].insertAdjacentHTML('beforeend', `
 <style id="DashboardLevelCSS-traditional">
-.sitemap__section-header[aria-controls="sitemap__levels"] {
+.sitemap__section-header[aria-controls="sitemap__levels"]:not(.sitemap__section-header--help) {
     overflow: visible;
     border-color: rgba(0,0,0,0.1);
-    border-left: none;
     padding-left: 0;
+    border-left: none;
+    margin-left: -8px;
+    margin-right: 8px;
 }
 .dashboard-level {
     display: inline-block;
@@ -140,7 +141,7 @@
                     },
                 },
             },
-        };
+        }
         let dialog = new wkof.Settings(config);
         dialog.open();
     }
