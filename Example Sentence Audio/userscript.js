@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bunpro: Example Sentence Audio
 // @namespace    http://tampermonkey.net/
-// @version      0.1.4
+// @version      0.1.5
 // @description  Adds Google Translate audio to all the sentences that do not yet have audio.
 // @author       Kumirei
 // @include      *bunpro.jp/*
@@ -14,7 +14,7 @@
 	// Need to remove the referrer; otherwise returns 404s
 	var remRef = document.createElement('meta');
 	remRef.name = 'referrer';
-	remRef.content = 'no-referrer';
+	remRef.content = 'same-origin';
 	document.querySelector('head').append(remRef);
 
 	// CSS stuff
