@@ -1,19 +1,18 @@
 // ==UserScript==
 // @name        WaniKani Stroke Order
 // @namespace   japanese
-// @version     1.1.8
+// @version     1.1.9
 // @description Shows a kanji's stroke order on its page and during lessons and reviews.
 // @license     GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 // @include     http*://*wanikani.com/kanji/*
-// @include     http*://*wanikani.com/level/*/kanji/*
 // @include     http*://*wanikani.com/review/session
 // @include     http*://*wanikani.com/lesson/session
 // @author      Looki, maintained by Kumirei
 // @grant       GM_xmlhttpRequest
 // @connect     jisho.org
 // @connect     cloudfront.net
-// @require     http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js
 // @require     https://cdnjs.cloudflare.com/ajax/libs/snap.svg/0.5.1/snap.svg-min.js
+// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=962341
 // ==/UserScript==
 
 /*
@@ -26,169 +25,67 @@
  */
 
 ;(function () {
+    /* global Snap */
+
     /*
      * Helper Functions/Variables
      */
-    $ = unsafeWindow.$
+    let wkItemInfo = unsafeWindow.wkItemInfo
 
     /*
      * Global Variables/Objects/Classes
      */
-    var PageEnum = Object.freeze({ unknown: 0, kanji: 1, reviews: 2, lessons: 3 })
-    var curPage = PageEnum.unknown
-    var JISHO = 'https://jisho.org'
-    var strokeOrderCss =
-        "<style type='text/css'>" +
-        '.stroke_order_diagram--bounding_box {fill: none;stroke: #ddd; stroke-width: 2; stroke-linecap: square;stroke-linejoin: square;}' +
-        '.stroke_order_diagram--bounding_box {fill: none;stroke: #ddd; stroke-width: 2;stroke-linecap: square;stroke-linejoin: square;}' +
-        '.stroke_order_diagram--existing_path {fill: none;stroke: #aaa;stroke-width: 3;stroke-linecap: round;stroke-linejoin: round;}' +
-        '.stroke_order_diagram--current_path {fill: none;stroke: #000;stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;}' +
-        '.stroke_order_diagram--path_start {fill: rgba(255,0,0,0.7);stroke: none;}' +
-        '.stroke_order_diagram--guide_line {fill: none; stroke: #ddd;stroke-width: 2;stroke-linecap: square; stroke-linejoin: square; stroke-dasharray: 5, 5;}</style>'
+    const JISHO = 'https://jisho.org'
+    const strokeOrderCss =
+        '.stroke_order_diagram--bounding_box {fill: none; stroke: #ddd; stroke-width: 2; stroke-linecap: square; stroke-linejoin: square;}' +
+        '.stroke_order_diagram--bounding_box {fill: none; stroke: #ddd; stroke-width: 2; stroke-linecap: square; stroke-linejoin: square;}' +
+        '.stroke_order_diagram--existing_path {fill: none; stroke: #aaa; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;}' +
+        '.stroke_order_diagram--current_path {fill: none; stroke: #000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;}' +
+        '.stroke_order_diagram--path_start {fill: rgba(255,0,0,0.7); stroke: none;}' +
+        '.stroke_order_diagram--guide_line {fill: none; stroke: #ddd; stroke-width: 2; stroke-linecap: square; stroke-linejoin: square; stroke-dasharray: 5, 5;}'
+
+    init()
 
     /*
      * Main
      */
     function init() {
-        // Determine page type
-        if (/\/kanji\/./.test(document.URL)) {
-            curPage = PageEnum.kanji
-        } else if (/\/review/.test(document.URL)) {
-            curPage = PageEnum.reviews
-        } else if (/\/lesson/.test(document.URL)) {
-            curPage = PageEnum.lessons
-        }
+        wkItemInfo.on('lesson').forType('kanji').under('composition').append('Stroke Order', loadDiagram)
+        wkItemInfo.on('lessonQuiz, review,itemPage').forType('kanji').under('composition').appendAtTop('Stroke Order', loadDiagram)
 
-        // Create and store the element that will hold the image
-        unsafeWindow.diagram = createDiagramSection()
-
-        // Register callback for when to load stroke order
-        switch (curPage) {
-            case PageEnum.kanji:
-                loadDiagram()
-                break
-            case PageEnum.reviews:
-                var o = new MutationObserver(function (mutations) {
-                    // The last one always has 2 mutations, so let's use that
-                    if (mutations.length != 2) return
-
-                    // Reviews dynamically generate the DOM. We always need to re-insert the element
-                    if (getKanji() !== null) {
-                        setTimeout(function () {
-                            var diagram = createDiagramSection()
-                            if (diagram !== null && diagram.length > 0) {
-                                unsafeWindow.diagram = diagram
-                                loadDiagram()
-                            }
-                        }, 150)
-                    }
-                })
-                o.observe(document.getElementById('item-info'), { attributes: true })
-                break
-            case PageEnum.lessons:
-                o = new MutationObserver(loadDiagram)
-                o.observe(document.getElementById('supplement-kan'), { attributes: true })
-                loadDiagram()
-                break
-        }
+        let style = document.createElement('style')
+        style.textContent = strokeOrderCss
+        document.head.appendChild(style)
     }
 
-    if (document.readyState === 'complete') {
-        init()
-    } else {
-        window.addEventListener('load', init)
-    }
-
-    /*
-     * Returns the current kanji
-     */
-    function getKanji() {
-        switch (curPage) {
-            case PageEnum.kanji:
-                return document.title[document.title.length - 1]
-
-            case PageEnum.reviews:
-                var curItem = $.jStorage.get('currentItem')
-                if ('kan' in curItem) return curItem.kan.trim()
-                else return null
-                break
-            case PageEnum.lessons:
-                var kanjiNode = $('#character')
-
-                if (kanjiNode === undefined || kanjiNode === null) return null
-
-                return kanjiNode.text().trim()
-        }
-
-        return null
-    }
-
-    /*
-     * Creates a section for the diagram and returns a pointer to its content
-     */
-    function createDiagramSection() {
-        // Reviews hack: Only do it once
-        if ($('#stroke_order').length == 0) {
-            let sectionHTML =
-                '<section><h2>Stroke Order</h2><div style="width:100%;overflow-x: auto; overflow-y: hidden"><svg id="stroke_order"></svg></div></section>'
-
-            switch (curPage) {
-                case PageEnum.kanji:
-                    $(sectionHTML).insertAfter('.span12 header')
-                    break
-                case PageEnum.reviews:
-                    console.log('prepend')
-                    $('#item-info-col2').prepend(sectionHTML)
-                    break
-                case PageEnum.lessons:
-                    $('#supplement-kan-breakdown .col1').append(sectionHTML)
-                    break
-            }
-            $(strokeOrderCss).appendTo('head')
-        }
-
-        return $('#stroke_order').empty()
+    function xmlHttpRequest(urlText) {
+        return new Promise((resolve, reject) => GM_xmlhttpRequest({
+            method: 'GET',
+            url: new URL(urlText),
+            onload : xhr => { xhr.status === 200 ? resolve(xhr) : reject(xhr.responseText) },
+            onerror: xhr => { reject(xhr.responseText) }
+        }))
     }
 
     /*
      * Adds the diagram section element to the appropriate location
      */
-    function loadDiagram() {
-        if (!unsafeWindow || !unsafeWindow.diagram.length) return
+    async function loadDiagram(injectorState) {
+        let xhr = await xmlHttpRequest(JISHO + '/search/' + injectorState.characters + '%20%23kanji')
 
-        diagram.empty()
-        setTimeout(function () {
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: new URL(JISHO + '/search/' + getKanji() + '%20%23kanji'),
-                onload: function (xhr) {
-                    var diagram = unsafeWindow.diagram
-                    if (xhr.status == 200) {
-                        var strokeOrderSvg = xhr.responseText.match(/var url = '\/\/(.+)';/)
-                        if (strokeOrderSvg) {
-                            GM_xmlhttpRequest({
-                                method: 'GET',
-                                url: new URL('https://' + strokeOrderSvg[1]),
-                                onload: function (xhr) {
-                                    diagram.empty()
-                                    new strokeOrderDiagram(diagram.get(0), $.parseXML(xhr.responseText, 'xml'))
-                                },
-                                onerror: function (xhr) {
-                                    unsafeWindow.diagram.html('Error while loading diagram')
-                                },
-                            })
-                        }
-                    } else {
-                        console.error(xhr.responseText)
-                        unsafeWindow.diagram.html('Error while loading diagram ')
-                    }
-                },
-                onerror: function (xhr) {
-                    console.error(xhr.responseText)
-                    unsafeWindow.diagram.html('Error while loading diagram')
-                },
-            })
-        }, 0)
+        let strokeOrderSvg = xhr.responseText.match(/var url = '\/\/(.+)';/)
+        if (!strokeOrderSvg) return null
+
+        xhr = await xmlHttpRequest('https://' + strokeOrderSvg[1])
+
+        let namespace = 'http://www.w3.org/2000/svg'
+        let div = document.createElement('div')
+        let svg = document.createElementNS(namespace, 'svg')
+        svg.id = 'stroke_order'
+        div.style = 'width: 100%; overflow: auto hidden;'
+        new strokeOrderDiagram(svg, xhr.responseXML || new DOMParser().parseFromString(xhr.responseText, "application/xml"))
+        div.append(svg)
+        return div
     }
 
     /*
