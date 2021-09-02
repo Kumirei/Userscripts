@@ -1,14 +1,13 @@
 // ==UserScript==
 // @name         Wanikani: Lesson Lock
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Displays 0 lessons available when you have too much on your plate already
 // @author       Kumirei
 // @include      *wanikani.com*
 // @exclude      *community.wanikani.com*
 // @grant        none
 // ==/UserScript==
-/*jshint esversion: 8 */
 
 (function(wkof, $) {
     // Check that the Wanikani Framework is installed
@@ -60,6 +59,7 @@
             var available = $('.navigation-shortcut--lessons span')[0].innerText;
             var left = Math.ceil((s.lock - score)/s.apprentice1);
             if (available > left) $('.navigation-shortcut--lessons span')[0].innerText = left;
+            if (available > left) $('.lessons-and-reviews__lessons-button span')[0].innerText = left;
         }
         // Display score
         if (s.display_as != "none") {
@@ -69,7 +69,8 @@
                 case 'score_and_max': score_text = score + ' of ' + s.lock; break;
                 case 'percent': score_text = Math.round(score/s.lock*100) + '%'; break;
             }
-            $('.navigation-shortcut--lessons').append('<div id="lock_score" style="text-align: center; font-size: 12px; color: #CCCCCC;">Score: '+score_text+'</div>');
+            $('.navigation-shortcut--lessons').append('<div id="lock_score" style="text-align: center; font-size: 12px;">Score: '+score_text+'</div>');
+            $('.lessons-and-reviews__lessons-button span').before('<div id="big_lock_score" style="font-size: 12px;left:50%;position:absolute;transform:translatex(-50%);bottom:16px;">Score: '+score_text+'</div>');
         }
     }
 
@@ -193,7 +194,7 @@
                     }
                 }
             }
-        };
+        }
         var dialog = new wkof.Settings(config);
         dialog.open();
     }
