@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Lesson Lock
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3
+// @version      1.0.4
 // @description  Displays 0 lessons available when you have too much on your plate already
 // @author       Kumirei
 // @include      *wanikani.com*
@@ -65,8 +65,8 @@
         if (s.display_as != "none") {
             var score_text;
             switch (s.display_as) {
-                case 'score': score_text = score; break;
-                case 'score_and_max': score_text = score + ' of ' + s.lock; break;
+                case 'score': score_text = Math.round(score); break;
+                case 'score_and_max': score_text = Math.round(score) + ' of ' + s.lock; break;
                 case 'percent': score_text = Math.round(score/s.lock*100) + '%'; break;
             }
             $('.navigation-shortcut--lessons').append('<div id="lock_score" style="text-align: center; font-size: 12px;">Score: '+score_text+'</div>');
