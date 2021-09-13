@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Hide System Alert
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.1.1
 // @description  Adds button to dismiss system alerts
 // @author       Kumirei
 // @match        https://www.wanikani.com/
