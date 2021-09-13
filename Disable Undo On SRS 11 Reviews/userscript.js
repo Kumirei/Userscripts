@@ -1,16 +1,14 @@
 // ==UserScript==
 // @name         Bunpro: Disable Undo on SRS 11 reviews
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Disables the undo button on the last SRS stage
 // @author       Kumirei
 // @include      *bunpro.jp/*
 // @exclude      *community.bunpro.jp*
-// @require      https://greasyfork.org/scripts/5392-waitforkeyelements/code/WaitForKeyElements.js?version=115012
 // @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=615700
 // @grant        none
 // ==/UserScript==
-/*jshint esversion: 8 */
 
 (function() {
     var $ = window.$;

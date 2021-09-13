@@ -1,14 +1,13 @@
 // ==UserScript==
 // @name         BunPro: JLPT Percentage
 // @namespace    http://tampermonkey.net/
-// @version      0.2.7
+// @version      0.2.8
 // @description  Adds percentages to the progress bars.
 // @author       Kumirei
 // @include      http://bunpro.jp/*
 // @include      https://bunpro.jp/*
 // @include      http://www.bunpro.jp/*
 // @include      https://www.bunpro.jp/*
-// @require      https://greasyfork.org/scripts/5392-waitforkeyelements/code/WaitForKeyElements.js?version=115012
 // @grant        none
 // ==/UserScript==
 
@@ -22,12 +21,12 @@
 					 '        text-shadow: 1px 0px black;' +
 					 '    }' +
 					 '</style>');
-	waitForKeyElements('.profile-jlpt-level .progress-bar', function(e) {
+	waitForSelector('.profile-jlpt-level .progress-bar').then(function(e) {
 		var percentage = String(Math.round(e.attr('aria-valuenow')*10)/10) + "%";
 		$(e[0].parentNode).append('<span class="percentage">' + percentage + '</span>');
 	});
 
-	waitForKeyElements('.profile-jlpt-level', function(e) {
+	waitForSelector('.profile-jlpt-level').then(function(e) {
 		if (!$('.profile-jlpt-level.total').length) {
 			var bar = $('.profile-jlpt-level')[0].cloneNode(true);
 			bar.className += ' total';
@@ -48,4 +47,17 @@
 			$(lastbar[lastbar.length-1]).after(bar);
 		}
 	});
+
+    // Waits for a selector query to yield results
+    function waitForSelector(s) {
+        let resolve, reject, promise = new Promise((res, rej)=>{resolve=res; reject=rej})
+        let i = setInterval(()=>{
+            let result = document.querySelector(s)
+            if (!!result) {
+                clearInterval(i)
+                resolve(result)
+            }
+        }, 100)
+        return promise
+    }
 })();
