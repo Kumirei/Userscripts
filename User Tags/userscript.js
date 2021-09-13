@@ -1,15 +1,12 @@
 // ==UserScript==
 // @name         Wanikani Forums: User Tags
 // @namespace    https://greasyfork.org/en/scripts/36581-wanikani-forums-user-tags
-// @version      1.0.0
+// @version      1.0.1
 // @description  Makes it possible to tag users on the forums.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
-// @require      https://greasyfork.org/scripts/5392-waitforkeyelements/code/WaitForKeyElements.js?version=115012
 // @grant        none
 // ==/UserScript==
-/*global waitForKeyElements */
-/*jshint esversion: 8 */
 
 ;(function ($) {
     var userList = []
@@ -37,10 +34,26 @@
     }
 
     // Adds info to the current page
-    function initialiseScript() {
+    async function initialiseScript() {
         userList = getUserList()
         insertStyle()
-        waitForKeyElements('.topic-post article', addTags)
+        let observer = new MutationObserver(addTags);
+        let postStream = await waitForSelector('.post-stream')
+        observer.observe(postStream, {attributes: true, subtree: true});
+        addTags()
+    }
+
+    // Waits for a selector query to yield results
+    function waitForSelector(s) {
+        let resolve, reject, promise = new Promise((res, rej)=>{resolve=res; reject=rej})
+        let i = setInterval(()=>{
+            let result = document.querySelector(s)
+            if (!!result) {
+                clearInterval(i)
+                resolve(result)
+            }
+        }, 100)
+        return promise
     }
 
     // Retrieves the list of users and their tags
@@ -56,23 +69,22 @@
 
     // Adds the tags to the posts
     function addTags() {
-        $('.topic-post article').each(function (i) {
-            if ($(this).find('.user-tag').length === 0) {
-                var userID = $(this).attr('data-user-id')
-                var postID = $(this).attr('data-post-id')
-                const userTag = userList[userID] || ''
-                $(this)
-                    .find('>> .topic-body:not(.embedded-posts) .names')
-                    .append(
-                        '<span class="user-tag">' +
-                            '    <input autocomplete="off" value="' +
-                            userTag +
-                            '"></input>' +
-                            '</span>',
-                    )
-                let input = $(this).find('.user-tag input')
-                input.on('keydown', (e) => saveTags(userID, postID, event.target))
-            }
+        $('.topic-post > article:not(.tagged)').each(function (i) {
+            $(this).addClass('tagged')
+            var userID = $(this).attr('data-user-id')
+            var postID = $(this).attr('data-post-id')
+            const userTag = userList[userID] || ''
+            $(this)
+                .find('>> .topic-body:not(.embedded-posts) .names')
+                .append(
+                '<span class="user-tag">' +
+                '    <input autocomplete="off" value="' +
+                userTag +
+                '"></input>' +
+                '</span>',
+            )
+            let input = $(this).find('.user-tag input')
+            input.on('keydown', (e) => saveTags(userID, postID, event.target))
         })
     }
 
@@ -89,7 +101,6 @@
 
     // Updates all other posts by the same user to the new tag
     function updateTags(userID, postID, tag) {
-        console.log('test')
         $('article[data-user-id="' + userID + '"]').each(function () {
             if ($(this).attr('data-post-id') != postID) $(this).find('.user-tag input').val(tag)
         })
@@ -99,23 +110,23 @@
     function insertStyle() {
         $('head').append(
             '<style class="user-tag">' +
-                '    .user-tag {' +
-                '        flex: 1;' +
-                '        padding-right: 4px;' +
-                '    }' +
-                '' +
-                '    .user-tag input {' +
-                '        background: transparent;' +
-                '        border: none;' +
-                '        width: 100%;' +
-                '    }' +
-                '' +
-                '    .user-tag input:focus {' +
-                '        outline-offset: -1px;' +
-                '        outline-style: dashed;' +
-                '        outline-color: inherit;' +
-                '    }' +
-                '</style>',
+            '    .user-tag {' +
+            '        flex: 1;' +
+            '        padding-right: 4px;' +
+            '    }' +
+            '' +
+            '    .user-tag input {' +
+            '        background: transparent;' +
+            '        border: none;' +
+            '        width: 100%;' +
+            '    }' +
+            '' +
+            '    .user-tag input:focus {' +
+            '        outline-offset: -1px;' +
+            '        outline-style: dashed;' +
+            '        outline-color: inherit;' +
+            '    }' +
+            '</style>',
         )
     }
 })(window.jQuery)
