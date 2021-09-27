@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         Wanikani: Woah Burns
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.0.5
 // @description  Adds a Kanna Woah emote to your burns count
 // @author       Kumirei
 // @match        https://www.wanikani.com/dashboard
 // @match        https://www.wanikani.com
 // @include      *preview.wanikani.com*
+// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974318
 // @grant        none
 // ==/UserScript==
-/*jshint esversion: 8 */
 
-(function() {
+(function($, wfs) {
     // Does the thing!
-    waitForSelector('#burned span').then(function(e) {
+    wfs.wait('#burned span', function(e) {
         console.log('WOAH');
         $('#burned').append('<img src="https://cdn.discordapp.com/emojis/295269590219489290.png?v=1" class="WoahBurns">');
         $('head').append('<style id="WoahBurnsCSS">'+
@@ -30,17 +30,4 @@
                          '    }'+
                          '</style>');
     });
-
-    // Waits for a selector query to yield results
-    function waitForSelector(s) {
-        let resolve, reject, promise = new Promise((res, rej)=>{resolve=res; reject=rej})
-        let i = setInterval(()=>{
-            let result = document.querySelector(s)
-            if (!!result) {
-                clearInterval(i)
-                resolve(result)
-            }
-        }, 100)
-        return promise
-    }
-})();
+})(window.jQuery, window.wfs);

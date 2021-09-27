@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         Wanikani: Order Vocab's Kanji Breakdown
 // @namespace    http://tampermonkey.net/
-// @version      0.1.1
+// @version      0.1.2
 // @description  Puts vocabulary words' kanji breakdown into the order of appearance within the word.
 // @author       Kumirei
 // @match        https://www.wanikani.com/*/session
 // @include      *preview.wanikani.com*
-// @require      https://greasyfork.org/scripts/5392-waitforkeyelements/code/WaitForKeyElements.js?version=115012
+// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974318
 // @grant        none
 // ==/UserScript==
 
-(function() {
+(function($, wfs) {
     var word;
     // fix order in lessons
-    waitForKeyElements('#supplement-voc-breakdown .kanji', function(e) {
+    wfs.wait('#supplement-voc-breakdown .kanji', function(e) {
         if (word != $('#character')[0].innerText) {
             word = $('#character')[0].innerText;
             var elems = hashElems('#supplement-voc-breakdown .kanji');
@@ -22,7 +22,7 @@
     });
 
     // fix order in reviews
-    waitForKeyElements('#related-items', function(e) {
+    wfs.wait('#related-items', function(e) {
         if ($('#character.vocabulary').length) {
             word = $('#character.vocabulary')[0].innerText;
             var elems = hashElems('#related-items span.kanji');
@@ -41,11 +41,11 @@
 
     // goes through the word's kanji in order and for each puts its respective element last in the breakdown
     function reorganiseWords(word, elems, target) {
-        for (i = 0; i < word.length; i++) {
+        for (let i = 0; i < word.length; i++) {
             var char = word.charAt(i);
             if (char in elems) {
                 $(target).append(elems[char]);
             }
         }
     }
-})();
+})(window.jQuery, window.wfs);

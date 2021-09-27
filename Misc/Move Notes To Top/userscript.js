@@ -1,31 +1,19 @@
 // ==UserScript==
 // @name         Wanikani: Move notes to top
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Moves the notes to the top if there is anything written in them
 // @author       Kumirei
 // @include      *wanikani.com/review/session
 // @include      *preview.wanikani.com/review/session
+// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974318
 // @grant        none
 // ==/UserScript==
 
-(function() {
-    waitForSelector('#note-meaning, #note-reading').then((e)=>{
+(function($, wfs) {
+    wfs.wait('#note-meaning, #note-reading', (e)=>{
         if (e.children[1].innerText != "Click to add note") {
             $('#item-info-col2').prepend(e);
         }
     });
-
-    // Waits for a selector query to yield results
-    function waitForSelector(s) {
-        let resolve, reject, promise = new Promise((res, rej)=>{resolve=res; reject=rej})
-        let i = setInterval(()=>{
-            let result = document.querySelector(s)
-            if (!!result) {
-                clearInterval(i)
-                resolve(result)
-            }
-        }, 100)
-        return promise
-    }
-})();
+})(window.jQuery, window.wfs);

@@ -8,7 +8,6 @@
 // @include      *preview.wanikani.com/review/session
 // @grant        none
 // ==/UserScript==
-/*jshint esversion: 8 */
 
 (function() {
 	let style = document.createElement("style");
