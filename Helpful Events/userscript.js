@@ -1,23 +1,31 @@
-(function() {
+// ==UserScript==
+// @name         Bunpro; Helpful Events
+// @namespace    http://tampermonkey.net/
+// @version      1.0.1
+// @author       Kumirei
+// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974318
+// ==/UserScript==
+
+(function(wfs) {
     // Add a custom event for when BP creates a new body
     var newBody = new Event('new-body');
-    waitForKeyElements('body > header', function(e) {fireEvent(newBody);});
+    wfs.wait('body > header', function(e) {fireEvent(newBody);});
 
     // Add a custom event for when you get a new item in reviews
     var newReviewItem = new Event('new-review-item');
-    waitForKeyElements('.level_lesson_info a', function(e) {fireEvent(newReviewItem);});
+    wfs.wait('.level_lesson_info a', function(e) {fireEvent(newReviewItem);});
 
     // Add a custom event when you go to study or cram page
     var quizPage = new Event('quiz-page');
-    waitForKeyElements('#show-grammar', function(e) {fireEvent(quizPage);});
+    wfs.wait('#show-grammar', function(e) {fireEvent(quizPage);});
 
     // Add a custom event when you go to study page
     var studyPage = new Event('study-page');
-    waitForKeyElements('#study-page #show-grammar', function(e) {fireEvent(studyPage);});
+    wfs.wait('#study-page #show-grammar', function(e) {fireEvent(studyPage);});
 
     // Add a custom event when you go to cram page
     var cramPage = new Event('cram-page');
-    waitForKeyElements('#cram-page #show-grammar', function(e) {fireEvent(cramPage);});
+    wfs.wait('#cram-page #show-grammar', function(e) {fireEvent(cramPage);});
 
     // Fires the given event on the HTML element
     function fireEvent(event) {
@@ -28,4 +36,4 @@
             }
         }, 100);
     }
-})();
+})(window.wfs);

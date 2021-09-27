@@ -1,16 +1,16 @@
 // ==UserScript==
 // @name         Bunpro: Example Sentence Audio
 // @namespace    http://tampermonkey.net/
-// @version      0.1.5
+// @version      0.1.6
 // @description  Adds Google Translate audio to all the sentences that do not yet have audio.
 // @author       Kumirei
 // @include      *bunpro.jp/*
 // @exclude      *community.bunpro.jp*
-// @require      https://greasyfork.org/scripts/5392-waitforkeyelements/code/WaitForKeyElements.js?version=115012
+// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974318
 // @grant        none
 // ==/UserScript==
 
-(function() {
+(function($, wfs) {
 	// Need to remove the referrer; otherwise returns 404s
 	var remRef = document.createElement('meta');
 	remRef.name = 'referrer';
@@ -29,7 +29,7 @@
 		"</div>";
 
 	// Detect context sentences
-	waitForKeyElements('.japanese-example-sentence', function(e) {
+	wfs.wait('.japanese-example-sentence', function(e) {
 		// Do nothing if there is already audio provided
 		if (e[0].nextElementSibling.className != "audio-holder" || e[0].nextElementSibling.innerText.includes('coming soon')) {
 			// Get sentence in plain text and add the player
@@ -63,4 +63,4 @@
 		});
 		return sentence;
 	}
-})();
+})(window.jQuery, window.wfs);

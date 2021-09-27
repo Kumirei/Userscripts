@@ -1,17 +1,18 @@
 // ==UserScript==
 // @name         BunPro: JLPT Percentage
 // @namespace    http://tampermonkey.net/
-// @version      0.2.8
+// @version      0.2.9
 // @description  Adds percentages to the progress bars.
 // @author       Kumirei
 // @include      http://bunpro.jp/*
 // @include      https://bunpro.jp/*
 // @include      http://www.bunpro.jp/*
 // @include      https://www.bunpro.jp/*
+// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974318
 // @grant        none
 // ==/UserScript==
 
-(function() {
+(function($, wfs) {
 	$('head').append('<style id="BunProPercentageScript">' +
 					 '    .profile-jlpt-level .progress .percentage {' +
 					 '        position: absolute; '+
@@ -21,12 +22,12 @@
 					 '        text-shadow: 1px 0px black;' +
 					 '    }' +
 					 '</style>');
-	waitForSelector('.profile-jlpt-level .progress-bar').then(function(e) {
+	wfs.wait('.profile-jlpt-level .progress-bar', function(e) {
 		var percentage = String(Math.round(e.attr('aria-valuenow')*10)/10) + "%";
 		$(e[0].parentNode).append('<span class="percentage">' + percentage + '</span>');
 	});
 
-	waitForSelector('.profile-jlpt-level').then(function(e) {
+	wfs.wait('.profile-jlpt-level', function(e) {
 		if (!$('.profile-jlpt-level.total').length) {
 			var bar = $('.profile-jlpt-level')[0].cloneNode(true);
 			bar.className += ' total';
@@ -47,17 +48,4 @@
 			$(lastbar[lastbar.length-1]).after(bar);
 		}
 	});
-
-    // Waits for a selector query to yield results
-    function waitForSelector(s) {
-        let resolve, reject, promise = new Promise((res, rej)=>{resolve=res; reject=rej})
-        let i = setInterval(()=>{
-            let result = document.querySelector(s)
-            if (!!result) {
-                clearInterval(i)
-                resolve(result)
-            }
-        }, 100)
-        return promise
-    }
-})();
+})(window.jQuery, window.wfs);
