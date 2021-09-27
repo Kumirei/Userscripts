@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Bunpro: Auto-refocus input on furigana toggle
 // @namespace    http://tampermonkey.net/
-// @version      0.1.4
+// @version      0.1.5
 // @description  Refocuses the input field after you click a kanji to toggle furigana.
 // @author       Kumirei
 // @include      http://bunpro.jp*
 // @include      https://bunpro.jp*
-// @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=974345
+// @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=974369
 // @grant        none
 // ==/UserScript==
 

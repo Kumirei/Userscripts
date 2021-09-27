@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         Bunpro: Hide Header
 // @namespace    http://tampermonkey.net/
-// @version      0.1.6
+// @version      0.1.7
 // @description  Hides the header when reviewing.
 // @author       Kumirei
 // @include      *bunpro.jp*
 // @match        www.bunpro.jp/study_lesson
 // @match        https://bunpro.jp/study_lesson
 // @match        https://www.bunpro.jp/study_lesson
-// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974318
+// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974366
 // @grant        none
 // ==/UserScript==
 

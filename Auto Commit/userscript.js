@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Bunpro: Auto Commit 2.0
 // @namespace    http://tampermonkey.net/
-// @version      2.1.2
+// @version      2.1.3
 // @description  Automatically submits your answer once it's correct.
 // @author       Kumirei
 // @include      *bunpro.jp/*
 // @exclude      *community.bunpro.jp*
-// @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=974345
+// @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=974369
 // @require      https://greasyfork.org/scripts/370219-bunpro-buttons-bar/code/Bunpro:%20Buttons%20Bar.js?version=768992
 // @grant        none
 // ==/UserScript==

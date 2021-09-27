@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Bunpro: Example Sentence Audio
 // @namespace    http://tampermonkey.net/
-// @version      0.1.6
+// @version      0.1.7
 // @description  Adds Google Translate audio to all the sentences that do not yet have audio.
 // @author       Kumirei
 // @include      *bunpro.jp/*
 // @exclude      *community.bunpro.jp*
-// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974318
+// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974366
 // @grant        none
 // ==/UserScript==
 
