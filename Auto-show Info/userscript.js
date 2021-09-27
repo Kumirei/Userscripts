@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Bunpro: Auto-show Info
 // @namespace    http://tampermonkey.net/
-// @version      0.2.6
+// @version      0.2.7
 // @description  Automatically expands the full grammar info when you get a review wrong.
 // @author       Kumirei
 // @include      *bunpro.jp/study*
 // @exclude      *community.bunpro.jp*
-// @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=615700
+// @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=974345
 // @grant        none
 // ==/UserScript==
 

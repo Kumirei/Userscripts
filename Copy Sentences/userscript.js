@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Bunpro: Copy Sentences
 // @namespace    http://tampermonkey.net/
-// @version      0.4.9
+// @version      0.4.10
 // @description  Adds buttons to copy the Japanese and English sentences in review.
 // @author       Kumirei
 // @include      *bunpro.jp/*
 // @exclude      *community.bunpro.jp*
-// @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=615700
+// @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=974345
 // @require      https://greasyfork.org/scripts/370219-bunpro-buttons-bar/code/Bunpro:%20Buttons%20Bar.js?version=654288
 // @grant        none
 // ==/UserScript==

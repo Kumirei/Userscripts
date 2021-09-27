@@ -1,15 +1,14 @@
 // ==UserScript==
 // @name         Bunpro: Mistake Delay
 // @namespace    http://tampermonkey.net/
-// @version      0.2.6
+// @version      0.2.7
 // @description  Prevents premature wrong answer submission.
 // @author       Kumirei
 // @include      *bunpro.jp/*
 // @exclude      *community.bunpro.jp*
-// @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=615700
+// @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=974345
 // @grant        none
 // ==/UserScript==
-/*jshint esversion: 8 */
 
 (function() {
 	// Seconds of delay

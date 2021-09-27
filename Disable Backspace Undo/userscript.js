@@ -1,15 +1,14 @@
 // ==UserScript==
 // @name         Bunpro: Disable Backspace Undo
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.0.5
 // @description  Disables the backspace functionality in reviews
 // @author       Kumirei
 // @include      *bunpro.jp/*
 // @exclude      *community.bunpro.jp*
-// @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=615700
+// @require      https://greasyfork.org/scripts/370623-bunpro-helpful-events/code/Bunpro:%20Helpful%20Events.js?version=974345
 // @grant        none
 // ==/UserScript==
-/*jshint esversion: 8 */
 
 (function() {
     var $ = window.$;
