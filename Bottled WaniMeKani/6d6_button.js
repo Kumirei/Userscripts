@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Roll 6d6
 // @namespace    http://tampermonkey.net/
-// @version      1.1.7
+// @version      1.1.8
 // @description  Adds a button to post @WaniMeKani roll 6d6
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -25,8 +25,7 @@
         var interval = setInterval(async function(){
             let composer = document.querySelector("textarea.d-editor-input")
             if (composer) {
-                composer.value = `:purple_heart: @WaniMeKani $\\color{VioletRed}\\textsf{roll 6d6}$ :purple_heart:
-<!-- @WaniMeKani roll 6d6 -->`
+                composer.value = `@WaniMeKani roll 6d6`
                 composer.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }))
                 clearInterval(interval);
                 await new Promise((res, rej) => setTimeout(res, 6000 - (Date.now() - last_roll)))
