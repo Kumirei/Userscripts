@@ -1,26 +1,24 @@
 // ==UserScript==
 // @name         Wanikani Forums: Roll 6d6
 // @namespace    http://tampermonkey.net/
-// @version      1.1.5
+// @version      1.1.7
 // @description  Adds a button to post @WaniMeKani roll 6d6
 // @author       Kumirei
 // @include      https://community.wanikani.com*
+// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974318
 // @grant        none
 // ==/UserScript==
 
-(function() {
-    setTriggers()
+(function(wfs) {
     let last_roll = Date.now()
-    function effect() {
-        waitForSelector('.topic-footer-main-buttons').then((e)=>{
-            var btn = document.createElement('button');
-            btn.className = "btn widget-button no-text btn-icon";
-            btn.title = "Click to roll 6d6";
-            btn.innerHTML = 'Roll 6d6';
-            btn.onclick = roll
-            e.prepend(btn);
-        });
-    }
+    wfs.wait('.topic-footer-main-buttons', (e)=>{
+        var btn = document.createElement('button');
+        btn.className = "btn widget-button no-text btn-icon";
+        btn.title = "Click to roll 6d6";
+        btn.innerHTML = 'Roll 6d6';
+        btn.onclick = roll
+        e.prepend(btn);
+    });
 
     function roll() {
         document.querySelector('button.create:not(.reply)').click();
@@ -42,39 +40,4 @@
         if (e.altKey && (e.keyCode == 102 || e.keyCode == 54)) roll();
         if (e.altKey && e.shiftKey && e.keyCode == 68) roll();
     })
-
-
-    function initialiseScript() {effect()}
-    // Make sure the script is always running
-    function setTriggers() {
-        // When loading a page
-        window.addEventListener('load', initialiseScript)
-
-        // When using the back and forward buttons
-        window.addEventListener('popstate', initialiseScript)
-
-        // When navigating the forums
-        ;(function (history) {
-            var pushState = history.pushState
-            history.pushState = function (state) {
-                if (typeof history.onpushstate == 'function') {
-                    history.onpushstate({ state: state })
-                }
-                initialiseScript()
-                return pushState.apply(history, arguments)
-            }
-        })(window.history)
-    }
-    // Waits for a selector query to yield results
-    function waitForSelector(s) {
-        let resolve, reject, promise = new Promise((res, rej)=>{resolve=res; reject=rej})
-        let i = setInterval(()=>{
-            let result = $(s)
-            if (result.length) {
-                clearInterval(i)
-                resolve(result)
-            }
-        }, 100)
-        return promise
-    }
-})();
+})(window.wfs);

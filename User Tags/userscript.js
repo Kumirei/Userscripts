@@ -1,59 +1,23 @@
 // ==UserScript==
 // @name         Wanikani Forums: User Tags
 // @namespace    https://greasyfork.org/en/scripts/36581-wanikani-forums-user-tags
-// @version      1.0.1
+// @version      1.0.2
 // @description  Makes it possible to tag users on the forums.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
+// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974318
 // @grant        none
 // ==/UserScript==
 
-;(function ($) {
+;(function ($, wfs) {
     var userList = []
-    setTriggers()
-
-    // Make sure the script is always running
-    function setTriggers() {
-        // When loading a page
-        window.addEventListener('load', initialiseScript)
-
-        // When using the back and forward buttons
-        window.addEventListener('popstate', initialiseScript)
-
-        // When navigating the forums
-        ;(function (history) {
-            var pushState = history.pushState
-            history.pushState = function (state) {
-                if (typeof history.onpushstate == 'function') {
-                    history.onpushstate({ state: state })
-                }
-                initialiseScript()
-                return pushState.apply(history, arguments)
-            }
-        })(window.history)
-    }
+    initialiseScript()
 
     // Adds info to the current page
-    async function initialiseScript() {
+    function initialiseScript() {
         userList = getUserList()
         insertStyle()
-        let observer = new MutationObserver(addTags);
-        let postStream = await waitForSelector('.post-stream')
-        observer.observe(postStream, {attributes: true, subtree: true});
-        addTags()
-    }
-
-    // Waits for a selector query to yield results
-    function waitForSelector(s) {
-        let resolve, reject, promise = new Promise((res, rej)=>{resolve=res; reject=rej})
-        let i = setInterval(()=>{
-            let result = document.querySelector(s)
-            if (!!result) {
-                clearInterval(i)
-                resolve(result)
-            }
-        }, 100)
-        return promise
+        wfs.wait('.post-stream .topic-post', addTags)
     }
 
     // Retrieves the list of users and their tags
@@ -129,4 +93,4 @@
             '</style>',
         )
     }
-})(window.jQuery)
+})(window.jQuery, window.wfs)
