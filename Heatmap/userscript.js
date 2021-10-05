@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.33
+// @version      3.0.34
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -173,7 +173,7 @@
             let create_row = (value, color)=>create_elem({type: 'div', class: 'row', children: [
                 create_elem({type: 'div', class: 'text', child: create_elem({type: 'input', input: 'number', value: value})}),
                 create_elem({type: 'div', class: 'color', child: create_elem({type: 'input', input: 'color', value: color, callback: e=>e.addEventListener('change', _=>update_label(e))}), callback: e=>update_label(e.children[0])}),
-                create_elem({type: 'div', class: 'delete', child: create_elem({type: 'button', onclick: e=>{e.target.closest('.row').remove(); update_color_settings();}, child: create_elem({type: 'i', class: 'icon-trash'})})}),
+                create_elem({type: 'div', class: 'delete', child: create_elem({type: 'button', onclick: e=>{e.target.closest('.row').remove(); update_color_settings();}, child: create_elem({type: 'i', class: 'fa fa-trash'})})}),
             ]});
             // Creates the interface for color settings
             let panel = create_elem({type: 'div', class: "right", children: [
@@ -570,8 +570,8 @@
     function create_buttons() {
         let buttons = create_elem({type: 'div', class: 'buttons'});
         add_transitions(buttons)
-        let settings_button = create_elem({type: 'button', class: 'settings-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Settings'}), create_elem({type: 'i', class: 'icon-gear'})], onclick: open_settings});
-        let toggle_button = create_elem({type: 'button', class: 'toggle-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Toggle view'}), create_elem({type: 'i', class: 'icon-inbox'})], onclick: toggle_visible_map});
+        let settings_button = create_elem({type: 'button', class: 'settings-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Settings'}), create_elem({type: 'i', class: 'fa fa-gear'})], onclick: open_settings});
+        let toggle_button = create_elem({type: 'button', class: 'toggle-button hover-wrapper-target', children: [create_elem({type: 'div', class: 'hover-wrapper above', child: 'Toggle view'}), create_elem({type: 'i', class: 'fa fa-inbox'})], onclick: toggle_visible_map});
         buttons.append(settings_button, toggle_button);
         return buttons;
     }
@@ -647,8 +647,8 @@
     function modify_heatmap(type, heatmap) {
         for (let [year, map] of Object.entries(heatmap.maps)) {
             let target = map.querySelector('.year-labels');
-            let up = create_elem({type: 'a', class: 'toggle-year up hover-wrapper-target', onclick: toggle_year, children: [create_elem({type: 'div', class: 'hover-wrapper above', child: create_elem({type: 'div', child: 'Click to '+(year==new Date().getFullYear()?'show next':'hide this')+' year'})}), create_elem({type: 'i', class: 'icon-chevron-up'})]});
-            let down = create_elem({type: 'a', class: 'toggle-year down hover-wrapper-target', onclick: toggle_year, children: [create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'div', child: 'Click to '+(year<=new Date().getFullYear()?'show previous':'hide this')+' year'})}), create_elem({type: 'i', class: 'icon-chevron-down'})]});
+            let up = create_elem({type: 'a', class: 'toggle-year up hover-wrapper-target', onclick: toggle_year, children: [create_elem({type: 'div', class: 'hover-wrapper above', child: create_elem({type: 'div', child: 'Click to '+(year==new Date().getFullYear()?'show next':'hide this')+' year'})}), create_elem({type: 'i', class: 'fa fa-chevron-up'})]});
+            let down = create_elem({type: 'a', class: 'toggle-year down hover-wrapper-target', onclick: toggle_year, children: [create_elem({type: 'div', class: 'hover-wrapper below', child: create_elem({type: 'div', child: 'Click to '+(year<=new Date().getFullYear()?'show previous':'hide this')+' year'})}), create_elem({type: 'i', class: 'fa fa-chevron-down'})]});
             target.append(up, down);
             if (wkof.settings[script_id].other.visible_years[type][year] === false) map.classList.add('hidden');
         }
