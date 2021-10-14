@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.35
+// @version      3.0.36
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -159,7 +159,7 @@
     // Loads heatmap and jQuery datepicker CSS
     function load_css() {
         // For jQuery Datepicker
-        wkof.load_css('//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css')
+        //wkof.load_css('//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');
         // Heatmap CSS
         wkof.load_css(
             '//raw.githubusercontent.com/Kumirei/Wanikani/a8319f669a9a3c8d9d545293ce1bdec406b7e0ec/Heatmap/Heatmap/Heatmap.css',
@@ -186,9 +186,7 @@
     let applied // Keeps track of whether the settings have been applied
     function modify_settings(dialog) {
         // Make start-date a jQuery datepicker
-        window
-            .jQuery(dialog[0].querySelector('#' + script_id + '_start_date'))
-            .datepicker({ dateFormat: 'yy-mm-dd', changeYear: true, yearRange: '2012:+0' })
+        //window.jQuery(dialog[0].querySelector('#'+script_id+'_start_date')).datepicker({dateFormat: "yy-mm-dd",changeYear: true,yearRange: "2012:+0"});
         // Add apply button
         applied = false
         let apply = create_elem({
@@ -355,7 +353,8 @@
                                             path: '@general.position',
                                         },
                                         start_date: {
-                                            type: 'text',
+                                            type: 'input',
+                                            subtype: 'date',
                                             label: 'Start date',
                                             default: '2012-01-01',
                                             hover_tip: 'All data before this date will be ignored',
