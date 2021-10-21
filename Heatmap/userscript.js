@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.36
+// @version      3.0.37
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -1592,7 +1592,8 @@
                                             type: 'img',
                                             class: 'radical-svg',
                                             src: item.data.character_images.find(
-                                                (a) => a.content_type == 'image/svg+xml' && a.metadata.inline_styles,
+                                                (a) =>
+                                                    a.content_type == 'image/png' && a.metadata.dimensions == '32x32',
                                             ).url,
                                         }),
                                 }),
@@ -1621,7 +1622,7 @@
                                     type: 'img',
                                     class: 'radical-svg',
                                     src: item.data.character_images.find(
-                                        (a) => a.content_type == 'image/svg+xml' && a.metadata.inline_styles,
+                                        (a) => a.content_type == 'image/png' && a.metadata.dimensions == '32x32',
                                     ).url,
                                 }),
                         }),
