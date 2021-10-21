@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.38
+// @version      3.0.39
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -166,7 +166,7 @@
             true,
         )
         wkof.load_css(
-            '//raw.githubusercontent.com/Kumirei/Wanikani/0d2ab85aa6fa8890650700700011278fbac28c28/Heatmap/heatmap3.css',
+            '//raw.githubusercontent.com/Kumirei/Wanikani/83f0ca55e84eaf4ab31575fe4dbd479dd757892d/Heatmap/heatmap3.css',
             true,
         )
     }
