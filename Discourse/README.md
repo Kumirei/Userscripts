@@ -1,2 +1,0 @@
-# Discourse Scripts
-Discourse Scripts
