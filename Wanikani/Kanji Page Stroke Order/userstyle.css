@@ -1,0 +1,7 @@
+@-moz-document url-prefix(https://www.wanikani.com/kanji)
+{
+    .single-character-grid .character {
+        font-weight: normal !important;
+        font-family: KanjiStrokeOrders;
+    }
+}

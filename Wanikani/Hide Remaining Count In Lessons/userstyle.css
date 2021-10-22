@@ -1,0 +1,7 @@
+@-moz-document url(https://www.wanikani.com/lesson/session)
+{
+    #stats > ul > li:not(#completed-count),
+    #progress-bar {
+        display: none;
+    }
+}

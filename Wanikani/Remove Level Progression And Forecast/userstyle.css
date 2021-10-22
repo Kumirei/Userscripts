@@ -1,0 +1,6 @@
+@-moz-document url(https://www.wanikani.com), url(https://www.wanikani.com/dashboard)
+{
+    .progress-and-forecast {
+        display: none !important;
+    }
+}
