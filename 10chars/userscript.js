@@ -26,7 +26,7 @@
         const new_save = function (t) {
             let composer = document.querySelector('textarea.d-editor-input') // Reply box
             if (this.model.missingReplyCharacters > 0) {
-                composer.value += ' < Lorem Ipsum >' // Modify message
+                composer.value += ' <Lorem Ipsum>' // Modify message
                 composer.dispatchEvent(new Event('change', { bubbles: true, cancelable: true })) // Let Discourse know
             }
             old_save.call(this, t) // Call regular save function
