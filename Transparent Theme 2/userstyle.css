@@ -3507,7 +3507,7 @@
 
     :root {
         --primary: var(--main-text);
-        d--secondary: var(--main-dark);
+        /* --secondary: var(--main-dark); */
         --header_primary: var(--main-text);
         --header_background: var(--header-background);
         --primary-high: var(--main-text);
@@ -3673,4 +3673,21 @@ Fixed: Fix presence margins
 
 .container.posts {
 	margin-bottom: 0;
+}
+
+
+/* Version 2.1.28
+/*_____________________
+
+Fixed: Likes, search 
+*/
+
+:root {
+	--primary-low-mid: var(--main-text);
+	--love-low: var(--highlight-background);
+	--tertiary: var(--main-text);
+}
+
+.discourse-reactions-double-button:hover .reaction-button {
+	background: transparent !important;
 }
