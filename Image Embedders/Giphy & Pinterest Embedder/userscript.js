@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Giphy/Pinterest embedder
 // @namespace    http://tampermonkey.net/
-// @version      0.1.8
+// @version      0.1.9
 // @description  Embeds images which Discourse fails to embed
 // @author       Kumirei
 // @include      https://community.wanikani.com*
