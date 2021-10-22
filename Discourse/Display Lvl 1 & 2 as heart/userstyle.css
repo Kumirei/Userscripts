@@ -1,0 +1,8 @@
+@-moz-document domain(community.wanikani.com)
+{
+  .avatar-flair[title*="01"]:after,
+.avatar-flair[title*="02"]:after
+  {
+    content: "<3";
+  }
+}
