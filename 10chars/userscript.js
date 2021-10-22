@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: 10chars
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.4
 // @description  Inserts invisible text into any post not meeting the 10 character requirement
 // @author       Kumirei
 // @include      https://community.wanikani.com/t/*
@@ -26,7 +26,7 @@
         const new_save = function (t) {
             let composer = document.querySelector('textarea.d-editor-input') // Reply box
             if (this.model.missingReplyCharacters > 0) {
-                composer.value += ' <!-- Lorem Ipsum -->' // Modify message
+                composer.value += ' < Lorem Ipsum >' // Modify message
                 composer.dispatchEvent(new Event('change', { bubbles: true, cancelable: true })) // Let Discourse know
             }
             old_save.call(this, t) // Call regular save function
