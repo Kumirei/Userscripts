@@ -1,0 +1,134 @@
+@-moz-document domain(community.wanikani.com) {
+    .names.trigger-user-card a[data-user-card*="/*[[u1]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u2]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u3]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u4]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u5]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u6]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u7]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u8]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u9]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u10]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u11]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u12]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u13]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u14]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u15]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u16]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u17]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u18]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u19]]*/"]::after,
+.names.trigger-user-card a[data-user-card*="/*[[u20]]*/"]::after {
+        color: rgb(0, 0, 0);
+        background-color: rgba(255, 255, 255, 0.4);
+        font-weight: normal;
+        padding: 0 4px;
+        border-radius: 2px;
+        left: 5px;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+    }
+    /* stylelint-disable */
+
+    .names.trigger-user-card a[data-user-card*="/*[[u1]]*/"]::after {
+        content: '/*[[t1]]*/';
+        background-color: /*[[c1]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u2]]*/"]::after {
+        content: '/*[[t2]]*/';
+        background-color: /*[[c2]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u3]]*/"]::after {
+        content: '/*[[t3]]*/';
+        background-color: /*[[c3]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u4]]*/"]::after {
+        content: '/*[[t4]]*/';
+        background-color: /*[[c4]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u5]]*/"]::after {
+        content: '/*[[t5]]*/';
+        background-color: /*[[c5]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u6]]*/"]::after {
+        content: '/*[[t6]]*/';
+        background-color: /*[[c6]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u7]]*/"]::after {
+        content: '/*[[t7]]*/';
+        background-color: /*[[c7]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u8]]*/"]::after {
+        content: '/*[[t8]]*/';
+        background-color: /*[[c8]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u9]]*/"]::after {
+        content: '/*[[t9]]*/';
+        background-color: /*[[c9]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u10]]*/"]::after {
+        content: '/*[[t10]]*/';
+        background-color: /*[[c10]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u11]]*/"]::after {
+        content: '/*[[t11]]*/';
+        background-color: /*[[c11]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u12]]*/"]::after {
+        content: '/*[[t12]]*/';
+        background-color: /*[[c12]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u13]]*/"]::after {
+        content: '/*[[t13]]*/';
+        background-color: /*[[c13]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u14]]*/"]::after {
+        content: '/*[[t14]]*/';
+        background-color: /*[[c14]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u15]]*/"]::after {
+        content: '/*[[t15]]*/';
+        background-color: /*[[c15]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u16]]*/"]::after {
+        content: '/*[[t16]]*/';
+        background-color: /*[[c16]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u17]]*/"]::after {
+        content: '/*[[t17]]*/';
+        background-color: /*[[c17]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u18]]*/"]::after {
+        content: '/*[[t18]*/';
+        background-color: /*[[c18]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u19]]*/"]::after {
+        content: '/*[[t19]]*/';
+        background-color: /*[[c19]]*/ ;
+    }
+
+    .names.trigger-user-card a[data-user-card*="/*[[u20]]*/"]::after {
+        content: '/*[[t20]]*/';
+        background-color: /*[[c20]]*/ ;
+    }
+}
