@@ -8,7 +8,7 @@
 // ==/UserScript==
 
 ;(function ($, wfs) {
-    let version = '0.1.1'
+    let version = '1.0.0'
 
     // Create new observer on body to monitor all DOM changes
     let observer = new MutationObserver(mutationHandler)
