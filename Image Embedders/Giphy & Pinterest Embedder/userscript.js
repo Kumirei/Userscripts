@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Giphy/Pinterest embedder
 // @namespace    http://tampermonkey.net/
-// @version      0.1.7
+// @version      0.1.8
 // @description  Embeds images which Discourse fails to embed
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -14,8 +14,8 @@
     //embeds images if there are any broken ones to find
     function embedImages(e) {
         var embed = false;
-        var url = e.attr('href');
-        if (e[0].innerText == "") {
+        var url = $(e).attr('href');
+        if (e.innerText == "") {
             if (url.match(/https:\/\/media\.giphy\.com\/media\/.+\/giphy\.gif/) != null) {
                 var ID = url.split("/")[4];
                 url = "https://i.giphy.com/media/"+ID+"/giphy.webp";
@@ -26,7 +26,7 @@
                 var img = document.createElement('img');
                 img.src = url;
                 img.alt = 'Loading image...';
-                var elem = $(e[0].parentElement);
+                var elem = $(e.parentElement);
                 elem.addClass("lightbox");
                 elem.empty();
                 elem.append(img);

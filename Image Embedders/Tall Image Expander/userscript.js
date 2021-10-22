@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Expand Tall Images
 // @namespace    http://tampermonkey.net/
-// @version      0.1.5
+// @version      0.1.6
 // @description  Expands tall images on the Wanikani forums
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -11,9 +11,8 @@
 
 (function($, wfs) {
     //wait for images
-    wfs.wait('.lightbox img', function(e) {
+    wfs.wait('.lightbox img', function(elem) {
         //get the infos
-        var elem = e[0];
         var dim = [elem.width, elem.height];
         if (elem.height == 500) {//all images which need to be expanded are 500px height
             if ($(elem.nextSibling).find('.informations').length) {
