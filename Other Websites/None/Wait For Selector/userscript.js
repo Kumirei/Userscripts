@@ -58,11 +58,15 @@
 
     // Waits until there has been more than 300 ms between mutations and then checks for new elements
     let lastMutationDate = 0 // Epoch of last mutation event
+    let timeoutID = 0
     function mutationHandler(mutations) {
         let duration = Date.now() - lastMutationDate
         lastMutationDate = Date.now()
-        if (duration > 300) {
-            for (let selector in interface.waits) search(selector)
+        if (duration < 300) {
+            clearTimeout(timeoutID)
+            timeoutID = setTimeout(() => {
+                for (let selector in interface.waits) search(selector)
+            }, 300)
         }
     }
 
