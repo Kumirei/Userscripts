@@ -1,0 +1,10 @@
+@-moz-document url(https://www.wanikani.com/review/session)
+{
+
+  div#stats span#available-count,
+div#stats .icon-inbox,
+div#reviews #progress-bar
+  {
+    display: none !important;
+  }
+}
