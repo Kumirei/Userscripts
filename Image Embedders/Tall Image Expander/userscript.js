@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Expand Tall Images
 // @namespace    http://tampermonkey.net/
-// @version      0.1.7
+// @version      0.1.8
 // @description  Expands tall images on the Wanikani forums
 // @author       Kumirei
 // @include      https://community.wanikani.com*
