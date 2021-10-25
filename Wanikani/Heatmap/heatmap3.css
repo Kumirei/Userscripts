@@ -359,9 +359,6 @@
 
 #heatmap #popper .items .radical-svg {
     width: 14px;
-}
-
-#heatmap[theme='light'] #popper .items .radical-svg {
     filter: invert(1);
 }
 
