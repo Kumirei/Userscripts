@@ -1583,7 +1583,6 @@
             )
         }
         await Promise.allSettled(svgPromises)
-        console.log(svgs)
         for (let id of ids) {
             let item = items_id[id]
             let burn = burns.includes(id)
