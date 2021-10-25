@@ -1563,7 +1563,28 @@
             ),
         ]
         let item_elems = []
-        for (let id of [...new Set(info.lists[type + '-ids'])]) {
+        const ids = [...new Set(info.lists[type + '-ids'])]
+        const svgs = {}
+        const svgPromises = []
+        for (const id of ids) {
+            if (items_id[id].data.characters) continue
+            svgPromises.push(
+                wkof
+                    .load_file(
+                        items_id[id].data.character_images.find(
+                            (a) => a.content_type == 'image/svg+xml' && a.metadata.inline_styles,
+                        ).url,
+                    )
+                    .then((svg) => {
+                        svgElem = document.createElement('span')
+                        svgElem.innerHTML = svg.replace(/(?<=<svg )/, `class="radical-svg" `)
+                        svgs[id] = svgElem.firstChild
+                    }),
+            )
+        }
+        await Promise.allSettled(svgPromises)
+        console.log(svgs)
+        for (let id of ids) {
             let item = items_id[id]
             let burn = burns.includes(id)
             item_elems.push(
@@ -1580,16 +1601,7 @@
                                     type: 'a',
                                     class: 'characters',
                                     href: item.data.document_url,
-                                    child:
-                                        item.data.characters ||
-                                        create_elem({
-                                            type: 'img',
-                                            class: 'radical-svg',
-                                            src: item.data.character_images.find(
-                                                (a) =>
-                                                    a.content_type == 'image/png' && a.metadata.dimensions == '128x128',
-                                            ).url,
-                                        }),
+                                    child: item.data.characters || svgs[id].cloneNode(true),
                                 }),
                                 create_table(
                                     'left',
@@ -1610,15 +1622,7 @@
                         create_elem({
                             type: 'a',
                             class: 'characters',
-                            child:
-                                item.data.characters ||
-                                create_elem({
-                                    type: 'img',
-                                    class: 'radical-svg',
-                                    src: item.data.character_images.find(
-                                        (a) => a.content_type == 'image/png' && a.metadata.dimensions == '128x128',
-                                    ).url,
-                                }),
+                            child: item.data.characters || svgs[id].cloneNode(true),
                         }),
                     ],
                 }),
