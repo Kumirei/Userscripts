@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.42
+// @version      3.0.43
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -160,7 +160,7 @@
     // Loads heatmap and jQuery datepicker CSS
     function load_css() {
         // Heatmap CSS
-        const heatmapRepo = `https//raw.githubusercontent.com/Kumirei/Userscripts/${CSS_COMMIT}/Wanikani/Heatmap`
+        const heatmapRepo = `//raw.githubusercontent.com/Kumirei/Userscripts/${CSS_COMMIT}/Wanikani/Heatmap`
         wkof.load_css(`${heatmapRepo}/Heatmap/Heatmap.css`, true)
         wkof.load_css(`${heatmapRepo}/heatmap3.css`, true)
     }
