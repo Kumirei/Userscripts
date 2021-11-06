@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        WaniKani Stroke Order
 // @namespace   japanese
-// @version     1.1.11
+// @version     1.1.12
 // @description Shows a kanji's stroke order on its page and during lessons and reviews.
 // @license     GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 // @include     http*://*wanikani.com/kanji/*
@@ -12,7 +12,7 @@
 // @connect     jisho.org
 // @connect     cloudfront.net
 // @require     https://cdnjs.cloudflare.com/ajax/libs/snap.svg/0.5.1/snap.svg-min.js
-// @require     https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=972944
+// @require     https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=985948
 
 // ==/UserScript==
 
@@ -52,7 +52,11 @@
      */
     function init() {
         wkItemInfo.on('lesson').forType('kanji').under('composition').append('Stroke Order', loadDiagram)
-        wkItemInfo.on('lessonQuiz, review,itemPage').forType('kanji').under('composition').appendAtTop('Stroke Order', loadDiagram)
+        wkItemInfo
+            .on('lessonQuiz, review,itemPage')
+            .forType('kanji')
+            .under('composition')
+            .appendAtTop('Stroke Order', loadDiagram)
 
         let style = document.createElement('style')
         style.textContent = strokeOrderCss
@@ -60,12 +64,18 @@
     }
 
     function xmlHttpRequest(urlText) {
-        return new Promise((resolve, reject) => GM_xmlhttpRequest({
-            method: 'GET',
-            url: new URL(urlText),
-            onload : xhr => { xhr.status === 200 ? resolve(xhr) : reject(xhr.responseText) },
-            onerror: xhr => { reject(xhr.responseText) }
-        }))
+        return new Promise((resolve, reject) =>
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: new URL(urlText),
+                onload: (xhr) => {
+                    xhr.status === 200 ? resolve(xhr) : reject(xhr.responseText)
+                },
+                onerror: (xhr) => {
+                    reject(xhr.responseText)
+                },
+            }),
+        )
     }
 
     /*
@@ -84,7 +94,10 @@
         let svg = document.createElementNS(namespace, 'svg')
         svg.id = 'stroke_order'
         div.style = 'width: 100%; overflow: auto hidden;'
-        new strokeOrderDiagram(svg, xhr.responseXML || new DOMParser().parseFromString(xhr.responseText, "application/xml"))
+        new strokeOrderDiagram(
+            svg,
+            xhr.responseXML || new DOMParser().parseFromString(xhr.responseText, 'application/xml'),
+        )
         div.append(svg)
         return div
     }
