@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.43
+// @version      3.0.44
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -1125,6 +1125,13 @@
                     )
                         string += `, Streak ${stats[type].streaks[new Date(time).toDateString()] || 0}`
                     string += '\n'
+                    if (
+                        type2 === 'reviews' &&
+                        day_data.counts.forecast &&
+                        new Date(time).toDateString() == new Date().toDateString()
+                    ) {
+                        string += `\n${day_data.counts.forecast} more reviews upcoming`
+                    }
                     if (type2 !== 'lessons' && day_data.counts[type2 + '-srs' + (type2 === 'reviews' ? '2-9' : '1-8')])
                         string += '\nBurns ' + day_data.counts[type2 + '-srs' + (type2 === 'reviews' ? '2-9' : '1-8')]
                     let level = (level_ups.find((a) => a[1] == new Date(time).toDateString()) || [undefined])[0]
