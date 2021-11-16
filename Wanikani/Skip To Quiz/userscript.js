@@ -1,17 +1,15 @@
 // ==UserScript==
 // @name         Wanikani: Skip to Quiz
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Enables the quiz button without having to go through any of the lessons.
 // @author       Kumirei
 // @match        https://www.wanikani.com/lesson/session
 // @match        https://preview.wanikani.com/lesson/session
 // @grant        none
 // ==/UserScript==
-/*global $, wkof */
-/*jshint esversion: 9 */
 
-;(function () {
+;(function ($) {
     // Make quiz button look clickable
     add_css(
         '#lesson #batch-items ul li[data-index="quiz"] span {background-color: #004fdd; cursor: pointer !important;}',
@@ -20,13 +18,15 @@
 
     // Enable clicking quiz button by adding class that the existing
     // click handler / keyup handler checks for before it fires
-    onEachElementReady('li[data-index="quiz"]', null, function (e) {
+    onEachElementReady('li[data-index="quiz"] > span', null, function (e) {
         e = $(e)
+        const p = e.parent()
         bindFirst(e, 'click', function () {
-            e.addClass('active-quiz')
+            console.log('click', e, p)
+            p.addClass('active-quiz')
         })
         bindFirst($('body'), 'keyup', function (evt) {
-            if (evt.key == 'q') e.addClass('active-quiz')
+            if (evt.key == 'q') p.addClass('active-quiz')
         })
     })
 
@@ -84,4 +84,4 @@
             handlers.splice(0, 0, handler)
         })
     }
-})()
+})(window.jQuery)
