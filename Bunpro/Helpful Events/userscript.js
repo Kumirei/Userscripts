@@ -9,7 +9,6 @@
 // ==/UserScript==
 
 ;(function (wfs) {
-    // @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974366
     // Add a custom event for when BP creates a new body
     var newBody = new Event('new-body')
     wfs.wait('body > header', function (e) {
