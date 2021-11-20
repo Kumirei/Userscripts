@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Bunpro; Helpful Events
+// @name         Bunpro: Helpful Events
 // @namespace    http://tampermonkey.net/
 // @version      1.0.2
 // @author       Kumirei
