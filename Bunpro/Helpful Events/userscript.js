@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bunpro: Helpful Events
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @author       Kumirei
 // @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=990207
 // @include      *bunpro.jp*
