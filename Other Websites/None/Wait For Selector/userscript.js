@@ -7,8 +7,8 @@
 // @grant        none
 // ==/UserScript==
 
-;(function ($, wfs) {
-    let version = '1.0.0'
+;(function (wfs) {
+    let version = '1.0.1'
 
     // Create new observer on body to monitor all DOM changes
     let observer = new MutationObserver(mutationHandler)
@@ -72,7 +72,7 @@
 
     // Searches for the selector and calls the callback on the found elements
     function search(selector, all = false) {
-        $(selector).each((i, e) => {
+        document.querySelectorAll(selector).forEach((e, i) => {
             let callbacks = Object.values(interface.waits[selector])
             if (all || !e.WFSFound || e.WFSFound == lastMutationDate) {
                 for (let callback of callbacks) callback(e)
@@ -80,4 +80,4 @@
             }
         })
     }
-})(window.jQuery, window.wfs)
+})(window.wfs)
