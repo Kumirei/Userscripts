@@ -10,8 +10,10 @@
 // @grant        none
 // ==/UserScript==
 
-(function() {
-    $('HTML')[0].addEventListener('quiz-page', function() {
-			$('.study-question-japanese').on('click', 'ruby', function() {$('#study-answer-input').focus();});
-	});
-})();
+;(function () {
+    $('HTML')[0].addEventListener('quiz-page', function () {
+        $('.study-question-japanese').on('click', 'ruby', function () {
+            $('#study-answer-input').focus()
+        })
+    })
+})()
