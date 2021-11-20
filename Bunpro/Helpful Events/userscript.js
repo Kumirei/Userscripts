@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.0.2
 // @author       Kumirei
-// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974366
+// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=990207
 // @include      *bunpro.jp*
 // @exclude      *community.bunpro.jp*
 // ==/UserScript==
