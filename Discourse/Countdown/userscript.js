@@ -19,7 +19,7 @@
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         {
-            title: 'Muay THai Day',
+            title: 'Muay Thai Day',
             date: '2 jan 2022',
             user: 'Plantron',
             message0: '',
