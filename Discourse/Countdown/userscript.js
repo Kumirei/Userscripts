@@ -32,7 +32,7 @@
             date: '16 nov 2021',
             user: 'Catherine670',
             message0: '',
-            message1: '@Catherine670 Stay awya from milk today',
+            message1: '@Catherine670 Stay away from milk today',
             modifier: '',
             extra: '',
         },
