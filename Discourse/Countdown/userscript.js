@@ -16,7 +16,15 @@
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'World Soil Day',
+            date: 'Dec 5 2021',
+            user: 'Catherine670',
+            message0: '',
+            message1: "@Catherine670 I don't know what this means, but happy dirt day!",
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'JLPT',
             date: 'dec 5 2021',
