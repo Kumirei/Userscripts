@@ -17,7 +17,15 @@
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'JLPT',
+            date: 'dec 5 2021',
+            user: 'Redglare',
+            message0: '@Redglare Get your nihongos ready',
+            message1: '@Redglare do not fail us',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'Muay Thai Day',
             date: '2 jan 2022',
