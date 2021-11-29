@@ -11,50 +11,50 @@
 // ==/UserScript==
 /*jshint esversion: 8 */
 
-(function() {
-    var wkof = window.wkof;
+;(function () {
+    var wkof = window.wkof
     // Make sure WKOF is installed
     if (!wkof) {
-        var response = confirm('"Wanikani: Locked Count" requires WaniKani Open Framework.\n Click "OK" to be forwarded to installation instructions.');
-        if (response) window.location.href = 'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549';
-        return;
-    }
-    else {
-        wkof.include('ItemData');
-        wkof.ready('ItemData')
-            .then(fetch_items)
-            .then(get_counts)
-            .then(display_counts);
+        var response = confirm(
+            '"Wanikani: Locked Count" requires WaniKani Open Framework.\n Click "OK" to be forwarded to installation instructions.',
+        )
+        if (response)
+            window.location.href =
+                'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549'
+        return
+    } else {
+        wkof.include('ItemData')
+        wkof.ready('ItemData').then(fetch_items).then(get_counts).then(display_counts)
     }
 
     function fetch_items() {
         const config = {
             wk_items: {
                 options: {
-                    assignments: true
+                    assignments: true,
                 },
                 filters: {
-                    srs: '-1, 0'
-                }
-            }
-        };
-        return wkof.ItemData.get_items(config);
+                    srs: '-1, 0',
+                },
+            },
+        }
+        return wkof.ItemData.get_items(config)
     }
 
     function get_counts(items) {
-        const srs = wkof.ItemData.get_index(items, 'srs_stage');
-        const type = wkof.ItemData.get_index(items, 'item_type');
+        const srs = wkof.ItemData.get_index(items, 'srs_stage')
+        const type = wkof.ItemData.get_index(items, 'item_type')
         const counts = {
-            'locked': items.length,
-            'radical': (type.radical||[]).length,
-            'kanji': (type.kanji||[]).length,
-            'vocabulary': (type.vocabulary||[]).length
-        };
-        return counts;
+            locked: items.length,
+            radical: (type.radical || []).length,
+            kanji: (type.kanji || []).length,
+            vocabulary: (type.vocabulary || []).length,
+        }
+        return counts
     }
 
     function display_counts(counts) {
-        console.log(counts);
+        console.log(counts)
         $('.srs-progress #burned').before(`
             <li id="locked">
                 <span>${counts.locked}</span>
@@ -81,9 +81,18 @@
                 </div>
             </div>
         </li>
-        `);
-        $('.srs-progress #locked').hover(()=>{$('.srs-progress #locked .popover').css("display", "block");}, ()=>{$('.srs-progress #locked .popover').css("display", "none");});
-        $('.srs-progress #locked .popover').hover(()=>{$('.srs-progress #locked .popover').css("display", "none");});
+        `)
+        $('.srs-progress #locked').hover(
+            () => {
+                $('.srs-progress #locked .popover').css('display', 'block')
+            },
+            () => {
+                $('.srs-progress #locked .popover').css('display', 'none')
+            },
+        )
+        $('.srs-progress #locked .popover').hover(() => {
+            $('.srs-progress #locked .popover').css('display', 'none')
+        })
         $('head').append(`<style id="WKLockedCount">
             .srs-progress {font-size: 0px;}
             .srs-progress > ul {display: flex;}
@@ -127,6 +136,6 @@
                 font-weight: bold;
                 text-shadow: none;
             }
-        </style>`);
+        </style>`)
     }
-})();
+})()
