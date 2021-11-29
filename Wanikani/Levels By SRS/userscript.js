@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Levels by SRS
 // @namespace    http://tampermonkey.net/
-// @version      1.1.6
+// @version      1.1.7
 // @description  Displays your level for each SRS stage.
 // @author       Kumirei
 // @match        https://www.wanikani.com/dashboard
@@ -189,7 +189,7 @@
         }
         #levels_by_srs > div {
             display: flex;
-            flex-grow: 1;
+            flex: 1;
             justify-content: center;
         }
         #levels_by_srs .level_label {
