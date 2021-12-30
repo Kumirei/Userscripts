@@ -15,7 +15,15 @@
 
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: "Zengotim attains enlightenment at @RoseWagsBlue's shop",
+            date: 'Jul 5 2040',
+            user: 'ZengoTim',
+            message0: '',
+            message1: '',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'World Soil Day',
             date: 'Dec 5 2021',
