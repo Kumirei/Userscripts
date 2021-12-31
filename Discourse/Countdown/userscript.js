@@ -9,12 +9,37 @@
 // @grant        none
 // ==/UserScript==
 
-;(function () {
-    'use strict'
-    /* eslint no-multi-spaces: "off" */
+// This script is super janky since it was one of the first ones that I made.
+// It has not changed much since its conception, as it has not been necessary,
+// but that also makes it super poorly written. One day I might rewrite it,
+// but it's not really needed, I can just keep adding countdowns this way.
 
+;(function () {
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'Level 30 Deadline for the [Manly Racers](https://community.wanikani.com/t/wanikani-study-buddy-race-2022-all-aboard/)',
+            date: 'Dec 31 2022',
+            user: 'Beyond_Sleepy',
+            message0: '@Beyond_Sleepy Just one more day!',
+            message1: '@Beyond_sleepy Did you do it?!',
+            modifier: '',
+            extra: '',
+        },
+        {
+            title: "Julian Calendar New Year's Day",
+            date: 'Jan 14 2022',
+            user: 'Plantron',
+            message0: '@Plantron Happy new years eve!',
+            message1: '@Plantron Happy new year!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: "Zengotim attains enlightenment at @RoseWagsBlue's shop",
             date: 'Jul 5 2040',
