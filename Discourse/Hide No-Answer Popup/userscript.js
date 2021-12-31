@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Hide "HAS YOUR QUESTION BEEN ANSWERED" Popup
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.0.0
 // @description  Hides the most annoying popup that Discourse has ever implemented
 // @author       Kumirei
 // @license MIT
