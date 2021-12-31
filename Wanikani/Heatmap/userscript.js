@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.45
+// @version      3.0.46
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -1584,7 +1584,7 @@
                     )
                     .then((svg) => {
                         let svgElem = document.createElement('span')
-                        svgElem.innerHTML = svg.replace(/(?<=<svg )/, `class="radical-svg" `)
+                        svgElem.innerHTML = svg.replace(/<svg /, `<svg class="radical-svg" `)
                         svgs[id] = svgElem.firstChild
                     }),
             )
