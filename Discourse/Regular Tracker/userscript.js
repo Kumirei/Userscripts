@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forum: Regular Tracker
 // @namespace    http://tampermonkey.net/
-// @version      1.1.3
+// @version      1.1.4
 // @description  Tracks how regular you are
 // @author       Kumirei
 // @include      *community.wanikani.com*
@@ -27,9 +27,6 @@
     }
 
     const msday = 1000 * 60 * 60 * 24 // Number of ms in a day
-    Number.prototype.toSeparated = function (separator = ',') {
-        return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator)
-    }
     init()
 
     // First run setup
@@ -199,14 +196,14 @@
 In the last 100 days
 –––––––––––––––––––––––––––––
 Days Visited:            ${days_visited} / 50 (${Math.round((100 * days_visited) / 50)}%)
-Posts Read:                ${posts_read.toSeparated()} / ${post_goal.toSeparated()} (${Math.round(
+Posts Read:                ${posts_read.toLocaleString()} / ${post_goal.toLocaleString()} (${Math.round(
                 (100 * posts_read) / post_goal,
             )}%)
-Topics Viewed:         ${topics_viewed.toSeparated()} / ${topics_goal} (${Math.round(
+Topics Viewed:         ${topics_viewed.toLocaleString()} / ${topics_goal} (${Math.round(
                 (100 * topics_viewed) / topics_goal,
             )}%)
-Likes Given:              ${likes_given.toSeparated()} / 30
-Likes Received:        ${likes_received.toSeparated()} / 20
+Likes Given:              ${likes_given.toLocaleString()} / 30
+Likes Received:        ${likes_received.toLocaleString()} / 20
 –––––––––––––––––––––––––––––
 Topics Posted In:      ??? / 10
 Flags Not Received: ??? / 5
