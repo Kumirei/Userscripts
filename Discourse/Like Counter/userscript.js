@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.1.6
+// @version      3.1.7
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -209,20 +209,24 @@
         // Update hover info
         received.attr(
             'title',
-            `${comma(day.received)} likes received in past 24h` +
-                `\n${comma(Math.round(summary.likes_received / summary.days_visited))} likes received per day visited` +
-                `\n${comma(summary.likes_received)} total likes received`,
+            `${day.received.toLocaleString()} likes received in past 24h` +
+                `\n${Math.round(
+                    summary.likes_received / summary.days_visited,
+                ).toLocaleString()} likes received per day visited` +
+                `\n${summary.likes_received.toLocaleString()} total likes received`,
         )
         given.attr(
             'title',
-            `${comma(day.given.length)} likes given in past 24h` +
-                `\n${comma(Math.round(summary.likes_given / summary.days_visited))} likes given per day visited` +
-                `\n${comma(summary.likes_given)} total likes given` +
-                `\n\n${comma(LC.stored.zero.length)} times have you ran out` +
+            `${day.given.length.toLocaleString()} likes given in past 24h` +
+                `\n${Math.round(
+                    summary.likes_given / summary.days_visited,
+                ).toLocaleString()} likes given per day visited` +
+                `\n${summary.likes_given.toLocaleString()} total likes given` +
+                `\n\n${LC.stored.zero.length.toLocaleString()} times have you ran out` +
                 `\n${comma(
                     Math.floor((now - (LC.stored.zero[LC.stored.zero.length - 1] || now)) / msday),
                 )} days since you last ran out` +
-                `\n\n${comma(LC.stored.full.length)} times have you had full likes` +
+                `\n\n${LC.stored.full.length.toLocaleString()} times have you had full likes` +
                 `\n${comma(
                     Math.floor((now - (LC.stored.full[LC.stored.full.length - 1] || now)) / msday),
                 )} days since you last had full likes`,
@@ -301,11 +305,6 @@
         if (h != 0) return hr + 'h'
         if (m != 0) return mr + 'm'
         if (s != 0) return sr + 's'
-    }
-
-    // Adds commas to a number
-    function comma(x) {
-        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
     }
 
     // Checks whether a dark theme is used

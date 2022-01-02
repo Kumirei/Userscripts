@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.18.2.
+// @version      1.18.4
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -41,7 +41,7 @@
         rng_timestamp = String(Date.now())
         rng = prng(rng_timestamp)
         // Get draft text, without quotes
-        const text = composer.value.replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gis, '')
+        const text = composer.value.replace(/\[quote.*?\[\/quote\]/gis, '') // Not sure if this will work the same as the negative lookahead
         // Don't do anything if results are already present
         if (text.match(/(<!-- WANIMEKANI REPLY -->|<wmki>)/i)) return ''
         // Get WaniMeKani responses
@@ -631,7 +631,7 @@
         const replied = summary.most_replied_to_users.map(users_map)
         const users_item = (l, i) =>
             `<td><img class="avatar" src="${l[i]?.[0] || ''}" width=20 height=20> ` +
-            `${l[i]?.[1] || ''}<td>${(l[i]?.[2] || 0).toSeparated()}`
+            `${l[i]?.[1] || ''}<td>${(l[i]?.[2] || 0).toLocaleString()}`
         const users_row = (i) => `<tr>` + users_item(liked, i) + users_item(liked_by, i) + users_item(replied, i)
         const users_rows = () =>
             new Array(6)
@@ -648,12 +648,12 @@
             `<th>Location<td>${user.location || 'Durtle Hell'}</table>` +
             `<hr><table><thead><tr><th>Joined<td>${user.created_at.slice(0, 10)}` +
             `<th>Seen<td>${rel_time(user.last_seen_at, now)}<th>Posted<td>${rel_time(user.last_posted_at, now)}` +
-            `<tr><th>Posts<td>${summary.post_count.toSeparated()}<th>Topics<td>` +
-            `${summary.topic_count.toSeparated()}<th>Read<td>${rel_time(0, summary.time_read * 1000)}` +
-            `<tr><th>Visits<td>${summary.days_visited.toSeparated()}<th>Views` +
-            `<td>${user.profile_view_count.toSeparated()}<th>Badges<td>${user.badge_count}` +
-            `<tr><th>Given<td>${summary.likes_given.toSeparated()} ${heart}<th>Received<td>` +
-            `${summary.likes_received.toSeparated()} ${heart}</table><hr>` +
+            `<tr><th>Posts<td>${summary.post_count.toLocaleString()}<th>Topics<td>` +
+            `${summary.topic_count.toLocaleString()}<th>Read<td>${rel_time(0, summary.time_read * 1000)}` +
+            `<tr><th>Visits<td>${summary.days_visited.toLocaleString()}<th>Views` +
+            `<td>${user.profile_view_count.toLocaleString()}<th>Badges<td>${user.badge_count}` +
+            `<tr><th>Given<td>${summary.likes_given.toLocaleString()} ${heart}<th>Received<td>` +
+            `${summary.likes_received.toLocaleString()} ${heart}</table><hr>` +
             `<table><thead><tr><th>Most Liked<th><th>Most Liked By<th><th>Most Replied To<th>` +
             `</thead>` +
             users_rows() +
@@ -671,11 +671,6 @@
         const times = ['y', 'mon', 'd', 'h', 'm', 's']
         const i = rel.findIndex((a) => a !== 0)
         return rel[i] + times[i] + ' ' + (i < times.length - 2 ? rel[i + 1] + times[i + 1] : '')
-    }
-
-    // Adds thousand separators to numbers. 1000000 → "1,000,000"
-    Number.prototype.toSeparated = function (separator = ',') {
-        return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator)
     }
 
     // Fetch local storage cache

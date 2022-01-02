@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.46
+// @version      3.0.47
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -1097,7 +1097,7 @@
                         day_data.counts.forecast
                     )
                         type2 = 'forecast'
-                    let string = `${(day_data.counts[type2] || 0).toSeparated()} ${
+                    let string = `${(day_data.counts[type2] || 0).toLocaleString()} ${
                         type2 === 'forecast'
                             ? 'reviews upcoming'
                             : day_data.counts[type2] === 1
@@ -1117,7 +1117,7 @@
                                     )) /
                                     msd,
                             ) + 1
-                        ).toSeparated()}`
+                        ).toLocaleString()}`
                     if (
                         time < Date.now() &&
                         time >= new Date(settings.general.start_day).getTime() &&
@@ -1235,12 +1235,12 @@
                 create_stat_element(
                     'Days Studied',
                     stats.days_studied[1] + '%',
-                    stats.days_studied[0].toSeparated() + ' out of ' + stats.days.toSeparated(),
+                    stats.days_studied[0].toLocaleString() + ' out of ' + stats.days.toLocaleString(),
                 ),
                 create_stat_element(
                     'Done Daily',
                     stats.average[0] + ' / ' + (stats.average[1] || 0),
-                    'Per Day / Days studied\nMax: ' + stats.max_done[0].toSeparated() + ' on ' + stats.max_done[1],
+                    'Per Day / Days studied\nMax: ' + stats.max_done[0].toLocaleString() + ' on ' + stats.max_done[1],
                 ),
                 create_stat_element('Streak', stats.streak[1] + ' / ' + stats.streak[0], 'Current / Longest'),
             ],
@@ -1251,17 +1251,17 @@
             children: [
                 create_stat_element(
                     'Sessions',
-                    stats.sessions.toSeparated(),
+                    stats.sessions.toLocaleString(),
                     (Math.floor(stats.total[0] / stats.sessions) || 0) + ' per session',
                 ),
                 create_stat_element(
                     type.toProper(),
-                    stats.total[0].toSeparated(),
+                    stats.total[0].toLocaleString(),
                     create_table('left', [
-                        ['Year', stats.total[1].toSeparated()],
-                        ['Month', stats.total[2].toSeparated()],
-                        ['Week', stats.total[3].toSeparated()],
-                        ['24h', stats.total[4].toSeparated()],
+                        ['Year', stats.total[1].toLocaleString()],
+                        ['Month', stats.total[2].toLocaleString()],
+                        ['Week', stats.total[3].toLocaleString()],
+                        ['24h', stats.total[4].toLocaleString()],
                     ]),
                 ),
                 create_stat_element(
@@ -1386,7 +1386,7 @@
                     if (type2 === 'reviews' && Date.parse(date.join('-')) > Date.now() && day_data.counts.forecast)
                         type2 = 'forecast'
                     let string = [
-                        `${(day_data.counts[type2] || 0).toSeparated()} ${
+                        `${(day_data.counts[type2] || 0).toLocaleString()} ${
                             type2 === 'forecast'
                                 ? 'reviews upcoming'
                                 : day_data.counts[type2] === 1
@@ -1641,25 +1641,25 @@
         // Populate popper
         popper.className = type
         popper.querySelector('.date').innerText = title
-        popper.querySelector('.count').innerText = count.toSeparated() + ' ' + count_str
+        popper.querySelector('.count').innerText = count.toLocaleString() + ' ' + count_str
         popper.querySelector('.time').innerText = type == 'forecast' ? '' : time_str ? ' (' + time_str + ')' : ''
-        popper.querySelector('.score > span').innerText = (srs_diff < 0 ? '' : '+') + srs_diff.toSeparated()
+        popper.querySelector('.score > span').innerText = (srs_diff < 0 ? '' : '+') + srs_diff.toLocaleString()
         popper.querySelectorAll('.levels .hover-wrapper > *').forEach((e) => e.remove())
         popper.querySelectorAll('.levels > tr > td').forEach((e, i) => {
-            e.innerText = levels[0][i].toSeparated()
+            e.innerText = levels[0][i].toLocaleString()
             e.parentElement.setAttribute('data-count', levels[0][i])
             e.parentElement.children[0].append(
                 create_table(
                     'left',
                     levels
                         .slice(1)
-                        .map((a, j) => [j + 1, a.toSeparated()])
+                        .map((a, j) => [j + 1, a.toLocaleString()])
                         .filter((a) => Math.floor((a[0] - 1) / 10) == i && a[1] != 0),
                 ),
             )
         })
         popper.querySelectorAll('.srs > tr > td').forEach((e, i) => {
-            e.innerText = srs[0][Math.floor(i / 2)][i % 2].toSeparated()
+            e.innerText = srs[0][Math.floor(i / 2)][i % 2].toLocaleString()
         })
         popper
             .querySelector('.srs .hover-wrapper table')
@@ -1671,18 +1671,18 @@
                         .slice(1)
                         .map((a, i) => [
                             ['App 1', 'App 2', 'App 3', 'App 4', 'Gur 1', 'Gur 2', 'Mas', 'Enl', 'Bur'][i],
-                            ...a.map((_) => _.toSeparated()),
+                            ...a.map((_) => _.toLocaleString()),
                         ]),
                 ]),
             )
         popper.querySelectorAll('.type td').forEach((e, i) => {
-            e.innerText = item_types[['rad', 'kan', 'voc'][i]].toSeparated()
+            e.innerText = item_types[['rad', 'kan', 'voc'][i]].toLocaleString()
         })
         popper.querySelectorAll('.summary td').forEach((e, i) => {
-            e.innerText = (pass[i] || 0).toSeparated()
+            e.innerText = (pass[i] || 0).toLocaleString()
         })
         popper.querySelectorAll('.answers td').forEach((e, i) => {
-            e.innerText = (answers[i] || 0).toSeparated()
+            e.innerText = (answers[i] || 0).toLocaleString()
         })
         popper.querySelector('.items').replaceWith(create_elem({ type: 'div', class: 'items', children: item_elems }))
         popper.querySelector('.minimap > .hours-map').replaceWith(create_minimap(type, minimap_data).maps.day)
@@ -1892,10 +1892,7 @@
             .slice(0, 2)
             .join(' ')
     }
-    // Adds thousand separators to numbers. 1000000 → "1,000,000"
-    Number.prototype.toSeparated = function (separator = ',') {
-        return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator)
-    }
+
     // Capitalizes the first character in a string. "proper" → "Proper"
     String.prototype.toProper = function () {
         return this.slice(0, 1).toUpperCase() + this.slice(1)

@@ -2210,7 +2210,7 @@
             '<td>' +
             item.modifier +
             big[0] +
-            commas(daysLeft) +
+            daysLeft.toLocaleString() +
             '\n'
         return text
     }
@@ -2222,21 +2222,6 @@
         if (month < 10) month = '0' + month
         var dateString = date.getFullYear() + '-' + month + '-' + day
         return dateString
-    }
-
-    function commas(x) {
-        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-    }
-
-    function newCounterRow(temp, name, URL) {
-        return `
-
-<th><div align="center">${temp.Name}</div>
-<th><div align="center">${name}</div>
-<tr>
-<td><div align="center"><img src=" ${temp.URL}" width="330"></div>
-<td><div align="center"><img src=" ${URL}" width="330"></div>
-<tr>`
     }
 
     var UpdateMainPost = function () {
