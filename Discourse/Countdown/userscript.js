@@ -20,7 +20,15 @@
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'Advent Of Code',
+            date: 'dec 1 2022',
+            user: 'Kumi',
+            message0: 'My body is ready!',
+            message1: '',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'The Munch Transformation',
             date: 'Jan 4 2023',
