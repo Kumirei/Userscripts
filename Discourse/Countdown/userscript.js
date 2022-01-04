@@ -21,7 +21,15 @@
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'The Munch Transformation',
+            date: 'Jan 4 2023',
+            user: '',
+            message0: '@KyokaJiro Get your names ready!',
+            message1: '@KyokaJiro Poof! You are all munches now',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'Level 30 Deadline for the <a href="https://community.wanikani.com/t/wanikani-study-buddy-race-2022-all-aboard/">Manly Racers</a>',
             date: 'Dec 31 2022',
