@@ -5,6 +5,7 @@
 // @description  Makes reading and meaning appear back to back in reviews
 // @author       Kumirei
 // @include       /^https://(www|preview).wanikani.com/review/session/
+// @license MIT
 // @grant        none
 // ==/UserScript==
 
