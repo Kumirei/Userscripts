@@ -28,6 +28,10 @@
         install_menu()
         install_back2back()
         install_prioritization()
+
+        console.log(
+            'Beware, "Back To Back Reviews" is installed and may cause other scripts using Math.random in a function called "randomQuestion" to misbehave.',
+        )
     }
 
     // Set up back to back meaning/reading reviews
