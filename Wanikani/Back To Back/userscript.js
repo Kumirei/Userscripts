@@ -1,15 +1,22 @@
 // ==UserScript==
-// @name         Wanikani: Back to back reviews
+// @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
-// @description  Makes reading and meaning appear back to back in reviews
+// @version      1.1.0
+// @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
-// @include       /^https://(www|preview).wanikani.com/review/session/
+// @include       /^https://(www|preview).wanikani.com/(lesson|review)/session/
 // @license MIT
 // @grant        none
 // ==/UserScript==
 
 ;(function (wkof, $) {
+    // Page related info
+    const isReviewsPage = location.pathname.match('lesson') == null
+    const currentItemKey = isReviewsPage ? 'currentItem' : 'l/currentQuizItem'
+    const questionTypeKey = isReviewsPage ? 'questionType' : 'l/questionType'
+    const UIDPrefix = isReviewsPage ? '' : 'l/stats/'
+    const traceFunctionName = isReviewsPage ? /randomQuestion/ : /selectItem/
+
     // Script info
     const script_name = 'Back 2 Back'
     const script_id = 'back2back'
@@ -30,7 +37,7 @@
         install_prioritization()
 
         console.log(
-            'Beware, "Back To Back Reviews" is installed and may cause other scripts using Math.random in a function called "randomQuestion" to misbehave.',
+            'Beware, "Back To Back" is installed and may cause other scripts using Math.random in a function called "randomQuestion" or "selectItem" to misbehave.',
         )
     }
 
@@ -42,7 +49,8 @@
             // this is done by throwing an error and checking the trace
             // to see if the function name randomQuestion which WK uses
             // is included
-            const match = /randomQuestion/.exec(new Error().stack)
+            const match = traceFunctionName.exec(new Error().stack)
+            console.log(new Error().stack)
             if (match && wkof.settings[script_id].active) return 0
             return old_random()
         }
@@ -52,7 +60,7 @@
     // Set up prioritization of reading or meaning
     function install_prioritization() {
         // Run every time item changes
-        $.jStorage.listenKeyChange('currentItem', prioritize)
+        $.jStorage.listenKeyChange(currentItemKey, prioritize)
         // Initialize session to prioritized question type
         prioritize()
     }
@@ -60,16 +68,16 @@
     // Prioritize reading or meaning
     function prioritize() {
         const prio = wkof.settings[script_id].prioritize
-        const item = $.jStorage.get('currentItem')
+        const item = $.jStorage.get(currentItemKey)
         // Skip if item is a radical, it is already the right question, or no priority is selected
-        if (item.type == 'Radical' || $.jStorage.get('questionType') == prio || 'none' == prio) return
+        if (item.type == 'Radical' || $.jStorage.get(questionTypeKey) == prio || 'none' == prio) return
         const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
-        const done = $.jStorage.get(UID)
+        const done = $.jStorage.get(UIDPrefix + UID)
         // Change the question if no question has been answered yet,
         // Or the priority question has not been answered correctly yet
         if (!done || !done[prio == 'reading' ? 'rc' : 'mc']) {
-            $.jStorage.set('questionType', prio)
-            $.jStorage.set('currentItem', item)
+            $.jStorage.set(questionTypeKey, prio)
+            $.jStorage.set(currentItemKey, item)
         }
     }
 
