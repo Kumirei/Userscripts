@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
+// @version      1.1.1
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @include       /^https://(www|preview).wanikani.com/(lesson|review)/session/
@@ -50,7 +50,6 @@
             // to see if the function name randomQuestion which WK uses
             // is included
             const match = traceFunctionName.exec(new Error().stack)
-            console.log(new Error().stack)
             if (match && wkof.settings[script_id].active) return 0
             return old_random()
         }
