@@ -40,7 +40,7 @@
         {
             title: 'The Munch Transformation',
             date: 'Jan 4 2023',
-            user: '',
+            user: 'KyokaJiro',
             message0: '@KyokaJiro Get your names ready!',
             message1: '@KyokaJiro Poof! You are all munches now',
             modifier: '',
