@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Lesson Lock
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.1.0
 // @description  Displays 0 lessons available when you have too much on your plate already
 // @author       Kumirei
 // @include      *wanikani.com*
@@ -52,7 +52,7 @@
         if (score >= s.lock) {
             $('.navigation-shortcut--lessons span')[0].innerText = 0;
             $('.navigation-shortcut--lessons').attr('data-count', 0);
-            $('.lessons-and-reviews__lessons-button span')[0].innerText = 0;
+            $('.lessons-and-reviews__lessons-button span')[0].innerText = 'locked';
             $('.lessons-and-reviews__lessons-button')[0].className = 'lessons-and-reviews__button lessons-and-reviews__lessons-button lessons-and-reviews__lessons-button--0';
         }
         else if (s.display_lessons_left) {
