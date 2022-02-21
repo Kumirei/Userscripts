@@ -1,12 +1,10 @@
 // ==UserScript==
 // @name         Wanikani: Woah Burns
 // @namespace    http://tampermonkey.net/
-// @version      1.0.5
+// @version      1.0.6
 // @description  Adds a Kanna Woah emote to your burns count
 // @author       Kumirei
-// @match        https://www.wanikani.com/dashboard
-// @match        https://www.wanikani.com
-// @include      *preview.wanikani.com*
+// @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974318
 // @grant        none
 // ==/UserScript==
