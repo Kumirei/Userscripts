@@ -20,6 +20,15 @@
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         {
+            title: 'Rick Matsuri',
+            date: 'feb 20 2023',
+            user: 'KyokaJiro',
+            message0: '@KyokaJiro you ready this time?',
+            message1: '@KyokaJiro Snakk time!',
+            modifier: '',
+            extra: '',
+        },
+        {
             title: 'Guts Pose Day',
             date: 'Apr 11 2022',
             user: 'Plantron',
