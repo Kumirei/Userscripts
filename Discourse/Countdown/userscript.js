@@ -18,7 +18,15 @@
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'Red finally graduates',
+            date: 'jul 14 2022',
+            user: 'RedOliveBlue',
+            message0: '@RedOliveBlue just a few more hours!',
+            message1: "@RedOliveBlue Congratulations! I knew you would do it! You're amazing!",
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'Rick Matsuri',
             date: 'feb 20 2023',
