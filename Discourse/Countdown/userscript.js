@@ -18,6 +18,18 @@
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'NeecyWizzle’s birthday',
+            date: 'mar 23 2022',
+            user: 'NeecyWizzle',
+            message0: '',
+            message1: '@NeecyWizzle Happy bday!!!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'Red finally graduates',
             date: 'jul 14 2022',
