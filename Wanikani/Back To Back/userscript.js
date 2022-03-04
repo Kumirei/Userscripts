@@ -37,7 +37,8 @@
         install_prioritization()
 
         console.log(
-            'Beware, "Back To Back" is installed and may cause other scripts using Math.random in a function called "randomQuestion" or "selectItem" to misbehave.',
+            'Beware, "Back To Back" is installed and may cause other scripts using Math.random' +
+                'in a function called "randomQuestion" or "selectItem" to misbehave.',
         )
     }
 
