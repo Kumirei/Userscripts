@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @include       /^https://(www|preview).wanikani.com/(lesson|review)/session/
@@ -48,12 +48,15 @@
             // Replace Math.random only for the wanikani script
             // this is done by throwing an error and checking the trace
             // to see if the function name randomQuestion which WK uses
-            // is included
+            // on the review page, or a function called selectItem which
+            // which WK uses for the lesson page is included
             const match = traceFunctionName.exec(new Error().stack)
             if (match && wkof.settings[script_id].active) return 0
             return old_random()
         }
         Math.random = new_random
+        // Set item 0 in active queue to current item so that it will be the item returned
+        $.jStorage.set('currentItem', $.jStorage.get('activeQueue')[0])
     }
 
     // Set up prioritization of reading or meaning
