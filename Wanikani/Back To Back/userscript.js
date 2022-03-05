@@ -1,21 +1,30 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.1.3
+// @version      1.2.0
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
-// @include       /^https://(www|preview).wanikani.com/(lesson|review)/session/
+// @include       /^https://(www|preview).wanikani.com/(lesson|review|extra_study)/session/
 // @license MIT
 // @grant        none
 // ==/UserScript==
 
 ;(function (wkof, $) {
     // Page related info
-    const isReviewsPage = location.pathname.match('lesson') == null
-    const currentItemKey = isReviewsPage ? 'currentItem' : 'l/currentQuizItem'
-    const questionTypeKey = isReviewsPage ? 'questionType' : 'l/questionType'
-    const UIDPrefix = isReviewsPage ? '' : 'l/stats/'
-    const traceFunctionName = isReviewsPage ? /randomQuestion/ : /selectItem/
+    const Page = { REVIEWS: 0, LESSONS: 1, EXTRA_STUDY: 2, OTHER: 3 }
+    let page = Page.OTHER
+    if (/REVIEW/i.test(location.pathname)) page = Page.REVIEWS
+    else if (/LESSON/i.test(location.pathname)) page = Page.LESSONS
+    else if (/EXTRA_STUDY/i.test(location.pathname)) page = Page.EXTRA_STUDY
+    const reviewsOrExtraStudy = page === Page.REVIEWS || page === Page.EXTRA_STUDY
+
+    const currentItemKey = reviewsOrExtraStudy ? 'currentItem' : 'l/currentQuizItem'
+    const questionTypeKey = reviewsOrExtraStudy ? 'questionType' : 'l/questionType'
+    const UIDPrefix = reviewsOrExtraStudy ? '' : 'l/stats/'
+    let traceFunctionName = ''
+    if (page == Page.REVIEWS) traceFunctionName = /randomQuestion/
+    else if (page == Page.LESSONS) traceFunctionName = /selectItem/
+    else if (page == Page.EXTRA_STUDY) traceFunctionName = /selectQuestion/
 
     // Script info
     const script_name = 'Back 2 Back'
@@ -37,27 +46,27 @@
         install_prioritization()
 
         console.log(
-            'Beware, "Back To Back" is installed and may cause other scripts using Math.random' +
-                'in a function called "randomQuestion" or "selectItem" to misbehave.',
+            'Beware, "Back To Back" is installed and may cause other scripts using Math.random ' +
+                `in a function called ${traceFunctionName} to misbehave.`,
         )
     }
 
     // Set up back to back meaning/reading reviews
     function install_back2back() {
+        // Replace Math.random only for the wanikani script this is done by throwing an error and
+        // checking the trace to see if either of the functions 'randomQuestion' (reviews page),
+        // 'selectItem' (lessons page), or 'selectItem' (extra study page) are present. WK uses
+        // functions with these names to pick the next question, so we must alter the behavior
+        // of Math.random only when called from either of those functions.
         const old_random = Math.random
         const new_random = function () {
-            // Replace Math.random only for the wanikani script
-            // this is done by throwing an error and checking the trace
-            // to see if the function name randomQuestion which WK uses
-            // on the review page, or a function called selectItem which
-            // which WK uses for the lesson page is included
             const match = traceFunctionName.exec(new Error().stack)
             if (match && wkof.settings[script_id].active) return 0
             return old_random()
         }
         Math.random = new_random
         // Set item 0 in active queue to current item so that it will be the item returned
-        if (isReviewsPage) $.jStorage.set(currentItemKey, $.jStorage.get('activeQueue')[0])
+        if (reviewsOrExtraStudy) $.jStorage.set(currentItemKey, $.jStorage.get('activeQueue')[0])
     }
 
     // Set up prioritization of reading or meaning
