@@ -18,5 +18,9 @@
   "homepage": "https://github.com/Kumirei/Userscripts#readme",
   "devDependencies": {
     "prettier": "^2.5.1"
+  },
+  "dependencies": {
+    "typedoc": "^0.22.12",
+    "typescript": "^4.6.2"
   }
 }
