@@ -1,16 +1,24 @@
 type SrsName = 'lock' | 'init' | 'appr1' | 'appr2' | 'appr3' | 'appr4' | 'guru1' | 'guru2' | 'mast' | 'enli' | 'burn'
 type SrsNumber = -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 type SubjectType = 'vocabulary' | 'kanji' | 'radical'
+type SubjectTypeString =
+    | `${SubjectType}`
+    | `${SubjectType},${SubjectType}`
+    | `${SubjectType},${SubjectType},${SubjectType}`
 type SubjectTypeShort = 'voc' | 'kan' | 'rad'
-
-// Allows creating a union type by combining primitive types and literal
-// types without sacrificing auto-completion in IDEs for the literal
-// type part of the union
-// From: https://github.com/sindresorhus/type-fest/blob/main/source/literal-union.d.ts
-type LiteralUnion<LiteralType, BaseType extends Primitive> = LiteralType | (BaseType & Record<never, never>)
+type SubjectTypeShortString =
+    | `${SubjectTypeShort}`
+    | `${SubjectTypeShort},${SubjectTypeShort}`
+    | `${SubjectTypeShort},${SubjectTypeShort},${SubjectTypeShort}`
 
 declare namespace Core {
-    type ModuleName = 'Apiv2' | 'ItemData' | 'Menu' | 'Progress' | 'Settings'
+    type ModuleNameOption = 'Apiv2' | 'ItemData' | 'Menu' | 'Progress' | 'Settings'
+    type ModuleName =
+        | `${ModuleNameOption}`
+        | `${ModuleNameOption},${ModuleNameOption}`
+        | `${ModuleNameOption},${ModuleNameOption},${ModuleNameOption}`
+        | `${ModuleNameOption},${ModuleNameOption},${ModuleNameOption},${ModuleNameOption}`
+        | `${ModuleNameOption},${ModuleNameOption},${ModuleNameOption},${ModuleNameOption},${ModuleNameOption}`
 
     type User = {
         apikey: string
@@ -71,14 +79,8 @@ declare namespace Core {
             value: string
             compare_to: (needed_version: string) => 'older' | 'same' | 'newer'
         }
-        /**
-         * @param modules String is comma separated list of possible values
-         */
-        include: (modules: LiteralUnion<ModuleName, string>) => Promise<{ loaded: string[]; failed: string[] }>
-        /**
-         * @param modules String is comma separated list of possible values
-         */
-        ready: (modules: LiteralUnion<ModuleName, string>) => Promise<'ready'>
+        include: (modules: ModuleName) => Promise<{ loaded: string[]; failed: string[] }>
+        ready: (modules: ModuleName) => Promise<'ready'>
         get_state: (state_var: string) => any
         set_state: (state_var: string, value: any) => void
         wait_state: (
@@ -164,10 +166,7 @@ declare namespace Apiv2 {
          * @remark Comma separated list of integers
          */
         subject_ids?: string
-        /**
-         * @remark Comma separated list of subject types
-         */
-        subject_types?: string
+        subject_types?: SubjectTypeString
         unlocked?: boolean
     } & Defaults
 
@@ -200,17 +199,11 @@ declare namespace Apiv2 {
          * @remark Comma separated list of integers
          */
         subject_ids?: string
-        /**
-         * @remark Comma separated list of subject types
-         */
-        subject_types?: string
+        subject_types?: SubjectTypeString
     } & Defaults
 
     type Subjects = {
-        /**
-         * @remark Comma separated list of subject types
-         */
-        types?: string
+        types?: SubjectTypeString
         /**
          * @remark Comma separated list of slugs
          */
@@ -266,9 +259,9 @@ declare namespace ItemData {
         | 'subject_id'
         | string
 
-    type ItemDataEndpoints = 'subjects' | 'assignments' | 'review_statistics' | 'study_materials'
+    type Endpoints = 'subjects' | 'assignments' | 'review_statistics' | 'study_materials'
 
-    type ItemDataItem = {
+    type Item = {
         url: string
         object: SubjectType
         id: number
@@ -386,7 +379,7 @@ declare namespace ItemData {
     type FilterCanInvert<T> = T | { value: T; invert: boolean }
 
     type GetItemsConfig =
-        | ItemDataEndpoints
+        | Endpoints
         | {
               [key: string]: {
                   options?: {
@@ -398,12 +391,9 @@ declare namespace ItemData {
                   }
                   filters?: {
                       [key: string]: FilterCanInvert<any>
+                      item_type?: FilterCanInvert<SubjectTypeShortString | SubjectTypeShort[]>
                       /**
-                       * @remark String is comma separated list of 'rad', 'kan', or 'voc'
-                       */
-                      item_type?: FilterCanInvert<string | SubjectTypeShort[]>
-                      /**
-                       * @remark A comma-separated list of Wanikani levels or level ranges
+                       * @remark A comma separated list of Wanikani levels or level ranges
                        */
                       level?: FilterCanInvert<string>
                       /**
@@ -416,8 +406,8 @@ declare namespace ItemData {
           }
 
     export type Module = {
-        get_items: (config?: GetItemsConfig) => Promise<ItemDataItem[]>
-        get_index: (items: ItemDataItem[], index_name: IndexOptions) => { [key: string]: ItemDataItem[] | ItemDataItem }
+        get_items: (config?: GetItemsConfig) => Promise<Item[]>
+        get_index: (items: Item[], index_name: IndexOptions) => { [key: string]: Item[] | Item }
     }
 }
 
