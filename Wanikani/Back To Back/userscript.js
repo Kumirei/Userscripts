@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
-// @include       /^https://(www|preview).wanikani.com/(lesson|review|extra_study)/session/
-// @license MIT
+// @include      /^https://(www|preview).wanikani.com/(lesson|review|extra_study)/session/
+// @license      MIT
 // @grant        none
 // ==/UserScript==
 
@@ -65,8 +65,16 @@
             return old_random()
         }
         Math.random = new_random
-        // Set item 0 in active queue to current item so that it will be the item returned
-        if (reviewsOrExtraStudy) $.jStorage.set(currentItemKey, $.jStorage.get('activeQueue')[0])
+        // Set item 0 in active queue to current item so the first item will be back to back
+        if (reviewsOrExtraStudy) {
+            // If active queue is not yet populated, wait until it is to set the currentItem
+            const callback = () => {
+                $.jStorage.set(currentItemKey, $.jStorage.get('activeQueue')[0])
+                $.jStorage.stopListening('activeQueue', callback)
+            }
+            if ($.jStorage.get('activeQueue').length) callback()
+            else $.jStorage.listenKeyChange('activeQueue', callback)
+        }
     }
 
     // Set up prioritization of reading or meaning
