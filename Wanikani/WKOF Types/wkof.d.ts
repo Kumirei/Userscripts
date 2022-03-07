@@ -3,7 +3,13 @@ type SrsNumber = -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 type SubjectType = 'vocabulary' | 'kanji' | 'radical'
 type SubjectTypeShort = 'voc' | 'kan' | 'rad'
 
-namespace Core {
+// Allows creating a union type by combining primitive types and literal
+// types without sacrificing auto-completion in IDEs for the literal
+// type part of the union
+// From: https://github.com/sindresorhus/type-fest/blob/main/source/literal-union.d.ts
+type LiteralUnion<LiteralType, BaseType extends Primitive> = LiteralType | (BaseType & Record<never, never>)
+
+declare namespace Core {
     type ModuleName = 'Apiv2' | 'ItemData' | 'Menu' | 'Progress' | 'Settings'
 
     type User = {
@@ -68,11 +74,11 @@ namespace Core {
         /**
          * @param modules String is comma separated list of possible values
          */
-        include: (modules: ModuleName | string) => Promise<{ loaded: string[]; failed: string[] }>
+        include: (modules: LiteralUnion<ModuleName, string>) => Promise<{ loaded: string[]; failed: string[] }>
         /**
          * @param modules String is comma separated list of possible values
          */
-        ready: (modules: ModuleName | string) => Promise<'ready'>
+        ready: (modules: LiteralUnion<ModuleName, string>) => Promise<'ready'>
         get_state: (state_var: string) => any
         set_state: (state_var: string, value: any) => void
         wait_state: (
@@ -92,7 +98,7 @@ namespace Core {
     }
 }
 
-namespace Apiv2 {
+declare namespace Apiv2 {
     type ApiEndpoints =
         | 'assignments'
         | 'level_progressions'
@@ -249,7 +255,7 @@ namespace Apiv2 {
     }
 }
 
-namespace ItemData {
+declare namespace ItemData {
     type IndexOptions =
         | 'level'
         | 'item_type'
@@ -415,7 +421,7 @@ namespace ItemData {
     }
 }
 
-namespace Menu {
+declare namespace Menu {
     export type Module = {
         insert_script_link: (config: {
             name: string
@@ -427,7 +433,7 @@ namespace Menu {
     }
 }
 
-namespace Settings {
+declare namespace Settings {
     type OnChange = (name: string, value: any, config: Component) => void
 
     type Validate = (value: any, config: Component) => boolean | string | { valid: boolean; msg: string }
@@ -577,7 +583,7 @@ namespace Settings {
     }
 }
 
-namespace Progress {
+declare namespace Progress {
     export type Module = {
         update: (progress: { name: string; label: string; value: number; max: number }) => void
     }
