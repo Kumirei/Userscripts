@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.2.2
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(lesson|review|extra_study)/session/
@@ -11,20 +11,27 @@
 
 ;(function (wkof, $) {
     // Page related info
-    const Page = { REVIEWS: 0, LESSONS: 1, EXTRA_STUDY: 2, OTHER: 3 }
-    let page = Page.OTHER
-    if (/REVIEW/i.test(location.pathname)) page = Page.REVIEWS
-    else if (/LESSON/i.test(location.pathname)) page = Page.LESSONS
-    else if (/EXTRA_STUDY/i.test(location.pathname)) page = Page.EXTRA_STUDY
-    const reviewsOrExtraStudy = page === Page.REVIEWS || page === Page.EXTRA_STUDY
-
-    const currentItemKey = reviewsOrExtraStudy ? 'currentItem' : 'l/currentQuizItem'
-    const questionTypeKey = reviewsOrExtraStudy ? 'questionType' : 'l/questionType'
-    const UIDPrefix = reviewsOrExtraStudy ? '' : 'l/stats/'
-    let traceFunctionName = ''
-    if (page == Page.REVIEWS) traceFunctionName = /randomQuestion/
-    else if (page == Page.LESSONS) traceFunctionName = /selectItem/
-    else if (page == Page.EXTRA_STUDY) traceFunctionName = /selectQuestion/
+    let currentItemKey, questionTypeKey, UIDPrefix, traceFunctionName
+    let REVIEWS, LESSONS, EXTRA_STUDY
+    if (/REVIEW/i.test(location.pathname)) {
+        REVIEWS = true
+        currentItemKey = 'currentItem'
+        questionTypeKey = 'questionType'
+        UIDPrefix = ''
+        traceFunctionName = /randomQuestion/
+    } else if (/LESSON/i.test(location.pathname)) {
+        LESSONS = true
+        currentItemKey = 'l/currentQuizItem'
+        questionTypeKey = 'l/questionType'
+        UIDPrefix = 'l/stats/'
+        traceFunctionName = /selectItem/
+    } else if (/EXTRA_STUDY/i.test(location.pathname)) {
+        EXTRA_STUDY = true
+        currentItemKey = 'currentItem'
+        questionTypeKey = 'questionType'
+        UIDPrefix = 'e/stats/'
+        traceFunctionName = /selectQuestion/
+    }
 
     // Script info
     const script_name = 'Back 2 Back'
@@ -66,7 +73,7 @@
         }
         Math.random = new_random
         // Set item 0 in active queue to current item so the first item will be back to back
-        if (reviewsOrExtraStudy) {
+        if (REVIEWS || EXTRA_STUDY) {
             // If active queue is not yet populated, wait until it is to set the currentItem
             const callback = () => {
                 $.jStorage.set(currentItemKey, $.jStorage.get('activeQueue')[0])
