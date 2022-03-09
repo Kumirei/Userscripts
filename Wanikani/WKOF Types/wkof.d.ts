@@ -504,9 +504,9 @@ declare namespace Settings {
         autosave?: boolean
         background?: boolean
         /**
-         * @param dialog DOM element of dialog box
+         * @param dialog jQuery DOM element of dialog box
          */
-        pre_open?: (dialog: any) => void
+        pre_open?: (dialog: [any]) => void
         on_save?: (settings: { [key: string]: any }) => void
         on_cancel?: (settings: { [key: string]: any }) => void
         on_close?: (settings: { [key: string]: any }) => void
