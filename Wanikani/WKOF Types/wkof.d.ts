@@ -447,7 +447,7 @@ declare namespace Settings {
 
     type Html = {
         type: 'html'
-        label: string
+        label?: string
         html: string
     }
 
@@ -506,7 +506,7 @@ declare namespace Settings {
         on_close?: (settings: { [key: string]: any }) => void
         on_change?: OnChange
         on_refresh?: (settings: { [key: string]: any }) => void
-        content: Component
+        content: { [key: string]: Component }
     }
 
     export type Module = {
