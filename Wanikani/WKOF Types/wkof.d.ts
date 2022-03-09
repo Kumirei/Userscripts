@@ -510,7 +510,7 @@ declare namespace Settings {
     }
 
     export type Module = {
-        (config: Config): () => Promise<Dialog>
+        new (config: Config): () => Promise<Dialog>
         save: (script_id: string) => Promise<undefined>
         load: (script_id: string, defaults?: { [key: string]: any }) => Promise<{ [key: string]: any }>
     }
