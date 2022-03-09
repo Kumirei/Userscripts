@@ -76,7 +76,7 @@ declare namespace Core {
             persistent: boolean,
         ) => void
         on: (event: string, callback: () => void) => void
-        trigger: (event: string) => WKOF<{}>
+        trigger: (event: string) => undefined
         support_files: { [key: string]: string }
         user: User
         load_file: (url: string, use_cache?: boolean) => Promise<any>
@@ -212,10 +212,12 @@ declare namespace Apiv2 {
     }
 
     export type Module = {
-        fetch_endpoint: (endpoint_name: ApiEndpoint, options?: FetchEndpointOptions) => Promise<any>
-        get_endpoint: (endpoint_name: ApiEndpoint, options?: GetEndpointOptions) => Promise<any>
-        clear_cache: (include_non_user?: boolean) => Promise<undefined>
-        apiv2_is_valid_apikey_format: (apikey: string) => boolean
+        Apiv2: {
+            fetch_endpoint: (endpoint_name: ApiEndpoint, options?: FetchEndpointOptions) => Promise<any>
+            get_endpoint: (endpoint_name: ApiEndpoint, options?: GetEndpointOptions) => Promise<any>
+            clear_cache: (include_non_user?: boolean) => Promise<undefined>
+            apiv2_is_valid_apikey_format: (apikey: string) => boolean
+        }
     }
 }
 
@@ -349,20 +351,24 @@ declare namespace ItemData {
           }
 
     export type Module = {
-        get_items: (config?: GetItemsConfig) => Promise<Item[]>
-        get_index: (items: Item[], index_name: IndexOptions) => { [key: string]: Item[] | Item }
+        ItemData: {
+            get_items: (config?: GetItemsConfig) => Promise<Item[]>
+            get_index: (items: Item[], index_name: IndexOptions) => { [key: string]: Item[] | Item }
+        }
     }
 }
 
 declare namespace Menu {
     export type Module = {
-        insert_script_link: (config: {
-            name: string
-            submenu?: string
-            title: string
-            class?: string
-            on_click: (event: any) => void
-        }) => void
+        Menu: {
+            insert_script_link: (config: {
+                name: string
+                submenu?: string
+                title: string
+                class?: string
+                on_click: (event: any) => void
+            }) => void
+        }
     }
 }
 
@@ -510,23 +516,31 @@ declare namespace Settings {
     }
 
     export type Module = {
-        new (config: Config): Dialog
-        save: (script_id: string) => Promise<undefined>
-        load: (script_id: string, defaults?: { [key: string]: any }) => Promise<{ [key: string]: any }>
+        Settings: {
+            new (config: Config): Dialog
+            save: (script_id: string) => Promise<undefined>
+            load: (script_id: string, defaults?: { [key: string]: any }) => Promise<{ [key: string]: any }>
+        }
+        settings: {
+            [key: string]: {
+                [key: string]: any
+            }
+        }
     }
 }
 
 declare namespace Progress {
     export type Module = {
-        update: (progress: { name: string; label: string; value: number; max: number }) => void
+        Progress: {
+            update: (progress: { name: string; label: string; value: number; max: number }) => void
+        }
     }
 }
 
 /**
- * @argument T Object containing the modules to include.
- * @example Use WKOF<{ItemData: ItemData, Apiv2: Apiv2}> to include both ItemData and Apiv2 modules.
+ * @remark To include modules use WKOF & Module
  */
-export type WKOF<T> = Core.Module & T
+export type WKOF = Core.Module
 export type Apiv2 = Apiv2.Module
 export type ItemData = ItemData.Module
 export type Menu = Menu.Module
