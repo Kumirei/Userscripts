@@ -506,7 +506,7 @@ declare namespace Settings {
         /**
          * @param dialog jQuery DOM element of dialog box
          */
-        pre_open?: (dialog: [any]) => void
+        pre_open?: (dialog: JQuery) => void
         on_save?: (settings: { [key: string]: any }) => void
         on_cancel?: (settings: { [key: string]: any }) => void
         on_close?: (settings: { [key: string]: any }) => void
