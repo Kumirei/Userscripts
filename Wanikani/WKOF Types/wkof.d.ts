@@ -10,6 +10,7 @@ type SubjectTypeShortString =
     | `${SubjectTypeShort}`
     | `${SubjectTypeShort},${SubjectTypeShort}`
     | `${SubjectTypeShort},${SubjectTypeShort},${SubjectTypeShort}`
+type IsoDateString = `${number}-${number}-${number}T${number}:${number}:${number}.${number}Z`
 
 declare namespace Core {
     type ModuleNameOption = 'Apiv2' | 'ItemData' | 'Menu' | 'Progress' | 'Settings'
@@ -22,10 +23,7 @@ declare namespace Core {
 
     type User = {
         apikey: string
-        /**
-         * @remark String is ISO Date string
-         */
-        current_vacation_started_at: null | string
+        current_vacation_started_at: null | IsoDateString
         id: string
         level: number
         preferences: {
@@ -39,17 +37,11 @@ declare namespace Core {
             wanikani_compatibility_mode: boolean
         }
         profile_url: string
-        /**
-         * @remark String is ISO Date string
-         */
-        started_at: string
+        started_at: IsoDateString
         subscription: {
             active: boolean
             max_level_granted: number
-            /**
-             * @remark String is ISO Date string
-             */
-            period_ends_at: null | string
+            period_ends_at: null | IsoDateString
             type: string
         }
         username: string
@@ -58,14 +50,8 @@ declare namespace Core {
     type FileCache = {
         dir: {
             [key: string]: {
-                /**
-                 * @remark ISO Date string
-                 */
-                added: string
-                /**
-                 * @remark ISO Date string
-                 */
-                last_loaded: string
+                added: IsoDateString
+                last_loaded: IsoDateString
             }
         }
         save: (name: string, content: string | { [key: string]: any }) => Promise<string>
@@ -119,10 +105,7 @@ declare namespace Apiv2 {
          * @remark Comma separated list of integers
          */
         ids?: string
-        /**
-         * @remark ISO Date string
-         */
-        updated_after?: string
+        updated_after?: IsoDateString
     }
 
     type LevelProgressions = {} & Defaults
@@ -131,14 +114,8 @@ declare namespace Apiv2 {
     type VoiceActors = {} & Defaults
 
     type Assignments = {
-        /**
-         * @remark ISO Date string
-         */
-        available_after?: string
-        /**
-         * @remark ISO Date string
-         */
-        available_before?: string
+        available_after?: IsoDateString
+        available_before?: IsoDateString
         burned?: boolean
         hidden?: boolean
         /**
@@ -172,10 +149,7 @@ declare namespace Apiv2 {
 
     type Reviews = {
         assignment_id?: number
-        /**
-         * @remark ISO Date string
-         */
-        created_at?: string
+        created_at?: IsoDateString
         ending_srs_stage?: number
         incorrect_meaning_answers?: number
         incorrect_reading_answers?: number
@@ -228,10 +202,7 @@ declare namespace Apiv2 {
 
     type FetchEndpointOptions = {
         progress_callback?: (endpoint_name: ApiEndpoints, first_new: number, so_far: number, total: number) => void
-        /**
-         * @remark ISO Date string
-         */
-        last_update?: Date | string
+        last_update?: Date | IsoDateString
         filters?: Filter
     }
 
@@ -265,10 +236,7 @@ declare namespace ItemData {
         url: string
         object: SubjectType
         id: number
-        /**
-         * @remark ISO Date string
-         */
-        data_updated_at: string
+        data_updated_at: IsoDateString
         data: {
             auxiliary_meanings: {
                 meaning: string
@@ -280,15 +248,9 @@ declare namespace ItemData {
                 en: string
                 ja: string
             }[]
-            /**
-             * @remark ISO Date string
-             */
-            created_at: string
+            created_at: IsoDateString
             document_url: string
-            /**
-             * @remark ISO Date string (or null)
-             */
-            hidden_at: null | string
+            hidden_at: null | IsoDateString
             lesson_position: number
             level: number
             meaning_mnemonic: string
@@ -320,47 +282,23 @@ declare namespace ItemData {
             spaced_repetition_system_id: number
         }
         assignments?: {
-            /**
-             * @remark ISO Date string (or null)
-             */
-            available_at: null | string
-            /**
-             * @remark ISO Date string (or null)
-             */
-            burned_at: null | string
-            /**
-             * @remark ISO Date string
-             */
-            created_at: string
+            available_at: null | IsoDateString
+            burned_at: null | IsoDateString
+            created_at: IsoDateString
             hidden: boolean
-            /**
-             * @remark ISO Date string (or null)
-             */
-            passed_at: null | string
-            /**
-             * @remark ISO Date string (or null)
-             */
-            resurrected_at: null | string
+            passed_at: null | IsoDateString
+            resurrected_at: null | IsoDateString
             /**
              * @remark 0 = init, 1 = appr1, etc
              */
             srs_stage: SrsNumber
-            /**
-             * @remark ISO Date string
-             */
-            started_at: null | string
+            started_at: null | IsoDateString
             subject_id: number
             subject_type: SubjectType
-            /**
-             * @remark ISO Date string
-             */
             unlocked_at: string
         }
         review_statistics?: {
-            /**
-             * @remark ISO Date string
-             */
-            created_at: string
+            created_at: IsoDateString
             hidden: boolean
             meaning_correct: number
             meaning_current_streak: number
