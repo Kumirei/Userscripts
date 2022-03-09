@@ -87,7 +87,7 @@ declare namespace Core {
 }
 
 declare namespace Apiv2 {
-    type ApiEndpoints =
+    type ApiEndpoint =
         | 'assignments'
         | 'level_progressions'
         | 'resets'
@@ -201,19 +201,19 @@ declare namespace Apiv2 {
         | VoiceActors
 
     type FetchEndpointOptions = {
-        progress_callback?: (endpoint_name: ApiEndpoints, first_new: number, so_far: number, total: number) => void
+        progress_callback?: (endpoint_name: ApiEndpoint, first_new: number, so_far: number, total: number) => void
         last_update?: Date | IsoDateString
         filters?: Filter
     }
 
     type GetEndpointOptions = {
-        progress_callback?: (endpoint_name: ApiEndpoints, first_new: number, so_far: number, total: number) => void
+        progress_callback?: (endpoint_name: ApiEndpoint, first_new: number, so_far: number, total: number) => void
         force_update?: boolean
     }
 
     export type Module = {
-        fetch_endpoint: (endpoint_name: ApiEndpoints, options?: FetchEndpointOptions) => Promise<any>
-        get_endpoint: (endpoint_name: ApiEndpoints, options?: GetEndpointOptions) => Promise<any>
+        fetch_endpoint: (endpoint_name: ApiEndpoint, options?: FetchEndpointOptions) => Promise<any>
+        get_endpoint: (endpoint_name: ApiEndpoint, options?: GetEndpointOptions) => Promise<any>
         clear_cache: (include_non_user?: boolean) => Promise<undefined>
         apiv2_is_valid_apikey_format: (apikey: string) => boolean
     }
@@ -230,7 +230,12 @@ declare namespace ItemData {
         | 'subject_id'
         | string
 
-    type Endpoints = 'subjects' | 'assignments' | 'review_statistics' | 'study_materials'
+    type Endpoint = 'subjects' | 'assignments' | 'review_statistics' | 'study_materials'
+    type EndpointString =
+        | `${Endpoint}`
+        | `${Endpoint},${Endpoint}`
+        | `${Endpoint},${Endpoint},${Endpoint}`
+        | `${Endpoint},${Endpoint},${Endpoint},${Endpoint}`
 
     type Item = {
         url: string
@@ -317,7 +322,7 @@ declare namespace ItemData {
     type FilterCanInvert<T> = T | { value: T; invert: boolean }
 
     type GetItemsConfig =
-        | Endpoints
+        | EndpointString
         | {
               [key: string]: {
                   options?: {
