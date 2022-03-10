@@ -391,7 +391,7 @@ declare namespace ItemData {
                             hover_tip: 'Filter items by whether they have ever been burned.\n * If checked, select burned items (including resurrected)\n * If unchecked, select items that have never been burned'
                             filter_func: (filter_value: boolean, item: Item) => boolean
                             set_options: (options: GetItems.Options) => void
-                        }
+                        } & Filter<any>
                         item_type: {
                             type: 'multi'
                             default: []
@@ -406,7 +406,7 @@ declare namespace ItemData {
                                 kanji: 'Kanji'
                                 vocabulary: 'Vocabulary'
                             }
-                        }
+                        } & Filter<any>
                         level: {
                             type: 'text'
                             default: ''
@@ -415,7 +415,7 @@ declare namespace ItemData {
                             placeholder: '(e.g. "1..3,5")'
                             filter_value_map: (filter_value: string) => { [key: number]: boolean }
                             filter_func: (filter_value: { [key: number]: boolean }, item: Item) => boolean
-                        }
+                        } & Filter<any>
                         srs: {
                             type: 'multi'
                             default: []
@@ -437,7 +437,7 @@ declare namespace ItemData {
                                 lock: 'Locked'
                                 mast: 'Master'
                             }
-                        }
+                        } & Filter<any>
                     }
                     options: {
                         assignments: {
