@@ -232,13 +232,6 @@ declare namespace ItemData {
         | 'subject_id'
         | string
 
-    type Endpoint = 'subjects' | 'assignments' | 'review_statistics' | 'study_materials'
-    type EndpointString =
-        | `${Endpoint}`
-        | `${Endpoint},${Endpoint}`
-        | `${Endpoint},${Endpoint},${Endpoint}`
-        | `${Endpoint},${Endpoint},${Endpoint},${Endpoint}`
-
     type Item = {
         url: string
         object: SubjectType
@@ -323,37 +316,159 @@ declare namespace ItemData {
 
     type FilterCanInvert<T> = T | { value: T; invert: boolean }
 
-    type GetItemsConfig =
-        | EndpointString
-        | {
-              [key: string]: {
-                  options?: {
-                      [key: string]: any
-                      assignments?: boolean
-                      review_statistics?: boolean
-                      study_materials?: boolean
-                      include_hidden?: boolean
-                  }
-                  filters?: {
-                      [key: string]: FilterCanInvert<any>
-                      item_type?: FilterCanInvert<SubjectTypeShortString | SubjectTypeShort[]>
-                      /**
-                       * @remark A comma separated list of Wanikani levels or level ranges
-                       */
-                      level?: FilterCanInvert<string>
-                      /**
-                       * @remark String is comma separated list of possible values
-                       */
-                      srs?: FilterCanInvert<string | (SrsName | SrsNumber)[]>
-                      have_burned?: FilterCanInvert<boolean>
-                  }
-              }
-          }
+    namespace GetItems {
+        type Endpoint = 'subjects' | 'assignments' | 'review_statistics' | 'study_materials'
+        type EndpointString =
+            | `${Endpoint}`
+            | `${Endpoint},${Endpoint}`
+            | `${Endpoint},${Endpoint},${Endpoint}`
+            | `${Endpoint},${Endpoint},${Endpoint},${Endpoint}`
+
+        type Options = {
+            [key: string]: any
+            assignments?: boolean
+            review_statistics?: boolean
+            study_materials?: boolean
+            include_hidden?: boolean
+        }
+
+        type Filters = {
+            [key: string]: FilterCanInvert<any>
+            item_type?: FilterCanInvert<SubjectTypeShortString | SubjectTypeShort[]>
+            /**
+             * @remark A comma separated list of Wanikani levels or level ranges
+             */
+            level?: FilterCanInvert<string>
+            /**
+             * @remark String is comma separated list of possible values
+             */
+            srs?: FilterCanInvert<string | (SrsName | SrsNumber)[]>
+            have_burned?: FilterCanInvert<boolean>
+        }
+
+        type SourceConfig = {
+            options?: Options
+            filters?: Filters
+        }
+
+        type Config = EndpointString | { [key: string]: SourceConfig }
+    }
+
+    namespace Registry {
+        type Filter<T> = {
+            type: string
+            default: T
+            filter_func: (filter_value: T, item: Item) => boolean
+            label?: string
+            hover_tip?: string
+            placeholder?: T
+            filter_value_map?: (filter_value: any) => T
+            set_options?: (options: GetItems.Options) => void
+            content?: { [key: string]: any }
+        }
+
+        type Registry = {
+            sources: {
+                [key: string]: {
+                    description: string
+                    fetcher: (...any) => Promise<{ [key: string]: any }>
+                    filters: { [key: string]: Filter<any> }
+                    options: { [key: string]: any }
+                }
+                wk_items: {
+                    description: 'Wanikani'
+                    fetcher: (
+                        config: GetItems.SourceConfig,
+                        options: Apiv2.GetEndpointOptions,
+                    ) => Promise<{ [key: string]: Item }>
+                    filters: {
+                        [key: string]: Filter<any>
+                        have_burned: {
+                            type: 'checkbox'
+                            default: true
+                            label: 'Have burned'
+                            hover_tip: 'Filter items by whether they have ever been burned.\n * If checked, select burned items (including resurrected)\n * If unchecked, select items that have never been burned'
+                            filter_func: (filter_value: boolean, item: Item) => boolean
+                            set_options: (options: GetItems.Options) => void
+                        }
+                        item_type: {
+                            type: 'multi'
+                            default: []
+                            label: 'Item type'
+                            hover_tip: 'Filter by item type (radical, kanji, vocabulary)'
+                            filter_value_map: (filter_value: SubjectTypeShort[] | SubjectTypeShortString) => {
+                                [key: string]: boolean
+                            }
+                            filter_func: (filter_value: { [key: string]: boolean }, item: Item) => boolean
+                            content: {
+                                radical: 'Radicals'
+                                kanji: 'Kanji'
+                                vocabulary: 'Vocabulary'
+                            }
+                        }
+                        level: {
+                            type: 'text'
+                            default: ''
+                            label: 'SRS Level'
+                            hover_tip: 'Filter by Wanikani level\nExamples:\n"*" (All levels)\n"1..3,5" (Levels 1 through 3, and level 5)\n"1..-1" (From level 1 to your current level minus 1)\n"-5..+0" (Your current level and previous 5 levels)\n"+1" (Your next level)'
+                            placeholder: '(e.g. "1..3,5")'
+                            filter_value_map: (filter_value: string) => { [key: number]: boolean }
+                            filter_func: (filter_value: { [key: number]: boolean }, item: Item) => boolean
+                        }
+                        srs: {
+                            type: 'multi'
+                            default: []
+                            label: 'SRS Level'
+                            hover_tip: 'Filter by SRS level (Apprentice 1, Apprentice 2, ..., Burn)'
+                            filter_value_map: (filter_value: string | SrsName[]) => { [key: string]: boolean }
+                            filter_func: (filter_value: { [key: string]: boolean }, item: Item) => boolean
+                            set_options: (options: GetItems.Options) => void
+                            content: {
+                                appr1: 'Apprentice 1'
+                                appr2: 'Apprentice 2'
+                                appr3: 'Apprentice 3'
+                                appr4: 'Apprentice 4'
+                                burn: 'Burned'
+                                enli: 'Enlightened'
+                                guru1: 'Guru 1'
+                                guru2: 'Guru 2'
+                                init: 'Initiate (Lesson Queue)'
+                                lock: 'Locked'
+                                mast: 'Master'
+                            }
+                        }
+                    }
+                    options: {
+                        assignments: {
+                            type: 'checkbox'
+                            label: 'Assignments'
+                            default: false
+                            hover_tip: 'Include the "/assignments" endpoint (SRS status, burn status, progress dates)'
+                        }
+                        review_statistics: {
+                            type: 'checkbox'
+                            label: 'Review Statistics'
+                            default: false
+                            hover_tip: 'Include the "/review_statistics" endpoint:\n  * Per-item review count\n  *Correct/incorrect count\n  * Longest streak'
+                        }
+                        study_materials: {
+                            type: 'checkbox'
+                            label: 'Study Materials'
+                            default: false
+                            hover_tip: 'Include the "/study_materials" endpoint:\n  * User synonyms\n  * User notes'
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     export type Module = {
         ItemData: {
-            get_items: (config?: GetItemsConfig) => Promise<Item[]>
+            get_items: (config?: GetItems.Config) => Promise<Item[]>
             get_index: (items: Item[], index_name: IndexOptions) => { [key: string]: Item[] | Item }
+            registry: Registry.Registry
+            pause_ready_event: (value: boolean) => void
         }
     }
 }
