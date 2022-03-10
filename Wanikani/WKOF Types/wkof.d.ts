@@ -365,6 +365,7 @@ declare namespace ItemData {
             filter_value_map?: (filter_value: any) => T
             set_options?: (options: GetItems.Options) => void
             content?: { [key: string]: any }
+            no_ui?: boolean
         }
 
         type Registry = {
