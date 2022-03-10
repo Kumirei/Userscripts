@@ -1,17 +1,29 @@
 type SrsName = 'lock' | 'init' | 'appr1' | 'appr2' | 'appr3' | 'appr4' | 'guru1' | 'guru2' | 'mast' | 'enli' | 'burn'
 type SrsNumber = -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 type SubjectType = 'vocabulary' | 'kanji' | 'radical'
+type SubjectTypeString =
+    | `${SubjectType}`
+    | `${SubjectType},${SubjectType}`
+    | `${SubjectType},${SubjectType},${SubjectType}`
 type SubjectTypeShort = 'voc' | 'kan' | 'rad'
+type SubjectTypeShortString =
+    | `${SubjectTypeShort}`
+    | `${SubjectTypeShort},${SubjectTypeShort}`
+    | `${SubjectTypeShort},${SubjectTypeShort},${SubjectTypeShort}`
+type IsoDateString = `${number}-${number}-${number}T${number}:${number}:${number}.${number}Z`
 
-namespace Core {
-    type ModuleName = 'Apiv2' | 'ItemData' | 'Menu' | 'Progress' | 'Settings'
+declare namespace Core {
+    type ModuleNameOption = 'Apiv2' | 'ItemData' | 'Menu' | 'Progress' | 'Settings'
+    type ModuleName =
+        | `${ModuleNameOption}`
+        | `${ModuleNameOption},${ModuleNameOption}`
+        | `${ModuleNameOption},${ModuleNameOption},${ModuleNameOption}`
+        | `${ModuleNameOption},${ModuleNameOption},${ModuleNameOption},${ModuleNameOption}`
+        | `${ModuleNameOption},${ModuleNameOption},${ModuleNameOption},${ModuleNameOption},${ModuleNameOption}`
 
     type User = {
         apikey: string
-        /**
-         * @remark String is ISO Date string
-         */
-        current_vacation_started_at: null | string
+        current_vacation_started_at: null | IsoDateString
         id: string
         level: number
         preferences: {
@@ -25,17 +37,11 @@ namespace Core {
             wanikani_compatibility_mode: boolean
         }
         profile_url: string
-        /**
-         * @remark String is ISO Date string
-         */
-        started_at: string
+        started_at: IsoDateString
         subscription: {
             active: boolean
             max_level_granted: number
-            /**
-             * @remark String is ISO Date string
-             */
-            period_ends_at: null | string
+            period_ends_at: null | IsoDateString
             type: string
         }
         username: string
@@ -44,14 +50,8 @@ namespace Core {
     type FileCache = {
         dir: {
             [key: string]: {
-                /**
-                 * @remark ISO Date string
-                 */
-                added: string
-                /**
-                 * @remark ISO Date string
-                 */
-                last_loaded: string
+                added: IsoDateString
+                last_loaded: IsoDateString
             }
         }
         save: (name: string, content: string | { [key: string]: any }) => Promise<string>
@@ -65,14 +65,8 @@ namespace Core {
             value: string
             compare_to: (needed_version: string) => 'older' | 'same' | 'newer'
         }
-        /**
-         * @param modules String is comma separated list of possible values
-         */
-        include: (modules: ModuleName | string) => Promise<{ loaded: string[]; failed: string[] }>
-        /**
-         * @param modules String is comma separated list of possible values
-         */
-        ready: (modules: ModuleName | string) => Promise<'ready'>
+        include: (modules: ModuleName) => Promise<{ loaded: string[]; failed: string[] }>
+        ready: (modules: ModuleName) => Promise<'ready'>
         get_state: (state_var: string) => any
         set_state: (state_var: string, value: any) => void
         wait_state: (
@@ -82,7 +76,7 @@ namespace Core {
             persistent: boolean,
         ) => void
         on: (event: string, callback: () => void) => void
-        trigger: (event: string) => WKOF<{}>
+        trigger: (event: string) => undefined
         support_files: { [key: string]: string }
         user: User
         load_file: (url: string, use_cache?: boolean) => Promise<any>
@@ -92,8 +86,8 @@ namespace Core {
     }
 }
 
-namespace Apiv2 {
-    type ApiEndpoints =
+declare namespace Apiv2 {
+    type ApiEndpoint =
         | 'assignments'
         | 'level_progressions'
         | 'resets'
@@ -111,10 +105,7 @@ namespace Apiv2 {
          * @remark Comma separated list of integers
          */
         ids?: string
-        /**
-         * @remark ISO Date string
-         */
-        updated_after?: string
+        updated_after?: IsoDateString
     }
 
     type LevelProgressions = {} & Defaults
@@ -123,14 +114,8 @@ namespace Apiv2 {
     type VoiceActors = {} & Defaults
 
     type Assignments = {
-        /**
-         * @remark ISO Date string
-         */
-        available_after?: string
-        /**
-         * @remark ISO Date string
-         */
-        available_before?: string
+        available_after?: IsoDateString
+        available_before?: IsoDateString
         burned?: boolean
         hidden?: boolean
         /**
@@ -158,19 +143,13 @@ namespace Apiv2 {
          * @remark Comma separated list of integers
          */
         subject_ids?: string
-        /**
-         * @remark Comma separated list of subject types
-         */
-        subject_types?: string
+        subject_types?: SubjectTypeString
         unlocked?: boolean
     } & Defaults
 
     type Reviews = {
         assignment_id?: number
-        /**
-         * @remark ISO Date string
-         */
-        created_at?: string
+        created_at?: IsoDateString
         ending_srs_stage?: number
         incorrect_meaning_answers?: number
         incorrect_reading_answers?: number
@@ -194,17 +173,11 @@ namespace Apiv2 {
          * @remark Comma separated list of integers
          */
         subject_ids?: string
-        /**
-         * @remark Comma separated list of subject types
-         */
-        subject_types?: string
+        subject_types?: SubjectTypeString
     } & Defaults
 
     type Subjects = {
-        /**
-         * @remark Comma separated list of subject types
-         */
-        types?: string
+        types?: SubjectTypeString
         /**
          * @remark Comma separated list of slugs
          */
@@ -228,28 +201,27 @@ namespace Apiv2 {
         | VoiceActors
 
     type FetchEndpointOptions = {
-        progress_callback?: (endpoint_name: ApiEndpoints, first_new: number, so_far: number, total: number) => void
-        /**
-         * @remark ISO Date string
-         */
-        last_update?: Date | string
+        progress_callback?: (endpoint_name: ApiEndpoint, first_new: number, so_far: number, total: number) => void
+        last_update?: Date | IsoDateString
         filters?: Filter
     }
 
     type GetEndpointOptions = {
-        progress_callback?: (endpoint_name: ApiEndpoints, first_new: number, so_far: number, total: number) => void
+        progress_callback?: (endpoint_name: ApiEndpoint, first_new: number, so_far: number, total: number) => void
         force_update?: boolean
     }
 
     export type Module = {
-        fetch_endpoint: (endpoint_name: ApiEndpoints, options?: FetchEndpointOptions) => Promise<any>
-        get_endpoint: (endpoint_name: ApiEndpoints, options?: GetEndpointOptions) => Promise<any>
-        clear_cache: (include_non_user?: boolean) => Promise<undefined>
-        apiv2_is_valid_apikey_format: (apikey: string) => boolean
+        Apiv2: {
+            fetch_endpoint: (endpoint_name: ApiEndpoint, options?: FetchEndpointOptions) => Promise<any>
+            get_endpoint: (endpoint_name: ApiEndpoint, options?: GetEndpointOptions) => Promise<any>
+            clear_cache: (include_non_user?: boolean) => Promise<undefined>
+            apiv2_is_valid_apikey_format: (apikey: string) => boolean
+        }
     }
 }
 
-namespace ItemData {
+declare namespace ItemData {
     type IndexOptions =
         | 'level'
         | 'item_type'
@@ -260,16 +232,11 @@ namespace ItemData {
         | 'subject_id'
         | string
 
-    type ItemDataEndpoints = 'subjects' | 'assignments' | 'review_statistics' | 'study_materials'
-
-    type ItemDataItem = {
+    type Item = {
         url: string
         object: SubjectType
         id: number
-        /**
-         * @remark ISO Date string
-         */
-        data_updated_at: string
+        data_updated_at: IsoDateString
         data: {
             auxiliary_meanings: {
                 meaning: string
@@ -281,15 +248,9 @@ namespace ItemData {
                 en: string
                 ja: string
             }[]
-            /**
-             * @remark ISO Date string
-             */
-            created_at: string
+            created_at: IsoDateString
             document_url: string
-            /**
-             * @remark ISO Date string (or null)
-             */
-            hidden_at: null | string
+            hidden_at: null | IsoDateString
             lesson_position: number
             level: number
             meaning_mnemonic: string
@@ -321,47 +282,23 @@ namespace ItemData {
             spaced_repetition_system_id: number
         }
         assignments?: {
-            /**
-             * @remark ISO Date string (or null)
-             */
-            available_at: null | string
-            /**
-             * @remark ISO Date string (or null)
-             */
-            burned_at: null | string
-            /**
-             * @remark ISO Date string
-             */
-            created_at: string
+            available_at: null | IsoDateString
+            burned_at: null | IsoDateString
+            created_at: IsoDateString
             hidden: boolean
-            /**
-             * @remark ISO Date string (or null)
-             */
-            passed_at: null | string
-            /**
-             * @remark ISO Date string (or null)
-             */
-            resurrected_at: null | string
+            passed_at: null | IsoDateString
+            resurrected_at: null | IsoDateString
             /**
              * @remark 0 = init, 1 = appr1, etc
              */
             srs_stage: SrsNumber
-            /**
-             * @remark ISO Date string
-             */
-            started_at: null | string
+            started_at: null | IsoDateString
             subject_id: number
             subject_type: SubjectType
-            /**
-             * @remark ISO Date string
-             */
             unlocked_at: string
         }
         review_statistics?: {
-            /**
-             * @remark ISO Date string
-             */
-            created_at: string
+            created_at: IsoDateString
             hidden: boolean
             meaning_correct: number
             meaning_current_streak: number
@@ -379,71 +316,196 @@ namespace ItemData {
 
     type FilterCanInvert<T> = T | { value: T; invert: boolean }
 
-    type GetItemsConfig =
-        | ItemDataEndpoints
-        | {
-              [key: string]: {
-                  options?: {
-                      [key: string]: any
-                      assignments?: boolean
-                      review_statistics?: boolean
-                      study_materials?: boolean
-                      include_hidden?: boolean
-                  }
-                  filters?: {
-                      [key: string]: FilterCanInvert<any>
-                      /**
-                       * @remark String is comma separated list of 'rad', 'kan', or 'voc'
-                       */
-                      item_type?: FilterCanInvert<string | SubjectTypeShort[]>
-                      /**
-                       * @remark A comma-separated list of Wanikani levels or level ranges
-                       */
-                      level?: FilterCanInvert<string>
-                      /**
-                       * @remark String is comma separated list of possible values
-                       */
-                      srs?: FilterCanInvert<string | (SrsName | SrsNumber)[]>
-                      have_burned?: FilterCanInvert<boolean>
-                  }
-              }
-          }
+    namespace GetItems {
+        type Endpoint = 'subjects' | 'assignments' | 'review_statistics' | 'study_materials'
+        type EndpointString =
+            | `${Endpoint}`
+            | `${Endpoint},${Endpoint}`
+            | `${Endpoint},${Endpoint},${Endpoint}`
+            | `${Endpoint},${Endpoint},${Endpoint},${Endpoint}`
+
+        type Options = {
+            [key: string]: any
+            assignments?: boolean
+            review_statistics?: boolean
+            study_materials?: boolean
+            include_hidden?: boolean
+        }
+
+        type Filters = {
+            [key: string]: FilterCanInvert<any>
+            item_type?: FilterCanInvert<SubjectTypeShortString | SubjectTypeShort[]>
+            /**
+             * @remark A comma separated list of Wanikani levels or level ranges
+             */
+            level?: FilterCanInvert<string>
+            /**
+             * @remark String is comma separated list of possible values
+             */
+            srs?: FilterCanInvert<string | (SrsName | SrsNumber)[]>
+            have_burned?: FilterCanInvert<boolean>
+        }
+
+        type SourceConfig = {
+            options?: Options
+            filters?: Filters
+        }
+
+        type Config = EndpointString | { [key: string]: SourceConfig }
+    }
+
+    namespace Registry {
+        type Filter<T> = {
+            type: string
+            default: T
+            filter_func: (filter_value: T, item: Item) => boolean
+            label?: string
+            hover_tip?: string
+            placeholder?: T
+            filter_value_map?: (filter_value: any) => T
+            set_options?: (options: GetItems.Options) => void
+            content?: { [key: string]: any }
+            no_ui?: boolean
+        }
+
+        type Registry = {
+            sources: {
+                [key: string]: {
+                    description: string
+                    fetcher: (...any) => Promise<{ [key: string]: any }>
+                    filters: { [key: string]: Filter<any> }
+                    options: { [key: string]: any }
+                }
+                wk_items: {
+                    description: 'Wanikani'
+                    fetcher: (
+                        config: GetItems.SourceConfig,
+                        options: Apiv2.GetEndpointOptions,
+                    ) => Promise<{ [key: string]: Item }>
+                    filters: {
+                        [key: string]: Filter<any>
+                        have_burned: {
+                            type: 'checkbox'
+                            default: true
+                            label: 'Have burned'
+                            hover_tip: 'Filter items by whether they have ever been burned.\n * If checked, select burned items (including resurrected)\n * If unchecked, select items that have never been burned'
+                            filter_func: (filter_value: boolean, item: Item) => boolean
+                            set_options: (options: GetItems.Options) => void
+                        }
+                        item_type: {
+                            type: 'multi'
+                            default: []
+                            label: 'Item type'
+                            hover_tip: 'Filter by item type (radical, kanji, vocabulary)'
+                            filter_value_map: (filter_value: SubjectTypeShort[] | SubjectTypeShortString) => {
+                                [key: string]: boolean
+                            }
+                            filter_func: (filter_value: { [key: string]: boolean }, item: Item) => boolean
+                            content: {
+                                radical: 'Radicals'
+                                kanji: 'Kanji'
+                                vocabulary: 'Vocabulary'
+                            }
+                        }
+                        level: {
+                            type: 'text'
+                            default: ''
+                            label: 'SRS Level'
+                            hover_tip: 'Filter by Wanikani level\nExamples:\n"*" (All levels)\n"1..3,5" (Levels 1 through 3, and level 5)\n"1..-1" (From level 1 to your current level minus 1)\n"-5..+0" (Your current level and previous 5 levels)\n"+1" (Your next level)'
+                            placeholder: '(e.g. "1..3,5")'
+                            filter_value_map: (filter_value: string) => { [key: number]: boolean }
+                            filter_func: (filter_value: { [key: number]: boolean }, item: Item) => boolean
+                        }
+                        srs: {
+                            type: 'multi'
+                            default: []
+                            label: 'SRS Level'
+                            hover_tip: 'Filter by SRS level (Apprentice 1, Apprentice 2, ..., Burn)'
+                            filter_value_map: (filter_value: string | SrsName[]) => { [key: string]: boolean }
+                            filter_func: (filter_value: { [key: string]: boolean }, item: Item) => boolean
+                            set_options: (options: GetItems.Options) => void
+                            content: {
+                                appr1: 'Apprentice 1'
+                                appr2: 'Apprentice 2'
+                                appr3: 'Apprentice 3'
+                                appr4: 'Apprentice 4'
+                                burn: 'Burned'
+                                enli: 'Enlightened'
+                                guru1: 'Guru 1'
+                                guru2: 'Guru 2'
+                                init: 'Initiate (Lesson Queue)'
+                                lock: 'Locked'
+                                mast: 'Master'
+                            }
+                        }
+                    }
+                    options: {
+                        assignments: {
+                            type: 'checkbox'
+                            label: 'Assignments'
+                            default: false
+                            hover_tip: 'Include the "/assignments" endpoint (SRS status, burn status, progress dates)'
+                        }
+                        review_statistics: {
+                            type: 'checkbox'
+                            label: 'Review Statistics'
+                            default: false
+                            hover_tip: 'Include the "/review_statistics" endpoint:\n  * Per-item review count\n  *Correct/incorrect count\n  * Longest streak'
+                        }
+                        study_materials: {
+                            type: 'checkbox'
+                            label: 'Study Materials'
+                            default: false
+                            hover_tip: 'Include the "/study_materials" endpoint:\n  * User synonyms\n  * User notes'
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     export type Module = {
-        get_items: (config?: GetItemsConfig) => Promise<ItemDataItem[]>
-        get_index: (items: ItemDataItem[], index_name: IndexOptions) => { [key: string]: ItemDataItem[] | ItemDataItem }
+        ItemData: {
+            get_items: (config?: GetItems.Config) => Promise<Item[]>
+            get_index: (items: Item[], index_name: IndexOptions) => { [key: string]: Item[] | Item }
+            registry: Registry.Registry
+            pause_ready_event: (value: boolean) => void
+        }
     }
 }
 
-namespace Menu {
+declare namespace Menu {
     export type Module = {
-        insert_script_link: (config: {
-            name: string
-            submenu?: string
-            title: string
-            class?: string
-            on_click: (event: any) => void
-        }) => void
+        Menu: {
+            insert_script_link: (config: {
+                name: string
+                submenu?: string
+                title: string
+                class?: string
+                on_click: (event: any) => void
+            }) => void
+        }
     }
 }
 
-namespace Settings {
+declare namespace Settings {
     type OnChange = (name: string, value: any, config: Component) => void
 
     type Validate = (value: any, config: Component) => boolean | string | { valid: boolean; msg: string }
 
     type ComponentDefaults = {
-        label: string
+        label?: string
         hover_tip?: string
         full_width?: boolean
         validate?: Validate
         on_change?: OnChange
         path?: string
+        refresh_on_change?: boolean
     }
 
     type Section = {
         type: 'section'
-        label: string
+        label?: string
     }
 
     type Divider = {
@@ -452,7 +514,7 @@ namespace Settings {
 
     type Group = {
         type: 'group'
-        label: string
+        label?: string
         content: { [key: string]: Component }
     }
 
@@ -508,7 +570,7 @@ namespace Settings {
 
     type Html = {
         type: 'html'
-        label: string
+        label?: string
         html: string
     }
 
@@ -559,35 +621,43 @@ namespace Settings {
         autosave?: boolean
         background?: boolean
         /**
-         * @param dialog DOM element of dialog box
+         * @param dialog jQuery DOM element of dialog box
          */
-        pre_open?: (dialog: any) => void
+        pre_open?: (dialog: JQuery) => void
         on_save?: (settings: { [key: string]: any }) => void
         on_cancel?: (settings: { [key: string]: any }) => void
         on_close?: (settings: { [key: string]: any }) => void
         on_change?: OnChange
         on_refresh?: (settings: { [key: string]: any }) => void
-        content: Component
+        content: { [key: string]: Component }
     }
 
     export type Module = {
-        (config: Config): () => Promise<Dialog>
-        save: (script_id: string) => Promise<undefined>
-        load: (script_id: string, defaults?: { [key: string]: any }) => Promise<{ [key: string]: any }>
+        Settings: {
+            new (config: Config): Dialog
+            save: (script_id: string) => Promise<undefined>
+            load: (script_id: string, defaults?: { [key: string]: any }) => Promise<{ [key: string]: any }>
+        }
+        settings: {
+            [key: string]: {
+                [key: string]: any
+            }
+        }
     }
 }
 
-namespace Progress {
+declare namespace Progress {
     export type Module = {
-        update: (progress: { name: string; label: string; value: number; max: number }) => void
+        Progress: {
+            update: (progress: { name: string; label: string; value: number; max: number }) => void
+        }
     }
 }
 
 /**
- * @argument T Object containing the modules to include.
- * @example Use WKOF<{ItemData: ItemData, Apiv2: Apiv2}> to include both ItemData and Apiv2 modules.
+ * @remark To include modules use WKOF & Module
  */
-export type WKOF<T> = Core.Module & T
+export type WKOF = Core.Module
 export type Apiv2 = Apiv2.Module
 export type ItemData = ItemData.Module
 export type Menu = Menu.Module

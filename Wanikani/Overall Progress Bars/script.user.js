@@ -50,7 +50,7 @@
 
     // Display
     $('.progress-and-forecast').before(
-        `<div class="srs-level-graph">${Object.entries(counts_by_level_and_srs)
+        `<section class="srs-level-graph">${Object.entries(counts_by_level_and_srs)
             .map(
                 ([level, counts_by_srs]) =>
                     `<div class="level"><div class="bars">${Object.entries(counts_by_srs)
@@ -60,22 +60,23 @@
                         )
                         .join('')}</div><div class="lbl" title="Level ${level}">${level}</div></div>`,
             )
-            .join('')}</div`,
+            .join('')}</section`,
     )
 
     function injectCss() {
+        const { single_bar, theme } = wkof.settings[script_id]
         const color = {
-            '-1': '#aaa',
-            0: '#aaa',
-            1: '#dd0093',
-            2: '#dd0093',
-            3: '#dd0093',
-            4: '#dd0093',
-            5: '#882d9e',
-            6: '#882d9e',
-            7: '#294ddb',
-            8: '#0093dd',
-            9: 'rgb(223,170,11)',
+            '-1': theme === 0 ? '#aaaaaa' : '#aaaaaa',
+            0: theme === 0 ? '#aaaaaa' : '#aaaaaa',
+            1: theme === 0 ? '#dd0093' : '#1d99f3',
+            2: theme === 0 ? '#dd0093' : '#1d99f3',
+            3: theme === 0 ? '#dd0093' : '#1d99f3',
+            4: theme === 0 ? '#dd0093' : '#1d99f3',
+            5: theme === 0 ? '#882d9e' : '#1cdc9a',
+            6: theme === 0 ? '#882d9e' : '#1cdc9a',
+            7: theme === 0 ? '#294ddb' : '#c9ce3b',
+            8: theme === 0 ? '#0093dd' : '#f67400',
+            9: theme === 0 ? 'rgb(223,170,11)' : '#da4453',
         }
 
         let srs_css = ''
@@ -83,7 +84,7 @@
             srs_css += `
 .srs-level-graph .srs[data-srs="${i}"] {
     background-color: ${color[i]};
-    ${wkof.settings[script_id].single_bar ? 'width: 100' : 'height: ' + (i + 1) * 10}%;
+    ${single_bar ? 'width: 100' : 'height: ' + (i + 1) * 10}%;
 }`
         }
 
@@ -108,7 +109,7 @@
     display: flex;
     align-items: flex-end;
     flex-grow: 1;
-    flex-direction: ${wkof.settings[script_id].single_bar ? 'column' : 'row-reverse'};
+    flex-direction: ${single_bar ? 'column' : 'row-reverse'};
 }
 
 .srs-level-graph .lbl {
@@ -116,10 +117,11 @@
     line-height: 1.5em;
     text-align: center;
     vertical-align: bottom;
+    ${theme === 1 ? 'color: black;' : ''}
 }
 
 .srs-level-graph .srs {
-    ${wkof.settings[script_id].single_bar ? '' : 'border-radius: 0.1em 0.1em 0 0;'}
+    ${single_bar ? '' : 'border-radius: 0.1em 0.1em 0 0;'}
     
 }
 
@@ -150,6 +152,7 @@ ${srs_css}`
     function load_settings() {
         const defaults = {
             single_bar: true,
+            theme: 0,
         }
         return wkof.Settings.load(script_id, defaults)
     }
@@ -172,6 +175,13 @@ ${srs_css}`
             title: script_name,
             content: {
                 single_bar: { type: 'checkbox', label: 'Single Bar', default: true },
+                theme: {
+                    type: 'dropdown',
+                    label: 'Theme',
+                    default: 0,
+                    hover_tip: 'Changes the colors of the items',
+                    content: { 0: 'Default', 1: 'Breeze Dark' },
+                },
             },
         }
         let dialog = new wkof.Settings(config)
