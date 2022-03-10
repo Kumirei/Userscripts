@@ -384,6 +384,7 @@ declare namespace Settings {
         validate?: Validate
         on_change?: OnChange
         path?: string
+        refresh_on_change?: boolean
     }
 
     type Section = {
