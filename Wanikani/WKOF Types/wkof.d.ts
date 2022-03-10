@@ -378,7 +378,7 @@ declare namespace Settings {
     type Validate = (value: any, config: Component) => boolean | string | { valid: boolean; msg: string }
 
     type ComponentDefaults = {
-        label: string
+        label?: string
         hover_tip?: string
         full_width?: boolean
         validate?: Validate
@@ -389,7 +389,7 @@ declare namespace Settings {
 
     type Section = {
         type: 'section'
-        label: string
+        label?: string
     }
 
     type Divider = {
@@ -398,7 +398,7 @@ declare namespace Settings {
 
     type Group = {
         type: 'group'
-        label: string
+        label?: string
         content: { [key: string]: Component }
     }
 
