@@ -358,14 +358,14 @@ declare namespace ItemData {
         type Filter<T> = {
             type: string
             default: T
-            filter_func: (filter_value: T, item: Item) => boolean
             label?: string
             hover_tip?: string
             placeholder?: T
-            filter_value_map?: (filter_value: any) => T
-            set_options?: (options: GetItems.Options) => void
             content?: { [key: string]: any }
             no_ui?: boolean
+            filter_func: (filter_value: T, item: Item) => boolean
+            filter_value_map?: (filter_value: any) => T
+            set_options?: (options: GetItems.Options) => void
         }
 
         type Registry = {
@@ -397,15 +397,15 @@ declare namespace ItemData {
                             default: []
                             label: 'Item type'
                             hover_tip: 'Filter by item type (radical, kanji, vocabulary)'
-                            filter_value_map: (filter_value: SubjectTypeShort[] | SubjectTypeShortString) => {
-                                [key: string]: boolean
-                            }
-                            filter_func: (filter_value: { [key: string]: boolean }, item: Item) => boolean
                             content: {
                                 radical: 'Radicals'
                                 kanji: 'Kanji'
                                 vocabulary: 'Vocabulary'
                             }
+                            filter_value_map: (filter_value: SubjectTypeShort[] | SubjectTypeShortString) => {
+                                [key: string]: boolean
+                            }
+                            filter_func: (filter_value: { [key: string]: boolean }, item: Item) => boolean
                         } & Filter<any>
                         level: {
                             type: 'text'
@@ -421,9 +421,6 @@ declare namespace ItemData {
                             default: []
                             label: 'SRS Level'
                             hover_tip: 'Filter by SRS level (Apprentice 1, Apprentice 2, ..., Burn)'
-                            filter_value_map: (filter_value: string | SrsName[]) => { [key: string]: boolean }
-                            filter_func: (filter_value: { [key: string]: boolean }, item: Item) => boolean
-                            set_options: (options: GetItems.Options) => void
                             content: {
                                 appr1: 'Apprentice 1'
                                 appr2: 'Apprentice 2'
@@ -437,6 +434,9 @@ declare namespace ItemData {
                                 lock: 'Locked'
                                 mast: 'Master'
                             }
+                            filter_value_map: (filter_value: string | SrsName[]) => { [key: string]: boolean }
+                            filter_func: (filter_value: { [key: string]: boolean }, item: Item) => boolean
+                            set_options: (options: GetItems.Options) => void
                         } & Filter<any>
                     }
                     options: {
