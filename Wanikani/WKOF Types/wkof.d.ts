@@ -461,6 +461,16 @@ declare namespace ItemData {
                     }
                 }
             }
+            indices: {
+                [key: string]: (items: Item[]) => { [key: string]: Item[] | Item }
+                item_type: (items: Item[]) => { [key: string]: Item[] }
+                level: (items: Item[]) => { [key: string]: Item[] }
+                reading: (items: Item[]) => { [key: string]: Item[] }
+                slug: (items: Item[]) => { [key: string]: Item[] | Item }
+                srs_stage: (items: Item[]) => { [key: string]: Item[] }
+                srs_stage_name: (items: Item[]) => { [key: string]: Item[] }
+                subject_id: (items: Item[]) => { [key: string]: Item[] }
+            }
         }
     }
 
