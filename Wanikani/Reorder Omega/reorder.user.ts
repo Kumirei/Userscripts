@@ -82,7 +82,7 @@ declare global {
 
         if (window.location.search === '?title=test') {
             // This has to be done before WK realizes that the queue is empty and redirects
-            displayLoading()
+            display_loading()
 
             run()
         }
@@ -142,32 +142,32 @@ declare global {
         if (page === 'extra_study') items = await wkof.ItemData.get_items('assignments,review_statistics')
 
         // Process
-        processQueue(items)
+        process_queue(items)
     }
 
-    function processQueue(items: ItemData.Item[]): void {
+    function process_queue(items: ItemData.Item[]): void {
         // Filter and sort
         const preset = settings.presets[settings.active_preset]
-        if (!preset) return displayMessage('Invalid Preset') // Active preset not defined
-        const results = processPreset(preset, items)
+        if (!preset) return display_message('Invalid Preset') // Active preset not defined
+        const results = process_preset(preset, items)
         const final = results.final.concat(results.keep)
-        if (!final.length) return displayMessage('No items in preset')
+        if (!final.length) return display_message('No items in preset')
         console.log('items', final)
 
         // Load into queue
-        transformAndUpdate(final)
+        transform_and_update(final)
     }
 
     type PresetItems = { keep: ItemData.Item[]; discard: ItemData.Item[]; final: ItemData.Item[] }
-    function processPreset(preset: Settings.Preset, items: ItemData.Item[]): PresetItems {
+    function process_preset(preset: Settings.Preset, items: ItemData.Item[]): PresetItems {
         let result = { keep: items, discard: [], final: [] } as PresetItems
         for (let action of preset.actions) {
-            result = processAction(action, result)
+            result = process_action(action, result)
         }
         return result
     }
 
-    function processAction(action: Settings.Action, items: PresetItems): PresetItems {
+    function process_action(action: Settings.Action, items: PresetItems): PresetItems {
         console.log(action)
         console.log('Intermediary items', items.keep)
         switch (action.type) {
@@ -175,7 +175,7 @@ declare global {
                 const { keep, discard } = process_filter(action, items.keep)
                 return { keep, discard: items.discard.concat(discard), final: items.final }
             case 'sort':
-                return { keep: processSort(action, items.keep), discard: items.discard, final: items.final }
+                return { keep: process_sort_action(action, items.keep), discard: items.discard, final: items.final }
             case 'freeze & restore':
                 return { keep: items.discard, discard: [], final: items.keep }
             case 'shuffle':
@@ -190,74 +190,116 @@ declare global {
     /* ------------------------------------------------------------------------------------*/
 
     function process_filter(action: Settings.FilterAction, items: ItemData.Item[]): KeepAndDiscard<ItemData.Item> {
-        const filter = wkof.ItemData.registry.sources.wk_items.filters[action.filter]
+        const filter = wkof.ItemData.registry.sources.wk_items.filters[action.filter.filter]
         if (!filter) return { keep: items, discard: [] }
-        const filter_value = filter.filter_value_map ? filter.filter_value_map(action.value) : action.value
+        const filter_value = filter.filter_value_map
+            ? filter.filter_value_map(action.filter[action.filter.filter])
+            : action.filter[action.filter.filter]
         const filter_func = (item: ItemData.Item) => filter.filter_func(filter_value, item)
-        return keepAndDiscard(items, filter_func)
+        return keep_and_discard(items, filter_func)
     }
+
+    // TODO: install more filters
 
     /* ------------------------------------------------------------------------------------*/
     // Sorting
     /* ------------------------------------------------------------------------------------*/
 
-    function processSort(action: Settings.SortAction, items: ItemData.Item[]): ItemData.Item[] {
+    function process_sort_action(action: Settings.SortAction, items: ItemData.Item[]): ItemData.Item[] {
         let sort: (a: ItemData.Item, b: ItemData.Item) => number
 
-        switch (action.sort) {
+        switch (action.sort.sort) {
             case 'level':
-                sort = (a, b) => numericalSort(a.data.level, b.data.level, action.order)
+                sort = (a, b) => numerical_sort(a.data.level, b.data.level, action.sort.level as 'asc' | 'desc')
                 break
             case 'type':
-                const order = parse_short_subject_type_string(action.order)
-                sort = (a, b) => sortType(a.object, b.object, order)
+                const order = parse_short_subject_type_string(action.sort.type)
+                sort = (a, b) => sort_by_type(a.object, b.object, order)
                 break
             case 'srs':
                 sort = (a, b) =>
-                    numericalSort(a.assignments?.srs_stage ?? -1, b.assignments?.srs_stage ?? -1, action.order)
+                    numerical_sort(
+                        a.assignments?.srs_stage ?? -1,
+                        b.assignments?.srs_stage ?? -1,
+                        action.sort.srs as 'asc' | 'desc',
+                    )
                 break
             case 'overdue':
-                sort = (a, b) => numericalSort(calculateOverdue(a), calculateOverdue(b), action.order)
+                sort = (a, b) =>
+                    numerical_sort(calculate_overdue(a), calculate_overdue(b), action.sort.overdue as 'asc' | 'desc')
                 break
             case 'critical':
-                sort = (a, b) => numericalSort(+isCritical(a), +isCritical(b), action.order)
+                sort = (a, b) =>
+                    numerical_sort(+is_critical(a), +is_critical(b), action.sort.critical as 'asc' | 'desc')
                 break
             case 'leech':
-                sort = (a, b) => numericalSort(calculateLeechScore(a), calculateLeechScore(b), action.order)
+                sort = (a, b) =>
+                    numerical_sort(
+                        calculate_leech_score(a),
+                        calculate_leech_score(b),
+                        action.sort.leech as 'asc' | 'desc',
+                    )
                 break
             default:
                 return [] // Invalid sort key
         }
 
-        return doubleSort<ItemData.Item>(items, sort)
+        return double_sort<ItemData.Item>(items, sort)
     }
 
-    function numericalSort(a: number, b: number, order: 'asc' | 'desc'): number {
+    function numerical_sort(a: number, b: number, order: 'asc' | 'desc'): number {
         if (order !== 'asc' && order !== 'desc') return 0
         return a === b ? 0 : xor(order === 'asc', a > b) ? -1 : 1
     }
 
-    function sortType(a: SubjectType, b: SubjectType, order: SubjectType[]): number {
+    function sort_by_type(a: SubjectType, b: SubjectType, order: SubjectType[]): number {
         if (!order.length || a === b) return 0 // No order or same type
         if (a === order[0]) return -1 // A is first type
         if (b === order[0]) return 1 // B is first type
-        return sortType(a, b, order.slice(1, 3)) // Yay, recursion
+        return sort_by_type(a, b, order.slice(1, 3)) // Yay, recursion
     }
 
+    function get_sorts() {
+        const numerical_types = ['level', 'srs', 'leech', 'overdue', 'critical']
+        const numerical_sort_config = (type: string) => ({
+            type: 'dropdown',
+            default: 'asc',
+            label: 'Order',
+            hover_tip: 'Sort in ascending or descending order',
+            path: `@presets[@active_preset][@active_action].sort.${type}`,
+            content: { asc: 'Ascending', desc: 'Descending' },
+        })
+        const sorts = {
+            type: {
+                type: 'text',
+                label: 'Order',
+                default: 'rad, kan, voc',
+                placeholder: 'rad, kan, voc',
+                hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad',
+                path: `@presets[@active_preset][@active_action].sort.type`,
+            },
+            ...Object.fromEntries(numerical_types.map((type) => [type, numerical_sort_config(type)])),
+        }
+    }
+
+    /* ------------------------------------------------------------------------------------*/
+    // Utility Functions
+    /* ------------------------------------------------------------------------------------*/
+
     const SRS_DURATIONS = [4, 8, 23, 47, 167, 335, 719, 2879, Infinity].map((time) => time * 60 * 60 * 1000)
-    function calculateOverdue(item: ItemData.Item): number {
+    function calculate_overdue(item: ItemData.Item): number {
         // Items without assignments or due dates, and burned items, are not overdue
         if (!item.assignments || !item.assignments.available_at || item.assignments.srs_stage == 9) return -1
         const dueMsAgo = Date.now() - Date.parse(item.assignments.available_at)
         return dueMsAgo / SRS_DURATIONS[item.assignments.srs_stage - 1]
     }
 
-    function isCritical(item: ItemData.Item): boolean {
+    function is_critical(item: ItemData.Item): boolean {
         return item.data.level == wkof.user.level && item.object !== 'vocabulary' && item.assignments?.passed_at == null
     }
 
     // Borrowed from Prouleau's Item Inspector script
-    function calculateLeechScore(item: ItemData.Item): number {
+    function calculate_leech_score(item: ItemData.Item): number {
         if (!item.review_statistics) return 0
         const stats = item.review_statistics
         function leechScore(incorrect: number, streak: number): number {
@@ -268,14 +310,14 @@ declare global {
         return Math.max(meaning_score, reading_score)
     }
 
-    function displayLoading() {
+    function display_loading() {
         const callback = () => {
             const queue = $.jStorage.get(fullQueueKey) as Review.Queue
             $.jStorage.set('questionType', 'meaning')
             if ('table' in queue) {
                 // Since the url is invalid the queue will contain an error. We must wait
                 // until the error is set until we can set our queue
-                updateQueue([{ type: 'Vocabulary', voc: 'Loading...', id: 0 }])
+                update_queue([{ type: 'Vocabulary', voc: 'Loading...', id: 0 }])
             }
             $.jStorage.stopListening(fullQueueKey, callback)
         }
@@ -284,7 +326,10 @@ declare global {
 
     function parse_short_subject_type_string(str: SubjectTypeShortString): SubjectType[] {
         const type_map = { rad: 'radical', kan: 'kanji', voc: 'vocabulary' } as { [key: string]: SubjectType }
-        return str.split(',').map((type) => type_map[type])
+        return str
+            .replace(/\W/g, '')
+            .split(',')
+            .map((type) => type_map[type])
     }
 
     /* ------------------------------------------------------------------------------------*/
@@ -300,12 +345,12 @@ declare global {
     // Final    [8, 7, 6, 4, 5, 1, 4, 5, 4, 1]
     // This is important when chaining multiple sorting actions, so that the results of
     // one sort don't get reversed (front to back) by the next sort
-    function doubleSort<T>(items: T[], sorter: (item_a: T, item_b: T) => number): T[] {
+    function double_sort<T>(items: T[], sorter: (item_a: T, item_b: T) => number): T[] {
         return items.sort(sorter).sort(sorter)
     }
 
     type KeepAndDiscard<T> = { keep: T[]; discard: T[] }
-    function keepAndDiscard<T>(items: T[], filter: (item: T) => boolean): KeepAndDiscard<T> {
+    function keep_and_discard<T>(items: T[], filter: (item: T) => boolean): KeepAndDiscard<T> {
         const results = { keep: [], discard: [] } as KeepAndDiscard<T>
 
         for (let item of items) {
@@ -334,27 +379,27 @@ declare global {
     // Queue Management
     /* ------------------------------------------------------------------------------------*/
 
-    function displayMessage(message: string) {
-        updateQueue([{ type: 'Vocabulary', voc: message, id: 0 }])
+    function display_message(message: string) {
+        update_queue([{ type: 'Vocabulary', voc: message, id: 0 }])
     }
 
-    function transformAndUpdate(items: ItemData.Item[]): void {
-        const transformedItems = transformItems(items)
-        updateQueue(transformedItems)
+    function transform_and_update(items: ItemData.Item[]): void {
+        const transformed_items = transform_items(items)
+        update_queue(transformed_items)
     }
 
-    function updateQueue(items: (Review.Item | Review.DummyItem)[]): void {
-        const currentItem = items[0]
-        const activeQueue = items.splice(0, 10)
+    function update_queue(items: (Review.Item | Review.DummyItem)[]): void {
+        const current_item = items[0]
+        const active_queue = items.splice(0, 10)
         const rest = items.map((item) => item.id) // Only need the ID for these
 
-        if (currentItem?.type === 'Radical') $.jStorage.set('questionType', 'meaning') // has to be set before currentItem
-        $.jStorage.set(currentItemKey, currentItem)
-        $.jStorage.set(activeQueueKey, activeQueue)
+        if (current_item?.type === 'Radical') $.jStorage.set('questionType', 'meaning') // has to be set before currentItem
+        $.jStorage.set(currentItemKey, current_item)
+        $.jStorage.set(activeQueueKey, active_queue)
         $.jStorage.set(fullQueueKey, rest)
     }
 
-    function transformItems(items: ItemData.Item[]): Review.Item[] {
+    function transform_items(items: ItemData.Item[]): Review.Item[] {
         // Not all of the data mapped here is needed, but I haven't bothered to figure out exactly what is needed yet
         return items.map((item) => ({
             aud: item.data.pronunciation_audios?.map((audio) => ({
@@ -416,28 +461,49 @@ declare global {
 
     // Load WKOF settings
     function load_settings() {
+        const test_preset_1 = get_preset_defaults()
+        test_preset_1.actions[0].name = 'test'
+        const test_preset_2 = get_preset_defaults()
+        test_preset_2.name = 'test'
+
         const defaults = {
             disabled: false,
+            active_preset: 0,
             active_presets_reviews: 'None',
             active_presets_lessons: 'None',
-            active_presets_extra_study: 'Seen',
-            presets: {
-                None: { name: 'None', actions: [] },
-                Seen: {
-                    name: 'Seen',
-                    actions: [
-                        {
-                            type: 'filter',
-                            name: 'Filter out locked and lessons',
-                            value: 1,
-                            filter: 'srs',
-                            invert: true,
-                        },
-                    ],
-                }, // TODO
-            } as { [key: string]: Settings.Preset },
-        }
+            active_presets_extra_study: 'None',
+            presets: [test_preset_1, test_preset_2], //
+        } //as Settings.Settings
         return wkof.Settings.load(script_id, defaults)
+    }
+
+    function get_preset_defaults(): Settings.Preset {
+        const defaults = {
+            name: 'New Preset',
+            active_action: 0,
+            actions: [get_action_defaults()],
+        }
+        return defaults
+    }
+
+    function get_action_defaults(): Settings.Action {
+        const defaults = {
+            name: 'New Action',
+            type: 'sort',
+            filter: {},
+            sort: {
+                sort: 'level',
+                type: ['rad', 'kan', 'voc'],
+            },
+        } as any
+
+        for (let [name, filter] of Object.entries(wkof.ItemData.registry.sources.wk_items.filters)) {
+            defaults.filter[name] = filter.default
+        }
+        for (let type of ['level', 'srs', 'leech', 'overdue', 'critical']) {
+            defaults.sort[type] = 'asc'
+        }
+        return defaults
     }
 
     // Installs the options button in the menu
@@ -529,6 +595,7 @@ declare global {
                                     type: 'list',
                                     refresh_on_change: true,
                                     hover_tip: 'Actions for the selected preset',
+                                    path: '@presets[@active_preset].active_action',
                                     content: {},
                                 },
                             },
@@ -539,20 +606,19 @@ declare global {
                             type: 'group',
                             label: 'Selected Action',
                             content: {
-                                preset_name: {
+                                action_name: {
                                     type: 'text',
                                     label: 'Edit Action Name',
                                     on_change: refresh_actions,
-                                    // Note that @presets[@active_preset] is an array and @active_action is a number
-                                    path: '@presets[@active_preset][@active_action].name',
+                                    path: '@presets[@active_preset].actions[@presets[@active_preset].active_action].name',
                                     hover_tip: 'Enter a name for the selected action',
                                 },
-                                type: {
+                                action_type: {
                                     type: 'dropdown',
                                     label: 'Action Type',
                                     hover_tip: 'Choose what kind of action this is',
                                     default: 'sort',
-                                    path: '@presets[@active_preset][@active_action].type',
+                                    path: '@presets[@active_preset].actions[@presets[@active_preset].active_action].type',
                                     on_change: refresh_action,
                                     content: {
                                         sort: 'Sort',
@@ -569,22 +635,29 @@ declare global {
                                 },
                                 filter_type: {
                                     type: 'dropdown',
-                                    label: 'Filter type',
+                                    label: 'Filter Type',
                                     hover_tip: 'Choose what kind of filter this is',
                                     default: 'level',
-                                    path: '@presets[@active_preset][@active_action].filter',
+                                    on_change: refresh_action,
+                                    path: '@presets[@active_preset].actions[@presets[@active_preset].active_action].filter.filter',
                                     content: {
                                         // Will be populated
-                                    },
+                                    } as { [key: string]: string | undefined },
                                 },
                                 sort_type: {
                                     type: 'dropdown',
-                                    label: 'Sort type',
+                                    label: 'Sort Type',
                                     hover_tip: 'Choose what kind of sort this is',
                                     default: 'level',
-                                    path: '@presets[@active_preset][@active_action].sort',
+                                    on_change: refresh_action,
+                                    path: '@presets[@active_preset].actions[@presets[@active_preset].active_action].sort.sort',
                                     content: {
-                                        // Will be populated
+                                        type: 'Type',
+                                        level: 'Level',
+                                        srs: 'SRS Level',
+                                        leech: 'Leech Score',
+                                        overdue: 'Overdue',
+                                        critical: 'Critical',
                                     },
                                 },
                             },
@@ -594,14 +667,60 @@ declare global {
             },
         } // as SettingsModule.Config
 
-        const action = config.content.presets.content.action.content
-        for (let [name, filter] of Object.entries(wkof.ItemData.registry.sources.wk_items.filters)) {
-            if (filter.no_ui)
-        }
-        action.filter_type.content
+        const action = config.content.presets.content.action as SettingsModule.Group
+        populate_settings(action)
+
+        // TODO: Update filter value input
+        // TODO: Update sort order input
 
         const dialog = new wkof.Settings(config as SettingsModule.Config)
         dialog.open()
+    }
+
+    function populate_settings(config: SettingsModule.Group) {
+        // Populate filters
+        for (let [name, filter] of Object.entries(wkof.ItemData.registry.sources.wk_items.filters)) {
+            if (filter.no_ui) continue
+
+            // Add to dropdown
+            const filter_type = config.content.filter_type as SettingsModule.Dropdown
+            filter_type.content[name] = filter.label ?? 'Filter Value'
+
+            // Add filter values
+            config.content[`filter_by_${name}`] = {
+                type: filter.type === 'multi' ? 'list' : filter.type,
+                multi: filter.type === 'multi',
+                default: filter.default,
+                label: filter.label ?? 'Filter Value',
+                hover_tip: filter.hover_tip ?? 'Choose a value for your filter',
+                placeholder: filter.placeholder,
+                content: filter.content,
+                path: `@presets[@active_preset].actions[@presets[@active_preset].active_action].filter.${name}`,
+            } as SettingsModule.Component
+            console.log(config.content[`filter_by_${name}`])
+        }
+
+        // Populate sort values
+        const numerical_sort_config = (type: string) =>
+            ({
+                type: 'dropdown',
+                default: 'asc',
+                label: 'Order',
+                hover_tip: 'Sort in ascending or descending order',
+                path: `@presets[@active_preset][@active_action].sort.${type}`,
+                content: { asc: 'Ascending', desc: 'Descending' },
+            } as SettingsModule.Dropdown)
+
+        config.content.sort_by_type = {
+            type: 'text',
+            label: 'Order',
+            default: 'rad, kan, voc',
+            placeholder: 'rad, kan, voc',
+            hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad',
+            path: `@presets[@active_preset][@active_action].sort.type`,
+        }
+        for (let type of ['level', 'srs', 'leech', 'overdue', 'critical'])
+            config.content[`sort_by_${type}`] = numerical_sort_config(type)
     }
 
     function settings_pre_open(dialog: JQuery): void {
@@ -622,20 +741,14 @@ declare global {
 
         //
 
-        $('#reorder_omega_action_settings .row:first-child').each(function (i, e) {
-            var row = $(e)
-            var right = row.find('>.right')
-            row.prepend(right)
-            row.addClass('src_enable')
-        })
-        console.log($('#reorder_omega_action_settings'))
-
         refresh_presets()
         refresh_actions()
         refresh_action()
     }
 
-    function refresh_settings() {}
+    function refresh_settings() {
+        refresh_actions()
+    }
 
     function refresh_presets() {
         const settings = wkof.settings[script_id] as Settings.Settings
@@ -647,7 +760,7 @@ declare global {
         populate_list(
             $(`#${script_id}_active_action`),
             settings.presets[settings.active_preset].actions,
-            settings.active_action,
+            settings.presets[settings.active_preset].active_action,
         )
     }
 
@@ -661,6 +774,22 @@ declare global {
         elem.children().eq(active_item).prop('selected', true) // Select the active item
     }
 
-    function refresh_action() {}
+    function refresh_action() {
+        // Hide currently visible value input
+        $('.visible-sort-or-filter-value').removeClass('visible-sort-or-filter-value')
+        // Show the correct input
+        const settings = wkof.settings[script_id]
+        const action = settings.presets[settings.active_preset][settings.active_action]
+        if (!action) return
+        console.log({ action, settings })
+
+        if (action.type == 'filter' || action.type == 'sort') {
+            const value_type = action[action.type][action.type] // Eg action.filter.filter = 'srs'
+            console.log('test', `#${script_id}_${action.type}_by_${value_type}`)
+
+            $(`#${script_id}_${action.type}_by_${value_type}`).closest('.row').addClass('visible-sort-or-filter-value')
+        }
+    }
+
     function list_button_pressed() {}
 })()

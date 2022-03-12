@@ -8,6 +8,17 @@
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|extra_study)/session))/
 // @grant        none
 // ==/UserScript==
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -80,34 +91,34 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                         _a.label = 5;
                     case 5:
                         // Process
-                        processQueue(items);
+                        process_queue(items);
                         return [2 /*return*/];
                 }
             });
         });
     }
-    function processQueue(items) {
+    function process_queue(items) {
         // Filter and sort
         var preset = settings.presets[settings.active_preset];
         if (!preset)
-            return displayMessage('Invalid Preset'); // Active preset not defined
-        var results = processPreset(preset, items);
+            return display_message('Invalid Preset'); // Active preset not defined
+        var results = process_preset(preset, items);
         var final = results.final.concat(results.keep);
         if (!final.length)
-            return displayMessage('No items in preset');
+            return display_message('No items in preset');
         console.log('items', final);
         // Load into queue
-        transformAndUpdate(final);
+        transform_and_update(final);
     }
-    function processPreset(preset, items) {
+    function process_preset(preset, items) {
         var result = { keep: items, discard: [], final: [] };
         for (var _i = 0, _a = preset.actions; _i < _a.length; _i++) {
             var action = _a[_i];
-            result = processAction(action, result);
+            result = process_action(action, result);
         }
         return result;
     }
-    function processAction(action, items) {
+    function process_action(action, items) {
         console.log(action);
         console.log('Intermediary items', items.keep);
         switch (action.type) {
@@ -115,7 +126,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 var _a = process_filter(action, items.keep), keep = _a.keep, discard = _a.discard;
                 return { keep: keep, discard: items.discard.concat(discard), final: items.final };
             case 'sort':
-                return { keep: processSort(action, items.keep), discard: items.discard, final: items.final };
+                return { keep: process_sort_action(action, items.keep), discard: items.discard, final: items.final };
             case 'freeze & restore':
                 return { keep: items.discard, discard: [], final: items.keep };
             case 'shuffle':
@@ -128,70 +139,101 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     // Filtering
     /* ------------------------------------------------------------------------------------*/
     function process_filter(action, items) {
-        var filter = wkof.ItemData.registry.sources.wk_items.filters[action.filter];
+        var filter = wkof.ItemData.registry.sources.wk_items.filters[action.filter.filter];
         if (!filter)
             return { keep: items, discard: [] };
-        var filter_value = filter.filter_value_map ? filter.filter_value_map(action.value) : action.value;
+        var filter_value = filter.filter_value_map
+            ? filter.filter_value_map(action.filter[action.filter.filter])
+            : action.filter[action.filter.filter];
         var filter_func = function (item) { return filter.filter_func(filter_value, item); };
-        return keepAndDiscard(items, filter_func);
+        return keep_and_discard(items, filter_func);
     }
+    // TODO: install more filters
     /* ------------------------------------------------------------------------------------*/
     // Sorting
     /* ------------------------------------------------------------------------------------*/
-    function processSort(action, items) {
+    function process_sort_action(action, items) {
         var sort;
-        switch (action.sort) {
+        switch (action.sort.sort) {
             case 'level':
-                sort = function (a, b) { return numericalSort(a.data.level, b.data.level, action.order); };
+                sort = function (a, b) { return numerical_sort(a.data.level, b.data.level, action.sort.level); };
                 break;
             case 'type':
-                var order_1 = parse_short_subject_type_string(action.order);
-                sort = function (a, b) { return sortType(a.object, b.object, order_1); };
+                var order_1 = parse_short_subject_type_string(action.sort.type);
+                sort = function (a, b) { return sort_by_type(a.object, b.object, order_1); };
                 break;
             case 'srs':
-                sort = function (a, b) { var _a, _b, _c, _d; return numericalSort((_b = (_a = a.assignments) === null || _a === void 0 ? void 0 : _a.srs_stage) !== null && _b !== void 0 ? _b : -1, (_d = (_c = b.assignments) === null || _c === void 0 ? void 0 : _c.srs_stage) !== null && _d !== void 0 ? _d : -1, action.order); };
+                sort = function (a, b) {
+                    var _a, _b, _c, _d;
+                    return numerical_sort((_b = (_a = a.assignments) === null || _a === void 0 ? void 0 : _a.srs_stage) !== null && _b !== void 0 ? _b : -1, (_d = (_c = b.assignments) === null || _c === void 0 ? void 0 : _c.srs_stage) !== null && _d !== void 0 ? _d : -1, action.sort.srs);
+                };
                 break;
             case 'overdue':
-                sort = function (a, b) { return numericalSort(calculateOverdue(a), calculateOverdue(b), action.order); };
+                sort = function (a, b) {
+                    return numerical_sort(calculate_overdue(a), calculate_overdue(b), action.sort.overdue);
+                };
                 break;
             case 'critical':
-                sort = function (a, b) { return numericalSort(+isCritical(a), +isCritical(b), action.order); };
+                sort = function (a, b) {
+                    return numerical_sort(+is_critical(a), +is_critical(b), action.sort.critical);
+                };
                 break;
             case 'leech':
-                sort = function (a, b) { return numericalSort(calculateLeechScore(a), calculateLeechScore(b), action.order); };
+                sort = function (a, b) {
+                    return numerical_sort(calculate_leech_score(a), calculate_leech_score(b), action.sort.leech);
+                };
                 break;
             default:
                 return []; // Invalid sort key
         }
-        return doubleSort(items, sort);
+        return double_sort(items, sort);
     }
-    function numericalSort(a, b, order) {
+    function numerical_sort(a, b, order) {
         if (order !== 'asc' && order !== 'desc')
             return 0;
         return a === b ? 0 : xor(order === 'asc', a > b) ? -1 : 1;
     }
-    function sortType(a, b, order) {
+    function sort_by_type(a, b, order) {
         if (!order.length || a === b)
             return 0; // No order or same type
         if (a === order[0])
             return -1; // A is first type
         if (b === order[0])
             return 1; // B is first type
-        return sortType(a, b, order.slice(1, 3)); // Yay, recursion
+        return sort_by_type(a, b, order.slice(1, 3)); // Yay, recursion
     }
-    function calculateOverdue(item) {
+    function get_sorts() {
+        var numerical_types = ['level', 'srs', 'leech', 'overdue', 'critical'];
+        var numerical_sort_config = function (type) { return ({
+            type: 'dropdown',
+            "default": 'asc',
+            label: 'Order',
+            hover_tip: 'Sort in ascending or descending order',
+            path: "@presets[@active_preset][@active_action].sort.".concat(type),
+            content: { asc: 'Ascending', desc: 'Descending' }
+        }); };
+        var sorts = __assign({ type: {
+                type: 'text',
+                label: 'Order',
+                "default": 'rad, kan, voc',
+                placeholder: 'rad, kan, voc',
+                hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad',
+                path: "@presets[@active_preset][@active_action].sort.type"
+            } }, Object.fromEntries(numerical_types.map(function (type) { return [type, numerical_sort_config(type)]; })));
+    }
+    function calculate_overdue(item) {
         // Items without assignments or due dates, and burned items, are not overdue
         if (!item.assignments || !item.assignments.available_at || item.assignments.srs_stage == 9)
             return -1;
         var dueMsAgo = Date.now() - Date.parse(item.assignments.available_at);
         return dueMsAgo / SRS_DURATIONS[item.assignments.srs_stage - 1];
     }
-    function isCritical(item) {
+    function is_critical(item) {
         var _a;
         return item.data.level == wkof.user.level && item.object !== 'vocabulary' && ((_a = item.assignments) === null || _a === void 0 ? void 0 : _a.passed_at) == null;
     }
     // Borrowed from Prouleau's Item Inspector script
-    function calculateLeechScore(item) {
+    function calculate_leech_score(item) {
         if (!item.review_statistics)
             return 0;
         var stats = item.review_statistics;
@@ -202,14 +244,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         var reading_score = leechScore(stats.reading_incorrect, stats.reading_current_streak);
         return Math.max(meaning_score, reading_score);
     }
-    function displayLoading() {
+    function display_loading() {
         var callback = function () {
             var queue = $.jStorage.get(fullQueueKey);
             $.jStorage.set('questionType', 'meaning');
             if ('table' in queue) {
                 // Since the url is invalid the queue will contain an error. We must wait
                 // until the error is set until we can set our queue
-                updateQueue([{ type: 'Vocabulary', voc: 'Loading...', id: 0 }]);
+                update_queue([{ type: 'Vocabulary', voc: 'Loading...', id: 0 }]);
             }
             $.jStorage.stopListening(fullQueueKey, callback);
         };
@@ -217,7 +259,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
     function parse_short_subject_type_string(str) {
         var type_map = { rad: 'radical', kan: 'kanji', voc: 'vocabulary' };
-        return str.split(',').map(function (type) { return type_map[type]; });
+        return str
+            .replace(/\W/g, '')
+            .split(',')
+            .map(function (type) { return type_map[type]; });
     }
     /* ------------------------------------------------------------------------------------*/
     // Polymorphic Utility Functions
@@ -231,10 +276,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     // Final    [8, 7, 6, 4, 5, 1, 4, 5, 4, 1]
     // This is important when chaining multiple sorting actions, so that the results of
     // one sort don't get reversed (front to back) by the next sort
-    function doubleSort(items, sorter) {
+    function double_sort(items, sorter) {
         return items.sort(sorter).sort(sorter);
     }
-    function keepAndDiscard(items, filter) {
+    function keep_and_discard(items, filter) {
         var results = { keep: [], discard: [] };
         for (var _i = 0, items_1 = items; _i < items_1.length; _i++) {
             var item = items_1[_i];
@@ -260,24 +305,24 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     /* ------------------------------------------------------------------------------------*/
     // Queue Management
     /* ------------------------------------------------------------------------------------*/
-    function displayMessage(message) {
-        updateQueue([{ type: 'Vocabulary', voc: message, id: 0 }]);
+    function display_message(message) {
+        update_queue([{ type: 'Vocabulary', voc: message, id: 0 }]);
     }
-    function transformAndUpdate(items) {
-        var transformedItems = transformItems(items);
-        updateQueue(transformedItems);
+    function transform_and_update(items) {
+        var transformed_items = transform_items(items);
+        update_queue(transformed_items);
     }
-    function updateQueue(items) {
-        var currentItem = items[0];
-        var activeQueue = items.splice(0, 10);
+    function update_queue(items) {
+        var current_item = items[0];
+        var active_queue = items.splice(0, 10);
         var rest = items.map(function (item) { return item.id; }); // Only need the ID for these
-        if ((currentItem === null || currentItem === void 0 ? void 0 : currentItem.type) === 'Radical')
+        if ((current_item === null || current_item === void 0 ? void 0 : current_item.type) === 'Radical')
             $.jStorage.set('questionType', 'meaning'); // has to be set before currentItem
-        $.jStorage.set(currentItemKey, currentItem);
-        $.jStorage.set(activeQueueKey, activeQueue);
+        $.jStorage.set(currentItemKey, current_item);
+        $.jStorage.set(activeQueueKey, active_queue);
         $.jStorage.set(fullQueueKey, rest);
     }
-    function transformItems(items) {
+    function transform_items(items) {
         // Not all of the data mapped here is needed, but I haven't bothered to figure out exactly what is needed yet
         return items.map(function (item) {
             var _a;
@@ -342,28 +387,47 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
     // Load WKOF settings
     function load_settings() {
+        var test_preset_1 = get_preset_defaults();
+        test_preset_1.actions[0].name = 'test';
+        var test_preset_2 = get_preset_defaults();
+        test_preset_2.name = 'test';
         var defaults = {
             disabled: false,
+            active_preset: 0,
             active_presets_reviews: 'None',
             active_presets_lessons: 'None',
-            active_presets_extra_study: 'Seen',
-            presets: {
-                None: { name: 'None', actions: [] },
-                Seen: {
-                    name: 'Seen',
-                    actions: [
-                        {
-                            type: 'filter',
-                            name: 'Filter out locked and lessons',
-                            value: 1,
-                            filter: 'srs',
-                            invert: true
-                        },
-                    ]
-                }
+            active_presets_extra_study: 'None',
+            presets: [test_preset_1, test_preset_2]
+        }; //as Settings.Settings
+        return wkof.Settings.load(script_id, defaults);
+    }
+    function get_preset_defaults() {
+        var defaults = {
+            name: 'New Preset',
+            active_action: 0,
+            actions: [get_action_defaults()]
+        };
+        return defaults;
+    }
+    function get_action_defaults() {
+        var defaults = {
+            name: 'New Action',
+            type: 'sort',
+            filter: {},
+            sort: {
+                sort: 'level',
+                type: ['rad', 'kan', 'voc']
             }
         };
-        return wkof.Settings.load(script_id, defaults);
+        for (var _i = 0, _a = Object.entries(wkof.ItemData.registry.sources.wk_items.filters); _i < _a.length; _i++) {
+            var _b = _a[_i], name_1 = _b[0], filter = _b[1];
+            defaults.filter[name_1] = filter["default"];
+        }
+        for (var _c = 0, _d = ['level', 'srs', 'leech', 'overdue', 'critical']; _c < _d.length; _c++) {
+            var type = _d[_c];
+            defaults.sort[type] = 'asc';
+        }
+        return defaults;
     }
     // Installs the options button in the menu
     function install_menu() {
@@ -453,6 +517,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                     type: 'list',
                                     refresh_on_change: true,
                                     hover_tip: 'Actions for the selected preset',
+                                    path: '@presets[@active_preset].active_action',
                                     content: {}
                                 }
                             }
@@ -463,20 +528,19 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                             type: 'group',
                             label: 'Selected Action',
                             content: {
-                                preset_name: {
+                                action_name: {
                                     type: 'text',
                                     label: 'Edit Action Name',
                                     on_change: refresh_actions,
-                                    // Note that @presets[@active_preset] is an array and @active_action is a number
-                                    path: '@presets[@active_preset][@active_action].name',
+                                    path: '@presets[@active_preset].actions[@presets[@active_preset].active_action].name',
                                     hover_tip: 'Enter a name for the selected action'
                                 },
-                                type: {
+                                action_type: {
                                     type: 'dropdown',
                                     label: 'Action Type',
                                     hover_tip: 'Choose what kind of action this is',
                                     "default": 'sort',
-                                    path: '@presets[@active_preset][@active_action].type',
+                                    path: '@presets[@active_preset].actions[@presets[@active_preset].active_action].type',
                                     on_change: refresh_action,
                                     content: {
                                         sort: 'Sort',
@@ -493,22 +557,29 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                 },
                                 filter_type: {
                                     type: 'dropdown',
-                                    label: 'Filter type',
+                                    label: 'Filter Type',
                                     hover_tip: 'Choose what kind of filter this is',
                                     "default": 'level',
-                                    path: '@presets[@active_preset][@active_action].filter',
+                                    on_change: refresh_action,
+                                    path: '@presets[@active_preset].actions[@presets[@active_preset].active_action].filter.filter',
                                     content: {
                                     // Will be populated
                                     }
                                 },
                                 sort_type: {
                                     type: 'dropdown',
-                                    label: 'Sort type',
+                                    label: 'Sort Type',
                                     hover_tip: 'Choose what kind of sort this is',
                                     "default": 'level',
-                                    path: '@presets[@active_preset][@active_action].sort',
+                                    on_change: refresh_action,
+                                    path: '@presets[@active_preset].actions[@presets[@active_preset].active_action].sort.sort',
                                     content: {
-                                    // Will be populated
+                                        type: 'Type',
+                                        level: 'Level',
+                                        srs: 'SRS Level',
+                                        leech: 'Leech Score',
+                                        overdue: 'Overdue',
+                                        critical: 'Critical'
                                     }
                                 }
                             }
@@ -517,15 +588,59 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 }
             }
         }; // as SettingsModule.Config
-        var action = config.content.presets.content.action.content;
-        for (var _i = 0, _a = Object.entries(wkof.ItemData.registry.sources.wk_items.filters); _i < _a.length; _i++) {
-            var _b = _a[_i], name_1 = _b[0], filter = _b[1];
-            if (filter.no_ui)
-                ;
-        }
-        action.filter_type.content;
+        var action = config.content.presets.content.action;
+        populate_settings(action);
+        // TODO: Update filter value input
+        // TODO: Update sort order input
         var dialog = new wkof.Settings(config);
         dialog.open();
+    }
+    function populate_settings(config) {
+        var _a, _b, _c;
+        // Populate filters
+        for (var _i = 0, _d = Object.entries(wkof.ItemData.registry.sources.wk_items.filters); _i < _d.length; _i++) {
+            var _e = _d[_i], name_2 = _e[0], filter = _e[1];
+            if (filter.no_ui)
+                continue;
+            // Add to dropdown
+            var filter_type = config.content.filter_type;
+            filter_type.content[name_2] = (_a = filter.label) !== null && _a !== void 0 ? _a : 'Filter Value';
+            // Add filter values
+            config.content["filter_by_".concat(name_2)] = {
+                type: filter.type === 'multi' ? 'list' : filter.type,
+                multi: filter.type === 'multi',
+                "default": filter["default"],
+                label: (_b = filter.label) !== null && _b !== void 0 ? _b : 'Filter Value',
+                hover_tip: (_c = filter.hover_tip) !== null && _c !== void 0 ? _c : 'Choose a value for your filter',
+                placeholder: filter.placeholder,
+                content: filter.content,
+                path: "@presets[@active_preset].actions[@presets[@active_preset].active_action].filter.".concat(name_2)
+            };
+            console.log(config.content["filter_by_".concat(name_2)]);
+        }
+        // Populate sort values
+        var numerical_sort_config = function (type) {
+            return ({
+                type: 'dropdown',
+                "default": 'asc',
+                label: 'Order',
+                hover_tip: 'Sort in ascending or descending order',
+                path: "@presets[@active_preset][@active_action].sort.".concat(type),
+                content: { asc: 'Ascending', desc: 'Descending' }
+            });
+        };
+        config.content.sort_by_type = {
+            type: 'text',
+            label: 'Order',
+            "default": 'rad, kan, voc',
+            placeholder: 'rad, kan, voc',
+            hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad',
+            path: "@presets[@active_preset][@active_action].sort.type"
+        };
+        for (var _f = 0, _g = ['level', 'srs', 'leech', 'overdue', 'critical']; _f < _g.length; _f++) {
+            var type = _g[_f];
+            config.content["sort_by_".concat(type)] = numerical_sort_config(type);
+        }
     }
     function settings_pre_open(dialog) {
         // Add buttons to the presets and actions lists
@@ -542,37 +657,46 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         wrap = dialog.find("#".concat(script_id, "_active_action")).closest('.row').addClass('list_wrap');
         wrap.prepend(buttons('action')).find('.list_buttons').on('click', 'button', list_button_pressed);
         //
-        $('#reorder_omega_action_settings .row:first-child').each(function (i, e) {
-            var row = $(e);
-            var right = row.find('>.right');
-            row.prepend(right);
-            row.addClass('src_enable');
-        });
-        console.log($('#reorder_omega_action_settings'));
         refresh_presets();
         refresh_actions();
         refresh_action();
     }
-    function refresh_settings() { }
+    function refresh_settings() {
+        refresh_actions();
+    }
     function refresh_presets() {
         var settings = wkof.settings[script_id];
         populate_list($("#".concat(script_id, "_active_preset")), settings.presets, settings.active_preset);
     }
     function refresh_actions() {
         var settings = wkof.settings[script_id];
-        populate_list($("#".concat(script_id, "_active_action")), settings.presets[settings.active_preset].actions, settings.active_action);
+        populate_list($("#".concat(script_id, "_active_action")), settings.presets[settings.active_preset].actions, settings.presets[settings.active_preset].active_action);
     }
     function populate_list(elem, items, active_item) {
         var html = '';
         for (var _i = 0, _a = Object.entries(items); _i < _a.length; _i++) {
-            var _b = _a[_i], id = _b[0], name_2 = _b[1].name;
-            name_2 = name_2.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            html += "<option name=\"".concat(id, "\">").concat(name_2, "</option>");
+            var _b = _a[_i], id = _b[0], name_3 = _b[1].name;
+            name_3 = name_3.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            html += "<option name=\"".concat(id, "\">").concat(name_3, "</option>");
         }
         elem.html(html);
         elem.children().eq(active_item).prop('selected', true); // Select the active item
     }
-    function refresh_action() { }
+    function refresh_action() {
+        // Hide currently visible value input
+        $('.visible-sort-or-filter-value').removeClass('visible-sort-or-filter-value');
+        // Show the correct input
+        var settings = wkof.settings[script_id];
+        var action = settings.presets[settings.active_preset][settings.active_action];
+        if (!action)
+            return;
+        console.log({ action: action, settings: settings });
+        if (action.type == 'filter' || action.type == 'sort') {
+            var value_type = action[action.type][action.type]; // Eg action.filter.filter = 'srs'
+            console.log('test', "#".concat(script_id, "_").concat(action.type, "_by_").concat(value_type));
+            $("#".concat(script_id, "_").concat(action.type, "_by_").concat(value_type)).closest('.row').addClass('visible-sort-or-filter-value');
+        }
+    }
     function list_button_pressed() { }
     var wkof, $, script_id, script_name, page, currentItemKey, activeQueueKey, fullQueueKey, settings, SRS_DURATIONS;
     return __generator(this, function (_a) {
@@ -608,7 +732,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     fullQueueKey = 'practiceQueue';
                     if (window.location.search === '?title=test') {
                         // This has to be done before WK realizes that the queue is empty and redirects
-                        displayLoading();
+                        display_loading();
                         run();
                     }
                 }

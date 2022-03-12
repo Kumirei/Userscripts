@@ -47,7 +47,6 @@ export namespace Settings {
     type Settings = {
         disabled: boolean
         active_preset: number
-        active_action: number
         active_preset_reviews: number
         active_preset_lessons: number
         active_preset_extra_study: number
@@ -56,6 +55,7 @@ export namespace Settings {
 
     type Preset = {
         name: string
+        active_action: number
         actions: Action[]
     }
 
@@ -74,16 +74,19 @@ export namespace Settings {
     type FilterAction = {
         type: 'filter'
         name: string
-        filter: string
-        value: any
-        invert: boolean
+        filter: {
+            [key: string]: any
+            filter: string
+            invert: boolean
+        }
     }
 
     type SortAction = {
         name: string
         type: 'sort'
-    } & (
-        | { sort: 'level' | 'srs' | 'leech' | 'overdue' | 'critical'; order: 'asc' | 'desc' }
-        | { sort: 'type'; order: SubjectTypeShortString }
-    )
+        sort: {
+            [key: string]: any
+            sort: 'level' | 'srs' | 'leech' | 'overdue' | 'critical' | 'type'
+        }
+    }
 }
