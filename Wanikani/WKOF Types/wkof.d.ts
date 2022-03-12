@@ -13,14 +13,6 @@ type SubjectTypeShortString =
 type IsoDateString = `${number}-${number}-${number}T${number}:${number}:${number}.${number}Z`
 
 declare namespace Core {
-    type ModuleNameOption = 'Apiv2' | 'ItemData' | 'Menu' | 'Progress' | 'Settings'
-    type ModuleName =
-        | `${ModuleNameOption}`
-        | `${ModuleNameOption},${ModuleNameOption}`
-        | `${ModuleNameOption},${ModuleNameOption},${ModuleNameOption}`
-        | `${ModuleNameOption},${ModuleNameOption},${ModuleNameOption},${ModuleNameOption}`
-        | `${ModuleNameOption},${ModuleNameOption},${ModuleNameOption},${ModuleNameOption},${ModuleNameOption}`
-
     type User = {
         apikey: string
         current_vacation_started_at: null | IsoDateString
@@ -65,8 +57,8 @@ declare namespace Core {
             value: string
             compare_to: (needed_version: string) => 'older' | 'same' | 'newer'
         }
-        include: (modules: ModuleName) => Promise<{ loaded: string[]; failed: string[] }>
-        ready: (modules: ModuleName) => Promise<'ready'>
+        include: (modules: string) => Promise<{ loaded: string[]; failed: string[] }>
+        ready: (modules: string) => Promise<'ready'>
         get_state: (state_var: string) => any
         set_state: (state_var: string, value: any) => void
         wait_state: (
