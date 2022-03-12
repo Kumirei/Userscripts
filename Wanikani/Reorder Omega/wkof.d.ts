@@ -613,9 +613,9 @@ declare namespace Settings {
         | Html
 
     type Dialog = {
-        open: () => void
-        load: () => void
-        save: () => void
+        open: () => Promise<undefined>
+        load: () => Promise<{ [key: string]: any }>
+        save: () => Promise<undefined>
         refresh: () => void
         background: {
             open: () => void
