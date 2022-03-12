@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Overall Progress Bar
 // @namespace    http://tampermonkey.net/
-// @version      0.1.0
+// @version      0.2.0
 // @description  Creates a progress on the dashboard for every level
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com(/dashboard)?$/
@@ -34,6 +34,22 @@
     confirm_wkof()
     wkof.include('Menu,Settings,ItemData')
     await wkof.ready('Menu,Settings,ItemData').then(load_settings).then(install_menu)
+
+    const { single_bar, single_color, theme } = wkof.settings[script_id]
+    const color = {
+        '-1': theme === 'breeze' ? '#aaaaaa' : '#aaaaaa',
+        0: theme === 'breeze' ? '#aaaaaa' : '#aaaaaa',
+        1: theme === 'breeze' ? '#1d99f3' : '#dd0093',
+        2: theme === 'breeze' ? '#1d99f3' : '#dd0093',
+        3: theme === 'breeze' ? '#1d99f3' : '#dd0093',
+        4: theme === 'breeze' ? '#1d99f3' : '#dd0093',
+        5: theme === 'breeze' ? '#1cdc9a' : '#882d9e',
+        6: theme === 'breeze' ? '#1cdc9a' : '#882d9e',
+        7: theme === 'breeze' ? '#c9ce3b' : '#294ddb',
+        8: theme === 'breeze' ? '#f67400' : '#0093dd',
+        9: theme === 'breeze' ? '#da4453' : '#dfaa0b',
+    }
+
     injectCss()
 
     // Get items by level
@@ -50,35 +66,47 @@
 
     // Display
     $('.progress-and-forecast').before(
-        `<section class="srs-level-graph">${Object.entries(counts_by_level_and_srs)
-            .map(
-                ([level, counts_by_srs]) =>
-                    `<div class="level"><div class="bars">${Object.entries(counts_by_srs)
-                        .map(
-                            ([srs_level, count]) =>
-                                `<div class="srs" data-srs="${srs_level}" title="${srs_names[srs_level]}: ${count} items" style="flex-grow: ${count}"></div>`,
-                        )
-                        .join('')}</div><div class="lbl" title="Level ${level}">${level}</div></div>`,
-            )
-            .join('')}</section`,
+        `<section class="srs-level-graph">${Object.entries(counts_by_level_and_srs).map(get_level).join('')}</section`,
     )
 
-    function injectCss() {
-        const { single_bar, theme } = wkof.settings[script_id]
-        const color = {
-            '-1': theme === 0 ? '#aaaaaa' : '#aaaaaa',
-            0: theme === 0 ? '#aaaaaa' : '#aaaaaa',
-            1: theme === 0 ? '#dd0093' : '#1d99f3',
-            2: theme === 0 ? '#dd0093' : '#1d99f3',
-            3: theme === 0 ? '#dd0093' : '#1d99f3',
-            4: theme === 0 ? '#dd0093' : '#1d99f3',
-            5: theme === 0 ? '#882d9e' : '#1cdc9a',
-            6: theme === 0 ? '#882d9e' : '#1cdc9a',
-            7: theme === 0 ? '#294ddb' : '#c9ce3b',
-            8: theme === 0 ? '#0093dd' : '#f67400',
-            9: theme === 0 ? 'rgb(223,170,11)' : '#da4453',
-        }
+    function get_level([level, counts_by_srs]) {
+        const bars = Object.entries(counts_by_srs).map(get_bar).join('')
+        return `<div class="level"><div class="bars" style="background: ${get_color(
+            counts_by_srs,
+        )};">${bars}</div><div class="lbl" title="Level ${level}">${level}</div></div>`
+    }
 
+    function get_bar([srs_level, count]) {
+        return `<div class="srs" data-srs="${srs_level}" title="${srs_names[srs_level]}: ${count} items" style="flex-grow: ${count}"></div>`
+    }
+
+    function get_color(counts_by_srs) {
+        if (!single_bar || !single_color) return ''
+        const srs_levels = Object.entries(counts_by_srs).reduce(
+            (srs_items, [srs_level, count]) => srs_items.concat(new Array(count).fill(srs_level)),
+            [],
+        )
+        const avg_srs = srs_levels.reduce((sum, val) => sum + Number(val), 0) / srs_levels.length
+        return interpolate_color(color[Math.floor(avg_srs)], color[Math.ceil(avg_srs)], avg_srs % 1)
+    }
+
+    function interpolate_color(a, b, amount) {
+        var ah = parseInt(a.replace(/#/g, ''), 16),
+            ar = ah >> 16,
+            ag = (ah >> 8) & 0xff,
+            ab = ah & 0xff,
+            bh = parseInt(b.replace(/#/g, ''), 16),
+            br = bh >> 16,
+            bg = (bh >> 8) & 0xff,
+            bb = bh & 0xff,
+            rr = ar + amount * (br - ar),
+            rg = ag + amount * (bg - ag),
+            rb = ab + amount * (bb - ab)
+
+        return '#' + (((1 << 24) + (rr << 16) + (rg << 8) + rb) | 0).toString(16).slice(1)
+    }
+
+    function injectCss() {
         let srs_css = ''
         for (let i = -1; i < 10; i++) {
             srs_css += `
@@ -121,6 +149,7 @@
 }
 
 .srs-level-graph .srs {
+    ${single_color && single_bar ? 'display:none;' : ''}
     ${single_bar ? '' : 'border-radius: 0.1em 0.1em 0 0;'}
     
 }
@@ -152,7 +181,8 @@ ${srs_css}`
     function load_settings() {
         const defaults = {
             single_bar: true,
-            theme: 0,
+            single_color: false,
+            theme: 'default',
         }
         return wkof.Settings.load(script_id, defaults)
     }
@@ -174,13 +204,24 @@ ${srs_css}`
             script_id: script_id,
             title: script_name,
             content: {
-                single_bar: { type: 'checkbox', label: 'Single Bar', default: true },
+                single_bar: {
+                    type: 'checkbox',
+                    label: 'Single Bar',
+                    default: true,
+                    hover_tip: 'Display as multiple bars next to each other or as a single stacked bar',
+                },
+                single_color: {
+                    type: 'checkbox',
+                    label: 'Single Color',
+                    default: false,
+                    hover_tip: 'Display stacked bar as a single color instead of a stack',
+                },
                 theme: {
                     type: 'dropdown',
                     label: 'Theme',
                     default: 0,
-                    hover_tip: 'Changes the colors of the items',
-                    content: { 0: 'Default', 1: 'Breeze Dark' },
+                    hover_tip: 'Changes the colors of the bars',
+                    content: { default: 'Default', breeze: 'Breeze Dark' },
                 },
             },
         }
