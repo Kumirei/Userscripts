@@ -630,6 +630,7 @@ declare namespace Settings {
         title: string
         autosave?: boolean
         background?: boolean
+        no_bkgd?: boolean
         /**
          * @param dialog jQuery DOM element of dialog box
          */
