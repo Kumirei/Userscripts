@@ -56,6 +56,11 @@ export namespace Settings {
     type Preset = {
         name: string
         active_action: number
+        available_on: {
+            reviews: boolean
+            lessons: boolean
+            extra_study: boolean
+        }
         actions: Action[]
     }
 

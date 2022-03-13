@@ -389,6 +389,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         var defaults = {
             name: 'New Preset',
             active_action: 0,
+            available_on: { reviews: true, lessons: true, extra_study: true },
             actions: [get_action_defaults()]
         };
         return defaults;
@@ -496,7 +497,19 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                     path: '@presets[@active_preset].name',
                                     hover_tip: 'Enter a name for the selected preset'
                                 },
-                                // TODO: Available on pages
+                                available_on: {
+                                    type: 'list',
+                                    multi: true,
+                                    label: 'Available For',
+                                    hover_tip: 'Choose which pages you should be able to choose this preset on',
+                                    "default": { reviews: true, lessons: true, extra_study: true },
+                                    path: '@presets[@active_preset].available_on',
+                                    content: {
+                                        reviews: 'Reviews',
+                                        lessons: 'Lessons',
+                                        extra_study: 'Extra Study'
+                                    }
+                                },
                                 actions_label: { type: 'section', label: 'Actions' },
                                 active_action: {
                                     type: 'list',
