@@ -522,11 +522,11 @@ declare namespace Settings {
 
     type List = {
         type: 'list'
-        multi?: boolean
         size?: number
         default?: string
         content: { [key: string]: string }
-    } & ComponentDefaults
+    } & ({ multi?: false; default?: string } | { multi?: true; default: { [key: string]: boolean } }) &
+        ComponentDefaults
 
     type Dropdown = {
         type: 'dropdown'
