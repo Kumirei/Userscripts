@@ -125,7 +125,7 @@
     padding: 16px 12px 12px;
     background-color: #f4f4f4;
     border-radius: 5px;
-    margin: 0 0 20px 0 !important;
+    margin: 0 0 30px 0 !important;
 }
 
 .srs-level-graph .level {
