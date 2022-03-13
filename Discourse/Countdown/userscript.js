@@ -20,7 +20,15 @@
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'Pep95 Burns everything!',
+            date: 'jun 10 2022',
+            user: 'Pep95',
+            message0: "@Pep95 Hey, how's it going?",
+            message1: '@Pep95 Did you do it?',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'NeecyWizzle’s birthday',
             date: 'mar 23 2022',
