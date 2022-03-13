@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Overall Progress Bars
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.1.0
 // @description  Creates a progress bar on the dashboard for every level
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -70,15 +70,18 @@
     )
 
     function get_level([level, counts_by_srs]) {
-        console.log(Object.entries(counts_by_srs))
-        const bars = Object.entries(counts_by_srs).map(get_bar).join('')
+        const total = Object.values(counts_by_srs).reduce((sum, val) => sum + val, 0)
+        const bars = Object.entries(counts_by_srs)
+            .map((item) => get_bar(...item, total))
+            .join('')
         return `<div class="level"><div class="bars" style="background: ${get_color(
             counts_by_srs,
         )};">${bars}</div><div class="lbl" title="Level ${level}">${level}</div></div>`
     }
 
-    function get_bar([srs_level, count]) {
-        return `<div class="srs" data-srs="${srs_level}" title="${srs_names[srs_level]}: ${count} items" style="flex-grow: ${count}"></div>`
+    function get_bar(srs_level, count, total) {
+        const percent = Math.round((count / total) * 100)
+        return `<div class="srs" data-srs="${srs_level}" title="${srs_names[srs_level]}: ${count} / ${total} items (${percent}%)" style="flex-grow: ${count}"></div>`
     }
 
     function get_color(counts_by_srs) {
