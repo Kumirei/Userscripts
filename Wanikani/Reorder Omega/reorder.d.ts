@@ -59,7 +59,12 @@ export namespace Settings {
         actions: Action[]
     }
 
-    type Action = FilterAction | SortAction | FreezeAndRestoreAction | ShuffleAction
+    type Action = NoAction | FilterAction | SortAction | FreezeAndRestoreAction | ShuffleAction
+
+    type NoAction = {
+        name: string
+        type: 'none'
+    }
 
     type FreezeAndRestoreAction = {
         name: string
@@ -86,7 +91,7 @@ export namespace Settings {
         type: 'sort'
         sort: {
             [key: string]: any
-            sort: 'level' | 'srs' | 'leech' | 'overdue' | 'critical' | 'type'
+            sort: 'level' | 'srs' | 'leech' | 'overdue' | 'type'
         }
     }
 }

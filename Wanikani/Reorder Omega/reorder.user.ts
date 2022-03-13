@@ -59,10 +59,17 @@ declare global {
     let activeQueueKey = 'activeQueue'
     let fullQueueKey = 'reviewQueue'
 
+    const reorder = {
+        settings: {},
+        settings_dialog: null,
+    } as any
+
+    wkof.ready('ItemData.registry').then(install_filters)
+
     // Allow changing settings on dashboard
     if (/(DASHBOARD)?$/i.test(window.location.pathname)) {
         await init_settings()
-        open_settings()
+        // open_settings()
     }
     // TODO: comment here
     else if (/REVIEW/i.test(window.location.pathname)) {
@@ -88,44 +95,6 @@ declare global {
         }
     }
 
-    // Testing settings
-    const settings = {
-        active_preset: 0,
-        disabled: false, // TODO: Implement
-        presets: [
-            {
-                name: 'test',
-                actions: [
-                    // {
-                    //     name: 'Get level 42',
-                    //     type: 'filter',
-                    //     key: 'level',
-                    //     value: 42,
-                    //     comparator: '=',
-                    //     invert: false,
-                    // },
-                    {
-                        name: 'Freeze and Restore',
-                        type: 'freeze & restore',
-                    },
-                    {
-                        name: 'Sort by level',
-                        type: 'sort',
-                        key: 'level',
-                        order: 'asc',
-                    },
-                    {
-                        name: 'First 1000',
-                        type: 'filter',
-                        key: 'first',
-                        value: 1000,
-                        invert: false,
-                    },
-                ],
-            },
-        ],
-    } as Settings.Settings
-
     /* ------------------------------------------------------------------------------------*/
     // Overhead
     /* ------------------------------------------------------------------------------------*/
@@ -147,6 +116,7 @@ declare global {
 
     function process_queue(items: ItemData.Item[]): void {
         // Filter and sort
+        const settings = reorder.settings
         const preset = settings.presets[settings.active_preset]
         if (!preset) return display_message('Invalid Preset') // Active preset not defined
         const results = process_preset(preset, items)
@@ -171,6 +141,8 @@ declare global {
         console.log(action)
         console.log('Intermediary items', items.keep)
         switch (action.type) {
+            case 'none':
+                return items
             case 'filter':
                 const { keep, discard } = process_filter(action, items.keep)
                 return { keep, discard: items.discard.concat(discard), final: items.final }
@@ -197,6 +169,25 @@ declare global {
             : action.filter[action.filter.filter]
         const filter_func = (item: ItemData.Item) => filter.filter_func(filter_value, item)
         return keep_and_discard(items, filter_func)
+    }
+
+    function install_filters() {
+        wkof.ItemData.registry.sources.wk_items.filters.omega_reorder_overdue = {
+            type: 'number',
+            default: 0,
+            label: 'Overdue%',
+            hover_tip:
+                'Items more overdue than this. A percentage.\nNegative: Not due yet\nZero: due now\nPositive: Overdue',
+            filter_func: (value, item) => calculate_overdue(item) * 100 > value,
+        }
+
+        wkof.ItemData.registry.sources.wk_items.filters.omega_reorder_critical = {
+            type: 'checkbox',
+            default: true,
+            label: 'Critical',
+            hover_tip: 'Filter for items critical to leveling up',
+            filter_func: (value, item) => value === is_critical(item),
+        }
     }
 
     // TODO: install more filters
@@ -228,10 +219,6 @@ declare global {
                 sort = (a, b) =>
                     numerical_sort(calculate_overdue(a), calculate_overdue(b), action.sort.overdue as 'asc' | 'desc')
                 break
-            case 'critical':
-                sort = (a, b) =>
-                    numerical_sort(+is_critical(a), +is_critical(b), action.sort.critical as 'asc' | 'desc')
-                break
             case 'leech':
                 sort = (a, b) =>
                     numerical_sort(
@@ -257,29 +244,6 @@ declare global {
         if (a === order[0]) return -1 // A is first type
         if (b === order[0]) return 1 // B is first type
         return sort_by_type(a, b, order.slice(1, 3)) // Yay, recursion
-    }
-
-    function get_sorts() {
-        const numerical_types = ['level', 'srs', 'leech', 'overdue', 'critical']
-        const numerical_sort_config = (type: string) => ({
-            type: 'dropdown',
-            default: 'asc',
-            label: 'Order',
-            hover_tip: 'Sort in ascending or descending order',
-            path: `@presets[@active_preset][@active_action].sort.${type}`,
-            content: { asc: 'Ascending', desc: 'Descending' },
-        })
-        const sorts = {
-            type: {
-                type: 'text',
-                label: 'Order',
-                default: 'rad, kan, voc',
-                placeholder: 'rad, kan, voc',
-                hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad',
-                path: `@presets[@active_preset][@active_action].sort.type`,
-            },
-            ...Object.fromEntries(numerical_types.map((type) => [type, numerical_sort_config(type)])),
-        }
     }
 
     /* ------------------------------------------------------------------------------------*/
@@ -472,9 +436,9 @@ declare global {
             active_presets_reviews: 'None',
             active_presets_lessons: 'None',
             active_presets_extra_study: 'None',
-            presets: [test_preset_1, test_preset_2], //
+            presets: [get_preset_defaults()],
         } //as Settings.Settings
-        return wkof.Settings.load(script_id, defaults)
+        return wkof.Settings.load(script_id, defaults).then((settings) => (reorder.settings = settings))
     }
 
     function get_preset_defaults(): Settings.Preset {
@@ -489,8 +453,8 @@ declare global {
     function get_action_defaults(): Settings.Action {
         const defaults = {
             name: 'New Action',
-            type: 'sort',
-            filter: {},
+            type: 'none',
+            filter: { filter: 'level', invert: false },
             sort: {
                 sort: 'level',
                 type: ['rad', 'kan', 'voc'],
@@ -590,6 +554,7 @@ declare global {
                                     path: '@presets[@active_preset].name',
                                     hover_tip: 'Enter a name for the selected preset',
                                 },
+                                // TODO: Available on pages
                                 actions_label: { type: 'section', label: 'Actions' },
                                 active_action: {
                                     type: 'list',
@@ -617,21 +582,39 @@ declare global {
                                     type: 'dropdown',
                                     label: 'Action Type',
                                     hover_tip: 'Choose what kind of action this is',
-                                    default: 'sort',
+                                    default: 'None',
                                     path: '@presets[@active_preset].actions[@presets[@active_preset].active_action].type',
                                     on_change: refresh_action,
                                     content: {
+                                        none: 'None',
                                         sort: 'Sort',
                                         filter: 'Filter',
+                                        shuffle: 'Shuffle',
                                         'freeze & restore': 'Freeze & Restore',
                                     },
                                 },
                                 // Sorts and filters
                                 // ------------------------------------------------------------
                                 action_label: { type: 'section', label: 'Action Settings' },
-                                type_description: {
+                                none_description: {
                                     type: 'html',
-                                    html: '<div>A description of the type (sort, filter, freeze and restore) goes here</div>',
+                                    html: '<div class="none">Description of None</div>',
+                                },
+                                sort_description: {
+                                    type: 'html',
+                                    html: '<div class="sort">Description of sort</div>',
+                                },
+                                filter_description: {
+                                    type: 'html',
+                                    html: '<div class="filter">Description of filter</div>',
+                                },
+                                shuffle_description: {
+                                    type: 'html',
+                                    html: '<div class="shuffle">Description of shuffle</div>',
+                                },
+                                freeze_and_restore_description: {
+                                    type: 'html',
+                                    html: '<div class="freeze_and_restore">Description of freeze and restore</div>',
                                 },
                                 filter_type: {
                                     type: 'dropdown',
@@ -673,8 +656,8 @@ declare global {
         // TODO: Update filter value input
         // TODO: Update sort order input
 
-        const dialog = new wkof.Settings(config as SettingsModule.Config)
-        dialog.open()
+        reorder.settings_dialog = new wkof.Settings(config as SettingsModule.Config)
+        reorder.settings_dialog.open()
     }
 
     function populate_settings(config: SettingsModule.Group) {
@@ -697,7 +680,15 @@ declare global {
                 content: filter.content,
                 path: `@presets[@active_preset].actions[@presets[@active_preset].active_action].filter.${name}`,
             } as SettingsModule.Component
-            console.log(config.content[`filter_by_${name}`])
+        }
+
+        // Add filter inversion so that it comes after all values
+        config.content.filter_invert = {
+            type: 'checkbox',
+            label: 'Invert Filter',
+            hover_tip: 'Check this box if you want to invert the effect of this filter.',
+            default: false,
+            path: '@presets[@active_preset].actions[@presets[@active_preset].active_action].filter.invert',
         }
 
         // Populate sort values
@@ -727,10 +718,10 @@ declare global {
         // Add buttons to the presets and actions lists
         const buttons = (type: string) =>
             `<div class="list_buttons">` +
-            `<button type="button" action="new" class="ui-button ui-corner-all ui-widget" title="Create a new ${type}"><span class="fa fa-plus"></span></button>` +
-            `<button type="button" action="new" class="ui-button ui-corner-all ui-widget" title="Move the selected ${type} up in the list"><span class="fa fa-arrow-up"></span></button>` +
-            `<button type="button" action="new" class="ui-button ui-corner-all ui-widget" title="Move the selected ${type} down in the list"><span class="fa fa-arrow-down"></span></button>` +
-            `<button type="button" action="new" class="ui-button ui-corner-all ui-widget" title="Delete the selected ${type}"><span class="fa fa-trash"></span></button>` +
+            `<button type="button" ref="${type}" action="new" class="ui-button ui-corner-all ui-widget" title="Create a new ${type}"><span class="fa fa-plus"></span></button>` +
+            `<button type="button" ref="${type}" action="up" class="ui-button ui-corner-all ui-widget" title="Move the selected ${type} up in the list"><span class="fa fa-arrow-up"></span></button>` +
+            `<button type="button" ref="${type}" action="down" class="ui-button ui-corner-all ui-widget" title="Move the selected ${type} down in the list"><span class="fa fa-arrow-down"></span></button>` +
+            `<button type="button" ref="${type}" action="delete" class="ui-button ui-corner-all ui-widget" title="Delete the selected ${type}"><span class="fa fa-trash"></span></button>` +
             `</div>`
 
         let wrap = dialog.find(`#${script_id}_active_preset`).closest('.row').addClass('list_wrap')
@@ -739,32 +730,33 @@ declare global {
         wrap = dialog.find(`#${script_id}_active_action`).closest('.row').addClass('list_wrap')
         wrap.prepend(buttons('action')).find('.list_buttons').on('click', 'button', list_button_pressed)
 
-        //
+        // Set some classes
+        dialog.find('[name="filter_type"]').closest('.row').addClass('filter')
+        dialog.find('[name="filter_invert"]').closest('.row').addClass('filter')
+        dialog.find('[name="sort_type"]').closest('.row').addClass('sort')
 
         refresh_presets()
         refresh_actions()
-        refresh_action()
     }
 
     function refresh_settings() {
+        refresh_presets()
         refresh_actions()
     }
 
     function refresh_presets() {
-        const settings = wkof.settings[script_id] as Settings.Settings
-        populate_list($(`#${script_id}_active_preset`), settings.presets, settings.active_preset)
+        populate_list($(`#${script_id}_active_preset`), reorder.settings.presets, reorder.settings.active_preset)
     }
 
     function refresh_actions() {
-        const settings = wkof.settings[script_id] as Settings.Settings
-        populate_list(
-            $(`#${script_id}_active_action`),
-            settings.presets[settings.active_preset].actions,
-            settings.presets[settings.active_preset].active_action,
-        )
+        const preset = reorder.settings.presets[reorder.settings.active_preset]
+        if (!preset) return
+        populate_list($(`#${script_id}_active_action`), preset.actions, preset.active_action)
+        refresh_action()
     }
 
     function populate_list(elem: JQuery, items: { name: string }[], active_item: number) {
+        if (!items) return
         let html = ''
         for (let [id, { name }] of Object.entries(items)) {
             name = name.replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -775,21 +767,68 @@ declare global {
     }
 
     function refresh_action() {
-        // Hide currently visible value input
-        $('.visible-sort-or-filter-value').removeClass('visible-sort-or-filter-value')
-        // Show the correct input
-        const settings = wkof.settings[script_id]
-        const action = settings.presets[settings.active_preset][settings.active_action]
-        if (!action) return
-        console.log({ action, settings })
+        // Set action type
+        const type = $(`#${script_id}_action_type`).val() as string
+        $(`#${script_id}_action`).attr('type', type)
 
-        if (action.type == 'filter' || action.type == 'sort') {
-            const value_type = action[action.type][action.type] // Eg action.filter.filter = 'srs'
-            console.log('test', `#${script_id}_${action.type}_by_${value_type}`)
-
-            $(`#${script_id}_${action.type}_by_${value_type}`).closest('.row').addClass('visible-sort-or-filter-value')
+        // Update visible input
+        const preset = reorder.settings.presets[reorder.settings.active_preset]
+        const action = preset.actions[preset.active_action]
+        $('.visible_action_value').removeClass('visible_action_value')
+        if (action.type === 'sort' || action.type === 'filter') {
+            $(`#${script_id}_${action.type}_by_${action[action.type][action.type]}`)
+                .closest('.row')
+                .addClass('visible_action_value')
         }
     }
 
-    function list_button_pressed() {}
+    function list_button_pressed(e: any) {
+        const ref = (e.currentTarget as any).attributes.ref.value
+        const btn = (e.currentTarget as any).attributes.action.value
+        const elem = $(`#${script_id}_active_` + ref)
+
+        let default_item, root, list, key
+        if (ref === 'preset') {
+            default_item = get_preset_defaults()
+            root = reorder.settings
+            list = reorder.settings.presets
+            key = 'active_preset'
+        } else {
+            default_item = get_action_defaults()
+            root = reorder.settings.presets[reorder.settings.active_preset]
+            list = root.actions
+            key = 'active_action'
+        }
+
+        switch (btn) {
+            case 'new':
+                list.push(default_item)
+                root[key] = list.length - 1
+                break
+            case 'delete':
+                list.push(...list.splice(root[key]).slice(1)) // Remove from list by index
+                if (root[key] && root[key] >= list.length) root[key]--
+                if (list.length === 0) list.push(default_item)
+                break
+            case 'up':
+                swap(list, root[key] - 1, root[key])
+                root[key]--
+                break
+            case 'down':
+                swap(list, root[key] + 1, root[key])
+                root[key]++
+                break
+        }
+
+        populate_list(elem, list, root[key])
+        reorder.settings_dialog.refresh()
+        if (btn === 'new') $(`#${script_id}_${ref}_name`).focus().select()
+    }
+
+    function swap(list: any[], i: number, j: number) {
+        if (list.length <= i || list.length <= j || i < 0 || j < 0) return
+        const temp = list[i]
+        list[i] = list[j]
+        list[j] = temp
+    }
 })()

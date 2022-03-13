@@ -8,17 +8,6 @@
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|extra_study)/session))/
 // @grant        none
 // ==/UserScript==
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -99,6 +88,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
     function process_queue(items) {
         // Filter and sort
+        var settings = reorder.settings;
         var preset = settings.presets[settings.active_preset];
         if (!preset)
             return display_message('Invalid Preset'); // Active preset not defined
@@ -122,6 +112,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         console.log(action);
         console.log('Intermediary items', items.keep);
         switch (action.type) {
+            case 'none':
+                return items;
             case 'filter':
                 var _a = process_filter(action, items.keep), keep = _a.keep, discard = _a.discard;
                 return { keep: keep, discard: items.discard.concat(discard), final: items.final };
@@ -148,6 +140,22 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         var filter_func = function (item) { return filter.filter_func(filter_value, item); };
         return keep_and_discard(items, filter_func);
     }
+    function install_filters() {
+        wkof.ItemData.registry.sources.wk_items.filters.omega_reorder_overdue = {
+            type: 'number',
+            "default": 0,
+            label: 'Overdue%',
+            hover_tip: 'Items more overdue than this. A percentage.\nNegative: Not due yet\nZero: due now\nPositive: Overdue',
+            filter_func: function (value, item) { return calculate_overdue(item) * 100 > value; }
+        };
+        wkof.ItemData.registry.sources.wk_items.filters.omega_reorder_critical = {
+            type: 'checkbox',
+            "default": true,
+            label: 'Critical',
+            hover_tip: 'Filter for items critical to leveling up',
+            filter_func: function (value, item) { return value === is_critical(item); }
+        };
+    }
     // TODO: install more filters
     /* ------------------------------------------------------------------------------------*/
     // Sorting
@@ -173,11 +181,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     return numerical_sort(calculate_overdue(a), calculate_overdue(b), action.sort.overdue);
                 };
                 break;
-            case 'critical':
-                sort = function (a, b) {
-                    return numerical_sort(+is_critical(a), +is_critical(b), action.sort.critical);
-                };
-                break;
             case 'leech':
                 sort = function (a, b) {
                     return numerical_sort(calculate_leech_score(a), calculate_leech_score(b), action.sort.leech);
@@ -201,25 +204,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (b === order[0])
             return 1; // B is first type
         return sort_by_type(a, b, order.slice(1, 3)); // Yay, recursion
-    }
-    function get_sorts() {
-        var numerical_types = ['level', 'srs', 'leech', 'overdue', 'critical'];
-        var numerical_sort_config = function (type) { return ({
-            type: 'dropdown',
-            "default": 'asc',
-            label: 'Order',
-            hover_tip: 'Sort in ascending or descending order',
-            path: "@presets[@active_preset][@active_action].sort.".concat(type),
-            content: { asc: 'Ascending', desc: 'Descending' }
-        }); };
-        var sorts = __assign({ type: {
-                type: 'text',
-                label: 'Order',
-                "default": 'rad, kan, voc',
-                placeholder: 'rad, kan, voc',
-                hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad',
-                path: "@presets[@active_preset][@active_action].sort.type"
-            } }, Object.fromEntries(numerical_types.map(function (type) { return [type, numerical_sort_config(type)]; })));
     }
     function calculate_overdue(item) {
         // Items without assignments or due dates, and burned items, are not overdue
@@ -397,9 +381,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             active_presets_reviews: 'None',
             active_presets_lessons: 'None',
             active_presets_extra_study: 'None',
-            presets: [test_preset_1, test_preset_2]
+            presets: [get_preset_defaults()]
         }; //as Settings.Settings
-        return wkof.Settings.load(script_id, defaults);
+        return wkof.Settings.load(script_id, defaults).then(function (settings) { return (reorder.settings = settings); });
     }
     function get_preset_defaults() {
         var defaults = {
@@ -412,8 +396,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function get_action_defaults() {
         var defaults = {
             name: 'New Action',
-            type: 'sort',
-            filter: {},
+            type: 'none',
+            filter: { filter: 'level', invert: false },
             sort: {
                 sort: 'level',
                 type: ['rad', 'kan', 'voc']
@@ -512,6 +496,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                     path: '@presets[@active_preset].name',
                                     hover_tip: 'Enter a name for the selected preset'
                                 },
+                                // TODO: Available on pages
                                 actions_label: { type: 'section', label: 'Actions' },
                                 active_action: {
                                     type: 'list',
@@ -539,21 +524,39 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                     type: 'dropdown',
                                     label: 'Action Type',
                                     hover_tip: 'Choose what kind of action this is',
-                                    "default": 'sort',
+                                    "default": 'None',
                                     path: '@presets[@active_preset].actions[@presets[@active_preset].active_action].type',
                                     on_change: refresh_action,
                                     content: {
+                                        none: 'None',
                                         sort: 'Sort',
                                         filter: 'Filter',
+                                        shuffle: 'Shuffle',
                                         'freeze & restore': 'Freeze & Restore'
                                     }
                                 },
                                 // Sorts and filters
                                 // ------------------------------------------------------------
                                 action_label: { type: 'section', label: 'Action Settings' },
-                                type_description: {
+                                none_description: {
                                     type: 'html',
-                                    html: '<div>A description of the type (sort, filter, freeze and restore) goes here</div>'
+                                    html: '<div class="none">Description of None</div>'
+                                },
+                                sort_description: {
+                                    type: 'html',
+                                    html: '<div class="sort">Description of sort</div>'
+                                },
+                                filter_description: {
+                                    type: 'html',
+                                    html: '<div class="filter">Description of filter</div>'
+                                },
+                                shuffle_description: {
+                                    type: 'html',
+                                    html: '<div class="shuffle">Description of shuffle</div>'
+                                },
+                                freeze_and_restore_description: {
+                                    type: 'html',
+                                    html: '<div class="freeze_and_restore">Description of freeze and restore</div>'
                                 },
                                 filter_type: {
                                     type: 'dropdown',
@@ -592,8 +595,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         populate_settings(action);
         // TODO: Update filter value input
         // TODO: Update sort order input
-        var dialog = new wkof.Settings(config);
-        dialog.open();
+        reorder.settings_dialog = new wkof.Settings(config);
+        reorder.settings_dialog.open();
     }
     function populate_settings(config) {
         var _a, _b, _c;
@@ -616,8 +619,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 content: filter.content,
                 path: "@presets[@active_preset].actions[@presets[@active_preset].active_action].filter.".concat(name_2)
             };
-            console.log(config.content["filter_by_".concat(name_2)]);
         }
+        // Add filter inversion so that it comes after all values
+        config.content.filter_invert = {
+            type: 'checkbox',
+            label: 'Invert Filter',
+            hover_tip: 'Check this box if you want to invert the effect of this filter.',
+            "default": false,
+            path: '@presets[@active_preset].actions[@presets[@active_preset].active_action].filter.invert'
+        };
         // Populate sort values
         var numerical_sort_config = function (type) {
             return ({
@@ -646,33 +656,40 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         // Add buttons to the presets and actions lists
         var buttons = function (type) {
             return "<div class=\"list_buttons\">" +
-                "<button type=\"button\" action=\"new\" class=\"ui-button ui-corner-all ui-widget\" title=\"Create a new ".concat(type, "\"><span class=\"fa fa-plus\"></span></button>") +
-                "<button type=\"button\" action=\"new\" class=\"ui-button ui-corner-all ui-widget\" title=\"Move the selected ".concat(type, " up in the list\"><span class=\"fa fa-arrow-up\"></span></button>") +
-                "<button type=\"button\" action=\"new\" class=\"ui-button ui-corner-all ui-widget\" title=\"Move the selected ".concat(type, " down in the list\"><span class=\"fa fa-arrow-down\"></span></button>") +
-                "<button type=\"button\" action=\"new\" class=\"ui-button ui-corner-all ui-widget\" title=\"Delete the selected ".concat(type, "\"><span class=\"fa fa-trash\"></span></button>") +
+                "<button type=\"button\" ref=\"".concat(type, "\" action=\"new\" class=\"ui-button ui-corner-all ui-widget\" title=\"Create a new ").concat(type, "\"><span class=\"fa fa-plus\"></span></button>") +
+                "<button type=\"button\" ref=\"".concat(type, "\" action=\"up\" class=\"ui-button ui-corner-all ui-widget\" title=\"Move the selected ").concat(type, " up in the list\"><span class=\"fa fa-arrow-up\"></span></button>") +
+                "<button type=\"button\" ref=\"".concat(type, "\" action=\"down\" class=\"ui-button ui-corner-all ui-widget\" title=\"Move the selected ").concat(type, " down in the list\"><span class=\"fa fa-arrow-down\"></span></button>") +
+                "<button type=\"button\" ref=\"".concat(type, "\" action=\"delete\" class=\"ui-button ui-corner-all ui-widget\" title=\"Delete the selected ").concat(type, "\"><span class=\"fa fa-trash\"></span></button>") +
                 "</div>";
         };
         var wrap = dialog.find("#".concat(script_id, "_active_preset")).closest('.row').addClass('list_wrap');
         wrap.prepend(buttons('preset')).find('.list_buttons').on('click', 'button', list_button_pressed);
         wrap = dialog.find("#".concat(script_id, "_active_action")).closest('.row').addClass('list_wrap');
         wrap.prepend(buttons('action')).find('.list_buttons').on('click', 'button', list_button_pressed);
-        //
+        // Set some classes
+        dialog.find('[name="filter_type"]').closest('.row').addClass('filter');
+        dialog.find('[name="filter_invert"]').closest('.row').addClass('filter');
+        dialog.find('[name="sort_type"]').closest('.row').addClass('sort');
         refresh_presets();
         refresh_actions();
-        refresh_action();
     }
     function refresh_settings() {
+        refresh_presets();
         refresh_actions();
     }
     function refresh_presets() {
-        var settings = wkof.settings[script_id];
-        populate_list($("#".concat(script_id, "_active_preset")), settings.presets, settings.active_preset);
+        populate_list($("#".concat(script_id, "_active_preset")), reorder.settings.presets, reorder.settings.active_preset);
     }
     function refresh_actions() {
-        var settings = wkof.settings[script_id];
-        populate_list($("#".concat(script_id, "_active_action")), settings.presets[settings.active_preset].actions, settings.presets[settings.active_preset].active_action);
+        var preset = reorder.settings.presets[reorder.settings.active_preset];
+        if (!preset)
+            return;
+        populate_list($("#".concat(script_id, "_active_action")), preset.actions, preset.active_action);
+        refresh_action();
     }
     function populate_list(elem, items, active_item) {
+        if (!items)
+            return;
         var html = '';
         for (var _i = 0, _a = Object.entries(items); _i < _a.length; _i++) {
             var _b = _a[_i], id = _b[0], name_3 = _b[1].name;
@@ -683,22 +700,70 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         elem.children().eq(active_item).prop('selected', true); // Select the active item
     }
     function refresh_action() {
-        // Hide currently visible value input
-        $('.visible-sort-or-filter-value').removeClass('visible-sort-or-filter-value');
-        // Show the correct input
-        var settings = wkof.settings[script_id];
-        var action = settings.presets[settings.active_preset][settings.active_action];
-        if (!action)
-            return;
-        console.log({ action: action, settings: settings });
-        if (action.type == 'filter' || action.type == 'sort') {
-            var value_type = action[action.type][action.type]; // Eg action.filter.filter = 'srs'
-            console.log('test', "#".concat(script_id, "_").concat(action.type, "_by_").concat(value_type));
-            $("#".concat(script_id, "_").concat(action.type, "_by_").concat(value_type)).closest('.row').addClass('visible-sort-or-filter-value');
+        // Set action type
+        var type = $("#".concat(script_id, "_action_type")).val();
+        $("#".concat(script_id, "_action")).attr('type', type);
+        // Update visible input
+        var preset = reorder.settings.presets[reorder.settings.active_preset];
+        var action = preset.actions[preset.active_action];
+        $('.visible_action_value').removeClass('visible_action_value');
+        if (action.type === 'sort' || action.type === 'filter') {
+            $("#".concat(script_id, "_").concat(action.type, "_by_").concat(action[action.type][action.type]))
+                .closest('.row')
+                .addClass('visible_action_value');
         }
     }
-    function list_button_pressed() { }
-    var wkof, $, script_id, script_name, page, currentItemKey, activeQueueKey, fullQueueKey, settings, SRS_DURATIONS;
+    function list_button_pressed(e) {
+        var ref = e.currentTarget.attributes.ref.value;
+        var btn = e.currentTarget.attributes.action.value;
+        var elem = $("#".concat(script_id, "_active_") + ref);
+        var default_item, root, list, key;
+        if (ref === 'preset') {
+            default_item = get_preset_defaults();
+            root = reorder.settings;
+            list = reorder.settings.presets;
+            key = 'active_preset';
+        }
+        else {
+            default_item = get_action_defaults();
+            root = reorder.settings.presets[reorder.settings.active_preset];
+            list = root.actions;
+            key = 'active_action';
+        }
+        switch (btn) {
+            case 'new':
+                list.push(default_item);
+                root[key] = list.length - 1;
+                break;
+            case 'delete':
+                list.push.apply(list, list.splice(root[key]).slice(1)); // Remove from list by index
+                if (root[key] && root[key] >= list.length)
+                    root[key]--;
+                if (list.length === 0)
+                    list.push(default_item);
+                break;
+            case 'up':
+                swap(list, root[key] - 1, root[key]);
+                root[key]--;
+                break;
+            case 'down':
+                swap(list, root[key] + 1, root[key]);
+                root[key]++;
+                break;
+        }
+        populate_list(elem, list, root[key]);
+        reorder.settings_dialog.refresh();
+        if (btn === 'new')
+            $("#".concat(script_id, "_").concat(ref, "_name")).focus().select();
+    }
+    function swap(list, i, j) {
+        if (list.length <= i || list.length <= j || i < 0 || j < 0)
+            return;
+        var temp = list[i];
+        list[i] = list[j];
+        list[j] = temp;
+    }
+    var wkof, $, script_id, script_name, page, currentItemKey, activeQueueKey, fullQueueKey, reorder, SRS_DURATIONS;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -708,11 +773,17 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 currentItemKey = 'currentItem';
                 activeQueueKey = 'activeQueue';
                 fullQueueKey = 'reviewQueue';
+                reorder = {
+                    settings: {},
+                    settings_dialog: null
+                };
+                wkof.ready('ItemData.registry').then(install_filters);
                 if (!/(DASHBOARD)?$/i.test(window.location.pathname)) return [3 /*break*/, 2];
-                return [4 /*yield*/, init_settings()];
+                return [4 /*yield*/, init_settings()
+                    // open_settings()
+                ];
             case 1:
                 _a.sent();
-                open_settings();
                 return [3 /*break*/, 5];
             case 2:
                 if (!/REVIEW/i.test(window.location.pathname)) return [3 /*break*/, 4];
@@ -738,42 +809,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 }
                 _a.label = 5;
             case 5:
-                settings = {
-                    active_preset: 0,
-                    disabled: false,
-                    presets: [
-                        {
-                            name: 'test',
-                            actions: [
-                                // {
-                                //     name: 'Get level 42',
-                                //     type: 'filter',
-                                //     key: 'level',
-                                //     value: 42,
-                                //     comparator: '=',
-                                //     invert: false,
-                                // },
-                                {
-                                    name: 'Freeze and Restore',
-                                    type: 'freeze & restore'
-                                },
-                                {
-                                    name: 'Sort by level',
-                                    type: 'sort',
-                                    key: 'level',
-                                    order: 'asc'
-                                },
-                                {
-                                    name: 'First 1000',
-                                    type: 'filter',
-                                    key: 'first',
-                                    value: 1000,
-                                    invert: false
-                                },
-                            ]
-                        },
-                    ]
-                };
                 SRS_DURATIONS = [4, 8, 23, 47, 167, 335, 719, 2879, Infinity].map(function (time) { return time * 60 * 60 * 1000; });
                 return [2 /*return*/];
         }
