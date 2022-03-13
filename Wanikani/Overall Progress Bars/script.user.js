@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         Wanikani: Overall Progress Bar
+// @name         Wanikani: Overall Progress Bars
 // @namespace    http://tampermonkey.net/
-// @version      0.2.0
-// @description  Creates a progress on the dashboard for every level
+// @version      1.0.1
+// @description  Creates a progress bar on the dashboard for every level
 // @author       Kumirei
-// @include      /^https://(www|preview).wanikani.com(/dashboard)?$/
+// @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @grant        none
 // @license      MIT
 // ==/UserScript==
@@ -37,8 +37,8 @@
 
     const { single_bar, single_color, theme } = wkof.settings[script_id]
     const color = {
-        '-1': theme === 'breeze' ? '#aaaaaa' : '#aaaaaa',
-        0: theme === 'breeze' ? '#aaaaaa' : '#aaaaaa',
+        '-1': theme === 'breeze' ? '#31363B' : '#aaaaaa',
+        0: theme === 'breeze' ? '#31363B' : '#aaaaaa',
         1: theme === 'breeze' ? '#1d99f3' : '#dd0093',
         2: theme === 'breeze' ? '#1d99f3' : '#dd0093',
         3: theme === 'breeze' ? '#1d99f3' : '#dd0093',
@@ -70,6 +70,7 @@
     )
 
     function get_level([level, counts_by_srs]) {
+        console.log(Object.entries(counts_by_srs))
         const bars = Object.entries(counts_by_srs).map(get_bar).join('')
         return `<div class="level"><div class="bars" style="background: ${get_color(
             counts_by_srs,
@@ -124,7 +125,7 @@
     padding: 16px 12px 12px;
     background-color: #f4f4f4;
     border-radius: 5px;
-    margin: 30px 0;
+    margin: 0 0 20px 0 !important;
 }
 
 .srs-level-graph .level {
@@ -145,13 +146,15 @@
     line-height: 1.5em;
     text-align: center;
     vertical-align: bottom;
-    ${theme === 1 ? 'color: black;' : ''}
 }
 
 .srs-level-graph .srs {
     ${single_color && single_bar ? 'display:none;' : ''}
     ${single_bar ? '' : 'border-radius: 0.1em 0.1em 0 0;'}
-    
+}
+
+.srs-level-graph .srs[data-srs="-1"] {
+    order: -1;
 }
 
 ${srs_css}`
