@@ -8,20 +8,13 @@
 // @grant        none
 // ==/UserScript==
 
-// This line in necessary to make sure that TSC does not put any exports in the
+// These lines are necessary to make sure that TSC does not put any exports in the
 // compiled js, which causes the script to crash
-export = 0
+const module = {}
+export = null
 
 // Import types
-import {
-    WKOF,
-    ItemData,
-    Menu,
-    Settings as SettingsModule,
-    SubjectType,
-    SubjectTypeShort,
-    SubjectTypeShortString,
-} from './wkof'
+import { WKOF, ItemData, Menu, Settings as SettingsModule, SubjectType, SubjectTypeShortString } from './wkof'
 import { Review, Settings } from './reorder'
 
 // We have to extend the global window object since the values are already present
@@ -42,10 +35,9 @@ declare global {
     // * SRS breakdown
     // * Streak
     // TODO: Add audio --> meaning option
-
     // TODO: More comments
-    // TODO: WKOF level filter
-    // TODO: Make shuffle a type instead of sort
+    // TODO: Organize settings
+
     const { wkof, $ } = window
 
     // Script info
@@ -53,12 +45,9 @@ declare global {
     const script_name = 'Reorder Omega'
 
     // Page variables
-    // TODO: Make work on review page
     // TODO: Make work on lessons page
     let page: 'reviews' | 'lessons' | 'extra_study'
-    let currentItemKey = 'currentItem'
-    let activeQueueKey = 'activeQueue'
-    let fullQueueKey = 'reviewQueue'
+    let currentItemKey: string, activeQueueKey: string, fullQueueKey: string
 
     const reorder = {
         settings: {},
@@ -68,32 +57,65 @@ declare global {
     wkof.ready('ItemData.registry').then(install_filters)
 
     // Allow changing settings on dashboard
-    if (/(DASHBOARD)?$/i.test(window.location.pathname)) {
+    if (/^\/(DASHBOARD)?$/i.test(window.location.pathname)) {
+        // Initiate WKOF
+        await confirm_wkof()
+        wkof.include('Settings,Menu,ItemData')
         await init_settings()
         // open_settings()
-    }
-    // TODO: comment here
-    else if (/REVIEW/i.test(window.location.pathname)) {
+    } else if (/REVIEW\/session/i.test(window.location.pathname)) {
         // Set page variables
         page = 'reviews'
+        currentItemKey = 'currentItem'
+        activeQueueKey = 'activeQueue'
         fullQueueKey = 'reviewQueue'
 
+        // Initiate WKOF
+        await confirm_wkof()
+        wkof.include('Settings,Menu,ItemData')
         await init_settings()
+        insert_interface()
 
-        // run()
+        run()
     }
     // If page is extra study and the query is correct, start running as self study
-    else if (/EXTRA_STUDY/i.test(window.location.pathname)) {
+    else if (/EXTRA_STUDY\/session/i.test(window.location.pathname)) {
         // Set page variables
         page = 'extra_study'
+        currentItemKey = 'currentItem'
+        activeQueueKey = 'activeQueue'
         fullQueueKey = 'practiceQueue'
 
         if (window.location.search === '?title=test') {
             // This has to be done before WK realizes that the queue is empty and redirects
             display_loading()
 
+            // Initiate WKOF
+            await confirm_wkof()
+            wkof.include('Settings,Menu,ItemData')
+            await init_settings()
+            insert_interface()
+
             run()
         }
+    }
+
+    function insert_interface() {
+        const options: string[] = []
+        console.log(reorder.settings.presets)
+
+        for (let [i, preset] of Object.entries(reorder.settings.presets as Settings.Preset[])) {
+            if (preset.available_on[page]) options.push(`<option value=${i}>${preset.name}</option>`)
+        }
+        const select = $(`<select id="${script_id}_preset_picker">${options.join('')}</select>`)
+        select.val(reorder.settings[`active_preset_${page}`]).on('change', (event: any) => {
+            // Change in settings then save
+            reorder.settings[`active_preset_${page}`] = event.currentTarget.value
+            wkof.Settings.save(script_id)
+            // Update
+            run()
+        })
+        $('#character').append($(`<div id="active_preset">Active Preset: </div>`).append(select))
     }
 
     /* ------------------------------------------------------------------------------------*/
@@ -101,29 +123,35 @@ declare global {
     /* ------------------------------------------------------------------------------------*/
 
     async function run(): Promise<void> {
-        // Initiate WKOF
-        await confirm_wkof()
-        wkof.include('Settings,Menu,ItemData')
-        await init_settings()
-        await wkof.ready('ItemData')
-
         // Get items
-        let items: ItemData.Item[] = []
-        if (page === 'extra_study') items = await wkof.ItemData.get_items('assignments,review_statistics')
+        let items = await wkof.ItemData.get_items('assignments,review_statistics')
+
+        if (page === 'reviews') {
+            const ids = get_queue_ids()
+            items = items.filter((item) => ids.has(item.id))
+        } else if (page === 'extra_study') {
+            shuffle<ItemData.Item>(items) // Always shuffle extra study items
+        }
 
         // Process
         process_queue(items)
     }
 
+    function get_queue_ids(): Set<number> {
+        const activeQueue = $.jStorage.get(activeQueueKey) as Review.Item[]
+        const remainingQueue = $.jStorage.get(fullQueueKey) as Review.Item[]
+        return new Set(activeQueue.concat(remainingQueue).map((item) => item.id))
+    }
+
     function process_queue(items: ItemData.Item[]): void {
         // Filter and sort
         const settings = reorder.settings
-        const preset = settings.presets[settings.active_preset]
+        const preset = settings.presets[settings[`active_preset_${page}`]]
         if (!preset) return display_message('Invalid Preset') // Active preset not defined
         const results = process_preset(preset, items)
         const final = results.final.concat(results.keep)
         if (!final.length) return display_message('No items in preset')
-        console.log('items', final)
+        console.log('items', JSON.parse(JSON.stringify(final)))
 
         // Load into queue
         transform_and_update(final)
@@ -189,9 +217,18 @@ declare global {
             hover_tip: 'Filter for items critical to leveling up',
             filter_func: (value, item) => value === is_critical(item),
         }
-    }
 
-    // TODO: install more filters
+        wkof.ItemData.registry.sources.wk_items.filters.omega_reorder_first = {
+            type: 'number',
+            default: 0,
+            label: 'First',
+            hover_tip: 'Get the first N number of items from the queue',
+            filter_func: (() => {
+                let count = 0
+                return (value) => count++ < value
+            })(),
+        }
+    }
 
     /* ------------------------------------------------------------------------------------*/
     // Sorting
@@ -282,7 +319,7 @@ declare global {
             if ('table' in queue) {
                 // Since the url is invalid the queue will contain an error. We must wait
                 // until the error is set until we can set our queue
-                update_queue([{ type: 'Vocabulary', voc: 'Loading...', id: 0 }])
+                display_message('Loading...')
             }
             $.jStorage.stopListening(fullQueueKey, callback)
         }
@@ -345,17 +382,20 @@ declare global {
     /* ------------------------------------------------------------------------------------*/
 
     function display_message(message: string) {
-        update_queue([{ type: 'Vocabulary', voc: message, id: 0 }])
+        const dummy = { type: 'Vocabulary', voc: message, id: 0 }
+        $.jStorage.set(currentItemKey, dummy)
+        $.jStorage.set(activeQueueKey, [dummy])
+        $.jStorage.set(fullQueueKey, [])
     }
 
     function transform_and_update(items: ItemData.Item[]): void {
-        const transformed_items = transform_items(items)
-        update_queue(transformed_items)
+        update_queue(items)
     }
 
-    function update_queue(items: (Review.Item | Review.DummyItem)[]): void {
-        const current_item = items[0]
-        const active_queue = items.splice(0, 10)
+    async function update_queue(items: ItemData.Item[]): Promise<void> {
+        const first10 = await transform_items(items.splice(0, 10))
+        const current_item = first10[0]
+        const active_queue = first10
         const rest = items.map((item) => item.id) // Only need the ID for these
 
         if (current_item?.type === 'Radical') $.jStorage.set('questionType', 'meaning') // has to be set before currentItem
@@ -364,42 +404,15 @@ declare global {
         $.jStorage.set(fullQueueKey, rest)
     }
 
-    function transform_items(items: ItemData.Item[]): Review.Item[] {
-        // Not all of the data mapped here is needed, but I haven't bothered to figure out exactly what is needed yet
-        return items.map((item) => ({
-            aud: item.data.pronunciation_audios?.map((audio) => ({
-                content_type: audio.content_type,
-                pronunciation: audio.metadata.pronunciation,
-                url: audio.url,
-                voice_actor_id: audio.metadata.voice_actor_id,
-            })),
-            auxiliary_meanings: item.data.meanings
-                .filter((meaning) => !meaning.primary)
-                .map((meaning) => meaning.meaning),
-            auxiliary_readings: item.data.readings
-                ?.filter((reading) => !reading.primary)
-                .map((reading) => reading.reading),
-            characters: item.data.characters,
-            en: item.data.meanings.filter((meaning) => meaning.primary).map((meaning) => meaning.meaning),
-            id: item.id,
-            kana: item.data.readings?.filter((reading) => reading.primary).map((reading) => reading.reading),
-            kanji: [
-                {
-                    // Dummy for now
-                    characters: '',
-                    en: '',
-                    id: 0,
-                    ja: '',
-                    kan: '',
-                    type: '',
-                },
-            ],
-            slug: item.data.slug,
-            srs: item.assignments?.srs_stage,
-            syn: [], // TODO
-            type: (item.object[0].toUpperCase() + item.object.slice(1)) as 'Vocabulary' | 'Kanji' | 'Radical',
-            [item.object == 'vocabulary' ? 'voc' : item.object == 'kanji' ? 'kan' : 'rad']: item.data.characters,
-        }))
+    async function transform_items(items: ItemData.Item[]): Promise<Review.Item[]> {
+        const ids = items.map((item) => item.id)
+        const response = await fetch(`/extra_study/items?ids=${ids.join(',')}`)
+        if (response.status !== 200) {
+            console.error('Could not fetch active queue')
+            return []
+        }
+        const data = (await response.json()) as Review.Item[]
+        return ids.map((id) => data.find((item) => item.id === id) as Review.Item) // Re-sort
     }
 
     /* ------------------------------------------------------------------------------------*/
@@ -421,25 +434,113 @@ declare global {
     }
 
     function init_settings(): Promise<void> {
-        return wkof.ready('Settings,Menu').then(load_settings).then(install_menu)
+        return wkof.ready('Settings,Menu,ItemData').then(load_settings).then(install_menu)
     }
 
     // Load WKOF settings
     function load_settings() {
-        const test_preset_1 = get_preset_defaults()
-        test_preset_1.actions[0].name = 'test'
-        const test_preset_2 = get_preset_defaults()
-        test_preset_2.name = 'test'
-
         const defaults = {
-            disabled: false,
             active_preset: 0,
             active_presets_reviews: 'None',
             active_presets_lessons: 'None',
             active_presets_extra_study: 'None',
-            presets: [get_preset_defaults()],
+            presets: get_default_presets(),
         } //as Settings.Settings
         return wkof.Settings.load(script_id, defaults).then((settings) => (reorder.settings = settings))
+    }
+
+    function get_default_presets(): Settings.Preset[] {
+        const none = $.extend(true, get_preset_defaults(), {
+            name: 'None',
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Do nothing',
+                    type: 'none',
+                }),
+            ] as Settings.Action[],
+        })
+
+        const critical_first = $.extend(true, get_preset_defaults(), {
+            name: 'Critical reviews first',
+            available_on: { reviews: true, lessons: false, extra_study: false },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Filter out critical items',
+                    type: 'filter',
+                    filter: {
+                        filter: 'omega_reorder_critical',
+                        omega_reorder_critical: true,
+                    },
+                }),
+                $.extend(true, get_action_defaults(), {
+                    name: 'Put non-critical items back',
+                    type: 'freeze & restore',
+                }),
+            ] as Settings.Action[],
+        })
+
+        const level = $.extend(true, get_preset_defaults(), {
+            name: 'Sort by level',
+            available_on: { reviews: true, lessons: true, extra_study: false },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Sort by level',
+                    type: 'sort',
+                    sort: { sort: 'level' },
+                }),
+            ] as Settings.Action[],
+        })
+
+        const srs = $.extend(true, get_preset_defaults(), {
+            name: 'Sort by srs level',
+            available_on: { reviews: true, lessons: true, extra_study: false },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Sort by srs',
+                    type: 'sort',
+                    sort: { sort: 'srs' },
+                }),
+            ] as Settings.Action[],
+        })
+
+        const type = $.extend(true, get_preset_defaults(), {
+            name: 'Radicals then Kanji then Vocab',
+            available_on: { reviews: true, lessons: true, extra_study: false },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Sort by item type',
+                    type: 'sort',
+                    sort: {
+                        sort: 'type',
+                        type: 'rad, kan, voc',
+                    },
+                }),
+            ] as Settings.Action[],
+        })
+
+        const random_burns = $.extend(true, get_preset_defaults(), {
+            name: '100 Random Burned Items',
+            available_on: { reviews: false, lessons: false, extra_study: true },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Filter burns',
+                    type: 'filter',
+                    filter: {
+                        filter: 'srs',
+                        srs: { burn: true },
+                    },
+                }),
+                $.extend(true, get_action_defaults(), {
+                    name: 'Get first 100 items',
+                    type: 'filter',
+                    filter: {
+                        filter: 'omega_reorder_first',
+                        omega_reorder_first: 100,
+                    },
+                }),
+            ] as Settings.Action[],
+        })
+        return [none, critical_first, level, srs, type, random_burns]
     }
 
     function get_preset_defaults(): Settings.Preset {
@@ -497,7 +598,6 @@ declare global {
                     type: 'page',
                     label: 'General',
                     content: {
-                        disabled: { type: 'checkbox', label: 'Disable', default: false },
                         // Active Presets
                         // ------------------------------------------------------------
                         active_presets: {
@@ -507,18 +607,24 @@ declare global {
                                 active_preset_reviews: {
                                     type: 'dropdown',
                                     label: 'Review preset',
-                                    content: { todo: 'todo' },
-                                }, // TODO: Implement
+                                    content: {
+                                        // Will be populated
+                                    },
+                                },
                                 active_preset_lessons: {
                                     type: 'dropdown',
                                     label: 'Lesson preset',
-                                    content: { todo: 'todo' },
-                                }, // TODO: Implement
+                                    content: {
+                                        // Will be populated
+                                    },
+                                },
                                 active_preset_extra_study: {
                                     type: 'dropdown',
                                     label: 'Extra Study preset',
-                                    content: { todo: 'todo' },
-                                }, // TODO: Implement
+                                    content: {
+                                        // Will be populated
+                                    },
+                                },
                             },
                         },
                     },
@@ -568,6 +674,7 @@ declare global {
                                         lessons: 'Lessons',
                                         extra_study: 'Extra Study',
                                     },
+                                    on_change: refresh_active_preset_selection,
                                 },
                                 actions_label: { type: 'section', label: 'Actions' },
                                 active_action: {
@@ -664,17 +771,27 @@ declare global {
             },
         } // as SettingsModule.Config
 
-        const action = config.content.presets.content.action as SettingsModule.Group
-        populate_settings(action)
+        populate_active_preset_options(config.content.general.content.active_presets.content)
 
-        // TODO: Update filter value input
-        // TODO: Update sort order input
+        const action = config.content.presets.content.action as SettingsModule.Group
+        populate_action_settings(action)
 
         reorder.settings_dialog = new wkof.Settings(config as SettingsModule.Config)
         reorder.settings_dialog.open()
     }
 
-    function populate_settings(config: SettingsModule.Group) {
+    function populate_active_preset_options(active_presets: any) {
+        for (let [i, preset] of Object.entries(reorder.settings.presets) as any) {
+            const available_on = Object.entries(preset.available_on)
+                .filter(([key, value]) => value)
+                .map(([key, value]) => key)
+            for (let page of available_on) {
+                active_presets[`active_preset_${page}`].content[i] = preset.name
+            }
+        }
+    }
+
+    function populate_action_settings(config: SettingsModule.Group) {
         // Populate filters
         for (let [name, filter] of Object.entries(wkof.ItemData.registry.sources.wk_items.filters)) {
             if (filter.no_ui) continue
@@ -712,7 +829,7 @@ declare global {
                 default: 'asc',
                 label: 'Order',
                 hover_tip: 'Sort in ascending or descending order',
-                path: `@presets[@active_preset][@active_action].sort.${type}`,
+                path: `@presets[@active_preset].actions[@presets[@active_preset].active_action].sort.${type}`,
                 content: { asc: 'Ascending', desc: 'Descending' },
             } as SettingsModule.Dropdown)
 
@@ -721,8 +838,8 @@ declare global {
             label: 'Order',
             default: 'rad, kan, voc',
             placeholder: 'rad, kan, voc',
-            hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad',
-            path: `@presets[@active_preset][@active_action].sort.type`,
+            hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad"',
+            path: `@presets[@active_preset].actions[@presets[@active_preset].active_action].sort.type`,
         }
         for (let type of ['level', 'srs', 'leech', 'overdue', 'critical'])
             config.content[`sort_by_${type}`] = numerical_sort_config(type)
@@ -795,6 +912,9 @@ declare global {
                 .addClass('visible_action_value')
         }
     }
+
+    // TODO:
+    function refresh_active_preset_selection() {}
 
     function list_button_pressed(e: any) {
         const ref = (e.currentTarget as any).attributes.ref.value

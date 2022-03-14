@@ -45,7 +45,6 @@ export namespace Settings {
     type SubjectType = 'vocabulary' | 'kanji' | 'radical'
 
     type Settings = {
-        disabled: boolean
         active_preset: number
         active_preset_reviews: number
         active_preset_lessons: number
@@ -82,8 +81,8 @@ export namespace Settings {
     }
 
     type FilterAction = {
-        type: 'filter'
         name: string
+        type: 'filter'
         filter: {
             [key: string]: any
             filter: string

@@ -44,41 +44,48 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+// These lines are necessary to make sure that TSC does not put any exports in the
+// compiled js, which causes the script to crash
+var module = {};
 // Actual script
 ;
 (function () { return __awaiter(void 0, void 0, void 0, function () {
+    function insert_interface() {
+        var options = [];
+        console.log(reorder.settings.presets);
+        for (var _i = 0, _a = Object.entries(reorder.settings.presets); _i < _a.length; _i++) {
+            var _b = _a[_i], i = _b[0], preset = _b[1];
+            if (preset.available_on[page])
+                options.push("<option value=".concat(i, ">").concat(preset.name, "</option>"));
+        }
+        var select = $("<select id=\"".concat(script_id, "_preset_picker\">").concat(options.join(''), "</select>"));
+        select.val(reorder.settings["active_preset_".concat(page)]).on('change', function (event) {
+            // Change in settings then save
+            reorder.settings["active_preset_".concat(page)] = event.currentTarget.value;
+            wkof.Settings.save(script_id);
+            // Update
+            run();
+        });
+        $('#character').append($("<div id=\"active_preset\">Active Preset: </div>").append(select));
+    }
     /* ------------------------------------------------------------------------------------*/
     // Overhead
     /* ------------------------------------------------------------------------------------*/
     function run() {
         return __awaiter(this, void 0, void 0, function () {
-            var items;
+            var items, ids_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: 
-                    // Initiate WKOF
-                    return [4 /*yield*/, confirm_wkof()];
+                    case 0: return [4 /*yield*/, wkof.ItemData.get_items('assignments,review_statistics')];
                     case 1:
-                        // Initiate WKOF
-                        _a.sent();
-                        wkof.include('Settings,Menu,ItemData');
-                        return [4 /*yield*/, init_settings()];
-                    case 2:
-                        _a.sent();
-                        return [4 /*yield*/, wkof.ready('ItemData')
-                            // Get items
-                        ];
-                    case 3:
-                        _a.sent();
-                        items = [];
-                        if (!(page === 'extra_study')) return [3 /*break*/, 5];
-                        return [4 /*yield*/, wkof.ItemData.get_items('assignments,review_statistics')
-                            // Process
-                        ];
-                    case 4:
                         items = _a.sent();
-                        _a.label = 5;
-                    case 5:
+                        if (page === 'reviews') {
+                            ids_1 = get_queue_ids();
+                            items = items.filter(function (item) { return ids_1.has(item.id); });
+                        }
+                        else if (page === 'extra_study') {
+                            shuffle(items); // Always shuffle extra study items
+                        }
                         // Process
                         process_queue(items);
                         return [2 /*return*/];
@@ -86,17 +93,22 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             });
         });
     }
+    function get_queue_ids() {
+        var activeQueue = $.jStorage.get(activeQueueKey);
+        var remainingQueue = $.jStorage.get(fullQueueKey);
+        return new Set(activeQueue.concat(remainingQueue).map(function (item) { return item.id; }));
+    }
     function process_queue(items) {
         // Filter and sort
         var settings = reorder.settings;
-        var preset = settings.presets[settings.active_preset];
+        var preset = settings.presets[settings["active_preset_".concat(page)]];
         if (!preset)
             return display_message('Invalid Preset'); // Active preset not defined
         var results = process_preset(preset, items);
         var final = results.final.concat(results.keep);
         if (!final.length)
             return display_message('No items in preset');
-        console.log('items', final);
+        console.log('items', JSON.parse(JSON.stringify(final)));
         // Load into queue
         transform_and_update(final);
     }
@@ -155,8 +167,17 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             hover_tip: 'Filter for items critical to leveling up',
             filter_func: function (value, item) { return value === is_critical(item); }
         };
+        wkof.ItemData.registry.sources.wk_items.filters.omega_reorder_first = {
+            type: 'number',
+            "default": 0,
+            label: 'First',
+            hover_tip: 'Get the first N number of items from the queue',
+            filter_func: (function () {
+                var count = 0;
+                return function (value) { return count++ < value; };
+            })()
+        };
     }
-    // TODO: install more filters
     /* ------------------------------------------------------------------------------------*/
     // Sorting
     /* ------------------------------------------------------------------------------------*/
@@ -235,7 +256,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             if ('table' in queue) {
                 // Since the url is invalid the queue will contain an error. We must wait
                 // until the error is set until we can set our queue
-                update_queue([{ type: 'Vocabulary', voc: 'Loading...', id: 0 }]);
+                display_message('Loading...');
             }
             $.jStorage.stopListening(fullQueueKey, callback);
         };
@@ -290,60 +311,56 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     // Queue Management
     /* ------------------------------------------------------------------------------------*/
     function display_message(message) {
-        update_queue([{ type: 'Vocabulary', voc: message, id: 0 }]);
+        var dummy = { type: 'Vocabulary', voc: message, id: 0 };
+        $.jStorage.set(currentItemKey, dummy);
+        $.jStorage.set(activeQueueKey, [dummy]);
+        $.jStorage.set(fullQueueKey, []);
     }
     function transform_and_update(items) {
-        var transformed_items = transform_items(items);
-        update_queue(transformed_items);
+        update_queue(items);
     }
     function update_queue(items) {
-        var current_item = items[0];
-        var active_queue = items.splice(0, 10);
-        var rest = items.map(function (item) { return item.id; }); // Only need the ID for these
-        if ((current_item === null || current_item === void 0 ? void 0 : current_item.type) === 'Radical')
-            $.jStorage.set('questionType', 'meaning'); // has to be set before currentItem
-        $.jStorage.set(currentItemKey, current_item);
-        $.jStorage.set(activeQueueKey, active_queue);
-        $.jStorage.set(fullQueueKey, rest);
+        return __awaiter(this, void 0, void 0, function () {
+            var first10, current_item, active_queue, rest;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, transform_items(items.splice(0, 10))];
+                    case 1:
+                        first10 = _a.sent();
+                        current_item = first10[0];
+                        active_queue = first10;
+                        rest = items.map(function (item) { return item.id; }) // Only need the ID for these
+                        ;
+                        if ((current_item === null || current_item === void 0 ? void 0 : current_item.type) === 'Radical')
+                            $.jStorage.set('questionType', 'meaning'); // has to be set before currentItem
+                        $.jStorage.set(currentItemKey, current_item);
+                        $.jStorage.set(activeQueueKey, active_queue);
+                        $.jStorage.set(fullQueueKey, rest);
+                        return [2 /*return*/];
+                }
+            });
+        });
     }
     function transform_items(items) {
-        // Not all of the data mapped here is needed, but I haven't bothered to figure out exactly what is needed yet
-        return items.map(function (item) {
-            var _a;
-            var _b, _c, _d, _e;
-            return (_a = {
-                    aud: (_b = item.data.pronunciation_audios) === null || _b === void 0 ? void 0 : _b.map(function (audio) { return ({
-                        content_type: audio.content_type,
-                        pronunciation: audio.metadata.pronunciation,
-                        url: audio.url,
-                        voice_actor_id: audio.metadata.voice_actor_id
-                    }); }),
-                    auxiliary_meanings: item.data.meanings
-                        .filter(function (meaning) { return !meaning.primary; })
-                        .map(function (meaning) { return meaning.meaning; }),
-                    auxiliary_readings: (_c = item.data.readings) === null || _c === void 0 ? void 0 : _c.filter(function (reading) { return !reading.primary; }).map(function (reading) { return reading.reading; }),
-                    characters: item.data.characters,
-                    en: item.data.meanings.filter(function (meaning) { return meaning.primary; }).map(function (meaning) { return meaning.meaning; }),
-                    id: item.id,
-                    kana: (_d = item.data.readings) === null || _d === void 0 ? void 0 : _d.filter(function (reading) { return reading.primary; }).map(function (reading) { return reading.reading; }),
-                    kanji: [
-                        {
-                            // Dummy for now
-                            characters: '',
-                            en: '',
-                            id: 0,
-                            ja: '',
-                            kan: '',
-                            type: ''
-                        },
-                    ],
-                    slug: item.data.slug,
-                    srs: (_e = item.assignments) === null || _e === void 0 ? void 0 : _e.srs_stage,
-                    syn: [],
-                    type: (item.object[0].toUpperCase() + item.object.slice(1))
-                },
-                _a[item.object == 'vocabulary' ? 'voc' : item.object == 'kanji' ? 'kan' : 'rad'] = item.data.characters,
-                _a);
+        return __awaiter(this, void 0, void 0, function () {
+            var ids, response, data;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        ids = items.map(function (item) { return item.id; });
+                        return [4 /*yield*/, fetch("/extra_study/items?ids=".concat(ids.join(',')))];
+                    case 1:
+                        response = _a.sent();
+                        if (response.status !== 200) {
+                            console.error('Could not fetch active queue');
+                            return [2 /*return*/, []];
+                        }
+                        return [4 /*yield*/, response.json()];
+                    case 2:
+                        data = (_a.sent());
+                        return [2 /*return*/, ids.map(function (id) { return data.find(function (item) { return item.id === id; }); })]; // Re-sort
+                }
+            });
         });
     }
     /* ------------------------------------------------------------------------------------*/
@@ -367,23 +384,106 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         });
     }
     function init_settings() {
-        return wkof.ready('Settings,Menu').then(load_settings).then(install_menu);
+        return wkof.ready('Settings,Menu,ItemData').then(load_settings).then(install_menu);
     }
     // Load WKOF settings
     function load_settings() {
-        var test_preset_1 = get_preset_defaults();
-        test_preset_1.actions[0].name = 'test';
-        var test_preset_2 = get_preset_defaults();
-        test_preset_2.name = 'test';
         var defaults = {
-            disabled: false,
             active_preset: 0,
             active_presets_reviews: 'None',
             active_presets_lessons: 'None',
             active_presets_extra_study: 'None',
-            presets: [get_preset_defaults()]
+            presets: get_default_presets()
         }; //as Settings.Settings
         return wkof.Settings.load(script_id, defaults).then(function (settings) { return (reorder.settings = settings); });
+    }
+    function get_default_presets() {
+        var none = $.extend(true, get_preset_defaults(), {
+            name: 'None',
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Do nothing',
+                    type: 'none'
+                }),
+            ]
+        });
+        var critical_first = $.extend(true, get_preset_defaults(), {
+            name: 'Critical reviews first',
+            available_on: { reviews: true, lessons: false, extra_study: false },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Filter out critical items',
+                    type: 'filter',
+                    filter: {
+                        filter: 'omega_reorder_critical',
+                        omega_reorder_critical: true
+                    }
+                }),
+                $.extend(true, get_action_defaults(), {
+                    name: 'Put non-critical items back',
+                    type: 'freeze & restore'
+                }),
+            ]
+        });
+        var level = $.extend(true, get_preset_defaults(), {
+            name: 'Sort by level',
+            available_on: { reviews: true, lessons: true, extra_study: false },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Sort by level',
+                    type: 'sort',
+                    sort: { sort: 'level' }
+                }),
+            ]
+        });
+        var srs = $.extend(true, get_preset_defaults(), {
+            name: 'Sort by srs level',
+            available_on: { reviews: true, lessons: true, extra_study: false },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Sort by srs',
+                    type: 'sort',
+                    sort: { sort: 'srs' }
+                }),
+            ]
+        });
+        var type = $.extend(true, get_preset_defaults(), {
+            name: 'Radicals then Kanji then Vocab',
+            available_on: { reviews: true, lessons: true, extra_study: false },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Sort by item type',
+                    type: 'sort',
+                    sort: {
+                        sort: 'type',
+                        type: 'rad, kan, voc'
+                    }
+                }),
+            ]
+        });
+        var random_burns = $.extend(true, get_preset_defaults(), {
+            name: '100 Random Burned Items',
+            available_on: { reviews: false, lessons: false, extra_study: true },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Filter burns',
+                    type: 'filter',
+                    filter: {
+                        filter: 'srs',
+                        srs: { burn: true }
+                    }
+                }),
+                $.extend(true, get_action_defaults(), {
+                    name: 'Get first 100 items',
+                    type: 'filter',
+                    filter: {
+                        filter: 'omega_reorder_first',
+                        omega_reorder_first: 100
+                    }
+                }),
+            ]
+        });
+        return [none, critical_first, level, srs, type, random_burns];
     }
     function get_preset_defaults() {
         var defaults = {
@@ -438,7 +538,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     type: 'page',
                     label: 'General',
                     content: {
-                        disabled: { type: 'checkbox', label: 'Disable', "default": false },
                         // Active Presets
                         // ------------------------------------------------------------
                         active_presets: {
@@ -448,17 +547,23 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                 active_preset_reviews: {
                                     type: 'dropdown',
                                     label: 'Review preset',
-                                    content: { todo: 'todo' }
+                                    content: {
+                                    // Will be populated
+                                    }
                                 },
                                 active_preset_lessons: {
                                     type: 'dropdown',
                                     label: 'Lesson preset',
-                                    content: { todo: 'todo' }
+                                    content: {
+                                    // Will be populated
+                                    }
                                 },
                                 active_preset_extra_study: {
                                     type: 'dropdown',
                                     label: 'Extra Study preset',
-                                    content: { todo: 'todo' }
+                                    content: {
+                                    // Will be populated
+                                    }
                                 }
                             }
                         }
@@ -508,7 +613,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                                         reviews: 'Reviews',
                                         lessons: 'Lessons',
                                         extra_study: 'Extra Study'
-                                    }
+                                    },
+                                    on_change: refresh_active_preset_selection
                                 },
                                 actions_label: { type: 'section', label: 'Actions' },
                                 active_action: {
@@ -604,14 +710,31 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 }
             }
         }; // as SettingsModule.Config
+        populate_active_preset_options(config.content.general.content.active_presets.content);
         var action = config.content.presets.content.action;
-        populate_settings(action);
-        // TODO: Update filter value input
-        // TODO: Update sort order input
+        populate_action_settings(action);
         reorder.settings_dialog = new wkof.Settings(config);
         reorder.settings_dialog.open();
     }
-    function populate_settings(config) {
+    function populate_active_preset_options(active_presets) {
+        for (var _i = 0, _a = Object.entries(reorder.settings.presets); _i < _a.length; _i++) {
+            var _b = _a[_i], i = _b[0], preset = _b[1];
+            var available_on = Object.entries(preset.available_on)
+                .filter(function (_a) {
+                var key = _a[0], value = _a[1];
+                return value;
+            })
+                .map(function (_a) {
+                var key = _a[0], value = _a[1];
+                return key;
+            });
+            for (var _c = 0, available_on_1 = available_on; _c < available_on_1.length; _c++) {
+                var page_1 = available_on_1[_c];
+                active_presets["active_preset_".concat(page_1)].content[i] = preset.name;
+            }
+        }
+    }
+    function populate_action_settings(config) {
         var _a, _b, _c;
         // Populate filters
         for (var _i = 0, _d = Object.entries(wkof.ItemData.registry.sources.wk_items.filters); _i < _d.length; _i++) {
@@ -648,7 +771,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 "default": 'asc',
                 label: 'Order',
                 hover_tip: 'Sort in ascending or descending order',
-                path: "@presets[@active_preset][@active_action].sort.".concat(type),
+                path: "@presets[@active_preset].actions[@presets[@active_preset].active_action].sort.".concat(type),
                 content: { asc: 'Ascending', desc: 'Descending' }
             });
         };
@@ -657,8 +780,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             label: 'Order',
             "default": 'rad, kan, voc',
             placeholder: 'rad, kan, voc',
-            hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad',
-            path: "@presets[@active_preset][@active_action].sort.type"
+            hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad"',
+            path: "@presets[@active_preset].actions[@presets[@active_preset].active_action].sort.type"
         };
         for (var _f = 0, _g = ['level', 'srs', 'leech', 'overdue', 'critical']; _f < _g.length; _f++) {
             var type = _g[_f];
@@ -726,6 +849,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 .addClass('visible_action_value');
         }
     }
+    // TODO:
+    function refresh_active_preset_selection() { }
     function list_button_pressed(e) {
         var ref = e.currentTarget.attributes.ref.value;
         var btn = e.currentTarget.attributes.action.value;
@@ -783,48 +908,69 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 wkof = window.wkof, $ = window.$;
                 script_id = 'reorder_omega';
                 script_name = 'Reorder Omega';
-                currentItemKey = 'currentItem';
-                activeQueueKey = 'activeQueue';
-                fullQueueKey = 'reviewQueue';
                 reorder = {
                     settings: {},
                     settings_dialog: null
                 };
                 wkof.ready('ItemData.registry').then(install_filters);
-                if (!/(DASHBOARD)?$/i.test(window.location.pathname)) return [3 /*break*/, 2];
+                if (!/^\/(DASHBOARD)?$/i.test(window.location.pathname)) return [3 /*break*/, 3];
+                // Initiate WKOF
+                return [4 /*yield*/, confirm_wkof()];
+            case 1:
+                // Initiate WKOF
+                _a.sent();
+                wkof.include('Settings,Menu,ItemData');
                 return [4 /*yield*/, init_settings()
                     // open_settings()
                 ];
-            case 1:
-                _a.sent();
-                return [3 /*break*/, 5];
             case 2:
-                if (!/REVIEW/i.test(window.location.pathname)) return [3 /*break*/, 4];
+                _a.sent();
+                return [3 /*break*/, 9];
+            case 3:
+                if (!/REVIEW\/session/i.test(window.location.pathname)) return [3 /*break*/, 6];
                 // Set page variables
                 page = 'reviews';
+                currentItemKey = 'currentItem';
+                activeQueueKey = 'activeQueue';
                 fullQueueKey = 'reviewQueue';
-                return [4 /*yield*/, init_settings()
-                    // run()
-                ];
-            case 3:
-                _a.sent();
-                return [3 /*break*/, 5];
+                // Initiate WKOF
+                return [4 /*yield*/, confirm_wkof()];
             case 4:
-                if (/EXTRA_STUDY/i.test(window.location.pathname)) {
-                    // Set page variables
-                    page = 'extra_study';
-                    fullQueueKey = 'practiceQueue';
-                    if (window.location.search === '?title=test') {
-                        // This has to be done before WK realizes that the queue is empty and redirects
-                        display_loading();
-                        run();
-                    }
-                }
-                _a.label = 5;
+                // Initiate WKOF
+                _a.sent();
+                wkof.include('Settings,Menu,ItemData');
+                return [4 /*yield*/, init_settings()];
             case 5:
+                _a.sent();
+                insert_interface();
+                run();
+                return [3 /*break*/, 9];
+            case 6:
+                if (!/EXTRA_STUDY\/session/i.test(window.location.pathname)) return [3 /*break*/, 9];
+                // Set page variables
+                page = 'extra_study';
+                currentItemKey = 'currentItem';
+                activeQueueKey = 'activeQueue';
+                fullQueueKey = 'practiceQueue';
+                if (!(window.location.search === '?title=test')) return [3 /*break*/, 9];
+                // This has to be done before WK realizes that the queue is empty and redirects
+                display_loading();
+                // Initiate WKOF
+                return [4 /*yield*/, confirm_wkof()];
+            case 7:
+                // Initiate WKOF
+                _a.sent();
+                wkof.include('Settings,Menu,ItemData');
+                return [4 /*yield*/, init_settings()];
+            case 8:
+                _a.sent();
+                insert_interface();
+                run();
+                _a.label = 9;
+            case 9:
                 SRS_DURATIONS = [4, 8, 23, 47, 167, 335, 719, 2879, Infinity].map(function (time) { return time * 60 * 60 * 1000; });
                 return [2 /*return*/];
         }
     });
 }); })();
-module.exports = 0;
+module.exports = null;
