@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Overall Progress Bars
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
+// @version      1.2.0
 // @description  Creates a progress bar on the dashboard for every level
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -35,19 +35,19 @@
     wkof.include('Menu,Settings,ItemData')
     await wkof.ready('Menu,Settings,ItemData').then(load_settings).then(install_menu)
 
-    const { single_bar, single_color, theme } = wkof.settings[script_id]
+    const settings = wkof.settings[script_id]
     const color = {
-        '-1': theme === 'breeze' ? '#31363B' : '#aaaaaa',
-        0: theme === 'breeze' ? '#31363B' : '#aaaaaa',
-        1: theme === 'breeze' ? '#1d99f3' : '#dd0093',
-        2: theme === 'breeze' ? '#1d99f3' : '#dd0093',
-        3: theme === 'breeze' ? '#1d99f3' : '#dd0093',
-        4: theme === 'breeze' ? '#1d99f3' : '#dd0093',
-        5: theme === 'breeze' ? '#1cdc9a' : '#882d9e',
-        6: theme === 'breeze' ? '#1cdc9a' : '#882d9e',
-        7: theme === 'breeze' ? '#c9ce3b' : '#294ddb',
-        8: theme === 'breeze' ? '#f67400' : '#0093dd',
-        9: theme === 'breeze' ? '#da4453' : '#dfaa0b',
+        '-1': settings.theme === 'breeze' ? '#31363B' : '#aaaaaa',
+        0: settings.theme === 'breeze' ? '#31363B' : '#aaaaaa',
+        1: settings.theme === 'breeze' ? '#1d99f3' : '#dd0093',
+        2: settings.theme === 'breeze' ? '#1d99f3' : '#dd0093',
+        3: settings.theme === 'breeze' ? '#1d99f3' : '#dd0093',
+        4: settings.theme === 'breeze' ? '#1d99f3' : '#dd0093',
+        5: settings.theme === 'breeze' ? '#1cdc9a' : '#882d9e',
+        6: settings.theme === 'breeze' ? '#1cdc9a' : '#882d9e',
+        7: settings.theme === 'breeze' ? '#c9ce3b' : '#294ddb',
+        8: settings.theme === 'breeze' ? '#f67400' : '#0093dd',
+        9: settings.theme === 'breeze' ? '#da4453' : '#dfaa0b',
     }
 
     injectCss()
@@ -85,9 +85,9 @@
     }
 
     function get_color(counts_by_srs) {
-        if (!single_bar || !single_color) return ''
+        if (settings.display !== 'blend') return ''
         const srs_levels = Object.entries(counts_by_srs).reduce(
-            (srs_items, [srs_level, count]) => srs_items.concat(new Array(count).fill(srs_level)),
+            (srs_items, [srs_level, count]) => srs_items.concat(new Array(count).fill(srs_level < 0 ? 0 : srs_level)),
             [],
         )
         const avg_srs = srs_levels.reduce((sum, val) => sum + Number(val), 0) / srs_levels.length
@@ -116,7 +116,7 @@
             srs_css += `
 .srs-level-graph .srs[data-srs="${i}"] {
     background-color: ${color[i]};
-    ${single_bar ? 'width: 100' : 'height: ' + (i + 1) * 10}%;
+    ${settings.display !== 'bars' ? 'width: 100' : 'height: ' + (i + 1) * 10}%;
 }`
         }
 
@@ -141,7 +141,7 @@
     display: flex;
     align-items: flex-end;
     flex-grow: 1;
-    flex-direction: ${single_bar ? 'column' : 'row-reverse'};
+    flex-direction: ${settings.display !== 'bars' ? 'column' : 'row-reverse'};
 }
 
 .srs-level-graph .lbl {
@@ -152,8 +152,8 @@
 }
 
 .srs-level-graph .srs {
-    ${single_color && single_bar ? 'display:none;' : ''}
-    ${single_bar ? '' : 'border-radius: 0.1em 0.1em 0 0;'}
+    ${settings.display === 'blend' ? 'display:none;' : ''}
+    ${settings.display !== 'bars' ? '' : 'border-radius: 0.1em 0.1em 0 0;'}
 }
 
 .srs-level-graph .srs[data-srs="-1"] {
@@ -162,6 +162,7 @@
 
 ${srs_css}`
 
+        $(`#overall-progress-bars`).remove()
         $('head').append(`<style id="overall-progress-bars">${css}</style>`)
     }
 
@@ -186,8 +187,7 @@ ${srs_css}`
     // Load WKOF settings
     function load_settings() {
         const defaults = {
-            single_bar: true,
-            single_color: false,
+            display: 'stack',
             theme: 'default',
         }
         return wkof.Settings.load(script_id, defaults)
@@ -210,17 +210,12 @@ ${srs_css}`
             script_id: script_id,
             title: script_name,
             content: {
-                single_bar: {
-                    type: 'checkbox',
-                    label: 'Single Bar',
-                    default: true,
-                    hover_tip: 'Display as multiple bars next to each other or as a single stacked bar',
-                },
-                single_color: {
-                    type: 'checkbox',
-                    label: 'Single Color',
-                    default: false,
-                    hover_tip: 'Display stacked bar as a single color instead of a stack',
+                display: {
+                    type: 'dropdown',
+                    label: 'Display as',
+                    default: 'stack',
+                    hover_tip: 'Changes how the bars look',
+                    content: { stack: 'Stack', bars: 'Bars', blend: 'Single Color' },
                 },
                 theme: {
                     type: 'dropdown',
