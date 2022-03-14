@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Overall Progress Bars
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Creates a progress bar on the dashboard for every level
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -91,7 +91,14 @@
             [],
         )
         const avg_srs = srs_levels.reduce((sum, val) => sum + Number(val), 0) / srs_levels.length
-        return interpolate_color(color[Math.floor(avg_srs)], color[Math.ceil(avg_srs)], avg_srs % 1)
+
+        let params
+        if (avg_srs <= 2.5) params = [color[0], color[1], avg_srs / 2.5]
+        else if (avg_srs <= 5.5) params = [color[1], color[5], (avg_srs - 2.5) / (5.5 - 2.5)]
+        else if (avg_srs <= 7) params = [color[5], color[7], (avg_srs - 5.5) / (7 - 5.5)]
+        else params = [color[Math.floor(avg_srs)], color[Math.ceil(avg_srs)], avg_srs % 1]
+
+        return interpolate_color(...params)
     }
 
     function interpolate_color(a, b, amount) {
