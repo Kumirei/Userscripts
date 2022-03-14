@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Overall Progress Bars
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.2.2
 // @description  Creates a progress bar on the dashboard for every level
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -36,14 +36,15 @@
     await wkof.ready('Menu,Settings,ItemData').then(load_settings).then(install_menu)
 
     const settings = wkof.settings[script_id]
+    const single_color = settings.display === 'blend' || settings.display === 'avg_srs'
     const color = {
         '-1': settings.theme === 'breeze' ? '#31363B' : '#aaaaaa',
         0: settings.theme === 'breeze' ? '#31363B' : '#aaaaaa',
-        1: settings.theme === 'breeze' ? '#1d99f3' : '#dd0093',
-        2: settings.theme === 'breeze' ? '#1d99f3' : '#dd0093',
-        3: settings.theme === 'breeze' ? '#1d99f3' : '#dd0093',
-        4: settings.theme === 'breeze' ? '#1d99f3' : '#dd0093',
-        5: settings.theme === 'breeze' ? '#1cdc9a' : '#882d9e',
+        1: settings.theme === 'breeze' ? '#3fbbf3' : '#ff00bb',
+        2: settings.theme === 'breeze' ? '#2eaaf4' : '#ee00aa',
+        3: settings.theme === 'breeze' ? '#1d99f3' : '#dd0099',
+        4: settings.theme === 'breeze' ? '#0c88e2' : '#cc0088',
+        5: settings.theme === 'breeze' ? '#1cdc9a' : '#9339aa',
         6: settings.theme === 'breeze' ? '#1cdc9a' : '#882d9e',
         7: settings.theme === 'breeze' ? '#c9ce3b' : '#294ddb',
         8: settings.theme === 'breeze' ? '#f67400' : '#0093dd',
@@ -85,20 +86,41 @@
     }
 
     function get_color(counts_by_srs) {
-        if (settings.display !== 'blend') return ''
+        if (!single_color) return ''
         const srs_levels = Object.entries(counts_by_srs).reduce(
             (srs_items, [srs_level, count]) => srs_items.concat(new Array(count).fill(srs_level < 0 ? 0 : srs_level)),
             [],
         )
         const avg_srs = srs_levels.reduce((sum, val) => sum + Number(val), 0) / srs_levels.length
+        if (settings.display === 'blend') {
+            return averageColors(srs_levels)
+        } else if (settings.display === 'avg_srs') {
+            return interpolate_color(color[Math.floor(avg_srs)], color[Math.ceil(avg_srs)], avg_srs % 1)
+        }
+        return ''
+    }
 
-        let params
-        if (avg_srs <= 2.5) params = [color[0], color[1], avg_srs / 2.5]
-        else if (avg_srs <= 5.5) params = [color[1], color[5], (avg_srs - 2.5) / (5.5 - 2.5)]
-        else if (avg_srs <= 7) params = [color[5], color[7], (avg_srs - 5.5) / (7 - 5.5)]
-        else params = [color[Math.floor(avg_srs)], color[Math.ceil(avg_srs)], avg_srs % 1]
+    function averageColors(levelItems) {
+        let itemValues = [0, 0, 0]
+        let averageColor = '#'
 
-        return interpolate_color(...params)
+        // For each level, a mean average is taken of each item's color
+        for (let i = 0; i < levelItems.length; i++) {
+            for (let j = 0; j < 3; j++) {
+                itemValues[j] += parseInt('0x0' + color[levelItems[i]].slice(2 * j + 1, 2 * j + 3), 16)
+            }
+        }
+
+        // Divide by the total to get the means for RGB
+        for (let k = 0; k < itemValues.length; k++) {
+            itemValues[k] = itemValues[k] / levelItems.length
+            itemValues[k] = Math.round(itemValues[k])
+        }
+
+        // Convert back into hex
+        averageColor = '#' + itemValues.map((a) => `00${parseInt(a, 10).toString(16)}`.slice(-2)).join('')
+
+        return averageColor
     }
 
     function interpolate_color(a, b, amount) {
@@ -159,7 +181,7 @@
 }
 
 .srs-level-graph .srs {
-    ${settings.display === 'blend' ? 'display:none;' : ''}
+    ${single_color ? 'display:none;' : ''}
     ${settings.display !== 'bars' ? '' : 'border-radius: 0.1em 0.1em 0 0;'}
 }
 
@@ -222,7 +244,12 @@ ${srs_css}`
                     label: 'Display as',
                     default: 'stack',
                     hover_tip: 'Changes how the bars look',
-                    content: { stack: 'Stack', bars: 'Bars', blend: 'Single Color' },
+                    content: {
+                        stack: 'Stack',
+                        bars: 'Bars',
+                        avg_srs: 'Single Color (average SRS)',
+                        blend: 'Single Color (blend)',
+                    },
                 },
                 theme: {
                     type: 'dropdown',
