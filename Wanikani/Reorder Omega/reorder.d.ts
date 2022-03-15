@@ -29,6 +29,13 @@ export namespace Review {
         rad?: string
     }
 
+    type AnswersObject = {
+        mi: number
+        ri: number
+        mc: number
+        rc: number
+    }
+
     type DummyItem = { type: string; voc: string; id: 0 }
 
     type QueueError = {
@@ -45,16 +52,22 @@ export namespace Settings {
     type SubjectType = 'vocabulary' | 'kanji' | 'radical'
 
     type Settings = {
-        active_preset: number
+        selected_preset: number
         active_preset_reviews: number
         active_preset_lessons: number
         active_preset_extra_study: number
         presets: Preset[]
+        display_egg_timer: boolean
+        display_streak: boolean
+        burn_bell: boolean
+        random_voice_actor: boolean
+        back2back: boolean
+        prioritize: 'none' | 'reading' | 'reading'
     }
 
     type Preset = {
         name: string
-        active_action: number
+        selected_action: number
         available_on: {
             reviews: boolean
             lessons: boolean
@@ -63,7 +76,7 @@ export namespace Settings {
         actions: Action[]
     }
 
-    type Action = NoAction | FilterAction | SortAction | FreezeAndRestoreAction | ShuffleAction
+    type Action = NoAction | FilterOrSortAction | FreezeAndRestoreAction | ShuffleAction
 
     type NoAction = {
         name: string
@@ -80,22 +93,25 @@ export namespace Settings {
         type: 'shuffle'
     }
 
-    type FilterAction = {
+    type FilterOrSortAction = {
         name: string
-        type: 'filter'
+        type: 'filter' | 'sort'
+        sort: {
+            sort: 'level' | 'srs' | 'leech' | 'overdue' | 'type'
+            level: 'asc' | 'desc'
+            srs: 'asc' | 'desc'
+            leech: 'asc' | 'desc'
+            overdue: 'asc' | 'desc'
+            /**
+             * @remark Comma separated list of short item type names
+             * @example "kan, rad, voc"
+             */
+            type: string
+        }
         filter: {
             [key: string]: any
             filter: string
             invert: boolean
-        }
-    }
-
-    type SortAction = {
-        name: string
-        type: 'sort'
-        sort: {
-            [key: string]: any
-            sort: 'level' | 'srs' | 'leech' | 'overdue' | 'type'
         }
     }
 }
