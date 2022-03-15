@@ -523,7 +523,6 @@ declare namespace Settings {
     type List = {
         type: 'list'
         size?: number
-        default?: string
         content: { [key: string]: string }
     } & ({ multi?: false; default?: string } | { multi?: true; default: { [key: string]: boolean } }) &
         ComponentDefaults
