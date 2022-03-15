@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Review Queue SRS Breakdown
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Adds a display showing how many items of each SRS stage there are in your queue
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/review/session/
@@ -25,8 +25,8 @@
 
     // Installs script functions on page
     async function install() {
-        install_srs_count()
         items_by_id = await wkof.ItemData.get_index(await wkof.ItemData.get_items('assignments'), 'subject_id')
+        install_srs_count()
         update_srs_count()
     }
 
