@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.0
+// @version      0.1.1
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -604,12 +604,12 @@ var module = {};
                 // If active queue is not yet populated, wait until it is to set the currentItem
                 var callback_1 = function () {
                     $.jStorage.set(current_item_key, $.jStorage.get(active_queue_key)[0]);
-                    $.jStorage.stopListening('activeQueue', callback_1);
+                    $.jStorage.stopListening(active_queue_key, callback_1);
                 };
                 if ($.jStorage.get(active_queue_key).length)
                     callback_1();
                 else
-                    $.jStorage.listenKeyChange('activeQueue', callback_1);
+                    $.jStorage.listenKeyChange(active_queue_key, callback_1);
             }
         }
         // Sets up prioritization of meaning and reading questions in sessions

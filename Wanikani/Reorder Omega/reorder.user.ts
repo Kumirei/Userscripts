@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.0
+// @version      0.1.1
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -653,10 +653,10 @@ declare global {
                 // If active queue is not yet populated, wait until it is to set the currentItem
                 const callback = () => {
                     $.jStorage.set(current_item_key, $.jStorage.get<Review.Item[]>(active_queue_key)[0])
-                    $.jStorage.stopListening('activeQueue', callback)
+                    $.jStorage.stopListening(active_queue_key, callback)
                 }
                 if ($.jStorage.get<Review.Item[]>(active_queue_key).length) callback()
-                else $.jStorage.listenKeyChange('activeQueue', callback)
+                else $.jStorage.listenKeyChange(active_queue_key, callback)
             }
         }
 
