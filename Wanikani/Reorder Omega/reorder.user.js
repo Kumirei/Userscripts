@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.1
+// @version      0.1.2
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -580,6 +580,7 @@ var module = {};
         // Sets up the back2back features so that meaning and reading questions
         // can be made to appear after each other
         function install_back_to_back() {
+            var _a;
             // For now this is not active in extra study since it is already back to back
             if (page !== 'reviews' && page !== 'lessons')
                 return;
@@ -606,7 +607,7 @@ var module = {};
                     $.jStorage.set(current_item_key, $.jStorage.get(active_queue_key)[0]);
                     $.jStorage.stopListening(active_queue_key, callback_1);
                 };
-                if ($.jStorage.get(active_queue_key).length)
+                if ((_a = $.jStorage.get(active_queue_key)) === null || _a === void 0 ? void 0 : _a.length)
                     callback_1();
                 else
                     $.jStorage.listenKeyChange(active_queue_key, callback_1);
