@@ -1,12 +1,13 @@
 "use strict";
 // ==UserScript==
-// @name         Wanikani: Omega Reorder
+// @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
 // @version      0.1.0
 // @description  Reorders n stuff
 // @author       Kumirei
-// @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|extra_study)/session))/
+// @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
 // @grant        none
+// @license      MIT
 // ==/UserScript==
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
@@ -64,271 +65,68 @@ var module = {};
     // Set all the global variables which have different values on different pages
     function set_page_variables() {
         var path = window.location.pathname;
-        var extra_study_search = window.location.search === "?title=".concat(encodeURIComponent(script_name));
+        var self_study_url = window.location.search === "?title=".concat(encodeURIComponent(script_name));
         if (/^\/(DASHBOARD)?$/i.test(path))
             page = 'dashboard';
         else if (/REVIEW\/session/i.test(path))
             page = 'reviews';
-        else if (/LESSONS\/session/i.test(path))
+        else if (/LESSON\/session/i.test(path))
             page = 'lessons';
-        else if (/EXTRA_STUDY\/session/i.test(path) && extra_study_search)
-            page = 'extra_study';
+        else if (/EXTRA_STUDY\/session/i.test(path))
+            page = self_study_url ? 'self_study' : 'extra_study';
         else
             page = 'other';
         switch (page) {
             case 'dashboard':
             case 'other':
-                break;
+                break; // These don't need those variables
             case 'reviews':
-                currentItemKey = 'currentItem';
-                activeQueueKey = 'activeQueue';
-                fullQueueKey = 'reviewQueue';
-                questionTypeKey = 'questionType';
-                UIDPrefix = '';
-                traceFunctionTest = /randomQuestion/;
-                break;
+                break; // Defaults are for review
             case 'lessons':
-                currentItemKey = 'l/currentQuizItem';
-                activeQueueKey = 'activeQueue';
-                fullQueueKey = 'reviewQueue';
-                questionTypeKey = 'l/questionType';
-                UIDPrefix = 'l/stats/';
-                traceFunctionTest = /selectItem/;
+                current_item_key = 'l/currentLesson';
+                active_queue_key = 'l/activeQueue';
+                inactive_queue_key = 'l/lessonQueue';
+                question_type_key = 'l/questionType';
+                UID_prefix = 'l/stats/';
+                trace_function = 'selectItem';
+                egg_timer_location = '#header-buttons';
+                preset_selection_location = '#main-info';
                 break;
             case 'extra_study':
-                currentItemKey = 'currentItem';
-                activeQueueKey = 'activeQueue';
-                fullQueueKey = 'practiceQueue';
-                questionTypeKey = 'questionType';
-                UIDPrefix = 'e/stats/';
-                traceFunctionTest = /selectQuestion/;
+            case 'self_study':
+                inactive_queue_key = 'practiceQueue';
+                UID_prefix = 'e/stats/';
+                // trace_function = 'selectQuestion'
                 break;
         }
         return page;
     }
-    // On the dashboard, adds a button to take you to the extra study page for the script
-    function add_to_extra_study_section() {
-        var button = $("<li class=\"md:mr-3\">\n            <div class=\" border border-blue-300 border-solid rounded flex flex-row \">\n                <a href=\"/extra_study/session?title=".concat(script_name, "\" class=\"active:no-underline active:text-black\n                appearance-none bg-transparent box-border disabled:border-gray-700 disabled:cursor-not-allowed\n                disabled:opacity-50 disabled:text-gray-700 duration-200 flex focus:no-underline focus:ring\n                font-medium font-sans hover:border-blue-500 hover:no-underline hover:text-blue-700 leading-none m-0\n                outline-none py-3 px-3 text-blue-500 text-left text-base sm:text-sm transition w-full border-0\"\n                data-test=\"extra-study-button\">").concat(script_name, "\n                </a>\n            </div>\n        </li>"));
-        $('.extra-study ul').append(button);
-    }
-    // Installs all the extra optional features
-    function install_extra_features() {
-        install_egg_timer();
-        install_streak();
-        install_burn_bell();
-        install_random_voice_actor();
-        install_back_to_back();
-        install_prioritization();
-        // Displays the current duration of the sessions
-        function install_egg_timer() {
-            if (page !== 'reviews' && page !== 'lessons' && page !== 'extra_study')
-                return;
-            var egg_timer_start = Date.now();
-            var egg_timer = $("<div id=\"egg_timer\">Elapsed: 0s</div>");
-            setInterval(function () {
-                egg_timer.html("Elapsed: ".concat(ms_to_relative_time(Date.now() - egg_timer_start)));
-            }, MS.second);
-            $('#summary-button').append(egg_timer);
-        }
-        // Installs the tracking of streaks of correct answers (note: not items)
-        function install_streak() {
-            if (page !== 'reviews' && page !== 'lessons' && page !== 'extra_study')
-                return;
-            // Create and insert element into page
-            var elem = $("<span id=\"streak\"><i class=\"fa fa-trophy\"></i><span class=\"current\">0</span>(<span class=\"max\">0</span>)</span>");
-            $('#stats').prepend(elem);
-            function update_display(streak, max) {
-                $('#streak .current').html(String(streak));
-                $('#streak .max').html(String(max));
-            }
-            // The object that keeps track of the current (and previous!) streak
-            var streak = {
-                current: {},
-                prev: {},
-                save: function () {
-                    return localStorage.setItem("".concat(script_id, "_streak"), JSON.stringify({ streak: streak.current.streak, max: streak.current.max }));
-                },
-                load: function () {
-                    var _a;
-                    var data = __assign({ questions: 0, incorrect: 0 }, JSON.parse((_a = localStorage.getItem("".concat(script_id, "_streak"))) !== null && _a !== void 0 ? _a : '{"streak": 0, "max": 0}'));
-                    streak.current = data;
-                    streak.prev = data;
-                },
-                undo: function () {
-                    streak.current = streak.prev;
-                },
-                correct: function (questions, incorrect) {
-                    streak.prev = streak.current;
-                    streak.current = {
-                        questions: questions,
-                        incorrect: incorrect,
-                        streak: streak.current.streak + 1,
-                        max: Math.max(streak.current.streak + 1, streak.current.max)
-                    };
-                },
-                incorrect: function (questions, incorrect) {
-                    streak.prev = streak.current;
-                    streak.current = { questions: questions, incorrect: incorrect, streak: 0, max: streak.current.max };
-                }
-            };
-            streak.load();
-            update_display(streak.current.streak, streak.current.max);
-            $.jStorage.listenKeyChange('questionCount', function () {
-                var questions = $.jStorage.get('questionCount');
-                var incorrect = $.jStorage.get('wrongCount');
-                if (questions < streak.current.questions)
-                    streak.undo();
-                else if (incorrect == streak.current.incorrect)
-                    streak.correct(questions, incorrect);
-                else
-                    streak.incorrect(questions, incorrect);
-                streak.save();
-                update_display(streak.current.streak, streak.current.max);
-            });
-        }
-        // Installs the burn bell, which plays a sound whenever an item is burned
-        function install_burn_bell() {
-            if (page !== 'reviews')
-                return;
-            // The base 64 audio is a very long string and is, as such, located at the end of the script
-            var audio = new Audio("data:audio/mp3;base64,".concat(base64BellAudio));
-            var listening = {};
-            var getUID = function (item) { return (item.rad ? 'r' : item.kan ? 'k' : 'v') + item.id; };
-            $.jStorage.listenKeyChange('currentItem', initiateItem);
-            function initiateItem() {
-                var item = $.jStorage.get('currentItem');
-                if (item.srs !== 8)
-                    return;
-                var UID = getUID(item);
-                if (!listening[UID])
-                    listenUID(UID);
-            }
-            function listenUID(UID) {
-                listening[UID] = { failed: false };
-                $.jStorage.listenKeyChange(UID, function () { return checkAnswer(UID); });
-            }
-            function checkAnswer(UID) {
-                var answers = $.jStorage.get(UID);
-                if (answers && (answers.ri || answers.mi))
-                    listening[UID].failed = true;
-                if (!answers && !listening[UID].failed)
-                    burn(UID);
-            }
-            function burn(UID) {
-                if (settings.burn_bell)
-                    audio.play();
-                delete listening[UID];
-            }
-        }
-        // Sets up the randomization of the voice actor in the quizzes
-        function install_random_voice_actor() {
-            if (page !== 'reviews' && page !== 'lessons' && page !== 'extra_study')
-                return;
-            $.jStorage.listenKeyChange('*', randomize_voice_actor);
-            function randomize_voice_actor() {
-                var voice_actors = window.WaniKani.voice_actors;
-                var voice_actor_id = voice_actors[Math.floor(Math.random() * voice_actors.length)].voice_actor_id;
-                if (settings.random_voice_actor)
-                    window.WaniKani.default_voice_actor_id = voice_actor_id;
-            }
-        }
-        // Sets up the back2back features so that meaning and reading questions
-        // can be made to appear after each other
-        function install_back_to_back() {
-            if (page !== 'reviews' && page !== 'lessons' && page !== 'extra_study')
-                return;
-            // Replace Math.random only for the wanikani script this is done by throwing an error and
-            // checking the trace to see if either of the functions 'randomQuestion' (reviews page),
-            // 'selectItem' (lessons page), or 'selectItem' (extra study page) are present. WK uses
-            // functions with these names to pick the next question, so we must alter the behavior
-            // of Math.random only when called from either of those functions.
-            var old_random = Math.random;
-            var new_random = function () {
-                var match = traceFunctionTest.exec(new Error().stack);
-                if (match && settings.back2back)
-                    return 0;
-                return old_random();
-            };
-            Math.random = new_random;
-            console.log('Beware, "Back To Back" is installed and may cause other scripts using Math.random ' +
-                "in a function called ".concat(traceFunctionTest, " to misbehave."));
-            // Set item 0 in active queue to current item so the first item will be back to back
-            if (page === 'reviews' || page === 'extra_study') {
-                // If active queue is not yet populated, wait until it is to set the currentItem
-                var callback_1 = function () {
-                    $.jStorage.set(currentItemKey, $.jStorage.get(activeQueueKey)[0]);
-                    $.jStorage.stopListening('activeQueue', callback_1);
-                };
-                if ($.jStorage.get(activeQueueKey).length)
-                    callback_1();
-                else
-                    $.jStorage.listenKeyChange('activeQueue', callback_1);
-            }
-        }
-        // Sets up prioritization of meaning and reading questions in sessions
-        function install_prioritization() {
-            // Run every time item changes
-            $.jStorage.listenKeyChange(currentItemKey, prioritize);
-            // Initialize session to prioritized question type
-            prioritize();
-            // Prioritize reading or meaning
-            function prioritize() {
-                var prio = settings.prioritize;
-                var item = $.jStorage.get(currentItemKey);
-                // Skip if item is a radical, it is already the right question, or no priority is selected
-                if (item.type == 'Radical' ||
-                    $.jStorage.get(questionTypeKey) == prio ||
-                    'none' == prio)
-                    return;
-                var UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id;
-                var done = $.jStorage.get(UIDPrefix + UID);
-                // Change the question if no question has been answered yet,
-                // Or the priority question has not been answered correctly yet
-                if (!done || !done[prio == 'reading' ? 'rc' : 'mc']) {
-                    $.jStorage.set(questionTypeKey, prio);
-                    $.jStorage.set(currentItemKey, item);
-                }
-            }
-        }
-    }
-    //
-    function install_interface() {
-        page = page;
-        var options = [];
-        for (var _i = 0, _a = Object.entries(settings.presets); _i < _a.length; _i++) {
-            var _b = _a[_i], i = _b[0], preset = _b[1];
-            if (preset.available_on[page])
-                options.push("<option value=".concat(i, ">").concat(preset.name, "</option>"));
-        }
-        var select = $("<select id=\"".concat(script_id, "_preset_picker\">").concat(options.join(''), "</select>"));
-        select.val(settings["active_preset_".concat(page)]).on('change', function (event) {
-            page = page;
-            // Change in settings then save
-            settings["active_preset_".concat(page)] = event.currentTarget.value;
-            wkof.Settings.save(script_id);
-            // Update
-            run();
-        });
-        $('#character').append($("<div id=\"active_preset\">Active Preset: </div>").append(select));
-    }
-    /* ------------------------------------------------------------------------------------*/
-    // Process queue
-    /* ------------------------------------------------------------------------------------*/
+    // -----------------------------------------------------------------------------------------------------------------
+    // PROCESS QUEUE
+    // -----------------------------------------------------------------------------------------------------------------
     // Runs the selected preset on the queue
     function run() {
         return __awaiter(this, void 0, void 0, function () {
-            var items, ids_1;
+            var items, ids_1, completed_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, wkof.ItemData.get_items('assignments,review_statistics')];
                     case 1:
                         items = _a.sent();
-                        if (page === 'reviews') {
-                            ids_1 = get_queue_ids();
-                            items = items.filter(function (item) { return ids_1.has(item.id); }); // Get wkof items from ids
-                        }
-                        else if (page === 'extra_study') {
-                            shuffle(items); // Always shuffle extra study items
+                        switch (page) {
+                            case 'reviews':
+                            case 'lessons':
+                            case 'extra_study':
+                                ids_1 = get_queue_ids();
+                                items = items.filter(function (item) { return ids_1.has(item.id); }); // Get wkof items from ids
+                                break;
+                            case 'self_study':
+                                completed_1 = get_completed_ids();
+                                items = items.filter(function (item) { return !completed_1.has(item.id); }); // Filter out answered items
+                                shuffle(items); // Always shuffle self study items
+                                break;
+                            default:
+                                return [2 /*return*/];
                         }
                         process_queue(items);
                         return [2 /*return*/];
@@ -336,16 +134,10 @@ var module = {};
             });
         });
     }
-    // Retrieves the ids of the the items in the current queue
-    function get_queue_ids() {
-        var activeQueue = $.jStorage.get(activeQueueKey);
-        var remainingQueue = $.jStorage.get(fullQueueKey);
-        return new Set(activeQueue.concat(remainingQueue).map(function (item) { return item.id; }));
-    }
     // Finds the active preset and runs it against the queue
     function process_queue(items) {
         page = page;
-        var preset = settings.presets[settings["active_preset_".concat(page)]];
+        var preset = settings.presets[settings.active_presets[page]];
         if (!preset)
             return display_message('Invalid Preset'); // Active preset not defined
         var results = process_preset(preset, items);
@@ -398,36 +190,6 @@ var module = {};
         };
         return keep_and_discard(items, filter_func);
     }
-    // Installs a couple of custom filters for the user
-    function install_filters() {
-        // Filters by how overdue items are
-        wkof.ItemData.registry.sources.wk_items.filters.omega_reorder_overdue = {
-            type: 'number',
-            "default": 0,
-            label: 'Overdue%',
-            hover_tip: 'Items more overdue than this. A percentage.\nNegative: Not due yet\nZero: due now\nPositive: Overdue',
-            filter_func: function (value, item) { return calculate_overdue(item) * 100 > value; }
-        };
-        // Filters by whether the item is critical to leveling up
-        wkof.ItemData.registry.sources.wk_items.filters.omega_reorder_critical = {
-            type: 'checkbox',
-            "default": true,
-            label: 'Critical',
-            hover_tip: 'Filter for items critical to leveling up',
-            filter_func: function (value, item) { return value === is_critical(item); }
-        };
-        // Retrieves the first N number of items from the queue
-        wkof.ItemData.registry.sources.wk_items.filters.omega_reorder_first = {
-            type: 'number',
-            "default": 0,
-            label: 'First',
-            hover_tip: 'Get the first N number of items from the queue',
-            filter_func: (function () {
-                var count = 0;
-                return function (value) { return count++ < value; };
-            })()
-        };
-    }
     // Sorts the items based on the provided action settings
     function process_sort_action(action, items) {
         var sort;
@@ -453,14 +215,109 @@ var module = {};
         }
         return double_sort(items, sort);
     }
-    /* ------------------------------------------------------------------------------------*/
-    // Utility Functions
-    /* ------------------------------------------------------------------------------------*/
-    // Sorts item in numerical order, either ascending or descending
-    function numerical_sort(a, b, order) {
-        if (order !== 'asc' && order !== 'desc')
-            return 0;
-        return a === b ? 0 : xor(order === 'asc', a > b) ? -1 : 1;
+    // Retrieves the ids of the the items in the current queue
+    function get_queue_ids() {
+        var active_queue = $.jStorage.get(active_queue_key);
+        var remaining_queue;
+        if (page === 'lessons')
+            remaining_queue = $.jStorage.get(inactive_queue_key).map(function (item) { return item.id; });
+        else
+            remaining_queue = $.jStorage.get(inactive_queue_key);
+        return new Set(active_queue.map(function (item) { return item.id; }).concat(remaining_queue));
+    }
+    // Retrieves the ids of already completed items
+    function get_completed_ids() {
+        var completed = $.jStorage.get('completedItems'); // Could be a page variable, but only extra study uses this
+        return new Set(completed.map(function (item) { return item.id; }));
+    }
+    // -----------------------------------------------------------------------------------------------------------------
+    // QUEUE MANAGEMENT
+    // -----------------------------------------------------------------------------------------------------------------
+    // This function is crucial to the script working on the extra_study page as it is needed to stop WK
+    // from thinking that the queue is empty. So we insert an item into the queue saying "Loading..." while
+    // we wait for everything to load
+    function display_loading() {
+        var callback = function () {
+            var queue = $.jStorage.get(inactive_queue_key);
+            $.jStorage.set('questionType', 'meaning');
+            if ('table' in queue) {
+                // Since the url is invalid the queue will contain an error. We must wait
+                // until the error is set until we can set our queue
+                display_message('Loading...');
+            }
+            $.jStorage.stopListening(inactive_queue_key, callback);
+        };
+        $.jStorage.listenKeyChange(inactive_queue_key, callback);
+    }
+    // Displays a message to the user by setting the current item to a vocabulary word with the message
+    function display_message(message) {
+        var dummy = { type: 'Vocabulary', voc: message, id: 0 };
+        $.jStorage.set(current_item_key, dummy);
+        $.jStorage.set(active_queue_key, [dummy]);
+        $.jStorage.set(inactive_queue_key, []);
+    }
+    // Takes a list of WKOF item and puts them into the queue
+    function update_queue(items) {
+        return __awaiter(this, void 0, void 0, function () {
+            var current_item, active_queue, rest;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!(page === 'lessons')) return [3 /*break*/, 2];
+                        return [4 /*yield*/, get_item_data(items)];
+                    case 1:
+                        rest = _a.sent();
+                        active_queue = rest.splice(0, $.jStorage.get('l/batchSize'));
+                        current_item = active_queue[0];
+                        return [3 /*break*/, 4];
+                    case 2: return [4 /*yield*/, get_item_data(items.splice(0, 10))];
+                    case 3:
+                        active_queue = _a.sent();
+                        current_item = active_queue[0];
+                        rest = items.map(function (item) { return item.id; });
+                        _a.label = 4;
+                    case 4:
+                        if (current_item.type === 'Radical')
+                            $.jStorage.set(question_type_key, 'meaning'); // Has to be set before currentItem
+                        $.jStorage.set(current_item_key, current_item);
+                        $.jStorage.set(active_queue_key, active_queue);
+                        $.jStorage.set(inactive_queue_key, rest);
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
+    // Retrieves the item's info from the WK api
+    function get_item_data(items) {
+        return __awaiter(this, void 0, void 0, function () {
+            var active_queue, inactive_queue, lesson_items_1, ids, response, data;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        // Lessons already have all the data
+                        if (page === 'lessons') {
+                            active_queue = $.jStorage.get(active_queue_key);
+                            inactive_queue = $.jStorage.get(inactive_queue_key);
+                            lesson_items_1 = Object.fromEntries(active_queue.concat(inactive_queue).map(function (item) { return [item.id, item]; })) // Map id to item
+                            ;
+                            return [2 /*return*/, items.map(function (item) { return lesson_items_1[item.id]; })]; // Replace WKOF item with WK item
+                        }
+                        ids = items.map(function (item) { return item.id; });
+                        return [4 /*yield*/, fetch("/extra_study/items?ids=".concat(ids.join(',')))]; // Can use this endpoint for all pages
+                    case 1:
+                        response = _a.sent() // Can use this endpoint for all pages
+                        ;
+                        if (response.status !== 200) {
+                            console.error('Could not fetch active queue');
+                            return [2 /*return*/, []];
+                        }
+                        return [4 /*yield*/, response.json()];
+                    case 2:
+                        data = (_a.sent());
+                        return [2 /*return*/, ids.map(function (id) { return data.find(function (item) { return item.id === id; }); })]; // Re-sort
+                }
+            });
+        });
     }
     function calculate_overdue(item) {
         // Items without assignments or due dates, and burned items, are not overdue
@@ -494,26 +351,9 @@ var module = {};
             .split(',')
             .map(function (type) { return type_map[type]; });
     }
-    // Converts a number of milliseconds into a relative duration such as "4h 32m 12s"
-    function ms_to_relative_time(ms) {
-        var days = Math.floor(ms / MS.day);
-        var hours = Math.floor((ms % MS.day) / MS.hour);
-        var minutes = Math.floor((ms % MS.hour) / MS.minute);
-        var seconds = Math.floor((ms % MS.minute) / MS.second);
-        var time = '';
-        if (days)
-            time += days + 'd ';
-        if (hours)
-            time += hours + 'h ';
-        if (minutes)
-            time += minutes + 'm ';
-        if (seconds)
-            time += seconds + 's ';
-        return time;
-    }
-    /* ------------------------------------------------------------------------------------*/
-    // More general utility functions
-    /* ------------------------------------------------------------------------------------*/
+    // -----------------------------------------------------------------------------------------------------------------
+    // UTILITY FUNCTIONS
+    // -----------------------------------------------------------------------------------------------------------------
     // Logical XOR
     function xor(a, b) {
         return (a && !b) || (!a && b);
@@ -565,81 +405,277 @@ var module = {};
         list[i] = list[j];
         list[j] = temp;
     }
-    /* ------------------------------------------------------------------------------------*/
-    // Queue Management
-    /* ------------------------------------------------------------------------------------*/
-    // This function is crucial to the script working on the extra_study page as it is needed to stop WK
-    // from thinking that the queue is empty. So we insert an item into the queue saying "Loading..." while
-    // we wait for everything to load
-    function display_loading() {
-        var callback = function () {
-            var queue = $.jStorage.get(fullQueueKey);
-            $.jStorage.set('questionType', 'meaning');
-            if ('table' in queue) {
-                // Since the url is invalid the queue will contain an error. We must wait
-                // until the error is set until we can set our queue
-                display_message('Loading...');
+    // Sorts item in numerical order, either ascending or descending
+    function numerical_sort(a, b, order) {
+        if (order !== 'asc' && order !== 'desc')
+            return 0;
+        return a === b ? 0 : xor(order === 'asc', a > b) ? -1 : 1;
+    }
+    // Converts a number of milliseconds into a relative duration such as "4h 32m 12s"
+    function ms_to_relative_time(ms) {
+        var days = Math.floor(ms / MS.day);
+        var hours = Math.floor((ms % MS.day) / MS.hour);
+        var minutes = Math.floor((ms % MS.hour) / MS.minute);
+        var seconds = Math.floor((ms % MS.minute) / MS.second);
+        var time = '';
+        if (days)
+            time += days + 'd ';
+        if (hours)
+            time += hours + 'h ';
+        if (minutes)
+            time += minutes + 'm ';
+        if (seconds)
+            time += seconds + 's ';
+        return time;
+    }
+    // -----------------------------------------------------------------------------------------------------------------
+    // INITIAL SETUP
+    // -----------------------------------------------------------------------------------------------------------------
+    // On the dashboard, adds a button to take you to the extra study page for the script
+    function add_to_extra_study_section() {
+        var button = $("<li class=\"md:mr-3\">\n            <div class=\" border border-blue-300 border-solid rounded flex flex-row \">\n                <a href=\"/extra_study/session?title=".concat(script_name, "\" class=\"active:no-underline active:text-black\n                appearance-none bg-transparent box-border disabled:border-gray-700 disabled:cursor-not-allowed\n                disabled:opacity-50 disabled:text-gray-700 duration-200 flex focus:no-underline focus:ring\n                font-medium font-sans hover:border-blue-500 hover:no-underline hover:text-blue-700 leading-none m-0\n                outline-none py-3 px-3 text-blue-500 text-left text-base sm:text-sm transition w-full border-0\"\n                data-test=\"extra-study-button\">Self Study\n                </a>\n            </div>\n        </li>"));
+        $('.extra-study ul').append(button);
+    }
+    // Installs the dropdown for selecting the active preset
+    function install_interface() {
+        page = page;
+        var options = [];
+        for (var _i = 0, _a = Object.entries(settings.presets); _i < _a.length; _i++) {
+            var _b = _a[_i], i = _b[0], preset = _b[1];
+            if (preset.available_on[page])
+                options.push("<option value=".concat(i, ">").concat(preset.name, "</option>"));
+        }
+        var select = $("<select id=\"".concat(script_id, "_preset_picker\">").concat(options.join(''), "</select>"));
+        select.val(settings.active_presets[page]).on('change', function (event) {
+            page = page;
+            // Change in settings then save
+            settings.active_presets[page] = event.currentTarget.value;
+            wkof.Settings.save(script_id);
+            // Update
+            run();
+        });
+        $(preset_selection_location).append($("<div id=\"active_preset\">Active Preset: </div>").append(select));
+    }
+    // Installs all the extra optional features
+    function install_extra_features() {
+        install_egg_timer();
+        install_streak();
+        install_burn_bell();
+        install_random_voice_actor();
+        install_back_to_back();
+        install_prioritization();
+        // Displays the current duration of the sessions
+        function install_egg_timer() {
+            if (page !== 'reviews' && page !== 'lessons' && page !== 'extra_study' && page !== 'self_study')
+                return;
+            var egg_timer_start = Date.now();
+            var egg_timer = $("<div id=\"egg_timer\">Elapsed: 0s</div>");
+            setInterval(function () {
+                egg_timer.html("Elapsed: ".concat(ms_to_relative_time(Date.now() - egg_timer_start)));
+            }, MS.second);
+            $(egg_timer_location).append(egg_timer);
+        }
+        // Installs the tracking of streaks of correct answers (note: not items)
+        function install_streak() {
+            if (page !== 'reviews' && page !== 'extra_study' && page !== 'self_study')
+                return;
+            // Create and insert element into page
+            var elem = $("<span id=\"streak\"><i class=\"fa fa-trophy\"></i><span class=\"current\">0</span>(<span class=\"max\">0</span>)</span>");
+            $('#stats').prepend(elem);
+            function update_display(streak, max) {
+                $('#streak .current').html(String(streak));
+                $('#streak .max').html(String(max));
             }
-            $.jStorage.stopListening(fullQueueKey, callback);
+            // The object that keeps track of the current (and previous!) streak
+            var streak = {
+                current: {},
+                prev: {},
+                save: function () {
+                    return localStorage.setItem("".concat(script_id, "_streak"), JSON.stringify({ streak: streak.current.streak, max: streak.current.max }));
+                },
+                load: function () {
+                    var _a;
+                    var data = __assign({ questions: 0, incorrect: 0 }, JSON.parse((_a = localStorage.getItem("".concat(script_id, "_").concat(page, "_streak"))) !== null && _a !== void 0 ? _a : '{"streak": 0, "max": 0}'));
+                    streak.current = data;
+                    streak.prev = data;
+                },
+                undo: function () {
+                    streak.current = streak.prev;
+                },
+                correct: function (questions, incorrect) {
+                    streak.prev = streak.current;
+                    streak.current = {
+                        questions: questions,
+                        incorrect: incorrect,
+                        streak: streak.current.streak + 1,
+                        max: Math.max(streak.current.streak + 1, streak.current.max)
+                    };
+                },
+                incorrect: function (questions, incorrect) {
+                    streak.prev = streak.current;
+                    streak.current = { questions: questions, incorrect: incorrect, streak: 0, max: streak.current.max };
+                }
+            };
+            streak.load();
+            update_display(streak.current.streak, streak.current.max);
+            $.jStorage.listenKeyChange('questionCount', function () {
+                var questions = $.jStorage.get('questionCount');
+                var incorrect = $.jStorage.get('wrongCount');
+                if (questions < streak.current.questions)
+                    streak.undo();
+                else if (incorrect == streak.current.incorrect)
+                    streak.correct(questions, incorrect);
+                else
+                    streak.incorrect(questions, incorrect);
+                streak.save();
+                update_display(streak.current.streak, streak.current.max);
+            });
+        }
+        // Installs the burn bell, which plays a sound whenever an item is burned
+        function install_burn_bell() {
+            if (page !== 'reviews')
+                return;
+            // The base 64 audio is a very long string and is, as such, located at the end of the script
+            var audio = new Audio("data:audio/mp3;base64,".concat(base64BellAudio));
+            var listening = {};
+            var getUID = function (item) { return (item.rad ? 'r' : item.kan ? 'k' : 'v') + item.id; };
+            $.jStorage.listenKeyChange('currentItem', initiate_item);
+            function initiate_item() {
+                var item = $.jStorage.get('currentItem');
+                if (item.srs !== 8)
+                    return;
+                var UID = getUID(item);
+                if (!listening[UID])
+                    listen_for_UID(UID);
+            }
+            function listen_for_UID(UID) {
+                listening[UID] = { failed: false };
+                $.jStorage.listenKeyChange(UID, function () { return check_answer(UID); });
+            }
+            function check_answer(UID) {
+                var answers = $.jStorage.get(UID);
+                if (answers && (answers.ri || answers.mi))
+                    listening[UID].failed = true;
+                if (!answers && !listening[UID].failed)
+                    burn(UID);
+            }
+            function burn(UID) {
+                if (settings.burn_bell)
+                    audio.play();
+                delete listening[UID];
+            }
+        }
+        // Sets up the randomization of the voice actor in the quizzes
+        function install_random_voice_actor() {
+            if (page !== 'reviews' && page !== 'lessons' && page !== 'extra_study' && page !== 'self_study')
+                return;
+            $.jStorage.listenKeyChange('*', randomize_voice_actor);
+            function randomize_voice_actor() {
+                var voice_actors = window.WaniKani.voice_actors;
+                var voice_actor_id = voice_actors[Math.floor(Math.random() * voice_actors.length)].voice_actor_id;
+                if (settings.random_voice_actor)
+                    window.WaniKani.default_voice_actor_id = voice_actor_id;
+            }
+        }
+        // Sets up the back2back features so that meaning and reading questions
+        // can be made to appear after each other
+        function install_back_to_back() {
+            // For now this is not active in extra study since it is already back to back
+            if (page !== 'reviews' && page !== 'lessons')
+                return;
+            // Replace Math.random only for the wanikani script this is done by throwing an error and
+            // checking the trace to see if either of the functions 'randomQuestion' (reviews page),
+            // 'selectItem' (lessons page), or 'selectItem' (extra study page) are present. WK uses
+            // functions with these names to pick the next question, so we must alter the behavior
+            // of Math.random only when called from either of those functions.
+            var trace_function_test = new RegExp("^^Error\\n[^)]+\\)\n\\s+at Object.".concat(trace_function));
+            var old_random = Math.random;
+            var new_random = function () {
+                var match = !!trace_function_test.exec(new Error().stack);
+                if (match && settings.back2back)
+                    return 0;
+                return old_random();
+            };
+            Math.random = new_random;
+            console.log('Beware, "Back To Back" is installed and may cause other scripts using Math.random ' +
+                "in a function called \"".concat(trace_function, "\" to misbehave."));
+            // Set item 0 in active queue to current item so the first item will be back to back
+            if (page === 'reviews') {
+                // If active queue is not yet populated, wait until it is to set the currentItem
+                var callback_1 = function () {
+                    $.jStorage.set(current_item_key, $.jStorage.get(active_queue_key)[0]);
+                    $.jStorage.stopListening('activeQueue', callback_1);
+                };
+                if ($.jStorage.get(active_queue_key).length)
+                    callback_1();
+                else
+                    $.jStorage.listenKeyChange('activeQueue', callback_1);
+            }
+        }
+        // Sets up prioritization of meaning and reading questions in sessions
+        function install_prioritization() {
+            // Run every time item changes
+            $.jStorage.listenKeyChange(current_item_key, prioritize);
+            // Initialize session to prioritized question type
+            prioritize();
+            // Prioritize reading or meaning
+            function prioritize() {
+                var prio = settings.prioritize;
+                var item = $.jStorage.get(current_item_key);
+                // Skip if item is a radical, it is already the right question, or no priority is selected
+                if (item.type == 'Radical' ||
+                    $.jStorage.get(question_type_key) == prio ||
+                    'none' == prio)
+                    return;
+                var UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id;
+                var done = $.jStorage.get(UID_prefix + UID);
+                // Change the question if no question has been answered yet,
+                // Or the priority question has not been answered correctly yet
+                if (!done || !done[prio == 'reading' ? 'rc' : 'mc']) {
+                    $.jStorage.set(question_type_key, prio);
+                    $.jStorage.set(current_item_key, item);
+                }
+            }
+        }
+    }
+    // Installs a couple of custom filters for the user
+    function install_filters() {
+        // Filters by how overdue items are
+        wkof.ItemData.registry.sources.wk_items.filters["".concat(script_id, "_overdue")] = {
+            type: 'number',
+            "default": 0,
+            label: 'Overdue%',
+            hover_tip: 'Items more overdue than this. A percentage.\nNegative: Not due yet\nZero: due now\nPositive: Overdue',
+            filter_func: function (value, item) { return calculate_overdue(item) * 100 > value; }
         };
-        $.jStorage.listenKeyChange(fullQueueKey, callback);
+        // Filters by whether the item is critical to leveling up
+        wkof.ItemData.registry.sources.wk_items.filters["".concat(script_id, "_critical")] = {
+            type: 'checkbox',
+            "default": true,
+            label: 'Critical',
+            hover_tip: 'Filter for items critical to leveling up',
+            filter_func: function (value, item) { return value === is_critical(item); }
+        };
+        // Retrieves the first N number of items from the queue
+        wkof.ItemData.registry.sources.wk_items.filters["".concat(script_id, "_first")] = {
+            type: 'number',
+            "default": 0,
+            label: 'First',
+            hover_tip: 'Get the first N number of items from the queue',
+            filter_func: (function () {
+                var count = 0;
+                return function (value) { return count++ < value; };
+            })()
+        };
     }
-    // Displays a message to the user by setting the current item to a vocabulary word with the message
-    function display_message(message) {
-        var dummy = { type: 'Vocabulary', voc: message, id: 0 };
-        $.jStorage.set(currentItemKey, dummy);
-        $.jStorage.set(activeQueueKey, [dummy]);
-        $.jStorage.set(fullQueueKey, []);
+    // Installs the CSS
+    function install_css() {
+        var css = "\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #active_preset {\n                font-size: 1rem;\n                line-height: 1rem;\n                margin-top: -1rem;\n                text-align: left;\n                padding: 0.5rem;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n            }\n\n            #active_preset select option { color: black; }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n        ";
+        $('head').append("<style id=\"".concat(script_id, "_css\">").concat(css, "</style>"));
     }
-    // Takes a list of WKOF item and puts them into the queue
-    function update_queue(items) {
-        return __awaiter(this, void 0, void 0, function () {
-            var first10, current_item, active_queue, rest;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, get_item_data(items.splice(0, 10))];
-                    case 1:
-                        first10 = _a.sent();
-                        current_item = first10[0];
-                        active_queue = first10;
-                        rest = items.map(function (item) { return item.id; }) // Only need the ID for these
-                        ;
-                        if ((current_item === null || current_item === void 0 ? void 0 : current_item.type) === 'Radical')
-                            $.jStorage.set('questionType', 'meaning'); // has to be set before currentItem
-                        $.jStorage.set(currentItemKey, current_item);
-                        $.jStorage.set(activeQueueKey, active_queue);
-                        $.jStorage.set(fullQueueKey, rest);
-                        return [2 /*return*/];
-                }
-            });
-        });
-    }
-    // Retrieves the item's info from the WK api
-    function get_item_data(items) {
-        return __awaiter(this, void 0, void 0, function () {
-            var ids, response, data;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        ids = items.map(function (item) { return item.id; });
-                        return [4 /*yield*/, fetch("/extra_study/items?ids=".concat(ids.join(',')))];
-                    case 1:
-                        response = _a.sent();
-                        if (response.status !== 200) {
-                            console.error('Could not fetch active queue');
-                            return [2 /*return*/, []];
-                        }
-                        return [4 /*yield*/, response.json()];
-                    case 2:
-                        data = (_a.sent());
-                        return [2 /*return*/, ids.map(function (id) { return data.find(function (item) { return item.id === id; }); })]; // Re-sort
-                }
-            });
-        });
-    }
-    /* ------------------------------------------------------------------------------------*/
-    // WKOF setup
-    /* ------------------------------------------------------------------------------------*/
+    // -----------------------------------------------------------------------------------------------------------------
+    // WKOF SETUP
+    // -----------------------------------------------------------------------------------------------------------------
     // Makes sure that WKOF is installed
     function confirm_wkof() {
         return __awaiter(this, void 0, void 0, function () {
@@ -660,9 +696,12 @@ var module = {};
     function load_settings() {
         var defaults = {
             selected_preset: 0,
-            active_preset_reviews: 0,
-            active_preset_lessons: 0,
-            active_preset_extra_study: 0,
+            active_presets: {
+                reviews: 0,
+                lessons: 0,
+                extra_study: 0,
+                self_study: 0
+            },
             presets: get_default_presets(),
             display_egg_timer: true,
             display_streak: true,
@@ -673,133 +712,6 @@ var module = {};
         };
         return wkof.Settings.load(script_id, defaults).then(function (wkof_settings) { return (settings = wkof_settings); });
     }
-    // Retrieves the presets that the script comes with
-    function get_default_presets() {
-        // Do nothing
-        var none = $.extend(true, get_preset_defaults(), {
-            name: 'None',
-            actions: [
-                $.extend(true, get_action_defaults(), {
-                    name: 'Do nothing',
-                    type: 'none'
-                }),
-            ]
-        });
-        // Preset to get all the critical items first
-        var critical_first = $.extend(true, get_preset_defaults(), {
-            name: 'Critical reviews first',
-            available_on: { reviews: true, lessons: false, extra_study: false },
-            actions: [
-                $.extend(true, get_action_defaults(), {
-                    name: 'Filter out critical items',
-                    type: 'filter',
-                    filter: {
-                        filter: 'omega_reorder_critical',
-                        omega_reorder_critical: true
-                    }
-                }),
-                $.extend(true, get_action_defaults(), {
-                    name: 'Put non-critical items back',
-                    type: 'freeze & restore'
-                }),
-            ]
-        });
-        // Preset to sort by level
-        var level = $.extend(true, get_preset_defaults(), {
-            name: 'Sort by level',
-            available_on: { reviews: true, lessons: true, extra_study: false },
-            actions: [
-                $.extend(true, get_action_defaults(), {
-                    name: 'Sort by level',
-                    type: 'sort',
-                    sort: { sort: 'level' }
-                }),
-            ]
-        });
-        // Preset to sort by SRS level
-        var srs = $.extend(true, get_preset_defaults(), {
-            name: 'Sort by srs level',
-            available_on: { reviews: true, lessons: true, extra_study: false },
-            actions: [
-                $.extend(true, get_action_defaults(), {
-                    name: 'Sort by srs',
-                    type: 'sort',
-                    sort: { sort: 'srs' }
-                }),
-            ]
-        });
-        // Preset to sort by item type
-        var type = $.extend(true, get_preset_defaults(), {
-            name: 'Radicals then Kanji then Vocab',
-            available_on: { reviews: true, lessons: true, extra_study: false },
-            actions: [
-                $.extend(true, get_action_defaults(), {
-                    name: 'Sort by item type',
-                    type: 'sort',
-                    sort: {
-                        sort: 'type',
-                        type: 'rad, kan, voc'
-                    }
-                }),
-            ]
-        });
-        // Preset to fetch 100 random burned items
-        var random_burns = $.extend(true, get_preset_defaults(), {
-            name: '100 Random Burned Items',
-            available_on: { reviews: false, lessons: false, extra_study: true },
-            actions: [
-                $.extend(true, get_action_defaults(), {
-                    name: 'Filter burns',
-                    type: 'filter',
-                    filter: {
-                        filter: 'srs',
-                        srs: { burn: true }
-                    }
-                }),
-                $.extend(true, get_action_defaults(), {
-                    name: 'Get first 100 items',
-                    type: 'filter',
-                    filter: {
-                        filter: 'omega_reorder_first',
-                        omega_reorder_first: 100
-                    }
-                }),
-            ]
-        });
-        return [none, critical_first, level, srs, type, random_burns];
-    }
-    // Get a new preset item. This is a function because we want to be able to get a copy of it on demand
-    function get_preset_defaults() {
-        var defaults = {
-            name: 'New Preset',
-            selected_action: 0,
-            available_on: { reviews: true, lessons: true, extra_study: true },
-            actions: [get_action_defaults()]
-        };
-        return defaults;
-    }
-    // Get a new action item. The filter and sort values need to be set as to not get any error in the settings
-    // dialog, so we dynamically generate the defaults for the sorts and filters.
-    function get_action_defaults() {
-        var defaults = {
-            name: 'New Action',
-            type: 'none',
-            filter: { filter: 'level', invert: false },
-            sort: {
-                sort: 'level',
-                type: ['rad', 'kan', 'voc']
-            }
-        };
-        for (var _i = 0, _a = Object.entries(wkof.ItemData.registry.sources.wk_items.filters); _i < _a.length; _i++) {
-            var _b = _a[_i], name_1 = _b[0], filter = _b[1];
-            defaults.filter[name_1] = filter["default"];
-        }
-        for (var _c = 0, _d = ['level', 'srs', 'leech', 'overdue', 'critical']; _c < _d.length; _c++) {
-            var type = _d[_c];
-            defaults.sort[type] = 'asc';
-        }
-        return defaults;
-    }
     // Installs the options button in the menu
     function install_menu() {
         var config = {
@@ -809,15 +721,6 @@ var module = {};
             on_click: open_settings
         };
         wkof.Menu.insert_script_link(config);
-    }
-    // Actions to take when the user saves their settings
-    function settings_on_save() {
-        set_body_attributes(); // For now we only need to update the CSS
-    }
-    // Set some attributes on the body to hide or show things with CSS
-    function set_body_attributes() {
-        $("body").attr("".concat(script_id, "_display_egg_timer"), String(settings.display_egg_timer));
-        $("body").attr("".concat(script_id, "_display_streak"), String(settings.display_streak));
     }
     // Opens settings dialogue when button is pressed
     function open_settings() {
@@ -840,23 +743,34 @@ var module = {};
                             type: 'group',
                             label: 'Active Presets',
                             content: {
-                                active_preset_reviews: {
+                                reviews: {
                                     type: 'dropdown',
                                     label: 'Review preset',
+                                    path: '@active_presets.reviews',
                                     content: {
                                     // Will be populated
                                     }
                                 },
-                                active_preset_lessons: {
+                                lessons: {
                                     type: 'dropdown',
                                     label: 'Lesson preset',
+                                    path: '@active_presets.lessons',
                                     content: {
                                     // Will be populated
                                     }
                                 },
-                                active_preset_extra_study: {
+                                extra_study: {
                                     type: 'dropdown',
                                     label: 'Extra Study preset',
+                                    path: '@active_presets.extra_study',
+                                    content: {
+                                    // Will be populated
+                                    }
+                                },
+                                self_study: {
+                                    type: 'dropdown',
+                                    label: 'Self Study preset',
+                                    path: '@active_presets.self_study',
                                     content: {
                                     // Will be populated
                                     }
@@ -928,9 +842,9 @@ var module = {};
                             content: {
                                 selected_preset: {
                                     type: 'list',
-                                    refresh_on_change: true,
                                     hover_tip: 'Filter & Reorder Presets',
-                                    content: {}
+                                    content: {},
+                                    refresh_on_change: true
                                 }
                             }
                         },
@@ -943,31 +857,32 @@ var module = {};
                                 preset_name: {
                                     type: 'text',
                                     label: 'Edit Preset Name',
-                                    on_change: refresh_presets,
+                                    hover_tip: 'Enter a name for the selected preset',
                                     path: '@presets[@selected_preset].name',
-                                    hover_tip: 'Enter a name for the selected preset'
+                                    on_change: refresh_presets
                                 },
                                 available_on: {
                                     type: 'list',
+                                    "default": { reviews: true, lessons: true, extra_study: true },
                                     multi: true,
                                     label: 'Available For',
                                     hover_tip: 'Choose which pages you should be able to choose this preset on',
-                                    "default": { reviews: true, lessons: true, extra_study: true },
                                     path: '@presets[@selected_preset].available_on',
                                     content: {
                                         reviews: 'Reviews',
                                         lessons: 'Lessons',
-                                        extra_study: 'Extra Study'
+                                        extra_study: 'Extra Study',
+                                        self_study: 'Self Study'
                                     },
                                     on_change: refresh_active_preset_selection
                                 },
                                 actions_label: { type: 'section', label: 'Actions' },
                                 selected_action: {
                                     type: 'list',
-                                    refresh_on_change: true,
                                     hover_tip: 'Actions for the selected preset',
                                     path: '@presets[@selected_preset].selected_action',
-                                    content: {}
+                                    content: {},
+                                    refresh_on_change: true
                                 }
                             }
                         },
@@ -980,65 +895,64 @@ var module = {};
                                 action_name: {
                                     type: 'text',
                                     label: 'Edit Action Name',
-                                    on_change: refresh_actions,
+                                    hover_tip: 'Enter a name for the selected action',
                                     path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].name',
-                                    hover_tip: 'Enter a name for the selected action'
+                                    on_change: refresh_actions
                                 },
                                 action_type: {
                                     type: 'dropdown',
+                                    "default": 'None',
                                     label: 'Action Type',
                                     hover_tip: 'Choose what kind of action this is',
-                                    "default": 'None',
                                     path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].type',
-                                    on_change: refresh_action,
                                     content: {
                                         none: 'None',
                                         sort: 'Sort',
                                         filter: 'Filter',
                                         shuffle: 'Shuffle',
                                         'freeze & restore': 'Freeze & Restore'
-                                    }
+                                    },
+                                    on_change: refresh_action
                                 },
                                 // Sorts and filters
                                 // ------------------------------------------------------------
                                 action_label: { type: 'section', label: 'Action Settings' },
                                 none_description: {
                                     type: 'html',
-                                    html: '<div class="none">Description of None</div>'
+                                    html: '<div class="description none">This action has no effect</div>'
                                 },
                                 sort_description: {
                                     type: 'html',
-                                    html: '<div class="sort">Description of sort</div>'
+                                    html: '<div class="description sort">A sort action will sort the items in the queue by a value of your choosing</div>'
                                 },
                                 filter_description: {
                                     type: 'html',
-                                    html: '<div class="filter">Description of filter</div>'
+                                    html: "<div class=\"description filter\">A filter can be used to select which type of items you want to keep</div>"
                                 },
                                 shuffle_description: {
                                     type: 'html',
-                                    html: '<div class="shuffle">Description of shuffle</div>'
+                                    html: '<div class="description shuffle">Randomizes the order of the items in the queue</div>'
                                 },
                                 freeze_and_restore_description: {
                                     type: 'html',
-                                    html: '<div class="freeze_and_restore">Description of freeze and restore</div>'
+                                    html: '<div class="description freeze_and_restore">Freeze & Restore is a special type of action which locks in the items you have already filtered and sorted, and then restores all the items you previously filtered out. This is useful for when you want to use a filter to get a specific type of item first, but you still want to keep the items you filtered out</div>'
                                 },
                                 filter_type: {
                                     type: 'dropdown',
+                                    "default": 'level',
                                     label: 'Filter Type',
                                     hover_tip: 'Choose what kind of filter this is',
-                                    "default": 'level',
-                                    on_change: refresh_action,
                                     path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.filter',
                                     content: {
                                     // Will be populated
-                                    }
+                                    },
+                                    on_change: refresh_action
                                 },
                                 sort_type: {
                                     type: 'dropdown',
+                                    "default": 'level',
                                     label: 'Sort Type',
                                     hover_tip: 'Choose what kind of sort this is',
-                                    "default": 'level',
-                                    on_change: refresh_action,
                                     path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.sort',
                                     content: {
                                         type: 'Type',
@@ -1047,7 +961,8 @@ var module = {};
                                         leech: 'Leech Score',
                                         overdue: 'Overdue',
                                         critical: 'Critical'
-                                    }
+                                    },
+                                    on_change: refresh_action
                                 }
                             }
                         }
@@ -1056,90 +971,14 @@ var module = {};
             }
         };
         // @ts-ignore
-        // I don't know why the type here is not working
+        // I don't know how to type this properly
         populate_active_preset_options(config.content.general.content.active_presets.content);
         // @ts-ignore
-        // I don't know why the type here is not working
+        // I don't know how to type this properly
         var action = config.content.presets.content.action;
         populate_action_settings(action);
         settings_dialog = new wkof.Settings(config);
         settings_dialog.open();
-    }
-    // Populate the active preset dropdowns in the general tabs with the available presets for those pages
-    function populate_active_preset_options(active_presets) {
-        for (var _i = 0, _a = Object.entries(settings.presets); _i < _a.length; _i++) {
-            var _b = _a[_i], i = _b[0], preset = _b[1];
-            var available_on = Object.entries(preset.available_on)
-                .filter(function (_a) {
-                var key = _a[0], value = _a[1];
-                return value;
-            })
-                .map(function (_a) {
-                var key = _a[0], value = _a[1];
-                return key;
-            });
-            for (var _c = 0, available_on_1 = available_on; _c < available_on_1.length; _c++) {
-                var page_1 = available_on_1[_c];
-                active_presets["active_preset_".concat(page_1)].content[i] = preset.name;
-            }
-        }
-    }
-    // Insert sorting and filtering options into the config
-    function populate_action_settings(config) {
-        var _a, _b, _c;
-        // Populate filters
-        for (var _i = 0, _d = Object.entries(wkof.ItemData.registry.sources.wk_items.filters); _i < _d.length; _i++) {
-            var _e = _d[_i], name_2 = _e[0], filter = _e[1];
-            if (filter.no_ui)
-                continue;
-            // Add to dropdown
-            var filter_type = config.content.filter_type;
-            filter_type.content[name_2] = (_a = filter.label) !== null && _a !== void 0 ? _a : 'Filter Value';
-            // Add filter values
-            config.content["filter_by_".concat(name_2)] = {
-                type: filter.type === 'multi' ? 'list' : filter.type,
-                multi: filter.type === 'multi',
-                "default": filter["default"],
-                label: (_b = filter.label) !== null && _b !== void 0 ? _b : 'Filter Value',
-                hover_tip: (_c = filter.hover_tip) !== null && _c !== void 0 ? _c : 'Choose a value for your filter',
-                placeholder: filter.placeholder,
-                content: filter.content,
-                path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.".concat(name_2)
-            };
-        }
-        // Add filter inversion so that it comes after all values
-        config.content.filter_invert = {
-            type: 'checkbox',
-            label: 'Invert Filter',
-            hover_tip: 'Check this box if you want to invert the effect of this filter.',
-            "default": false,
-            path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.invert'
-        };
-        // Populate sort values
-        var numerical_sort_config = function (type) {
-            return ({
-                type: 'dropdown',
-                "default": 'asc',
-                label: 'Order',
-                hover_tip: 'Sort in ascending or descending order',
-                path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.".concat(type),
-                content: { asc: 'Ascending', desc: 'Descending' }
-            });
-        };
-        // Sort by type is special
-        config.content.sort_by_type = {
-            type: 'text',
-            label: 'Order',
-            "default": 'rad, kan, voc',
-            placeholder: 'rad, kan, voc',
-            hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad"',
-            path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.type"
-        };
-        // Other sorts are identical
-        for (var _f = 0, _g = ['level', 'srs', 'leech', 'overdue', 'critical']; _f < _g.length; _f++) {
-            var type = _g[_f];
-            config.content["sort_by_".concat(type)] = numerical_sort_config(type);
-        }
     }
     // Edits the settings dialog to insert some buttons, add some classes, and refresh, before it opens
     function settings_pre_open(dialog) {
@@ -1163,6 +1002,261 @@ var module = {};
         // Refresh
         refresh_settings();
     }
+    // -----------------------------------------------------------------------------------------------------------------
+    // WKOF SETUP: Defaults
+    // -----------------------------------------------------------------------------------------------------------------
+    // Retrieves the presets that the script comes with
+    function get_default_presets() {
+        var _a, _b, _c;
+        // Do nothing
+        var none = $.extend(true, get_preset_defaults(), {
+            name: 'None',
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Do nothing',
+                    type: 'none'
+                }),
+            ]
+        });
+        // Preset to get all the critical items first
+        var speed_demon = $.extend(true, get_preset_defaults(), {
+            name: 'Speed Demon',
+            available_on: { reviews: true, lessons: true, extra_study: true, self_study: true },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Filter out non-critical items',
+                    type: 'filter',
+                    filter: (_a = {
+                            filter: "".concat(script_id, "_critical")
+                        },
+                        _a["".concat(script_id, "_critical")] = true,
+                        _a)
+                }),
+                $.extend(true, get_action_defaults(), {
+                    name: 'Get radicals first',
+                    type: 'sort',
+                    sort: {
+                        sort: 'type',
+                        type: 'rad'
+                    }
+                }),
+                $.extend(true, get_action_defaults(), {
+                    name: 'Put non-critical items back',
+                    type: 'freeze & restore'
+                }),
+            ]
+        });
+        // Preset to sort by level
+        var level = $.extend(true, get_preset_defaults(), {
+            name: 'Sort by level',
+            available_on: { reviews: true, lessons: false, extra_study: false, self_study: false },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Sort by level',
+                    type: 'sort',
+                    sort: { sort: 'level' }
+                }),
+            ]
+        });
+        // Preset to sort by SRS level
+        var srs = $.extend(true, get_preset_defaults(), {
+            name: 'Sort by SRS',
+            available_on: { reviews: true, lessons: false, extra_study: false, self_study: false },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Sort by SRS',
+                    type: 'sort',
+                    sort: { sort: 'srs' }
+                }),
+            ]
+        });
+        // Preset to sort by item type
+        var type = $.extend(true, get_preset_defaults(), {
+            name: 'Sort by type',
+            available_on: { reviews: true, lessons: true, extra_study: true, self_study: false },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Sort by item type',
+                    type: 'sort',
+                    sort: {
+                        sort: 'type',
+                        type: 'rad, kan, voc'
+                    }
+                }),
+            ]
+        });
+        // Preset to fetch 100 random burned items
+        var random_burns = $.extend(true, get_preset_defaults(), {
+            name: '100 Random Burned Items',
+            available_on: { reviews: false, lessons: false, extra_study: false, self_study: true },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Filter burns',
+                    type: 'filter',
+                    filter: {
+                        filter: 'srs',
+                        srs: { burn: true }
+                    }
+                }),
+                $.extend(true, get_action_defaults(), {
+                    name: 'Get first 100 items',
+                    type: 'filter',
+                    filter: (_b = {
+                            filter: "".concat(script_id, "_first")
+                        },
+                        _b["".concat(script_id, "_first")] = 100,
+                        _b)
+                }),
+            ]
+        });
+        // Kumi's recommended way to get through a backlog
+        var backlog = $.extend(true, get_preset_defaults(), {
+            name: 'Backlog',
+            available_on: { reviews: true, lessons: false, extra_study: false, self_study: false },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Sort by level to follow SRS',
+                    type: 'sort',
+                    sort: { sort: 'srs' }
+                }),
+                $.extend(true, get_action_defaults(), {
+                    name: 'Do 100 items a day to avoid burnout',
+                    type: 'filter',
+                    filter: (_c = {
+                            filter: "".concat(script_id, "_first")
+                        },
+                        _c["".concat(script_id, "_first")] = 100,
+                        _c)
+                }),
+                $.extend(true, get_action_defaults(), {
+                    name: 'Shuffle for the benefits of interleaving',
+                    type: 'shuffle'
+                }),
+            ]
+        });
+        return [none, speed_demon, level, srs, type, random_burns, backlog];
+    }
+    // Get a new preset item. This is a function because we want to be able to get a copy of it on demand
+    function get_preset_defaults() {
+        var defaults = {
+            name: 'New Preset',
+            selected_action: 0,
+            available_on: { reviews: true, lessons: true, extra_study: true, self_study: true },
+            actions: [get_action_defaults()]
+        };
+        return defaults;
+    }
+    // Get a new action item. The filter and sort values need to be set as to not get any error in the settings
+    // dialog, so we dynamically generate the defaults for the sorts and filters.
+    function get_action_defaults() {
+        var defaults = {
+            name: 'New Action',
+            type: 'none',
+            filter: { filter: 'level', invert: false },
+            sort: {
+                sort: 'level',
+                type: 'rad, kan, voc'
+            }
+        }; // Casting because it is still incomplete
+        for (var _i = 0, _a = Object.entries(wkof.ItemData.registry.sources.wk_items.filters); _i < _a.length; _i++) {
+            var _b = _a[_i], name_1 = _b[0], filter = _b[1];
+            defaults.filter[name_1] = filter["default"];
+        }
+        for (var _c = 0, _d = ['level', 'srs', 'leech', 'overdue']; _c < _d.length; _c++) {
+            var type = _d[_c];
+            defaults.sort[type] = 'asc';
+        }
+        return defaults;
+    }
+    // Populate the active preset dropdowns in the general tabs with the available presets for those pages
+    function populate_active_preset_options(active_presets) {
+        for (var _i = 0, _a = Object.entries(settings.presets); _i < _a.length; _i++) {
+            var _b = _a[_i], i = _b[0], preset = _b[1];
+            var available_on = Object.entries(preset.available_on)
+                .filter(function (_a) {
+                var key = _a[0], value = _a[1];
+                return value;
+            })
+                .map(function (_a) {
+                var key = _a[0], value = _a[1];
+                return key;
+            });
+            for (var _c = 0, available_on_1 = available_on; _c < available_on_1.length; _c++) {
+                var page_1 = available_on_1[_c];
+                active_presets[page_1].content[i] = preset.name;
+            }
+        }
+    }
+    // Insert sorting and filtering options into the config
+    function populate_action_settings(config) {
+        var _a, _b, _c;
+        // Populate filters
+        for (var _i = 0, _d = Object.entries(wkof.ItemData.registry.sources.wk_items.filters); _i < _d.length; _i++) {
+            var _e = _d[_i], name_2 = _e[0], filter = _e[1];
+            if (filter.no_ui)
+                continue;
+            // Add to dropdown
+            var filter_type = config.content.filter_type;
+            filter_type.content[name_2] = (_a = filter.label) !== null && _a !== void 0 ? _a : 'Filter Value';
+            // Add filter values
+            config.content["filter_by_".concat(name_2)] = {
+                type: filter.type === 'multi' ? 'list' : filter.type,
+                "default": filter["default"],
+                placeholder: filter.placeholder,
+                multi: filter.type === 'multi',
+                label: (_b = filter.label) !== null && _b !== void 0 ? _b : 'Filter Value',
+                hover_tip: (_c = filter.hover_tip) !== null && _c !== void 0 ? _c : 'Choose a value for your filter',
+                path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.".concat(name_2),
+                content: filter.content
+            };
+        }
+        // Add filter inversion so that it comes after all values
+        config.content.filter_invert = {
+            type: 'checkbox',
+            "default": false,
+            label: 'Invert Filter',
+            hover_tip: 'Check this box if you want to invert the effect of this filter.',
+            path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.invert'
+        };
+        // Populate sort values
+        var numerical_sort_config = function (type) {
+            return ({
+                type: 'dropdown',
+                "default": 'asc',
+                label: 'Order',
+                hover_tip: 'Sort in ascending or descending order',
+                path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.".concat(type),
+                content: { asc: 'Ascending', desc: 'Descending' }
+            });
+        };
+        // Sort by type is special
+        config.content.sort_by_type = {
+            type: 'text',
+            "default": 'rad, kan, voc',
+            placeholder: 'rad, kan, voc',
+            label: 'Order',
+            hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad"',
+            path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.type"
+        };
+        // Other sorts are identical
+        for (var _f = 0, _g = ['level', 'srs', 'leech', 'overdue', 'critical']; _f < _g.length; _f++) {
+            var type = _g[_f];
+            config.content["sort_by_".concat(type)] = numerical_sort_config(type);
+        }
+    }
+    // -----------------------------------------------------------------------------------------------------------------
+    // WKOF DYNAMIC SETTINGS
+    // -----------------------------------------------------------------------------------------------------------------
+    // Actions to take when the user saves their settings
+    function settings_on_save() {
+        set_body_attributes(); // Update attributes on body to hide/show stuff
+        run(); // Re-run preset in case something changed
+    }
+    // Set some attributes on the body to hide or show things with CSS
+    function set_body_attributes() {
+        $("body").attr("".concat(script_id, "_display_egg_timer"), String(settings.display_egg_timer));
+        $("body").attr("".concat(script_id, "_display_streak"), String(settings.display_streak));
+    }
     // Refreshes the preset and action selection
     function refresh_settings() {
         refresh_presets();
@@ -1180,6 +1274,23 @@ var module = {};
         populate_list($("#".concat(script_id, "_selected_action")), preset.actions, preset.selected_action);
         refresh_action();
     }
+    // Updates which items are visible in the action section
+    function refresh_action() {
+        // Set action type
+        var type = $("#".concat(script_id, "_action_type")).val();
+        $("#".concat(script_id, "_action")).attr('type', type);
+        // Update visible input
+        var preset = settings.presets[settings.selected_preset];
+        var action = preset.actions[preset.selected_action];
+        $('.visible_action_value').removeClass('visible_action_value');
+        if (action.type === 'sort' || action.type === 'filter') {
+            // @ts-ignore
+            // Don't know how to type this properly
+            $("#".concat(script_id, "_").concat(action.type, "_by_").concat(action[action.type][action.type]))
+                .closest('.row')
+                .addClass('visible_action_value');
+        }
+    }
     // Updates the contents of a selection elements. Particularly the preset and action selection elements
     function populate_list(elem, items, active_item) {
         if (!items)
@@ -1193,41 +1304,26 @@ var module = {};
         elem.html(html);
         elem.children().eq(active_item).prop('selected', true); // Select the active item
     }
-    // Updates which items are visible in the action section
-    function refresh_action() {
-        // Set action type
-        var type = $("#".concat(script_id, "_action_type")).val();
-        $("#".concat(script_id, "_action")).attr('type', type);
-        // Update visible input
-        var preset = settings.presets[settings.selected_preset];
-        var action = preset.actions[preset.selected_action];
-        $('.visible_action_value').removeClass('visible_action_value');
-        if (action.type === 'sort' || action.type === 'filter') {
-            $("#".concat(script_id, "_").concat(action.type, "_by_").concat(action[action.type][action.type]))
-                .closest('.row')
-                .addClass('visible_action_value');
-        }
-    }
     // Refreshes which items are available in the active preset selection in the general tab
     function refresh_active_preset_selection() {
-        for (var _i = 0, _a = ['reviews', 'lessons', 'extra_study']; _i < _a.length; _i++) {
+        for (var _i = 0, _a = ['reviews', 'lessons', 'extra_study', 'self_study']; _i < _a.length; _i++) {
             var type = _a[_i];
             populate_preset_pickers(type);
         }
         function populate_preset_pickers(type) {
-            var elem = $("#".concat(script_id, "_active_preset_").concat(type));
+            var elem = $("#reorder_omega_active_presets select[name=\"".concat(type, "\"]"));
             var presets = Object.entries(settings.presets).filter(function (_a) {
                 var i = _a[0], preset = _a[1];
                 return preset.available_on[type];
             });
-            var selected = settings["active_preset_".concat(type)];
+            var selected = settings.active_presets[type];
             var selected_available = presets.reduce(function (available, _a) {
                 var i = _a[0];
                 return available || Number(i) == selected;
             }, false);
             // If the selected preset is no longer available, default to something that is available
             if (!selected_available)
-                settings["active_preset_".concat(type)] = Number(presets[0][0]);
+                settings.active_presets[type] = Number(presets[0][0]);
             // Insert into dialog
             var html = presets
                 .map(function (_a) {
@@ -1285,7 +1381,7 @@ var module = {};
         if (btn === 'new')
             $("#".concat(script_id, "_").concat(ref, "_name")).focus().select();
     }
-    var script_id, script_name, wkof, $, MS, page, currentItemKey, activeQueueKey, fullQueueKey, questionTypeKey, UIDPrefix, traceFunctionTest, settings, settings_dialog, SRS_DURATIONS, base64BellAudio;
+    var script_id, script_name, wkof, $, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, trace_function, egg_timer_location, preset_selection_location, settings, settings_dialog, SRS_DURATIONS, base64BellAudio;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -1293,10 +1389,11 @@ var module = {};
                 script_name = 'Reorder Omega';
                 wkof = window.wkof, $ = window.$;
                 MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 };
+                current_item_key = 'currentItem', active_queue_key = 'activeQueue', inactive_queue_key = 'reviewQueue', question_type_key = 'questionType', UID_prefix = '', trace_function = 'randomQuestion', egg_timer_location = '#summary-button', preset_selection_location = '#character';
                 page = set_page_variables();
                 // This has to be done before WK realizes that the queue is empty and
                 // redirects, thus we have to do it before initializing WKOF
-                if (page === 'extra_study')
+                if (page === 'self_study')
                     display_loading();
                 // Initiate WKOF
                 return [4 /*yield*/, confirm_wkof()];
@@ -1306,23 +1403,25 @@ var module = {};
                 wkof.include('Settings,Menu,ItemData');
                 wkof.ready('ItemData.registry').then(install_filters);
                 return [4 /*yield*/, wkof.ready('Settings,Menu').then(load_settings).then(install_menu)
-                    // Decide what to do depending on the page
+                    // Install css
                 ];
             case 2:
                 _a.sent();
+                // Install css
+                install_css();
                 // Decide what to do depending on the page
                 switch (page) {
                     case 'dashboard':
                         add_to_extra_study_section();
                         break;
                     case 'reviews':
-                    case 'extra_study': // TODO: Filter out finished items
+                    case 'lessons':
+                    case 'extra_study':
+                    case 'self_study':
                         install_interface();
                         install_extra_features();
                         set_body_attributes();
                         run();
-                        break;
-                    case 'lessons':
                         break;
                 }
                 SRS_DURATIONS = [4, 8, 23, 47, 167, 335, 719, 2879, Infinity].map(function (time) { return time * MS.hour; });

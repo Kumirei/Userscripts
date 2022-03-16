@@ -53,9 +53,12 @@ export namespace Settings {
 
     type Settings = {
         selected_preset: number
-        active_preset_reviews: number
-        active_preset_lessons: number
-        active_preset_extra_study: number
+        active_presets: {
+            reviews: number
+            lessons: number
+            extra_study: number
+            self_study: number
+        }
         presets: Preset[]
         display_egg_timer: boolean
         display_streak: boolean
@@ -72,30 +75,14 @@ export namespace Settings {
             reviews: boolean
             lessons: boolean
             extra_study: boolean
+            self_study: boolean
         }
         actions: Action[]
     }
 
-    type Action = NoAction | FilterOrSortAction | FreezeAndRestoreAction | ShuffleAction
-
-    type NoAction = {
+    type Action = {
         name: string
-        type: 'none'
-    }
-
-    type FreezeAndRestoreAction = {
-        name: string
-        type: 'freeze & restore'
-    }
-
-    type ShuffleAction = {
-        name: string
-        type: 'shuffle'
-    }
-
-    type FilterOrSortAction = {
-        name: string
-        type: 'filter' | 'sort'
+        type: 'none' | 'filter' | 'sort' | 'shuffle' | 'freeze & restore'
         sort: {
             sort: 'level' | 'srs' | 'leech' | 'overdue' | 'type'
             level: 'asc' | 'desc'
