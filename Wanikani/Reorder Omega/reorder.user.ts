@@ -170,7 +170,7 @@ declare global {
     // Type used only in the functions below
     type PresetItems = { keep: ItemData.Item[]; discard: ItemData.Item[]; final: ItemData.Item[] }
 
-    // Calls all the preset actions on the items while keeping the items in thee categories:
+    // Calls all the preset actions on the items while keeping the items in three categories:
     // keep: Items that are kept by filters and sorted by sorts
     // discard: Items that have been discarded by filters
     // final: Items which have been frozen by the "Freeze & Restore" action
@@ -193,7 +193,7 @@ declare global {
             case 'sort':
                 return { keep: process_sort_action(action, items.keep), discard: items.discard, final: items.final }
             case 'freeze & restore':
-                return { keep: items.discard, discard: [], final: items.keep }
+                return { keep: items.discard, discard: [], final: items.final.concat(items.keep) }
             case 'shuffle':
                 return { keep: shuffle<ItemData.Item>(items.keep), discard: items.discard, final: items.final }
             default:
@@ -240,7 +240,7 @@ declare global {
                 return [] // Invalid sort key
         }
 
-        return double_sort<ItemData.Item>(items, sort)
+        return items.sort(sort)
     }
 
     // Retrieves the ids of the the items in the current queue
@@ -374,25 +374,12 @@ declare global {
 
     // Logical XOR
     function xor(a: boolean, b: boolean): boolean {
-        return (a && !b) || (!a && b)
-    }
-
-    // Sorting the array twice keeps the relative order of the sorted items. Example:
-    // Original [8, 4, 5, 1, 7, 4, 5, 4, 6, 1].sort((a,b)=>a>5 ? -1 : 1)
-    // Sorted   [6, 7, 8, 4, 5, 1, 4, 5, 4, 1].sort((a,b)=>a>5 ? -1 : 1)
-    // Final    [8, 7, 6, 4, 5, 1, 4, 5, 4, 1]
-    // This is important when chaining multiple sorting actions, so that the results of
-    // one sort don't get reversed (front to back) by the next sort
-    function double_sort<T>(items: T[], sorter: (item_a: T, item_b: T) => number): T[] {
-        return items.sort(sorter).sort(sorter)
+        return a !== b // since a and b are guaranteed to be boolean
     }
 
     // Sorts items by the order they appear in a list
     function sort_by_list<T>(a: T, b: T, order: T[]): number {
-        if (!order.length || a === b) return 0 // No order or same
-        if (a === order[0]) return -1 // A is first type
-        if (b === order[0]) return 1 // B is first type
-        return sort_by_list(a, b, order.slice(1, 3)) // Yay, recursion
+        return order.indexOf(a) - order.indexOf(b)
     }
 
     // A filter function that also returns the items discarded by the filter
@@ -408,7 +395,7 @@ declare global {
 
     // Randomizes the order of items in the array
     function shuffle<T>(arr: T[]): T[] {
-        var j, x, i
+        let j, x, i
         for (i = arr.length - 1; i > 0; i--) {
             j = Math.floor(Math.random() * (i + 1))
             x = arr[i]
@@ -428,8 +415,7 @@ declare global {
 
     // Sorts item in numerical order, either ascending or descending
     function numerical_sort(a: number, b: number, order: 'asc' | 'desc'): number {
-        if (order !== 'asc' && order !== 'desc') return 0
-        return a === b ? 0 : xor(order === 'asc', a > b) ? -1 : 1
+        return order === 'asc' ? a - b : order === 'desc' ? b - a : 0
     }
 
     // Converts a number of milliseconds into a relative duration such as "4h 32m 12s"
