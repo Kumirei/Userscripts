@@ -13,32 +13,6 @@ type SubjectTypeShortString =
 type IsoDateString = `${number}-${number}-${number}T${number}:${number}:${number}.${number}Z`
 
 declare namespace Core {
-    type User = {
-        apikey: string
-        current_vacation_started_at: null | IsoDateString
-        id: string
-        level: number
-        preferences: {
-            default_voice_actor: number
-            extra_study_autoplay_audio: boolean
-            lessons_autoplay_audio: boolean
-            lessons_batch_size: number
-            lessons_presentation_order: string
-            reviews_autoplay_audio: boolean
-            reviews_display_srs_indicator: boolean
-            wanikani_compatibility_mode: boolean
-        }
-        profile_url: string
-        started_at: IsoDateString
-        subscription: {
-            active: boolean
-            max_level_granted: number
-            period_ends_at: null | IsoDateString
-            type: string
-        }
-        username: string
-    }
-
     type FileCache = {
         dir: {
             [key: string]: {
@@ -70,7 +44,6 @@ declare namespace Core {
         on: (event: string, callback: () => void) => void
         trigger: (event: string) => undefined
         support_files: { [key: string]: string }
-        user: User
         load_file: (url: string, use_cache?: boolean) => Promise<any>
         load_script: (url: string, use_cache?: boolean) => Promise<string | undefined>
         load_css: (url: string, use_cache?: boolean) => Promise<string | undefined>
@@ -202,6 +175,31 @@ declare namespace Apiv2 {
         progress_callback?: (endpoint_name: ApiEndpoint, first_new: number, so_far: number, total: number) => void
         force_update?: boolean
     }
+    type User = {
+        apikey: string
+        current_vacation_started_at: null | IsoDateString
+        id: string
+        level: number
+        preferences: {
+            default_voice_actor: number
+            extra_study_autoplay_audio: boolean
+            lessons_autoplay_audio: boolean
+            lessons_batch_size: number
+            lessons_presentation_order: string
+            reviews_autoplay_audio: boolean
+            reviews_display_srs_indicator: boolean
+            wanikani_compatibility_mode: boolean
+        }
+        profile_url: string
+        started_at: IsoDateString
+        subscription: {
+            active: boolean
+            max_level_granted: number
+            period_ends_at: null | IsoDateString
+            type: string
+        }
+        username: string
+    }
 
     export type Module = {
         Apiv2: {
@@ -210,6 +208,7 @@ declare namespace Apiv2 {
             clear_cache: (include_non_user?: boolean) => Promise<undefined>
             apiv2_is_valid_apikey_format: (apikey: string) => boolean
         }
+        user: User
     }
 }
 
