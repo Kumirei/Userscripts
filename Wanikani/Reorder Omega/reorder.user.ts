@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.6
+// @version      0.1.7
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -775,9 +775,9 @@ declare global {
             #active_preset {
                 font-size: 1rem;
                 line-height: 1rem;
-                margin-top: -1rem;
-                text-align: left;
                 padding: 0.5rem;
+                position: absolute;
+                bottom: 0;
             }
 
             #active_preset select {
