@@ -270,7 +270,9 @@ var module = {};
                             case 'self_study': return [3 /*break*/, 3];
                         }
                         return [3 /*break*/, 5];
-                    case 1: return [4 /*yield*/, get_item_data(items)];
+                    case 1:
+                        update_lesson_counts(items);
+                        return [4 /*yield*/, get_item_data(items)];
                     case 2:
                         rest = _b.sent();
                         active_queue = rest.splice(0, $.jStorage.get('l/batchSize'));
@@ -336,6 +338,14 @@ var module = {};
                 }
             });
         });
+    }
+    // Updates the radical, kanji, and vocab counts in lessons
+    function update_lesson_counts(items) {
+        var _a, _b, _c, _d, _e, _f;
+        var counts = wkof.ItemData.get_index(items, 'item_type');
+        $.jStorage.set('l/count/rad', (_b = (_a = counts.radical) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0);
+        $.jStorage.set('l/count/kan', (_d = (_c = counts.kanji) === null || _c === void 0 ? void 0 : _c.length) !== null && _d !== void 0 ? _d : 0);
+        $.jStorage.set('l/count/voc', (_f = (_e = counts.vocabulary) === null || _e === void 0 ? void 0 : _e.length) !== null && _f !== void 0 ? _f : 0);
     }
     function calculate_overdue(item) {
         // Items without assignments or due dates, and burned items, are not overdue

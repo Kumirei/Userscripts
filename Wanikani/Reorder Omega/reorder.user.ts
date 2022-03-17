@@ -294,6 +294,7 @@ declare global {
 
         switch (page) {
             case 'lessons':
+                update_lesson_counts(items)
                 rest = await get_item_data(items)
                 active_queue = rest.splice(0, $.jStorage.get<number>('l/batchSize'))
                 current_item = active_queue[0]
@@ -342,6 +343,14 @@ declare global {
         }
         const data = (await response.json()) as Review.Item[]
         return ids.map((id) => data.find((item) => item.id === id)) as Review.Item[] // Re-sort
+    }
+
+    // Updates the radical, kanji, and vocab counts in lessons
+    function update_lesson_counts(items: ItemData.Item[]) {
+        const counts = wkof.ItemData.get_index(items, 'item_type') as { [key: string]: ItemData.Item[] }
+        $.jStorage.set('l/count/rad', counts.radical?.length ?? 0)
+        $.jStorage.set('l/count/kan', counts.kanji?.length ?? 0)
+        $.jStorage.set('l/count/voc', counts.vocabulary?.length ?? 0)
     }
 
     // -----------------------------------------------------------------------------------------------------------------
