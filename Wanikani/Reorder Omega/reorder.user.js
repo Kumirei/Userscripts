@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.11
+// @version      0.1.12
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -88,7 +88,7 @@ var module = {};
                 inactive_queue_key = 'l/lessonQueue';
                 question_type_key = 'l/questionType';
                 UID_prefix = 'l/stats/';
-                trace_function = 'selectItem';
+                trace_function_test = /selectItem/;
                 egg_timer_location = '#header-buttons';
                 preset_selection_location = '#main-info';
                 break;
@@ -96,7 +96,7 @@ var module = {};
             case 'self_study':
                 inactive_queue_key = 'practiceQueue';
                 UID_prefix = 'e/stats/';
-                // trace_function = 'selectQuestion'
+                // trace_function = /selectQuestion/
                 break;
         }
         return page;
@@ -604,7 +604,6 @@ var module = {};
             // 'selectItem' (lessons page), or 'selectItem' (extra study page) are present. WK uses
             // functions with these names to pick the next question, so we must alter the behavior
             // of Math.random only when called from either of those functions.
-            var trace_function_test = new RegExp("^^Error\\n[^)]+\\)\n\\s+at Object.".concat(trace_function));
             var old_random = Math.random;
             var new_random = function () {
                 var match = !!trace_function_test.exec(new Error().stack);
@@ -614,7 +613,7 @@ var module = {};
             };
             Math.random = new_random;
             console.log('Beware, "Back To Back" is installed and may cause other scripts using Math.random ' +
-                "in a function called \"".concat(trace_function, "\" to misbehave."));
+                "in a function called \"".concat(trace_function_test, "\" to misbehave."));
             // Set item 0 in active queue to current item so the first item will be back to back
             if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) >= 0) {
                 // If active queue is not yet populated, wait until it is to set the currentItem
@@ -1420,7 +1419,7 @@ var module = {};
         if (btn === 'new')
             $("#".concat(script_id, "_").concat(ref, "_name")).focus().select();
     }
-    var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, trace_function, egg_timer_location, preset_selection_location, settings, settings_dialog, SRS_DURATIONS, base64BellAudio;
+    var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, trace_function_test, egg_timer_location, preset_selection_location, settings, settings_dialog, SRS_DURATIONS, base64BellAudio;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -1428,7 +1427,7 @@ var module = {};
                 script_name = 'Reorder Omega';
                 wkof = window.wkof, $ = window.$, WaniKani = window.WaniKani;
                 MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 };
-                current_item_key = 'currentItem', active_queue_key = 'activeQueue', inactive_queue_key = 'reviewQueue', question_type_key = 'questionType', UID_prefix = '', trace_function = 'randomQuestion', egg_timer_location = '#summary-button', preset_selection_location = '#character';
+                current_item_key = 'currentItem', active_queue_key = 'activeQueue', inactive_queue_key = 'reviewQueue', question_type_key = 'questionType', UID_prefix = '', trace_function_test = /randomQuestion/, egg_timer_location = '#summary-button', preset_selection_location = '#character';
                 page = set_page_variables();
                 // This has to be done before WK realizes that the queue is empty and
                 // redirects, thus we have to do it before initializing WKOF

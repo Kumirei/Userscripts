@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.11
+// @version      0.1.12
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -51,7 +51,7 @@ declare global {
         inactive_queue_key: string = 'reviewQueue',
         question_type_key: string = 'questionType',
         UID_prefix: string = '',
-        trace_function: string = 'randomQuestion',
+        trace_function_test: RegExp = /randomQuestion/,
         egg_timer_location: string = '#summary-button',
         preset_selection_location: string = '#character'
     page = set_page_variables()
@@ -113,7 +113,7 @@ declare global {
                 inactive_queue_key = 'l/lessonQueue'
                 question_type_key = 'l/questionType'
                 UID_prefix = 'l/stats/'
-                trace_function = 'selectItem'
+                trace_function_test = /selectItem/
                 egg_timer_location = '#header-buttons'
                 preset_selection_location = '#main-info'
                 break
@@ -121,7 +121,7 @@ declare global {
             case 'self_study':
                 inactive_queue_key = 'practiceQueue'
                 UID_prefix = 'e/stats/'
-                // trace_function = 'selectQuestion'
+                // trace_function = /selectQuestion/
                 break
         }
 
@@ -652,7 +652,6 @@ declare global {
             // 'selectItem' (lessons page), or 'selectItem' (extra study page) are present. WK uses
             // functions with these names to pick the next question, so we must alter the behavior
             // of Math.random only when called from either of those functions.
-            const trace_function_test = new RegExp(`^^Error\\n[^)]+\\)\n\\s+at Object.${trace_function}`)
             const old_random = Math.random
             const new_random = function (): number {
                 const match = !!trace_function_test.exec(new Error().stack as string)
@@ -663,7 +662,7 @@ declare global {
 
             console.log(
                 'Beware, "Back To Back" is installed and may cause other scripts using Math.random ' +
-                    `in a function called "${trace_function}" to misbehave.`,
+                    `in a function called "${trace_function_test}" to misbehave.`,
             )
 
             // Set item 0 in active queue to current item so the first item will be back to back
