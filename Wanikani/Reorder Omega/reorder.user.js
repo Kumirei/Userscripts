@@ -259,29 +259,47 @@ var module = {};
     // Takes a list of WKOF item and puts them into the queue
     function update_queue(items) {
         return __awaiter(this, void 0, void 0, function () {
-            var current_item, active_queue, rest;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var current_item, active_queue, rest, _a, active_queue_composition;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        if (!(page === 'lessons')) return [3 /*break*/, 2];
-                        return [4 /*yield*/, get_item_data(items)];
-                    case 1:
-                        rest = _a.sent();
+                        _a = page;
+                        switch (_a) {
+                            case 'lessons': return [3 /*break*/, 1];
+                            case 'extra_study': return [3 /*break*/, 3];
+                            case 'self_study': return [3 /*break*/, 3];
+                        }
+                        return [3 /*break*/, 5];
+                    case 1: return [4 /*yield*/, get_item_data(items)];
+                    case 2:
+                        rest = _b.sent();
                         active_queue = rest.splice(0, $.jStorage.get('l/batchSize'));
                         current_item = active_queue[0];
-                        return [3 /*break*/, 4];
-                    case 2: return [4 /*yield*/, get_item_data(items.splice(0, 10))];
+                        return [3 /*break*/, 7];
                     case 3:
-                        active_queue = _a.sent();
+                        active_queue_composition = void 0;
+                        if (items.length >= 10)
+                            active_queue_composition = items.splice(0, 1).concat(items.splice(-9, 9));
+                        else
+                            active_queue_composition = items;
+                        return [4 /*yield*/, get_item_data(active_queue_composition.reverse())];
+                    case 4:
+                        active_queue = _b.sent();
+                        current_item = active_queue[active_queue.length - 1];
+                        rest = items.map(function (item) { return item.id; });
+                        return [3 /*break*/, 7];
+                    case 5: return [4 /*yield*/, get_item_data(items.splice(0, 10))];
+                    case 6:
+                        active_queue = _b.sent();
                         current_item = active_queue[0];
                         rest = items.map(function (item) { return item.id; });
-                        _a.label = 4;
-                    case 4:
+                        return [3 /*break*/, 7];
+                    case 7:
                         if (current_item.type === 'Radical')
                             $.jStorage.set(question_type_key, 'meaning'); // Has to be set before currentItem
                         $.jStorage.set(current_item_key, current_item);
                         $.jStorage.set(active_queue_key, active_queue);
-                        $.jStorage.set(inactive_queue_key, rest);
+                        $.jStorage.set(inactive_queue_key, rest.reverse()); // Reverse because items are popped from inactive queue
                         return [2 /*return*/];
                 }
             });

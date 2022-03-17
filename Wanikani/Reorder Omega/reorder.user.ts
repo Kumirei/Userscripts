@@ -292,20 +292,35 @@ declare global {
     async function update_queue(items: ItemData.Item[]): Promise<void> {
         let current_item: Review.Item, active_queue: Review.Item[], rest: number[] | Review.Item[]
 
-        if (page === 'lessons') {
-            rest = await get_item_data(items)
-            active_queue = rest.splice(0, $.jStorage.get<number>('l/batchSize'))
-            current_item = active_queue[0]
-        } else {
-            active_queue = await get_item_data(items.splice(0, 10))
-            current_item = active_queue[0]
-            rest = items.map((item) => item.id)
+        switch (page) {
+            case 'lessons':
+                rest = await get_item_data(items)
+                active_queue = rest.splice(0, $.jStorage.get<number>('l/batchSize'))
+                current_item = active_queue[0]
+                break
+            case 'extra_study':
+            case 'self_study':
+                // The extra study active queue is a bit strange. It ever only picks the last item of the queue,
+                // and replenishes it from the back. This means that the first 9 items of the active queue are the
+                // last 9 items you will see...
+                let active_queue_composition: ItemData.Item[]
+                if (items.length >= 10) active_queue_composition = items.splice(0, 1).concat(items.splice(-9, 9))
+                else active_queue_composition = items
+                active_queue = await get_item_data(active_queue_composition.reverse())
+                current_item = active_queue[active_queue.length - 1]
+                rest = items.map((item) => item.id)
+                break
+            default:
+                active_queue = await get_item_data(items.splice(0, 10))
+                current_item = active_queue[0]
+                rest = items.map((item) => item.id)
+                break
         }
 
         if (current_item.type === 'Radical') $.jStorage.set(question_type_key, 'meaning') // Has to be set before currentItem
         $.jStorage.set(current_item_key, current_item)
         $.jStorage.set(active_queue_key, active_queue)
-        $.jStorage.set(inactive_queue_key, rest)
+        $.jStorage.set(inactive_queue_key, rest.reverse()) // Reverse because items are popped from inactive queue
     }
 
     // Retrieves the item's info from the WK api
