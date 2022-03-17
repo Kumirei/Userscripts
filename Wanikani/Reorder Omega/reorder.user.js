@@ -381,16 +381,7 @@ var module = {};
     // -----------------------------------------------------------------------------------------------------------------
     // Logical XOR
     function xor(a, b) {
-        return a !== b; // since a and b are guaranteed to be boolean
-    }
-    // Sorting the array twice keeps the relative order of the sorted items. Example:
-    // Original [8, 4, 5, 1, 7, 4, 5, 4, 6, 1].sort((a,b)=>a>5 ? -1 : 1)
-    // Sorted   [6, 7, 8, 4, 5, 1, 4, 5, 4, 1].sort((a,b)=>a>5 ? -1 : 1)
-    // Final    [8, 7, 6, 4, 5, 1, 4, 5, 4, 1]
-    // This is important when chaining multiple sorting actions, so that the results of
-    // one sort don't get reversed (front to back) by the next sort
-    function double_sort(items, sorter) {
-        return items.sort(sorter).sort(sorter);
+        return a !== b; // Since a and b are guaranteed to be boolean
     }
     // Sorts items by the order they appear in a list
     function sort_by_list(a, b, order) {
