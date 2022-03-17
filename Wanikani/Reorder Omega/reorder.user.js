@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.13
+// @version      0.1.14
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -504,7 +504,7 @@ var module = {};
                 current: {},
                 prev: {},
                 save: function () {
-                    return localStorage.setItem("".concat(script_id, "_streak"), JSON.stringify({ streak: streak.current.streak, max: streak.current.max }));
+                    return localStorage.setItem("".concat(script_id, "_").concat(page, "_streak"), JSON.stringify({ streak: streak.current.streak, max: streak.current.max }));
                 },
                 load: function () {
                     var _a;

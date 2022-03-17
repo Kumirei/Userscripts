@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.13
+// @version      0.1.14
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -549,7 +549,7 @@ declare global {
                 prev: {} as StreakTracker,
                 save: (): void =>
                     localStorage.setItem(
-                        `${script_id}_streak`,
+                        `${script_id}_${page}_streak`,
                         JSON.stringify({ streak: streak.current.streak, max: streak.current.max }),
                     ),
                 load: (): void => {
