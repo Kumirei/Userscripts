@@ -218,6 +218,10 @@ var module = {};
     // Retrieves the ids of the the items in the current queue
     function get_queue_ids() {
         var active_queue = $.jStorage.get(active_queue_key);
+        // Swap current item into first position so that the current item doesn't change
+        var current_item = $.jStorage.get(current_item_key);
+        var current_item_index = active_queue.findIndex(function (item) { return item.id === current_item.id; });
+        swap(active_queue, 0, current_item_index);
         var inactive_queue = $.jStorage.get(inactive_queue_key);
         var remaining_queue = inactive_queue.map(function (item) { return (typeof item === 'number' ? item : item.id); });
         return active_queue.map(function (item) { return item.id; }).concat(remaining_queue);
@@ -615,7 +619,8 @@ var module = {};
                     var current_item = active_queue[0];
                     if (page in ['extra_study', 'self_study'])
                         current_item = active_queue[active_queue.length - 1]; // Extra study page picks last item
-                    $.jStorage.set(current_item_key, $.jStorage.get(active_queue_key)[0]);
+                    if (settings.back2back)
+                        $.jStorage.set(current_item_key, current_item);
                     $.jStorage.stopListening(active_queue_key, callback_1);
                 };
                 if ((_a = $.jStorage.get(active_queue_key)) === null || _a === void 0 ? void 0 : _a.length)

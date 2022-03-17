@@ -246,6 +246,12 @@ declare global {
     // Retrieves the ids of the the items in the current queue
     function get_queue_ids(): number[] {
         const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key)
+
+        // Swap current item into first position so that the current item doesn't change
+        const current_item = $.jStorage.get<Review.Item>(current_item_key)
+        const current_item_index = active_queue.findIndex((item) => item.id === current_item.id)
+        swap(active_queue, 0, current_item_index)
+
         const inactive_queue = $.jStorage.get<(Review.Item | number)[]>(inactive_queue_key)
         const remaining_queue = inactive_queue.map((item) => (typeof item === 'number' ? item : item.id))
         return active_queue.map((item) => item.id).concat(remaining_queue)
@@ -662,7 +668,7 @@ declare global {
                     const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key)
                     let current_item = active_queue[0]
                     if (page in ['extra_study', 'self_study']) current_item = active_queue[active_queue.length - 1] // Extra study page picks last item
-                    $.jStorage.set(current_item_key, $.jStorage.get<Review.Item[]>(active_queue_key)[0])
+                    if (settings.back2back) $.jStorage.set(current_item_key, current_item)
                     $.jStorage.stopListening(active_queue_key, callback)
                 }
                 if ($.jStorage.get<Review.Item[]>(active_queue_key)?.length) callback()
