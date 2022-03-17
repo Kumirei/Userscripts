@@ -63,7 +63,7 @@ export namespace Settings {
         display_egg_timer: boolean
         display_streak: boolean
         burn_bell: boolean
-        random_voice_actor: boolean
+        voice_actor: 'default' | 'random' | 'alternate'
         back2back: boolean
         prioritize: 'none' | 'reading' | 'reading'
     }

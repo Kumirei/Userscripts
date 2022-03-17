@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.10
+// @version      0.1.11
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -39,7 +39,7 @@ declare global {
     const script_name = 'Reorder Omega'
 
     // Globals
-    const { wkof, $ } = window
+    const { wkof, $, WaniKani } = window
 
     // Constants
     const MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 }
@@ -505,13 +505,13 @@ declare global {
         install_egg_timer()
         install_streak()
         install_burn_bell()
-        install_random_voice_actor()
+        install_voice_actor_control()
         install_back_to_back()
         install_prioritization()
 
         // Displays the current duration of the sessions
         function install_egg_timer(): void {
-            if (!(page in ['reviews', 'lessons', 'extra_study', 'self_study'])) return
+            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) < 0) return
             const egg_timer_start = Date.now()
             const egg_timer = $(`<div id="egg_timer">Elapsed: 0s</div>`)
             setInterval((): void => {
@@ -522,7 +522,7 @@ declare global {
 
         // Installs the tracking of streaks of correct answers (note: not items)
         function install_streak(): void {
-            if (!(page in ['reviews', 'extra_study', 'self_study'])) return
+            if (['reviews', 'extra_study', 'self_study'].indexOf(page) < 0) return
 
             // Create and insert element into page
             const elem = $(
@@ -626,22 +626,26 @@ declare global {
             }
         }
 
-        // Sets up the randomization of the voice actor in the quizzes
-        function install_random_voice_actor(): void {
-            if (!(page in ['reviews', 'lessons', 'extra_study', 'self_study'])) return
-            $.jStorage.listenKeyChange('*', randomize_voice_actor)
+        // Sets up the randomization or alternation of the voice actor in the quizzes
+        function install_voice_actor_control(): void {
+            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) < 0) return
+            $.jStorage.listenKeyChange(current_item_key, update_default_voice_actor)
+            $.jStorage.listenKeyChange('l/currentQuizItem', update_default_voice_actor)
 
-            function randomize_voice_actor(): void {
-                const voice_actors = window.WaniKani.voice_actors
-                const voice_actor_id = voice_actors[Math.floor(Math.random() * voice_actors.length)].voice_actor_id
-                if (settings.random_voice_actor) window.WaniKani.default_voice_actor_id = voice_actor_id
+            function update_default_voice_actor(): void {
+                const voice_actors = WaniKani.voice_actors
+                const random = voice_actors[Math.floor(Math.random() * voice_actors.length)].voice_actor_id
+                const alternate =
+                    voice_actors[(WaniKani.default_voice_actor_id + 1) % voice_actors.length].voice_actor_id
+                if (settings.voice_actor === 'random') WaniKani.default_voice_actor_id = random
+                else if (settings.voice_actor === 'alternate') WaniKani.default_voice_actor_id = alternate
             }
         }
 
         // Sets up the back2back features so that meaning and reading questions
         // can be made to appear after each other
         function install_back_to_back(): void {
-            if (!(page in ['reviews', 'lessons', 'extra_study', 'self_study'])) return
+            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) < 0) return
 
             // Replace Math.random only for the wanikani script this is done by throwing an error and
             // checking the trace to see if either of the functions 'randomQuestion' (reviews page),
@@ -663,12 +667,13 @@ declare global {
             )
 
             // Set item 0 in active queue to current item so the first item will be back to back
-            if (page in ['reviews', 'lessons', 'extra_study', 'self_study']) {
+            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) >= 0) {
                 // If active queue is not yet populated, wait until it is to set the currentItem
                 const callback = () => {
                     const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key)
                     let current_item = active_queue[0]
-                    if (page in ['extra_study', 'self_study']) current_item = active_queue[active_queue.length - 1] // Extra study page picks last item
+                    if (['extra_study', 'self_study'].indexOf(page) >= 0)
+                        current_item = active_queue[active_queue.length - 1] // Extra study page picks last item
                     if (settings.back2back) $.jStorage.set(current_item_key, current_item)
                     $.jStorage.stopListening(active_queue_key, callback)
                 }
@@ -839,7 +844,7 @@ declare global {
             display_egg_timer: true,
             display_streak: true,
             burn_bell: false,
-            random_voice_actor: false,
+            voice_actor: 'default',
             back2back: false,
             prioritize: 'none',
         }
@@ -938,12 +943,6 @@ declare global {
                                     label: 'Burn Bell',
                                     hover_tip: 'Play a bell sound when you burn an item',
                                 },
-                                random_voice_actor: {
-                                    type: 'checkbox',
-                                    default: false,
-                                    label: 'Random Voice Actor',
-                                    hover_tip: 'Randomize which voice gets played',
-                                },
                                 back2back: {
                                     type: 'checkbox',
                                     default: false,
@@ -959,6 +958,17 @@ declare global {
                                         none: 'None',
                                         reading: 'Reading',
                                         meaning: 'Meaning',
+                                    },
+                                },
+                                voice_actor: {
+                                    type: 'dropdown',
+                                    default: `default`,
+                                    label: 'Voice Actor',
+                                    hover_tip: 'Randomize or alternate the voice that is played',
+                                    content: {
+                                        default: `Default`,
+                                        random: 'Randomize',
+                                        alternate: 'Alternate',
                                     },
                                 },
                             },
@@ -1437,7 +1447,7 @@ declare global {
         const preset = settings.presets[settings.selected_preset]
         const action = preset.actions[preset.selected_action]
         $('.visible_action_value').removeClass('visible_action_value')
-        if (action.type in ['sort', 'filter']) {
+        if (['sort', 'filter'].indexOf(action.type) >= 0) {
             // @ts-ignore
             // Don't know how to type this properly
             $(`#${script_id}_${action.type}_by_${action[action.type][action.type]}`)

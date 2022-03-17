@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.10
+// @version      0.1.11
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -473,12 +473,12 @@ var module = {};
         install_egg_timer();
         install_streak();
         install_burn_bell();
-        install_random_voice_actor();
+        install_voice_actor_control();
         install_back_to_back();
         install_prioritization();
         // Displays the current duration of the sessions
         function install_egg_timer() {
-            if (!(page in ['reviews', 'lessons', 'extra_study', 'self_study']))
+            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) < 0)
                 return;
             var egg_timer_start = Date.now();
             var egg_timer = $("<div id=\"egg_timer\">Elapsed: 0s</div>");
@@ -489,7 +489,7 @@ var module = {};
         }
         // Installs the tracking of streaks of correct answers (note: not items)
         function install_streak() {
-            if (!(page in ['reviews', 'extra_study', 'self_study']))
+            if (['reviews', 'extra_study', 'self_study'].indexOf(page) < 0)
                 return;
             // Create and insert element into page
             var elem = $("<span id=\"streak\"><i class=\"fa fa-trophy\"></i><span class=\"current\">0</span>(<span class=\"max\">0</span>)</span>");
@@ -577,23 +577,27 @@ var module = {};
                 delete listening[UID];
             }
         }
-        // Sets up the randomization of the voice actor in the quizzes
-        function install_random_voice_actor() {
-            if (!(page in ['reviews', 'lessons', 'extra_study', 'self_study']))
+        // Sets up the randomization or alternation of the voice actor in the quizzes
+        function install_voice_actor_control() {
+            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) < 0)
                 return;
-            $.jStorage.listenKeyChange('*', randomize_voice_actor);
-            function randomize_voice_actor() {
-                var voice_actors = window.WaniKani.voice_actors;
-                var voice_actor_id = voice_actors[Math.floor(Math.random() * voice_actors.length)].voice_actor_id;
-                if (settings.random_voice_actor)
-                    window.WaniKani.default_voice_actor_id = voice_actor_id;
+            $.jStorage.listenKeyChange(current_item_key, update_default_voice_actor);
+            $.jStorage.listenKeyChange('l/currentQuizItem', update_default_voice_actor);
+            function update_default_voice_actor() {
+                var voice_actors = WaniKani.voice_actors;
+                var random = voice_actors[Math.floor(Math.random() * voice_actors.length)].voice_actor_id;
+                var alternate = voice_actors[(WaniKani.default_voice_actor_id + 1) % voice_actors.length].voice_actor_id;
+                if (settings.voice_actor === 'random')
+                    WaniKani.default_voice_actor_id = random;
+                else if (settings.voice_actor === 'alternate')
+                    WaniKani.default_voice_actor_id = alternate;
             }
         }
         // Sets up the back2back features so that meaning and reading questions
         // can be made to appear after each other
         function install_back_to_back() {
             var _a;
-            if (!(page in ['reviews', 'lessons', 'extra_study', 'self_study']))
+            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) < 0)
                 return;
             // Replace Math.random only for the wanikani script this is done by throwing an error and
             // checking the trace to see if either of the functions 'randomQuestion' (reviews page),
@@ -612,12 +616,12 @@ var module = {};
             console.log('Beware, "Back To Back" is installed and may cause other scripts using Math.random ' +
                 "in a function called \"".concat(trace_function, "\" to misbehave."));
             // Set item 0 in active queue to current item so the first item will be back to back
-            if (page in ['reviews', 'lessons', 'extra_study', 'self_study']) {
+            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) >= 0) {
                 // If active queue is not yet populated, wait until it is to set the currentItem
                 var callback_1 = function () {
                     var active_queue = $.jStorage.get(active_queue_key);
                     var current_item = active_queue[0];
-                    if (page in ['extra_study', 'self_study'])
+                    if (['extra_study', 'self_study'].indexOf(page) >= 0)
                         current_item = active_queue[active_queue.length - 1]; // Extra study page picks last item
                     if (settings.back2back)
                         $.jStorage.set(current_item_key, current_item);
@@ -734,7 +738,7 @@ var module = {};
             display_egg_timer: true,
             display_streak: true,
             burn_bell: false,
-            random_voice_actor: false,
+            voice_actor: 'default',
             back2back: false,
             prioritize: 'none'
         };
@@ -829,12 +833,6 @@ var module = {};
                                     label: 'Burn Bell',
                                     hover_tip: 'Play a bell sound when you burn an item'
                                 },
-                                random_voice_actor: {
-                                    type: 'checkbox',
-                                    "default": false,
-                                    label: 'Random Voice Actor',
-                                    hover_tip: 'Randomize which voice gets played'
-                                },
                                 back2back: {
                                     type: 'checkbox',
                                     "default": false,
@@ -850,6 +848,17 @@ var module = {};
                                         none: 'None',
                                         reading: 'Reading',
                                         meaning: 'Meaning'
+                                    }
+                                },
+                                voice_actor: {
+                                    type: 'dropdown',
+                                    "default": "default",
+                                    label: 'Voice Actor',
+                                    hover_tip: 'Randomize or alternate the voice that is played',
+                                    content: {
+                                        "default": "Default",
+                                        random: 'Randomize',
+                                        alternate: 'Alternate'
                                     }
                                 }
                             }
@@ -1313,7 +1322,7 @@ var module = {};
         var preset = settings.presets[settings.selected_preset];
         var action = preset.actions[preset.selected_action];
         $('.visible_action_value').removeClass('visible_action_value');
-        if (action.type in ['sort', 'filter']) {
+        if (['sort', 'filter'].indexOf(action.type) >= 0) {
             // @ts-ignore
             // Don't know how to type this properly
             $("#".concat(script_id, "_").concat(action.type, "_by_").concat(action[action.type][action.type]))
@@ -1411,13 +1420,13 @@ var module = {};
         if (btn === 'new')
             $("#".concat(script_id, "_").concat(ref, "_name")).focus().select();
     }
-    var script_id, script_name, wkof, $, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, trace_function, egg_timer_location, preset_selection_location, settings, settings_dialog, SRS_DURATIONS, base64BellAudio;
+    var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, trace_function, egg_timer_location, preset_selection_location, settings, settings_dialog, SRS_DURATIONS, base64BellAudio;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 script_id = 'reorder_omega';
                 script_name = 'Reorder Omega';
-                wkof = window.wkof, $ = window.$;
+                wkof = window.wkof, $ = window.$, WaniKani = window.WaniKani;
                 MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 };
                 current_item_key = 'currentItem', active_queue_key = 'activeQueue', inactive_queue_key = 'reviewQueue', question_type_key = 'questionType', UID_prefix = '', trace_function = 'randomQuestion', egg_timer_location = '#summary-button', preset_selection_location = '#character';
                 page = set_page_variables();
