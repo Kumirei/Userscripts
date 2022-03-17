@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.7
+// @version      0.1.8
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -176,8 +176,13 @@ declare global {
     // final: Items which have been frozen by the "Freeze & Restore" action
     function process_preset(preset: Settings.Preset, items: ItemData.Item[]): ItemData.Item[] {
         let result: PresetItems = { keep: items, discard: [], final: [] }
+        console.log(preset)
+
         for (let action of preset.actions) {
+            console.log(result)
+
             result = process_action(action, result)
+            console.log(result)
         }
         return result.final.concat(result.keep) // Add the kept items to final
     }
@@ -735,8 +740,19 @@ declare global {
             hover_tip: 'Get the first N number of items from the queue',
             filter_func: (() => {
                 let count = 0
-                return (value) => count++ < value
+                let filter_start = 0
+                return ({ value, start }, item) => {
+                    if (filter_start !== start) {
+                        // Reset if this is a different filter
+                        filter_start = start
+                        count = 0
+                    }
+                    return count++ < value
+                }
             })(),
+            filter_value_map: (value: number) => {
+                return { value, start: Date.now() }
+            },
         }
     }
 

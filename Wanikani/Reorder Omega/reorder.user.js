@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.7
+// @version      0.1.8
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -152,9 +152,12 @@ var module = {};
     // final: Items which have been frozen by the "Freeze & Restore" action
     function process_preset(preset, items) {
         var result = { keep: items, discard: [], final: [] };
+        console.log(preset);
         for (var _i = 0, _a = preset.actions; _i < _a.length; _i++) {
             var action = _a[_i];
+            console.log(result);
             result = process_action(action, result);
+            console.log(result);
         }
         return result.final.concat(result.keep); // Add the kept items to final
     }
@@ -681,8 +684,20 @@ var module = {};
             hover_tip: 'Get the first N number of items from the queue',
             filter_func: (function () {
                 var count = 0;
-                return function (value) { return count++ < value; };
-            })()
+                var filter_start = 0;
+                return function (_a, item) {
+                    var value = _a.value, start = _a.start;
+                    if (filter_start !== start) {
+                        // Reset if this is a different filter
+                        filter_start = start;
+                        count = 0;
+                    }
+                    return count++ < value;
+                };
+            })(),
+            filter_value_map: function (value) {
+                return { value: value, start: Date.now() };
+            }
         };
     }
     // Installs the CSS
