@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Review Queue SRS Breakdown
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Adds a display showing how many items of each SRS stage there are in your queue
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/review/session/
@@ -52,7 +52,7 @@
     function get_queue() {
         const reviewQueue = $.jStorage
             .get('reviewQueue')
-            .map((item) => (typeof item === 'number' ? { srs: items_by_id[id].assignments.srs_stage } : item))
+            .map((item) => (typeof item === 'number' ? { srs: items_by_id[item].assignments.srs_stage } : item))
         return [...$.jStorage.get('activeQueue'), ...reviewQueue]
     }
 
