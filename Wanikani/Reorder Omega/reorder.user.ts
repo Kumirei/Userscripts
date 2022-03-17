@@ -379,7 +379,7 @@ declare global {
 
     // Sorts items by the order they appear in a list
     function sort_by_list<T>(a: T, b: T, order: T[]): number {
-        return order.indexOf(a) - order.indexOf(b)
+        return (order.indexOf(a) + 1 || order.length + 1) - (order.indexOf(b) + 1 || order.length + 1)
     }
 
     // A filter function that also returns the items discarded by the filter
