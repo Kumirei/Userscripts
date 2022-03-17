@@ -504,7 +504,7 @@ declare global {
 
         // Displays the current duration of the sessions
         function install_egg_timer(): void {
-            if (page !== 'reviews' && page !== 'lessons' && page !== 'extra_study' && page !== 'self_study') return
+            if (!(page in ['reviews', 'lessons', 'extra_study', 'self_study'])) return
             const egg_timer_start = Date.now()
             const egg_timer = $(`<div id="egg_timer">Elapsed: 0s</div>`)
             setInterval((): void => {
@@ -515,7 +515,7 @@ declare global {
 
         // Installs the tracking of streaks of correct answers (note: not items)
         function install_streak(): void {
-            if (page !== 'reviews' && page !== 'extra_study' && page !== 'self_study') return
+            if (!(page in ['reviews', 'extra_study', 'self_study'])) return
 
             // Create and insert element into page
             const elem = $(
@@ -621,7 +621,7 @@ declare global {
 
         // Sets up the randomization of the voice actor in the quizzes
         function install_random_voice_actor(): void {
-            if (page !== 'reviews' && page !== 'lessons' && page !== 'extra_study' && page !== 'self_study') return
+            if (!(page in ['reviews', 'lessons', 'extra_study', 'self_study'])) return
             $.jStorage.listenKeyChange('*', randomize_voice_actor)
 
             function randomize_voice_actor(): void {
@@ -634,8 +634,7 @@ declare global {
         // Sets up the back2back features so that meaning and reading questions
         // can be made to appear after each other
         function install_back_to_back(): void {
-            // For now this is not active in extra study since it is already back to back
-            if (page !== 'reviews' && page !== 'lessons') return
+            if (!(page in ['reviews', 'lessons', 'extra_study', 'self_study'])) return
 
             // Replace Math.random only for the wanikani script this is done by throwing an error and
             // checking the trace to see if either of the functions 'randomQuestion' (reviews page),

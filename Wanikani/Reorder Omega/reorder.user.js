@@ -474,7 +474,7 @@ var module = {};
         install_prioritization();
         // Displays the current duration of the sessions
         function install_egg_timer() {
-            if (page !== 'reviews' && page !== 'lessons' && page !== 'extra_study' && page !== 'self_study')
+            if (!(page in ['reviews', 'lessons', 'extra_study', 'self_study']))
                 return;
             var egg_timer_start = Date.now();
             var egg_timer = $("<div id=\"egg_timer\">Elapsed: 0s</div>");
@@ -485,7 +485,7 @@ var module = {};
         }
         // Installs the tracking of streaks of correct answers (note: not items)
         function install_streak() {
-            if (page !== 'reviews' && page !== 'extra_study' && page !== 'self_study')
+            if (!(page in ['reviews', 'extra_study', 'self_study']))
                 return;
             // Create and insert element into page
             var elem = $("<span id=\"streak\"><i class=\"fa fa-trophy\"></i><span class=\"current\">0</span>(<span class=\"max\">0</span>)</span>");
@@ -575,7 +575,7 @@ var module = {};
         }
         // Sets up the randomization of the voice actor in the quizzes
         function install_random_voice_actor() {
-            if (page !== 'reviews' && page !== 'lessons' && page !== 'extra_study' && page !== 'self_study')
+            if (!(page in ['reviews', 'lessons', 'extra_study', 'self_study']))
                 return;
             $.jStorage.listenKeyChange('*', randomize_voice_actor);
             function randomize_voice_actor() {
@@ -589,8 +589,7 @@ var module = {};
         // can be made to appear after each other
         function install_back_to_back() {
             var _a;
-            // For now this is not active in extra study since it is already back to back
-            if (page !== 'reviews' && page !== 'lessons')
+            if (!(page in ['reviews', 'lessons', 'extra_study', 'self_study']))
                 return;
             // Replace Math.random only for the wanikani script this is done by throwing an error and
             // checking the trace to see if either of the functions 'randomQuestion' (reviews page),
