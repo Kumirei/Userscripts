@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.9
+// @version      0.1.10
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -15,7 +15,7 @@ const module = {}
 export = null
 
 // Import types
-import { WKOF, ItemData, Menu, Settings as SettingsModule, SubjectType, SubjectTypeShortString } from './wkof'
+import { WKOF, ItemData, Menu, Settings as SettingsModule, SubjectType, Apiv2 } from './wkof'
 import { Review, Settings } from './reorder'
 
 // We have to extend the global window object since the values are already present
@@ -23,7 +23,7 @@ import { Review, Settings } from './reorder'
 declare global {
     interface Window {
         // We have to insert the modules we want to use into the WKOF type
-        wkof: WKOF & ItemData & Menu & SettingsModule
+        wkof: WKOF & ItemData & Menu & SettingsModule & Apiv2
         $: JQueryStatic
         WaniKani: any
     }
@@ -66,9 +66,10 @@ declare global {
 
     // Initiate WKOF
     await confirm_wkof()
-    wkof.include('Settings,Menu,ItemData')
+    wkof.include('Settings,Menu,ItemData,Apiv2') // Apiv2 purely for the user module
     wkof.ready('ItemData.registry').then(install_filters)
     await wkof.ready('Settings,Menu').then(load_settings).then(install_menu)
+    await wkof.ready('ItemData,Apiv2')
 
     // Install css
     install_css()
@@ -687,13 +688,9 @@ declare global {
             function prioritize(): void {
                 const prio = settings.prioritize
                 const item = $.jStorage.get<Review.Item>(current_item_key)
-                // Skip if item is a radical, it is already the right question, or no priority is selected
-                if (
-                    item.type == 'Radical' ||
-                    $.jStorage.get<'meaning' | 'reading'>(question_type_key) == prio ||
-                    'none' == prio
-                )
-                    return
+                const question_type = $.jStorage.get<'meaning' | 'reading'>(question_type_key)
+                // Skip if item is not defined, it is a radical, it is already the right question, or no priority is selected
+                if (!item || item.type == 'Radical' || question_type == prio || 'none' == prio) return
                 const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
                 const done = $.jStorage.get<Review.AnswersObject>(UID_prefix + UID)
                 // Change the question if no question has been answered yet,

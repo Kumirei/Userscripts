@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.9
+// @version      0.1.10
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -639,10 +639,9 @@ var module = {};
             function prioritize() {
                 var prio = settings.prioritize;
                 var item = $.jStorage.get(current_item_key);
-                // Skip if item is a radical, it is already the right question, or no priority is selected
-                if (item.type == 'Radical' ||
-                    $.jStorage.get(question_type_key) == prio ||
-                    'none' == prio)
+                var question_type = $.jStorage.get(question_type_key);
+                // Skip if item is not defined, it is a radical, it is already the right question, or no priority is selected
+                if (!item || item.type == 'Radical' || question_type == prio || 'none' == prio)
                     return;
                 var UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id;
                 var done = $.jStorage.get(UID_prefix + UID);
@@ -1431,12 +1430,15 @@ var module = {};
             case 1:
                 // Initiate WKOF
                 _a.sent();
-                wkof.include('Settings,Menu,ItemData');
+                wkof.include('Settings,Menu,ItemData,Apiv2'); // Apiv2 purely for the user module
                 wkof.ready('ItemData.registry').then(install_filters);
-                return [4 /*yield*/, wkof.ready('Settings,Menu').then(load_settings).then(install_menu)
+                return [4 /*yield*/, wkof.ready('Settings,Menu').then(load_settings).then(install_menu)];
+            case 2:
+                _a.sent();
+                return [4 /*yield*/, wkof.ready('ItemData,Apiv2')
                     // Install css
                 ];
-            case 2:
+            case 3:
                 _a.sent();
                 // Install css
                 install_css();
