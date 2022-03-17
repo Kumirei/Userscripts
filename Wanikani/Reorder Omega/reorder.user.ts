@@ -176,13 +176,8 @@ declare global {
     // final: Items which have been frozen by the "Freeze & Restore" action
     function process_preset(preset: Settings.Preset, items: ItemData.Item[]): ItemData.Item[] {
         let result: PresetItems = { keep: items, discard: [], final: [] }
-        console.log(preset)
-
         for (let action of preset.actions) {
-            console.log(result)
-
             result = process_action(action, result)
-            console.log(result)
         }
         return result.final.concat(result.keep) // Add the kept items to final
     }

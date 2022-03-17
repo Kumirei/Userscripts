@@ -152,12 +152,9 @@ var module = {};
     // final: Items which have been frozen by the "Freeze & Restore" action
     function process_preset(preset, items) {
         var result = { keep: items, discard: [], final: [] };
-        console.log(preset);
         for (var _i = 0, _a = preset.actions; _i < _a.length; _i++) {
             var action = _a[_i];
-            console.log(result);
             result = process_action(action, result);
-            console.log(result);
         }
         return result.final.concat(result.keep); // Add the kept items to final
     }
