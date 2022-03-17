@@ -107,18 +107,18 @@ var module = {};
     // Runs the selected preset on the queue
     function run() {
         return __awaiter(this, void 0, void 0, function () {
-            var items, ids_1, completed_1;
+            var items, items_by_id, completed_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, wkof.ItemData.get_items('assignments,review_statistics')];
                     case 1:
                         items = _a.sent();
+                        items_by_id = wkof.ItemData.get_index(items, 'subject_id');
                         switch (page) {
                             case 'reviews':
                             case 'lessons':
                             case 'extra_study':
-                                ids_1 = get_queue_ids();
-                                items = items.filter(function (item) { return ids_1.has(item.id); }); // Get wkof items from ids
+                                items = get_queue_ids().map(function (id) { return items_by_id[id]; });
                                 break;
                             case 'self_study':
                                 completed_1 = get_completed_ids();
@@ -223,7 +223,7 @@ var module = {};
             remaining_queue = $.jStorage.get(inactive_queue_key).map(function (item) { return item.id; });
         else
             remaining_queue = $.jStorage.get(inactive_queue_key);
-        return new Set(active_queue.map(function (item) { return item.id; }).concat(remaining_queue));
+        return active_queue.map(function (item) { return item.id; }).concat(remaining_queue);
     }
     // Retrieves the ids of already completed items
     function get_completed_ids() {

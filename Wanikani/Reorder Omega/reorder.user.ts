@@ -134,18 +134,18 @@ declare global {
     // Runs the selected preset on the queue
     async function run(): Promise<void> {
         let items = await wkof.ItemData.get_items('assignments,review_statistics')
+        const items_by_id = wkof.ItemData.get_index<ItemData.Item>(items, 'subject_id')
 
         switch (page) {
             case 'reviews':
             case 'lessons':
             case 'extra_study':
-                let ids = get_queue_ids()
-                items = items.filter((item) => ids.has(item.id)) // Get wkof items from ids
+                items = get_queue_ids().map((id) => items_by_id[id])
                 break
             case 'self_study':
                 const completed = get_completed_ids()
                 items = items.filter((item) => !completed.has(item.id)) // Filter out answered items
-                shuffle<ItemData.Item>(items) // Always shuffle self study items
+                shuffle(items) // Always shuffle self study items
                 break
             default:
                 return
@@ -244,13 +244,13 @@ declare global {
     }
 
     // Retrieves the ids of the the items in the current queue
-    function get_queue_ids(): Set<number> {
+    function get_queue_ids(): number[] {
         const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key)
         let remaining_queue: number[]
         if (page === 'lessons')
             remaining_queue = $.jStorage.get<Review.Item[]>(inactive_queue_key).map((item) => item.id)
         else remaining_queue = $.jStorage.get<number[]>(inactive_queue_key)
-        return new Set(active_queue.map((item) => item.id).concat(remaining_queue))
+        return active_queue.map((item) => item.id).concat(remaining_queue)
     }
 
     // Retrieves the ids of already completed items
