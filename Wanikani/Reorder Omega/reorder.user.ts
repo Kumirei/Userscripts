@@ -289,7 +289,6 @@ declare global {
     // Takes a list of WKOF item and puts them into the queue
     async function update_queue(items: ItemData.Item[]): Promise<void> {
         let current_item: Review.Item, active_queue: Review.Item[], rest: number[] | Review.Item[]
-        console.log(items)
 
         switch (page) {
             case 'lessons':
@@ -411,13 +410,6 @@ declare global {
 
     // Sorts items by the order they appear in a list
     function sort_by_list<T>(a: T, b: T, order: T[]): number {
-        console.log(
-            a,
-            b,
-            order,
-            (order.indexOf(a) + 1 || order.length + 1) - (order.indexOf(b) + 1 || order.length + 1),
-        )
-
         return (order.indexOf(a) + 1 || order.length + 1) - (order.indexOf(b) + 1 || order.length + 1)
     }
 

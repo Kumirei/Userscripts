@@ -260,7 +260,6 @@ var module = {};
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        console.log(items);
                         _a = page;
                         switch (_a) {
                             case 'lessons': return [3 /*break*/, 1];
@@ -395,7 +394,6 @@ var module = {};
     }
     // Sorts items by the order they appear in a list
     function sort_by_list(a, b, order) {
-        console.log(a, b, order, (order.indexOf(a) + 1 || order.length + 1) - (order.indexOf(b) + 1 || order.length + 1));
         return (order.indexOf(a) + 1 || order.length + 1) - (order.indexOf(b) + 1 || order.length + 1);
     }
     function keep_and_discard(items, filter) {
