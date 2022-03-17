@@ -469,7 +469,7 @@ declare namespace ItemData {
     export type Module = {
         ItemData: {
             get_items: (config?: GetItems.Config) => Promise<Item[]>
-            get_index: (items: Item[], index_name: IndexOptions) => { [key: string]: Item[] | Item }
+            get_index: <T = Item[] | Item>(items: Item[], index_name: IndexOptions) => { [key: string]: T }
             registry: Registry.Registry
             pause_ready_event: (value: boolean) => void
         }
