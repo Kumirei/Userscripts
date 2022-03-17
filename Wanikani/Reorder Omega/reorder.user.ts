@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.4
+// @version      0.1.5
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -246,10 +246,8 @@ declare global {
     // Retrieves the ids of the the items in the current queue
     function get_queue_ids(): number[] {
         const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key)
-        let remaining_queue: number[]
-        if (page === 'lessons')
-            remaining_queue = $.jStorage.get<Review.Item[]>(inactive_queue_key).map((item) => item.id)
-        else remaining_queue = $.jStorage.get<number[]>(inactive_queue_key)
+        const inactive_queue = $.jStorage.get<(Review.Item | number)[]>(inactive_queue_key)
+        const remaining_queue = inactive_queue.map((item) => (typeof item === 'number' ? item : item.id))
         return active_queue.map((item) => item.id).concat(remaining_queue)
     }
 
@@ -291,6 +289,7 @@ declare global {
     // Takes a list of WKOF item and puts them into the queue
     async function update_queue(items: ItemData.Item[]): Promise<void> {
         let current_item: Review.Item, active_queue: Review.Item[], rest: number[] | Review.Item[]
+        console.log(items)
 
         switch (page) {
             case 'lessons':
@@ -387,7 +386,7 @@ declare global {
     function parse_short_subject_type_string(str: string): SubjectType[] {
         const type_map: { [key: string]: SubjectType } = { rad: 'radical', kan: 'kanji', voc: 'vocabulary' }
         return str
-            .replace(/\W/g, '')
+            .replace(/\s/g, '')
             .split(',')
             .map((type) => type_map[type])
     }
@@ -412,6 +411,13 @@ declare global {
 
     // Sorts items by the order they appear in a list
     function sort_by_list<T>(a: T, b: T, order: T[]): number {
+        console.log(
+            a,
+            b,
+            order,
+            (order.indexOf(a) + 1 || order.length + 1) - (order.indexOf(b) + 1 || order.length + 1),
+        )
+
         return (order.indexOf(a) + 1 || order.length + 1) - (order.indexOf(b) + 1 || order.length + 1)
     }
 
