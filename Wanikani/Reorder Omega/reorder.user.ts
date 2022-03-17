@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.12
+// @version      0.1.13
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -497,6 +497,7 @@ declare global {
             // Update
             run()
         })
+        $('#active_preset').remove()
         $(preset_selection_location).append($(`<div id="active_preset">Active Preset: </div>`).append(select))
     }
 
@@ -1408,6 +1409,7 @@ declare global {
     // Actions to take when the user saves their settings
     function settings_on_save() {
         set_body_attributes() // Update attributes on body to hide/show stuff
+        install_interface() // Reinstall interface in order to update it
         run() // Re-run preset in case something changed
     }
 
