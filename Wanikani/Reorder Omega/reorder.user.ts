@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.8
+// @version      0.1.9
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -1286,6 +1286,7 @@ declare global {
             ] as Settings.Action[],
         })
 
+        if (!!wkof.file_cache.dir[`wkof.settings.${script_id}`]) return [] // If user already change settings don't include these
         return [none, speed_demon, level, srs, type, random_burns, backlog]
     }
 

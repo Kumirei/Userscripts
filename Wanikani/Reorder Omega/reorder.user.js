@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.8
+// @version      0.1.9
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -1163,6 +1163,8 @@ var module = {};
                 }),
             ]
         });
+        if (!!wkof.file_cache.dir["wkof.settings.".concat(script_id)])
+            return []; // If user already change settings don't include these
         return [none, speed_demon, level, srs, type, random_burns, backlog];
     }
     // Get a new preset item. This is a function because we want to be able to get a copy of it on demand
