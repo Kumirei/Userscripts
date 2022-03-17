@@ -657,9 +657,12 @@ declare global {
             )
 
             // Set item 0 in active queue to current item so the first item will be back to back
-            if (page === 'reviews') {
+            if (page in ['reviews', 'lessons', 'extra_study', 'self_study']) {
                 // If active queue is not yet populated, wait until it is to set the currentItem
                 const callback = () => {
+                    const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key)
+                    let current_item = active_queue[0]
+                    if (page in ['extra_study', 'self_study']) current_item = active_queue[active_queue.length - 1] // Extra study page picks last item
                     $.jStorage.set(current_item_key, $.jStorage.get<Review.Item[]>(active_queue_key)[0])
                     $.jStorage.stopListening(active_queue_key, callback)
                 }
@@ -1420,7 +1423,7 @@ declare global {
         const preset = settings.presets[settings.selected_preset]
         const action = preset.actions[preset.selected_action]
         $('.visible_action_value').removeClass('visible_action_value')
-        if (action.type === 'sort' || action.type === 'filter') {
+        if (action.type in ['sort', 'filter']) {
             // @ts-ignore
             // Don't know how to type this properly
             $(`#${script_id}_${action.type}_by_${action[action.type][action.type]}`)
