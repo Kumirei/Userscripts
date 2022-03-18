@@ -514,7 +514,7 @@ declare global {
 
         // Displays the current duration of the sessions
         function install_egg_timer(): void {
-            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) < 0) return
+            if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) return
             const egg_timer_start = Date.now()
             const egg_timer = $(`<div id="egg_timer">Elapsed: 0s</div>`)
             setInterval((): void => {
@@ -525,7 +525,7 @@ declare global {
 
         // Installs the tracking of streaks of correct answers (note: not items)
         function install_streak(): void {
-            if (['reviews', 'extra_study', 'self_study'].indexOf(page) < 0) return
+            if (!['reviews', 'extra_study', 'self_study'].includes(page)) return
 
             // Create and insert element into page
             const elem = $(
@@ -631,7 +631,7 @@ declare global {
 
         // Sets up the randomization or alternation of the voice actor in the quizzes
         function install_voice_actor_control(): void {
-            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) < 0) return
+            if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) return
             $.jStorage.listenKeyChange(current_item_key, update_default_voice_actor)
             $.jStorage.listenKeyChange('l/currentQuizItem', update_default_voice_actor)
 
@@ -648,7 +648,7 @@ declare global {
         // Sets up the back2back features so that meaning and reading questions
         // can be made to appear after each other
         function install_back_to_back(): void {
-            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) < 0) return
+            if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) return
 
             // Replace Math.random only for the wanikani script this is done by throwing an error and
             // checking the trace to see if either of the functions 'randomQuestion' (reviews page),
@@ -669,12 +669,12 @@ declare global {
             )
 
             // Set item 0 in active queue to current item so the first item will be back to back
-            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) >= 0) {
+            if (['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) {
                 // If active queue is not yet populated, wait until it is to set the currentItem
                 const callback = () => {
                     const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key)
                     let current_item = active_queue[0]
-                    if (['extra_study', 'self_study'].indexOf(page) >= 0)
+                    if (['extra_study', 'self_study'].includes(page))
                         current_item = active_queue[active_queue.length - 1] // Extra study page picks last item
                     if (settings.back2back) $.jStorage.set(current_item_key, current_item)
                     $.jStorage.stopListening(active_queue_key, callback)
@@ -1450,7 +1450,7 @@ declare global {
         const preset = settings.presets[settings.selected_preset]
         const action = preset.actions[preset.selected_action]
         $('.visible_action_value').removeClass('visible_action_value')
-        if (['sort', 'filter'].indexOf(action.type) >= 0) {
+        if (['sort', 'filter'].includes(action.type)) {
             // @ts-ignore
             // Don't know how to type this properly
             $(`#${script_id}_${action.type}_by_${action[action.type][action.type]}`)

@@ -490,7 +490,7 @@ var module = {};
         install_prioritization();
         // Displays the current duration of the sessions
         function install_egg_timer() {
-            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) < 0)
+            if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page))
                 return;
             var egg_timer_start = Date.now();
             var egg_timer = $("<div id=\"egg_timer\">Elapsed: 0s</div>");
@@ -501,7 +501,7 @@ var module = {};
         }
         // Installs the tracking of streaks of correct answers (note: not items)
         function install_streak() {
-            if (['reviews', 'extra_study', 'self_study'].indexOf(page) < 0)
+            if (!['reviews', 'extra_study', 'self_study'].includes(page))
                 return;
             // Create and insert element into page
             var elem = $("<span id=\"streak\"><i class=\"fa fa-trophy\"></i><span class=\"current\">0</span>(<span class=\"max\">0</span>)</span>");
@@ -591,7 +591,7 @@ var module = {};
         }
         // Sets up the randomization or alternation of the voice actor in the quizzes
         function install_voice_actor_control() {
-            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) < 0)
+            if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page))
                 return;
             $.jStorage.listenKeyChange(current_item_key, update_default_voice_actor);
             $.jStorage.listenKeyChange('l/currentQuizItem', update_default_voice_actor);
@@ -609,7 +609,7 @@ var module = {};
         // can be made to appear after each other
         function install_back_to_back() {
             var _a;
-            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) < 0)
+            if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page))
                 return;
             // Replace Math.random only for the wanikani script this is done by throwing an error and
             // checking the trace to see if either of the functions 'randomQuestion' (reviews page),
@@ -627,12 +627,12 @@ var module = {};
             console.log('Beware, "Back To Back" is installed and may cause other scripts using Math.random ' +
                 "in a function called \"".concat(trace_function_test, "\" to misbehave."));
             // Set item 0 in active queue to current item so the first item will be back to back
-            if (['reviews', 'lessons', 'extra_study', 'self_study'].indexOf(page) >= 0) {
+            if (['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) {
                 // If active queue is not yet populated, wait until it is to set the currentItem
                 var callback_1 = function () {
                     var active_queue = $.jStorage.get(active_queue_key);
                     var current_item = active_queue[0];
-                    if (['extra_study', 'self_study'].indexOf(page) >= 0)
+                    if (['extra_study', 'self_study'].includes(page))
                         current_item = active_queue[active_queue.length - 1]; // Extra study page picks last item
                     if (settings.back2back)
                         $.jStorage.set(current_item_key, current_item);
@@ -1334,7 +1334,7 @@ var module = {};
         var preset = settings.presets[settings.selected_preset];
         var action = preset.actions[preset.selected_action];
         $('.visible_action_value').removeClass('visible_action_value');
-        if (['sort', 'filter'].indexOf(action.type) >= 0) {
+        if (['sort', 'filter'].includes(action.type)) {
             // @ts-ignore
             // Don't know how to type this properly
             $("#".concat(script_id, "_").concat(action.type, "_by_").concat(action[action.type][action.type]))
