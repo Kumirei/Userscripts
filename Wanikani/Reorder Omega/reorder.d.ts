@@ -1,4 +1,4 @@
-import { SubjectTypeShortString } from './wkof'
+import { SubjectTypeShortString } from '../WKOF Types/wkof'
 
 export namespace Review {
     type Item = {

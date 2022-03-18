@@ -15,7 +15,7 @@ const module = {}
 export = null
 
 // Import types
-import { WKOF, ItemData, Menu, Settings as SettingsModule, SubjectType, Apiv2 } from './wkof'
+import { WKOF, ItemData, Menu, Settings as SettingsModule, SubjectType, Apiv2 } from '../WKOF Types/wkof'
 import { Review, Settings } from './reorder'
 
 // We have to extend the global window object since the values are already present
