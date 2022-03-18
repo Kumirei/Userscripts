@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Overall Progress Bars
 // @namespace    http://tampermonkey.net/
-// @version      1.2.2
+// @version      1.3.0
 // @description  Creates a progress bar on the dashboard for every level
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -30,28 +30,20 @@
         8: 'Enlightened',
         9: 'Burned',
     }
+    const positions = [
+        $('.progress-and-forecast'),
+        $('.srs-progress'),
+        $('.recent-unlocks').closest('.row'),
+        $('.forum-topics-list').closest('.row'),
+    ]
 
+    // Init
     confirm_wkof()
     wkof.include('Menu,Settings,ItemData')
     await wkof.ready('Menu,Settings,ItemData').then(load_settings).then(install_menu)
 
     const settings = wkof.settings[script_id]
-    const single_color = settings.display === 'blend' || settings.display === 'avg_srs'
-    const color = {
-        '-1': settings.theme === 'breeze' ? '#31363B' : '#aaaaaa',
-        0: settings.theme === 'breeze' ? '#31363B' : '#aaaaaa',
-        1: settings.theme === 'breeze' ? '#3fbbf3' : '#ff00bb',
-        2: settings.theme === 'breeze' ? '#2eaaf4' : '#ee00aa',
-        3: settings.theme === 'breeze' ? '#1d99f3' : '#dd0099',
-        4: settings.theme === 'breeze' ? '#0c88e2' : '#cc0088',
-        5: settings.theme === 'breeze' ? '#1cdc9a' : '#9339aa',
-        6: settings.theme === 'breeze' ? '#1cdc9a' : '#882d9e',
-        7: settings.theme === 'breeze' ? '#c9ce3b' : '#294ddb',
-        8: settings.theme === 'breeze' ? '#f67400' : '#0093dd',
-        9: settings.theme === 'breeze' ? '#da4453' : '#dfaa0b',
-    }
-
-    injectCss()
+    let color
 
     // Get items by level
     const items = await wkof.ItemData.get_items('assignments')
@@ -64,11 +56,34 @@
             Object.entries(wkof.ItemData.get_index(items, 'srs_stage')).map(([srs, items]) => [srs, items.length]),
         )
     }
+    display()
 
-    // Display
-    $('.progress-and-forecast').before(
-        `<section class="srs-level-graph">${Object.entries(counts_by_level_and_srs).map(get_level).join('')}</section`,
-    )
+    function display() {
+        set_color_theme()
+        injectCss()
+        $('.srs-level-graph').remove()
+        positions[settings.position].before(
+            `<section class="srs-level-graph">${Object.entries(counts_by_level_and_srs)
+                .map(get_level)
+                .join('')}</section`,
+        )
+    }
+
+    function set_color_theme() {
+        color = {
+            '-1': settings.theme === 'breeze' ? '#31363B' : '#aaaaaa',
+            0: settings.theme === 'breeze' ? '#31363B' : '#aaaaaa',
+            1: settings.theme === 'breeze' ? '#3fbbf3' : '#ff00bb',
+            2: settings.theme === 'breeze' ? '#2eaaf4' : '#ee00aa',
+            3: settings.theme === 'breeze' ? '#1d99f3' : '#dd0099',
+            4: settings.theme === 'breeze' ? '#0c88e2' : '#cc0088',
+            5: settings.theme === 'breeze' ? '#1cdc9a' : '#9339aa',
+            6: settings.theme === 'breeze' ? '#1cdc9a' : '#882d9e',
+            7: settings.theme === 'breeze' ? '#c9ce3b' : '#294ddb',
+            8: settings.theme === 'breeze' ? '#f67400' : '#0093dd',
+            9: settings.theme === 'breeze' ? '#da4453' : '#dfaa0b',
+        }
+    }
 
     function get_level([level, counts_by_srs]) {
         const total = Object.values(counts_by_srs).reduce((sum, val) => sum + val, 0)
@@ -86,7 +101,7 @@
     }
 
     function get_color(counts_by_srs) {
-        if (!single_color) return ''
+        if (!['blend', 'avg_srs'].includes(settings.display)) return ''
         const srs_levels = Object.entries(counts_by_srs).reduce(
             (srs_items, [srs_level, count]) => srs_items.concat(new Array(count).fill(srs_level < 0 ? 0 : srs_level)),
             [],
@@ -181,7 +196,7 @@
 }
 
 .srs-level-graph .srs {
-    ${single_color ? 'display:none;' : ''}
+    ${['blend', 'avg_srs'].includes(settings.display) ? 'display:none;' : ''}
     ${settings.display !== 'bars' ? '' : 'border-radius: 0.1em 0.1em 0 0;'}
 }
 
@@ -191,8 +206,8 @@
 
 ${srs_css}`
 
-        $(`#overall-progress-bars`).remove()
-        $('head').append(`<style id="overall-progress-bars">${css}</style>`)
+        $(`#overall-progress-bars-css`).remove()
+        $('head').append(`<style id="overall-progress-bars-css">${css}</style>`)
     }
 
     /* ----------------------------------------------------------*/
@@ -218,6 +233,7 @@ ${srs_css}`
         const defaults = {
             display: 'stack',
             theme: 'default',
+            position: 0,
         }
         return wkof.Settings.load(script_id, defaults)
     }
@@ -238,6 +254,7 @@ ${srs_css}`
         let config = {
             script_id: script_id,
             title: script_name,
+            on_save: display,
             content: {
                 display: {
                     type: 'dropdown',
@@ -257,6 +274,13 @@ ${srs_css}`
                     default: 0,
                     hover_tip: 'Changes the colors of the bars',
                     content: { default: 'Default', breeze: 'Breeze Dark' },
+                },
+                position: {
+                    type: 'dropdown',
+                    label: 'Position',
+                    default: 0,
+                    hover_tip: 'Changes the colors of the bars',
+                    content: ['Top', 'Above SRS Counts', 'Above Panels', 'Above Recent Topics'],
                 },
             },
         }
