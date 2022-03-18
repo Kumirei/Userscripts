@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.14
+// @version      0.1.15
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -316,11 +316,13 @@ declare global {
                 current_item = active_queue[active_queue.length - 1]
                 rest = items.map((item) => item.id)
                 break
-            default:
+            case 'reviews':
                 active_queue = await get_item_data(items.splice(0, 10))
                 current_item = active_queue[0]
-                rest = items.map((item) => item.id)
+                rest = WaniKani.wanikani_compatibility_mode ? await get_item_data(items) : items.map((item) => item.id)
                 break
+            default:
+                return
         }
 
         if (current_item.type === 'Radical') $.jStorage.set(question_type_key, 'meaning') // Has to be set before currentItem

@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.14
+// @version      0.1.15
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -260,25 +260,26 @@ var module = {};
     // Takes a list of WKOF item and puts them into the queue
     function update_queue(items) {
         return __awaiter(this, void 0, void 0, function () {
-            var current_item, active_queue, rest, _a, active_queue_composition;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var current_item, active_queue, rest, _a, active_queue_composition, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
                         _a = page;
                         switch (_a) {
                             case 'lessons': return [3 /*break*/, 1];
                             case 'extra_study': return [3 /*break*/, 3];
                             case 'self_study': return [3 /*break*/, 3];
+                            case 'reviews': return [3 /*break*/, 5];
                         }
-                        return [3 /*break*/, 5];
+                        return [3 /*break*/, 10];
                     case 1:
                         update_lesson_counts(items);
                         return [4 /*yield*/, get_item_data(items)];
                     case 2:
-                        rest = _b.sent();
+                        rest = _c.sent();
                         active_queue = rest.splice(0, $.jStorage.get('l/batchSize'));
                         current_item = active_queue[0];
-                        return [3 /*break*/, 7];
+                        return [3 /*break*/, 11];
                     case 3:
                         active_queue_composition = void 0;
                         if (items.length >= 10)
@@ -287,17 +288,27 @@ var module = {};
                             active_queue_composition = items;
                         return [4 /*yield*/, get_item_data(active_queue_composition.reverse())];
                     case 4:
-                        active_queue = _b.sent();
+                        active_queue = _c.sent();
                         current_item = active_queue[active_queue.length - 1];
                         rest = items.map(function (item) { return item.id; });
-                        return [3 /*break*/, 7];
+                        return [3 /*break*/, 11];
                     case 5: return [4 /*yield*/, get_item_data(items.splice(0, 10))];
                     case 6:
-                        active_queue = _b.sent();
+                        active_queue = _c.sent();
                         current_item = active_queue[0];
-                        rest = items.map(function (item) { return item.id; });
-                        return [3 /*break*/, 7];
+                        if (!WaniKani.wanikani_compatibility_mode) return [3 /*break*/, 8];
+                        return [4 /*yield*/, get_item_data(items)];
                     case 7:
+                        _b = _c.sent();
+                        return [3 /*break*/, 9];
+                    case 8:
+                        _b = items.map(function (item) { return item.id; });
+                        _c.label = 9;
+                    case 9:
+                        rest = _b;
+                        return [3 /*break*/, 11];
+                    case 10: return [2 /*return*/];
+                    case 11:
                         if (current_item.type === 'Radical')
                             $.jStorage.set(question_type_key, 'meaning'); // Has to be set before currentItem
                         $.jStorage.set(current_item_key, current_item);
