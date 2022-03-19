@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.15
+// @version      0.1.16
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -285,7 +285,7 @@ var module = {};
                         if (items.length >= 10)
                             active_queue_composition = items.splice(0, 1).concat(items.splice(-9, 9));
                         else
-                            active_queue_composition = items;
+                            active_queue_composition = items.splice(0, 10);
                         return [4 /*yield*/, get_item_data(active_queue_composition.reverse())];
                     case 4:
                         active_queue = _c.sent();

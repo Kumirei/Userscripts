@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.15
+// @version      0.1.16
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -311,7 +311,7 @@ declare global {
                 // last 9 items you will see...
                 let active_queue_composition: ItemData.Item[]
                 if (items.length >= 10) active_queue_composition = items.splice(0, 1).concat(items.splice(-9, 9))
-                else active_queue_composition = items
+                else active_queue_composition = items.splice(0, 10)
                 active_queue = await get_item_data(active_queue_composition.reverse())
                 current_item = active_queue[active_queue.length - 1]
                 rest = items.map((item) => item.id)
