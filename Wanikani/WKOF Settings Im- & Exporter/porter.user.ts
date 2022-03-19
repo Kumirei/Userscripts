@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Settings Exporter & Importer
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Imports and exports your WKOF settings
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?/
@@ -31,7 +31,7 @@ declare global {
 ;(async () => {
     // Script info
     const script_id = 'settings_exporter'
-    const script_name = 'WKOF Settings Exporter'
+    const script_name = 'Settings Exporter'
 
     // Globals
     const { wkof } = window
