@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Roll 6d6
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Adds a button to post @WaniMeKani roll 6d6
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -36,8 +36,8 @@
     }
 
     document.addEventListener('keydown', (e) => {
-        if (e.altKey && (e.key == 'Numpad6' || e.key == 'Digit6')) roll()
-        if (e.altKey && e.shiftKey && e.key == 'KeyD') roll()
-        if (e.altKey && e.ctrlKey && e.key == 'KeyD') roll()
+        if (e.altKey && (e.keyCode == 102 || e.keyCode == 54)) roll()
+        if (e.altKey && e.shiftKey && e.keyCode == 68) roll()
+        if (e.altKey && e.ctrlKey && e.keyCode == 68) roll()
     })
 })(window.wfs)
