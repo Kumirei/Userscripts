@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.16
+// @version      0.1.17
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
 // @grant        none
+// @run-at       document-idle
 // @license      MIT
 // ==/UserScript==
 
@@ -500,7 +501,7 @@ declare global {
             run()
         })
         $('#active_preset').remove()
-        $(preset_selection_location).append($(`<div id="active_preset">Active Preset: </div>`).append(select))
+        $(preset_selection_location).append($(`<div id="active_preset">Preset: </div>`).append(select))
     }
 
     // Installs all the extra optional features
@@ -665,7 +666,7 @@ declare global {
 
             console.log(
                 'Beware, "Back To Back" is installed and may cause other scripts using Math.random ' +
-                    `in a function called "${trace_function_test}" to misbehave.`,
+                    `in a function called ${trace_function_test} to misbehave.`,
             )
 
             // Set item 0 in active queue to current item so the first item will be back to back
