@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.18
+// @version      0.1.19
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -280,6 +280,7 @@ var module = {};
                         rest = _c.sent();
                         active_queue = rest.splice(0, $.jStorage.get('l/batchSize'));
                         current_item = active_queue[0];
+                        rest.reverse();
                         return [3 /*break*/, 11];
                     case 3:
                         active_queue_composition = void 0;

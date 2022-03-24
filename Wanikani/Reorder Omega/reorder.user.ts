@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.18
+// @version      0.1.19
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -304,6 +304,7 @@ declare global {
                 rest = await get_item_data(items)
                 active_queue = rest.splice(0, $.jStorage.get<number>('l/batchSize'))
                 current_item = active_queue[0]
+                rest.reverse()
                 break
             case 'extra_study':
             case 'self_study':
