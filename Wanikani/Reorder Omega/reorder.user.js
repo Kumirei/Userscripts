@@ -280,7 +280,6 @@ var module = {};
                         rest = _c.sent();
                         active_queue = rest.splice(0, $.jStorage.get('l/batchSize'));
                         current_item = active_queue[0];
-                        rest.reverse();
                         return [3 /*break*/, 11];
                     case 3:
                         active_queue_composition = void 0;
@@ -293,6 +292,7 @@ var module = {};
                         active_queue = _c.sent();
                         current_item = active_queue[active_queue.length - 1];
                         rest = items.map(function (item) { return item.id; });
+                        rest.reverse(); // Reverse because items are popped from inactive queue
                         return [3 /*break*/, 11];
                     case 5: return [4 /*yield*/, get_item_data(items.splice(0, 10))];
                     case 6:
@@ -308,6 +308,7 @@ var module = {};
                         _c.label = 9;
                     case 9:
                         rest = _b;
+                        rest.reverse(); // Reverse because items are popped from inactive queue
                         return [3 /*break*/, 11];
                     case 10: return [2 /*return*/];
                     case 11:
@@ -315,7 +316,7 @@ var module = {};
                             $.jStorage.set(question_type_key, 'meaning'); // Has to be set before currentItem
                         $.jStorage.set(current_item_key, current_item);
                         $.jStorage.set(active_queue_key, active_queue);
-                        $.jStorage.set(inactive_queue_key, rest.reverse()); // Reverse because items are popped from inactive queue
+                        $.jStorage.set(inactive_queue_key, rest);
                         return [2 /*return*/];
                 }
             });

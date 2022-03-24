@@ -304,7 +304,6 @@ declare global {
                 rest = await get_item_data(items)
                 active_queue = rest.splice(0, $.jStorage.get<number>('l/batchSize'))
                 current_item = active_queue[0]
-                rest.reverse()
                 break
             case 'extra_study':
             case 'self_study':
@@ -317,11 +316,13 @@ declare global {
                 active_queue = await get_item_data(active_queue_composition.reverse())
                 current_item = active_queue[active_queue.length - 1]
                 rest = items.map((item) => item.id)
+                rest.reverse() // Reverse because items are popped from inactive queue
                 break
             case 'reviews':
                 active_queue = await get_item_data(items.splice(0, 10))
                 current_item = active_queue[0]
                 rest = WaniKani.wanikani_compatibility_mode ? await get_item_data(items) : items.map((item) => item.id)
+                rest.reverse() // Reverse because items are popped from inactive queue
                 break
             default:
                 return
@@ -330,7 +331,7 @@ declare global {
         if (current_item.type === 'Radical') $.jStorage.set(question_type_key, 'meaning') // Has to be set before currentItem
         $.jStorage.set(current_item_key, current_item)
         $.jStorage.set(active_queue_key, active_queue)
-        $.jStorage.set(inactive_queue_key, rest.reverse()) // Reverse because items are popped from inactive queue
+        $.jStorage.set(inactive_queue_key, rest)
     }
 
     // Retrieves the item's info from the WK api
