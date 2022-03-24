@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.17
+// @version      0.1.18
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -696,19 +696,19 @@ var module = {};
             hover_tip: 'Get the first N number of items from the queue',
             filter_func: (function () {
                 var count = 0;
-                var filter_start = 0;
+                var filter_nonce = 0;
                 return function (_a, item) {
-                    var value = _a.value, start = _a.start;
-                    if (filter_start !== start) {
+                    var value = _a.value, nonce = _a.nonce;
+                    if (filter_nonce !== nonce) {
                         // Reset if this is a different filter
-                        filter_start = start;
+                        filter_nonce = nonce;
                         count = 0;
                     }
                     return count++ < value;
                 };
             })(),
             filter_value_map: function (value) {
-                return { value: value, start: Date.now() };
+                return { value: value, nonce: Math.random() };
             }
         };
     }

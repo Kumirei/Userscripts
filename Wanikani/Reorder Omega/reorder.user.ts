@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.17
+// @version      0.1.18
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -740,18 +740,18 @@ declare global {
             hover_tip: 'Get the first N number of items from the queue',
             filter_func: (() => {
                 let count = 0
-                let filter_start = 0
-                return ({ value, start }, item) => {
-                    if (filter_start !== start) {
+                let filter_nonce = 0
+                return ({ value, nonce }, item) => {
+                    if (filter_nonce !== nonce) {
                         // Reset if this is a different filter
-                        filter_start = start
+                        filter_nonce = nonce
                         count = 0
                     }
                     return count++ < value
                 }
             })(),
             filter_value_map: (value: number) => {
-                return { value, start: Date.now() }
+                return { value, nonce: Math.random() }
             },
         }
     }
