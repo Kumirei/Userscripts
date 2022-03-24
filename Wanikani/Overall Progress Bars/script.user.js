@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Overall Progress Bars
 // @namespace    http://tampermonkey.net/
-// @version      1.3.0
+// @version      1.3.1
 // @description  Creates a progress bar on the dashboard for every level
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -81,7 +81,7 @@
             6: settings.theme === 'breeze' ? '#1cdc9a' : '#882d9e',
             7: settings.theme === 'breeze' ? '#c9ce3b' : '#294ddb',
             8: settings.theme === 'breeze' ? '#f67400' : '#0093dd',
-            9: settings.theme === 'breeze' ? '#da4453' : '#dfaa0b',
+            9: settings.theme === 'breeze' ? '#da4453' : '#FAAF0E',
         }
     }
 
