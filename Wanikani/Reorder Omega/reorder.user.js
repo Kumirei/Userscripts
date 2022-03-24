@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.20
+// @version      0.1.21
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -108,10 +108,10 @@ var module = {};
     // Runs the selected preset on the queue
     function run() {
         return __awaiter(this, void 0, void 0, function () {
-            var items, items_by_id, completed_1;
+            var items, completed_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, wkof.ItemData.get_items('assignments,review_statistics')];
+                    case 0: return [4 /*yield*/, wkof.ItemData.get_items('assignments,review_statistics,study_materials')];
                     case 1:
                         items = _a.sent();
                         items_by_id = wkof.ItemData.get_index(items, 'subject_id');
@@ -326,34 +326,93 @@ var module = {};
     // Retrieves the item's info from the WK api
     function get_item_data(items) {
         return __awaiter(this, void 0, void 0, function () {
-            var active_queue, inactive_queue, lesson_items_1, ids, response, data;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var _a, active_queue, inactive_queue, lesson_items_1, ids, response, data_1;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        // Lessons already have all the data
-                        if (page === 'lessons') {
-                            active_queue = $.jStorage.get(active_queue_key, []);
-                            inactive_queue = $.jStorage.get(inactive_queue_key, []);
-                            lesson_items_1 = Object.fromEntries(active_queue.concat(inactive_queue).map(function (item) { return [item.id, item]; })) // Map id to item
-                            ;
-                            return [2 /*return*/, items.map(function (item) { return lesson_items_1[item.id]; })]; // Replace WKOF item with WK item
+                        _a = page;
+                        switch (_a) {
+                            case 'lessons': return [3 /*break*/, 1];
+                            case 'reviews': return [3 /*break*/, 2];
+                            case 'extra_study': return [3 /*break*/, 2];
+                            case 'self_study': return [3 /*break*/, 5];
                         }
+                        return [3 /*break*/, 6];
+                    case 1:
+                        active_queue = $.jStorage.get(active_queue_key, []);
+                        inactive_queue = $.jStorage.get(inactive_queue_key, []);
+                        lesson_items_1 = Object.fromEntries(active_queue.concat(inactive_queue).map(function (item) { return [item.id, item]; })) // Map id to item
+                        ;
+                        return [2 /*return*/, items.map(function (item) { return lesson_items_1[item.id]; })]; // Replace WKOF item with WK item
+                    case 2:
                         ids = items.map(function (item) { return item.id; });
                         return [4 /*yield*/, fetch("/extra_study/items?ids=".concat(ids.join(',')))]; // Can use this endpoint for all pages
-                    case 1:
-                        response = _a.sent() // Can use this endpoint for all pages
+                    case 3:
+                        response = _b.sent() // Can use this endpoint for all pages
                         ;
                         if (response.status !== 200) {
                             console.error('Could not fetch active queue');
                             return [2 /*return*/, []];
                         }
                         return [4 /*yield*/, response.json()];
-                    case 2:
-                        data = (_a.sent());
-                        return [2 /*return*/, ids.map(function (id) { return data.find(function (item) { return item.id === id; }); })]; // Re-sort
+                    case 4:
+                        data_1 = (_b.sent());
+                        return [2 /*return*/, ids.map(function (id) { return data_1.find(function (item) { return item.id === id; }); })]; // Re-sort
+                    case 5: return [2 /*return*/, items.map(transform_item)];
+                    case 6: return [2 /*return*/, []];
                 }
             });
         });
+    }
+    // Transforms a wkof item into a review item
+    function transform_item(item) {
+        var _a;
+        var _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
+        var mutual = (_a = {
+                auxiliary_meanings: item.data.meanings
+                    .filter(function (meaning) { return !meaning.primary; })
+                    .map(function (meaning) { return meaning.meaning; }),
+                characters: item.data.characters,
+                en: item.data.meanings.filter(function (meaning) { return meaning.primary; }).map(function (meaning) { return meaning.meaning; }),
+                id: item.id,
+                slug: item.data.slug,
+                srs: (_b = item.assignments) === null || _b === void 0 ? void 0 : _b.srs_stage,
+                syn: (_d = (_c = item.study_materials) === null || _c === void 0 ? void 0 : _c.meaning_synonyms) !== null && _d !== void 0 ? _d : [],
+                type: (item.object[0].toUpperCase() + item.object.slice(1))
+            },
+            _a[item.object == 'vocabulary' ? 'voc' : item.object == 'kanji' ? 'kan' : 'rad'] = item.data.characters,
+            _a);
+        switch (item.object) {
+            case 'vocabulary':
+                return __assign(__assign({}, mutual), { aud: (_e = item.data.pronunciation_audios) === null || _e === void 0 ? void 0 : _e.map(function (audio) { return ({
+                        content_type: audio.content_type,
+                        pronunciation: audio.metadata.pronunciation,
+                        url: audio.url,
+                        voice_actor_id: audio.metadata.voice_actor_id
+                    }); }), auxiliary_readings: (_f = item.data.readings) === null || _f === void 0 ? void 0 : _f.filter(function (reading) { return !reading.primary; }).map(function (reading) { return reading.reading; }), kana: (_g = item.data.readings) === null || _g === void 0 ? void 0 : _g.filter(function (reading) { return reading.primary; }).map(function (reading) { return reading.reading; }), kanji: item.data.component_subject_ids.map(function (id) {
+                        var kanji = items_by_id[id];
+                        return {
+                            characters: kanji.data.characters,
+                            en: kanji.data.meanings
+                                .filter(function (m) { return m.accepted_answer; })
+                                .map(function (m) { return m.meaning; })
+                                .join(', '),
+                            id: kanji.id,
+                            ja: kanji.data.readings
+                                .filter(function (r) { return r.accepted_answer; })
+                                .map(function (r) { return r.reading; })
+                                .join(', '),
+                            kan: kanji.data.characters,
+                            type: 'Kanji'
+                        };
+                    }), type: 'Vocabulary', voc: item.data.characters });
+            case 'kanji':
+                return __assign(__assign({}, mutual), { auxiliary_readings: (_h = item.data.readings) === null || _h === void 0 ? void 0 : _h.filter(function (reading) { return !reading.primary; }).map(function (reading) { return reading.reading; }), emph: (_k = (_j = item.data.readings.find(function (r) { return r.primary; })) === null || _j === void 0 ? void 0 : _j.type) !== null && _k !== void 0 ? _k : 'kunyomi', kan: item.data.characters, kun: item.data.readings.filter(function (r) { return r.type === 'kunyomi'; }).map(function (r) { return r.reading; }), nanori: item.data.readings.filter(function (r) { return r.type === 'nanori'; }).map(function (r) { return r.reading; }), on: item.data.readings.filter(function (r) { return r.type === 'onyomi'; }).map(function (r) { return r.reading; }), type: 'Kanji' });
+            case 'radical':
+                return __assign(__assign({}, mutual), { character_image_url: item.data.characters
+                        ? undefined
+                        : (_m = (_l = item.data.character_images) === null || _l === void 0 ? void 0 : _l.find(function (i) { return i.content_type === 'image/png' && i.metadata.dimensions === '1024x1024'; })) === null || _m === void 0 ? void 0 : _m.url, rad: item.data.characters, type: 'Radical' });
+        }
     }
     // Updates the radical, kanji, and vocab counts in lessons
     function update_lesson_counts(items) {
@@ -566,7 +625,9 @@ var module = {};
             // The base 64 audio is a very long string and is, as such, located at the end of the script
             var audio = new Audio("data:audio/mp3;base64,".concat(base64BellAudio));
             var listening = {};
-            var getUID = function (item) { return (item.rad ? 'r' : item.kan ? 'k' : 'v') + item.id; };
+            var getUID = function (item) {
+                return (item.type === 'Radical' ? 'r' : item.type === 'Kanji' ? 'k' : 'v') + item.id;
+            };
             $.jStorage.listenKeyChange('currentItem', initiate_item);
             function initiate_item() {
                 var item = $.jStorage.get('currentItem');
@@ -1435,7 +1496,7 @@ var module = {};
         if (btn === 'new')
             $("#".concat(script_id, "_").concat(ref, "_name")).focus().select();
     }
-    var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, trace_function_test, egg_timer_location, preset_selection_location, settings, settings_dialog, SRS_DURATIONS, base64BellAudio;
+    var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, trace_function_test, egg_timer_location, preset_selection_location, settings, settings_dialog, items_by_id, SRS_DURATIONS, base64BellAudio;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -1445,6 +1506,7 @@ var module = {};
                 MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 };
                 current_item_key = 'currentItem', active_queue_key = 'activeQueue', inactive_queue_key = 'reviewQueue', question_type_key = 'questionType', UID_prefix = '', trace_function_test = /randomQuestion/, egg_timer_location = '#summary-button', preset_selection_location = '#character';
                 page = set_page_variables();
+                items_by_id = {};
                 // This has to be done before WK realizes that the queue is empty and
                 // redirects, thus we have to do it before initializing WKOF
                 if (page === 'self_study')

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.20
+// @version      0.1.21
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -60,6 +60,7 @@ declare global {
     // Settings objects
     let settings: Settings.Settings
     let settings_dialog: SettingsModule.Dialog
+    let items_by_id: { [key: string]: ItemData.Item } = {}
 
     // This has to be done before WK realizes that the queue is empty and
     // redirects, thus we have to do it before initializing WKOF
@@ -135,8 +136,8 @@ declare global {
 
     // Runs the selected preset on the queue
     async function run(): Promise<void> {
-        let items = await wkof.ItemData.get_items('assignments,review_statistics')
-        const items_by_id = wkof.ItemData.get_index<ItemData.Item>(items, 'subject_id')
+        let items = await wkof.ItemData.get_items('assignments,review_statistics,study_materials')
+        items_by_id = wkof.ItemData.get_index<ItemData.Item>(items, 'subject_id')
 
         switch (page) {
             case 'reviews':
@@ -337,23 +338,106 @@ declare global {
 
     // Retrieves the item's info from the WK api
     async function get_item_data(items: ItemData.Item[]): Promise<Review.Item[]> {
-        // Lessons already have all the data
-        if (page === 'lessons') {
-            const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
-            const inactive_queue = $.jStorage.get<Review.Item[]>(inactive_queue_key, [])
-            const lesson_items = Object.fromEntries(active_queue.concat(inactive_queue).map((item) => [item.id, item])) // Map id to item
-            return items.map((item) => lesson_items[item.id]) // Replace WKOF item with WK item
+        switch (page) {
+            case 'lessons':
+                const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
+                const inactive_queue = $.jStorage.get<Review.Item[]>(inactive_queue_key, [])
+                const lesson_items = Object.fromEntries(
+                    active_queue.concat(inactive_queue).map((item) => [item.id, item]),
+                ) // Map id to item
+                return items.map((item) => lesson_items[item.id]) // Replace WKOF item with WK item
+            case 'reviews':
+            case 'extra_study':
+                const ids = items.map((item) => item.id)
+                const response = await fetch(`/extra_study/items?ids=${ids.join(',')}`) // Can use this endpoint for all pages
+                if (response.status !== 200) {
+                    console.error('Could not fetch active queue')
+                    return []
+                }
+                const data = (await response.json()) as Review.Item[]
+                return ids.map((id) => data.find((item) => item.id === id)) as Review.Item[] // Re-sort
+            case 'self_study':
+                return items.map(transform_item)
+            default:
+                return []
+        }
+    }
+
+    // Transforms a wkof item into a review item
+    function transform_item(item: ItemData.Item): Review.Item {
+        const mutual = {
+            auxiliary_meanings: item.data.meanings
+                .filter((meaning) => !meaning.primary)
+                .map((meaning) => meaning.meaning),
+            characters: item.data.characters,
+            en: item.data.meanings.filter((meaning) => meaning.primary).map((meaning) => meaning.meaning),
+            id: item.id,
+            slug: item.data.slug,
+            srs: item.assignments?.srs_stage,
+            syn: item.study_materials?.meaning_synonyms ?? [],
+            type: (item.object[0].toUpperCase() + item.object.slice(1)) as 'Vocabulary' | 'Kanji' | 'Radical',
+            [item.object == 'vocabulary' ? 'voc' : item.object == 'kanji' ? 'kan' : 'rad']: item.data.characters,
         }
 
-        // Fetch from API for reviews and extra/self study
-        const ids = items.map((item) => item.id)
-        const response = await fetch(`/extra_study/items?ids=${ids.join(',')}`) // Can use this endpoint for all pages
-        if (response.status !== 200) {
-            console.error('Could not fetch active queue')
-            return []
+        switch (item.object) {
+            case 'vocabulary':
+                return {
+                    ...mutual,
+                    aud: item.data.pronunciation_audios?.map((audio) => ({
+                        content_type: audio.content_type,
+                        pronunciation: audio.metadata.pronunciation,
+                        url: audio.url,
+                        voice_actor_id: audio.metadata.voice_actor_id,
+                    })),
+                    auxiliary_readings: item.data.readings
+                        ?.filter((reading) => !reading.primary)
+                        .map((reading) => reading.reading),
+                    kana: item.data.readings?.filter((reading) => reading.primary).map((reading) => reading.reading),
+                    kanji: item.data.component_subject_ids.map((id) => {
+                        const kanji = items_by_id[id]
+                        return {
+                            characters: kanji.data.characters,
+                            en: kanji.data.meanings
+                                .filter((m) => m.accepted_answer)
+                                .map((m) => m.meaning)
+                                .join(', '),
+                            id: kanji.id,
+                            ja: kanji.data.readings
+                                .filter((r) => r.accepted_answer)
+                                .map((r) => r.reading)
+                                .join(', '),
+                            kan: kanji.data.characters,
+                            type: 'Kanji',
+                        }
+                    }),
+                    type: 'Vocabulary',
+                    voc: item.data.characters,
+                }
+            case 'kanji':
+                return {
+                    ...mutual,
+                    auxiliary_readings: item.data.readings
+                        ?.filter((reading) => !reading.primary)
+                        .map((reading) => reading.reading),
+                    emph: item.data.readings.find((r) => r.primary)?.type ?? 'kunyomi',
+                    kan: item.data.characters,
+                    kun: item.data.readings.filter((r) => r.type === 'kunyomi').map((r) => r.reading),
+                    nanori: item.data.readings.filter((r) => r.type === 'nanori').map((r) => r.reading),
+                    on: item.data.readings.filter((r) => r.type === 'onyomi').map((r) => r.reading),
+                    type: 'Kanji',
+                }
+            case 'radical':
+                return {
+                    ...mutual,
+                    character_image_url: item.data.characters
+                        ? undefined
+                        : item.data.character_images?.find(
+                              (i) => i.content_type === 'image/png' && i.metadata.dimensions === '1024x1024',
+                          )?.url,
+                    rad: item.data.characters,
+                    type: 'Radical',
+                }
         }
-        const data = (await response.json()) as Review.Item[]
-        return ids.map((id) => data.find((item) => item.id === id)) as Review.Item[] // Re-sort
     }
 
     // Updates the radical, kanji, and vocab counts in lessons
@@ -606,7 +690,8 @@ declare global {
             const audio = new Audio(`data:audio/mp3;base64,${base64BellAudio}`)
 
             let listening: { [key: string]: { failed: boolean } } = {}
-            let getUID = (item: Review.Item): string => (item.rad ? 'r' : item.kan ? 'k' : 'v') + item.id
+            let getUID = (item: Review.Item): string =>
+                (item.type === 'Radical' ? 'r' : item.type === 'Kanji' ? 'k' : 'v') + item.id
             $.jStorage.listenKeyChange('currentItem', initiate_item)
 
             function initiate_item(): void {
