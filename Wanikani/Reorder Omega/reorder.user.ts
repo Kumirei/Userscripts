@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.19
+// @version      0.1.20
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -247,21 +247,21 @@ declare global {
 
     // Retrieves the ids of the the items in the current queue
     function get_queue_ids(): number[] {
-        const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key)
+        const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
 
         // Swap current item into first position so that the current item doesn't change
         const current_item = $.jStorage.get<Review.Item>(current_item_key)
         const current_item_index = active_queue.findIndex((item) => item.id === current_item.id)
         swap(active_queue, 0, current_item_index)
 
-        const inactive_queue = $.jStorage.get<(Review.Item | number)[]>(inactive_queue_key)
+        const inactive_queue = $.jStorage.get<(Review.Item | number)[]>(inactive_queue_key, [])
         const remaining_queue = inactive_queue.map((item) => (typeof item === 'number' ? item : item.id))
         return active_queue.map((item) => item.id).concat(remaining_queue)
     }
 
     // Retrieves the ids of already completed items
     function get_completed_ids(): Set<number> {
-        const completed = $.jStorage.get<Review.Item[]>('completedItems') // Could be a page variable, but only extra study uses this
+        const completed = $.jStorage.get<Review.Item[]>('completedItems', []) // Could be a page variable, but only extra study uses this
         return new Set(completed.map((item) => item.id))
     }
 
@@ -274,7 +274,7 @@ declare global {
     // we wait for everything to load
     function display_loading(): void {
         const callback = () => {
-            const queue = $.jStorage.get<Review.Queue>(inactive_queue_key)
+            const queue = $.jStorage.get<Review.Queue>(inactive_queue_key, [])
             $.jStorage.set('questionType', 'meaning')
             if ('table' in queue) {
                 // Since the url is invalid the queue will contain an error. We must wait
@@ -302,7 +302,7 @@ declare global {
             case 'lessons':
                 update_lesson_counts(items)
                 rest = await get_item_data(items)
-                active_queue = rest.splice(0, $.jStorage.get<number>('l/batchSize'))
+                active_queue = rest.splice(0, $.jStorage.get<number>('l/batchSize', 5))
                 current_item = active_queue[0]
                 break
             case 'extra_study':
@@ -317,6 +317,7 @@ declare global {
                 current_item = active_queue[active_queue.length - 1]
                 rest = items.map((item) => item.id)
                 rest.reverse() // Reverse because items are popped from inactive queue
+                $('#reviews').attr('style', 'display: block;') // Show page
                 break
             case 'reviews':
                 active_queue = await get_item_data(items.splice(0, 10))
@@ -338,8 +339,8 @@ declare global {
     async function get_item_data(items: ItemData.Item[]): Promise<Review.Item[]> {
         // Lessons already have all the data
         if (page === 'lessons') {
-            const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key)
-            const inactive_queue = $.jStorage.get<Review.Item[]>(inactive_queue_key)
+            const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
+            const inactive_queue = $.jStorage.get<Review.Item[]>(inactive_queue_key, [])
             const lesson_items = Object.fromEntries(active_queue.concat(inactive_queue).map((item) => [item.id, item])) // Map id to item
             return items.map((item) => lesson_items[item.id]) // Replace WKOF item with WK item
         }
@@ -587,8 +588,8 @@ declare global {
             update_display(streak.current.streak, streak.current.max)
 
             $.jStorage.listenKeyChange('questionCount', (): void => {
-                const questions: number = $.jStorage.get('questionCount')
-                const incorrect: number = $.jStorage.get('wrongCount')
+                const questions: number = $.jStorage.get('questionCount', 0)
+                const incorrect: number = $.jStorage.get('wrongCount', 0)
                 if (questions < streak.current.questions) streak.undo()
                 else if (incorrect == streak.current.incorrect) streak.correct(questions, incorrect)
                 else streak.incorrect(questions, incorrect)
@@ -675,14 +676,14 @@ declare global {
             if (['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) {
                 // If active queue is not yet populated, wait until it is to set the currentItem
                 const callback = () => {
-                    const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key)
+                    const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
                     let current_item = active_queue[0]
                     if (['extra_study', 'self_study'].includes(page))
                         current_item = active_queue[active_queue.length - 1] // Extra study page picks last item
                     if (settings.back2back) $.jStorage.set(current_item_key, current_item)
                     $.jStorage.stopListening(active_queue_key, callback)
                 }
-                if ($.jStorage.get<Review.Item[]>(active_queue_key)?.length) callback()
+                if ($.jStorage.get<Review.Item[]>(active_queue_key, []).length) callback()
                 else $.jStorage.listenKeyChange(active_queue_key, callback)
             }
         }
@@ -698,7 +699,7 @@ declare global {
             function prioritize(): void {
                 const prio = settings.prioritize
                 const item = $.jStorage.get<Review.Item>(current_item_key)
-                const question_type = $.jStorage.get<'meaning' | 'reading'>(question_type_key)
+                const question_type = $.jStorage.get<'meaning' | 'reading'>(question_type_key, 'meaning')
                 // Skip if item is not defined, it is a radical, it is already the right question, or no priority is selected
                 if (!item || item.type == 'Radical' || question_type == prio || 'none' == prio) return
                 const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id

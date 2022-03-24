@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.19
+// @version      0.1.20
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -218,18 +218,18 @@ var module = {};
     }
     // Retrieves the ids of the the items in the current queue
     function get_queue_ids() {
-        var active_queue = $.jStorage.get(active_queue_key);
+        var active_queue = $.jStorage.get(active_queue_key, []);
         // Swap current item into first position so that the current item doesn't change
         var current_item = $.jStorage.get(current_item_key);
         var current_item_index = active_queue.findIndex(function (item) { return item.id === current_item.id; });
         swap(active_queue, 0, current_item_index);
-        var inactive_queue = $.jStorage.get(inactive_queue_key);
+        var inactive_queue = $.jStorage.get(inactive_queue_key, []);
         var remaining_queue = inactive_queue.map(function (item) { return (typeof item === 'number' ? item : item.id); });
         return active_queue.map(function (item) { return item.id; }).concat(remaining_queue);
     }
     // Retrieves the ids of already completed items
     function get_completed_ids() {
-        var completed = $.jStorage.get('completedItems'); // Could be a page variable, but only extra study uses this
+        var completed = $.jStorage.get('completedItems', []); // Could be a page variable, but only extra study uses this
         return new Set(completed.map(function (item) { return item.id; }));
     }
     // -----------------------------------------------------------------------------------------------------------------
@@ -240,7 +240,7 @@ var module = {};
     // we wait for everything to load
     function display_loading() {
         var callback = function () {
-            var queue = $.jStorage.get(inactive_queue_key);
+            var queue = $.jStorage.get(inactive_queue_key, []);
             $.jStorage.set('questionType', 'meaning');
             if ('table' in queue) {
                 // Since the url is invalid the queue will contain an error. We must wait
@@ -278,7 +278,7 @@ var module = {};
                         return [4 /*yield*/, get_item_data(items)];
                     case 2:
                         rest = _c.sent();
-                        active_queue = rest.splice(0, $.jStorage.get('l/batchSize'));
+                        active_queue = rest.splice(0, $.jStorage.get('l/batchSize', 5));
                         current_item = active_queue[0];
                         return [3 /*break*/, 11];
                     case 3:
@@ -293,6 +293,7 @@ var module = {};
                         current_item = active_queue[active_queue.length - 1];
                         rest = items.map(function (item) { return item.id; });
                         rest.reverse(); // Reverse because items are popped from inactive queue
+                        $('#reviews').attr('style', 'display: block;'); // Show page
                         return [3 /*break*/, 11];
                     case 5: return [4 /*yield*/, get_item_data(items.splice(0, 10))];
                     case 6:
@@ -331,8 +332,8 @@ var module = {};
                     case 0:
                         // Lessons already have all the data
                         if (page === 'lessons') {
-                            active_queue = $.jStorage.get(active_queue_key);
-                            inactive_queue = $.jStorage.get(inactive_queue_key);
+                            active_queue = $.jStorage.get(active_queue_key, []);
+                            inactive_queue = $.jStorage.get(inactive_queue_key, []);
                             lesson_items_1 = Object.fromEntries(active_queue.concat(inactive_queue).map(function (item) { return [item.id, item]; })) // Map id to item
                             ;
                             return [2 /*return*/, items.map(function (item) { return lesson_items_1[item.id]; })]; // Replace WKOF item with WK item
@@ -546,8 +547,8 @@ var module = {};
             streak.load();
             update_display(streak.current.streak, streak.current.max);
             $.jStorage.listenKeyChange('questionCount', function () {
-                var questions = $.jStorage.get('questionCount');
-                var incorrect = $.jStorage.get('wrongCount');
+                var questions = $.jStorage.get('questionCount', 0);
+                var incorrect = $.jStorage.get('wrongCount', 0);
                 if (questions < streak.current.questions)
                     streak.undo();
                 else if (incorrect == streak.current.incorrect)
@@ -611,7 +612,6 @@ var module = {};
         // Sets up the back2back features so that meaning and reading questions
         // can be made to appear after each other
         function install_back_to_back() {
-            var _a;
             if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page))
                 return;
             // Replace Math.random only for the wanikani script this is done by throwing an error and
@@ -633,7 +633,7 @@ var module = {};
             if (['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) {
                 // If active queue is not yet populated, wait until it is to set the currentItem
                 var callback_1 = function () {
-                    var active_queue = $.jStorage.get(active_queue_key);
+                    var active_queue = $.jStorage.get(active_queue_key, []);
                     var current_item = active_queue[0];
                     if (['extra_study', 'self_study'].includes(page))
                         current_item = active_queue[active_queue.length - 1]; // Extra study page picks last item
@@ -641,7 +641,7 @@ var module = {};
                         $.jStorage.set(current_item_key, current_item);
                     $.jStorage.stopListening(active_queue_key, callback_1);
                 };
-                if ((_a = $.jStorage.get(active_queue_key)) === null || _a === void 0 ? void 0 : _a.length)
+                if ($.jStorage.get(active_queue_key, []).length)
                     callback_1();
                 else
                     $.jStorage.listenKeyChange(active_queue_key, callback_1);
@@ -657,7 +657,7 @@ var module = {};
             function prioritize() {
                 var prio = settings.prioritize;
                 var item = $.jStorage.get(current_item_key);
-                var question_type = $.jStorage.get(question_type_key);
+                var question_type = $.jStorage.get(question_type_key, 'meaning');
                 // Skip if item is not defined, it is a radical, it is already the right question, or no priority is selected
                 if (!item || item.type == 'Radical' || question_type == prio || 'none' == prio)
                     return;
