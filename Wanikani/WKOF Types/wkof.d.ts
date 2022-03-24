@@ -203,10 +203,13 @@ declare namespace Apiv2 {
 
     export type Module = {
         Apiv2: {
+            user: string
+            key: string
             fetch_endpoint: (endpoint_name: ApiEndpoint, options?: FetchEndpointOptions) => Promise<any>
             get_endpoint: (endpoint_name: ApiEndpoint, options?: GetEndpointOptions) => Promise<any>
             clear_cache: (include_non_user?: boolean) => Promise<undefined>
             apiv2_is_valid_apikey_format: (apikey: string) => boolean
+            spoof: (key: string) => void
         }
         user: User
     }
@@ -234,6 +237,16 @@ declare namespace ItemData {
                 type: 'whitelist' | 'blacklist'
             }[]
             characters: string
+            character_images?: {
+                content_type: string
+                url: string
+                metadata: {
+                    color?: string
+                    dimensions?: `${number}x${number}`
+                    style_name?: string
+                    inline_styles?: boolean
+                }
+            }[]
             component_subject_ids: number[]
             context_sentences: {
                 en: string
@@ -244,6 +257,7 @@ declare namespace ItemData {
             hidden_at: null | IsoDateString
             lesson_position: number
             level: number
+            meaning_hint?: string
             meaning_mnemonic: string
             meanings: {
                 accepted_answer: boolean
@@ -263,11 +277,13 @@ declare namespace ItemData {
                 }
                 content_type: string
             }[]
+            reading_hint?: string
             reading_mnemonic: string
             readings: {
                 accepted_answer: boolean
                 primary: boolean
                 reading: string
+                type?: 'kunyomi' | 'onyomi' | 'nanori'
             }[]
             slug: string
             spaced_repetition_system_id: number
@@ -302,6 +318,15 @@ declare namespace ItemData {
             reading_max_streak: number
             subject_id: number
             subject_type: SubjectType
+        }
+        study_materials?: {
+            created_at: IsoDateString
+            hidden: boolean
+            reading_note?: string
+            meaning_note?: string
+            subject_id: number
+            subject_type: SubjectType
+            meaning_synonyms: string[]
         }
     }
 
