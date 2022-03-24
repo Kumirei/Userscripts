@@ -2,31 +2,50 @@ import { SubjectTypeShortString } from '../WKOF Types/wkof'
 
 export namespace Review {
     type Item = {
+        auxiliary_meanings: string[]
+        characters: string
+        en: string[]
+        id: number
+        slug: string
+        srs: -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | undefined
+        syn: string[]
+    } & (VocabItem | KanjiItem | RadicalItem)
+
+    type VocabItem = {
         aud: {
             content_type: string
             pronunciation: string
             url: string
             voice_actor_id: number
         }[]
-        auxiliary_meanings: string[]
         auxiliary_readings: string[]
-        characters: string
-        en: string[]
-        id: number
         kana: string[]
         kanji: {
             characters: string
             en: string
             id: number
+            ja: string
             kan: string
             type: string
         }[]
-        slug: string
-        srs: -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | undefined
-        type: 'Vocabulary' | 'Kanji' | 'Radical'
-        voc?: string
-        kan?: string
-        rad?: string
+        type: 'Vocabulary'
+        voc: string
+    }
+
+    type KanjiItem = {
+        auxiliary_readings: string[]
+        emph: 'onyomi' | 'kunyomi' | 'nanori'
+        kan: string
+        kun: string[]
+        nanori: string[]
+        on: string[]
+        type: 'Kanji'
+    }
+
+    type RadicalItem = {
+        character_image_url?: string
+        rad: string
+        type: 'Radical'
     }
 
     type AnswersObject = {
