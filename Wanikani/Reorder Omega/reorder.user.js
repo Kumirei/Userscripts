@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.21
+// @version      0.1.22
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -1120,6 +1120,8 @@ var module = {};
     // Retrieves the presets that the script comes with
     function get_default_presets() {
         var _a, _b, _c;
+        if (!!wkof.file_cache.dir["wkof.settings.".concat(script_id)])
+            return []; // If user already change settings don't include these
         // Do nothing
         var none = $.extend(true, get_preset_defaults(), {
             name: 'None',
@@ -1262,9 +1264,7 @@ var module = {};
                 }),
             ]
         });
-        if (!!wkof.file_cache.dir["wkof.settings.".concat(script_id)])
-            return []; // If user already change settings don't include these
-        return [none, speed_demon, level, srs, type, random_burns, backlog];
+        return [none, speed_demon, level, srs, type, random_burns, backlog, learned];
     }
     // Get a new preset item. This is a function because we want to be able to get a copy of it on demand
     function get_preset_defaults() {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.21
+// @version      0.1.22
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -1254,6 +1254,8 @@ declare global {
 
     // Retrieves the presets that the script comes with
     function get_default_presets(): Settings.Preset[] {
+        if (!!wkof.file_cache.dir[`wkof.settings.${script_id}`]) return [] // If user already change settings don't include these
+
         // Do nothing
         const none = $.extend(true, get_preset_defaults(), {
             name: 'None',
@@ -1401,8 +1403,7 @@ declare global {
             ] as Settings.Action[],
         })
 
-        if (!!wkof.file_cache.dir[`wkof.settings.${script_id}`]) return [] // If user already change settings don't include these
-        return [none, speed_demon, level, srs, type, random_burns, backlog]
+        return [none, speed_demon, level, srs, type, random_burns, backlog, learned]
     }
 
     // Get a new preset item. This is a function because we want to be able to get a copy of it on demand
