@@ -1384,6 +1384,23 @@ declare global {
             ] as Settings.Action[],
         })
 
+        // An example on how to use the filter only learned items
+        const learned = $.extend(true, get_preset_defaults(), {
+            name: 'Learned',
+            available_on: { reviews: false, lessons: false, extra_study: false, self_study: true },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Filter learned items',
+                    type: 'filter',
+                    filter: {
+                        filter: `srs`,
+                        srs: { lock: true, init: true },
+                        invert: true,
+                    },
+                }),
+            ] as Settings.Action[],
+        })
+
         if (!!wkof.file_cache.dir[`wkof.settings.${script_id}`]) return [] // If user already change settings don't include these
         return [none, speed_demon, level, srs, type, random_burns, backlog]
     }
