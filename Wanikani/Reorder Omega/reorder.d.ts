@@ -2,7 +2,7 @@ import { SubjectTypeShortString } from '../WKOF Types/wkof'
 
 export namespace Review {
     type Item = {
-        auxiliary_meanings: string[]
+        auxiliary_meanings: { meaning: string; type: 'whitelist' | 'blacklist' }[]
         characters: string
         en: string[]
         id: number
@@ -18,7 +18,7 @@ export namespace Review {
             url: string
             voice_actor_id: number
         }[]
-        auxiliary_readings: string[]
+        auxiliary_readings: { reading: string; type: 'whitelist' | 'blacklist' }[]
         kana: string[]
         kanji: {
             characters: string
@@ -33,7 +33,7 @@ export namespace Review {
     }
 
     type KanjiItem = {
-        auxiliary_readings: string[]
+        auxiliary_readings: { reading: string; type: 'whitelist' | 'blacklist' }[]
         emph: 'onyomi' | 'kunyomi' | 'nanori'
         kan: string
         kun: string[]
