@@ -4,7 +4,6 @@
 // @version      1.2.1
 // @description  Displays 0 lessons available when you have too much on your plate already
 // @author       Kumirei
-// @include      *wanikani.com*
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?/
 // @grant        none
 // ==/UserScript==
