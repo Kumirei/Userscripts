@@ -149,6 +149,7 @@ declare global {
                 const completed = get_completed_ids()
                 items = items.filter((item) => !completed.has(item.id)) // Filter out answered items
                 shuffle(items) // Always shuffle self study items
+                $('#reviews').attr('style', 'display: block;') // Show page
                 break
             default:
                 return
@@ -318,7 +319,6 @@ declare global {
                 current_item = active_queue[active_queue.length - 1]
                 rest = items.map((item) => item.id)
                 rest.reverse() // Reverse because items are popped from inactive queue
-                $('#reviews').attr('style', 'display: block;') // Show page
                 break
             case 'reviews':
                 active_queue = await get_item_data(items.splice(0, 10))
@@ -366,9 +366,7 @@ declare global {
     // Transforms a wkof item into a review item
     function transform_item(item: ItemData.Item): Review.Item {
         const mutual = {
-            auxiliary_meanings: item.data.meanings
-                .filter((meaning) => !meaning.primary)
-                .map((meaning) => meaning.meaning),
+            auxiliary_meanings: item.data.auxiliary_meanings ?? [],
             characters: item.data.characters,
             en: item.data.meanings.filter((meaning) => meaning.primary).map((meaning) => meaning.meaning),
             id: item.id,
@@ -389,9 +387,7 @@ declare global {
                         url: audio.url,
                         voice_actor_id: audio.metadata.voice_actor_id,
                     })),
-                    auxiliary_readings: item.data.readings
-                        ?.filter((reading) => !reading.primary)
-                        .map((reading) => reading.reading),
+                    auxiliary_readings: [], // Sadly the warn/shake info is not available in the api
                     kana: item.data.readings?.filter((reading) => reading.primary).map((reading) => reading.reading),
                     kanji: item.data.component_subject_ids.map((id) => {
                         const kanji = items_by_id[id]
@@ -416,9 +412,7 @@ declare global {
             case 'kanji':
                 return {
                     ...mutual,
-                    auxiliary_readings: item.data.readings
-                        ?.filter((reading) => !reading.primary)
-                        .map((reading) => reading.reading),
+                    auxiliary_readings: [], // Sadly the warn/shake info is not available in the api
                     emph: item.data.readings.find((r) => r.primary)?.type ?? 'kunyomi',
                     kan: item.data.characters,
                     kun: item.data.readings.filter((r) => r.type === 'kunyomi').map((r) => r.reading),

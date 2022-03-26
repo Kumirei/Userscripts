@@ -125,6 +125,7 @@ var module = {};
                                 completed_1 = get_completed_ids();
                                 items = items.filter(function (item) { return !completed_1.has(item.id); }); // Filter out answered items
                                 shuffle(items); // Always shuffle self study items
+                                $('#reviews').attr('style', 'display: block;'); // Show page
                                 break;
                             default:
                                 return [2 /*return*/];
@@ -293,7 +294,6 @@ var module = {};
                         current_item = active_queue[active_queue.length - 1];
                         rest = items.map(function (item) { return item.id; });
                         rest.reverse(); // Reverse because items are popped from inactive queue
-                        $('#reviews').attr('style', 'display: block;'); // Show page
                         return [3 /*break*/, 11];
                     case 5: return [4 /*yield*/, get_item_data(items.splice(0, 10))];
                     case 6:
@@ -367,29 +367,27 @@ var module = {};
     // Transforms a wkof item into a review item
     function transform_item(item) {
         var _a;
-        var _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
+        var _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         var mutual = (_a = {
-                auxiliary_meanings: item.data.meanings
-                    .filter(function (meaning) { return !meaning.primary; })
-                    .map(function (meaning) { return meaning.meaning; }),
+                auxiliary_meanings: (_b = item.data.auxiliary_meanings) !== null && _b !== void 0 ? _b : [],
                 characters: item.data.characters,
                 en: item.data.meanings.filter(function (meaning) { return meaning.primary; }).map(function (meaning) { return meaning.meaning; }),
                 id: item.id,
                 slug: item.data.slug,
-                srs: (_b = item.assignments) === null || _b === void 0 ? void 0 : _b.srs_stage,
-                syn: (_d = (_c = item.study_materials) === null || _c === void 0 ? void 0 : _c.meaning_synonyms) !== null && _d !== void 0 ? _d : [],
+                srs: (_c = item.assignments) === null || _c === void 0 ? void 0 : _c.srs_stage,
+                syn: (_e = (_d = item.study_materials) === null || _d === void 0 ? void 0 : _d.meaning_synonyms) !== null && _e !== void 0 ? _e : [],
                 type: (item.object[0].toUpperCase() + item.object.slice(1))
             },
             _a[item.object == 'vocabulary' ? 'voc' : item.object == 'kanji' ? 'kan' : 'rad'] = item.data.characters,
             _a);
         switch (item.object) {
             case 'vocabulary':
-                return __assign(__assign({}, mutual), { aud: (_e = item.data.pronunciation_audios) === null || _e === void 0 ? void 0 : _e.map(function (audio) { return ({
+                return __assign(__assign({}, mutual), { aud: (_f = item.data.pronunciation_audios) === null || _f === void 0 ? void 0 : _f.map(function (audio) { return ({
                         content_type: audio.content_type,
                         pronunciation: audio.metadata.pronunciation,
                         url: audio.url,
                         voice_actor_id: audio.metadata.voice_actor_id
-                    }); }), auxiliary_readings: (_f = item.data.readings) === null || _f === void 0 ? void 0 : _f.filter(function (reading) { return !reading.primary; }).map(function (reading) { return reading.reading; }), kana: (_g = item.data.readings) === null || _g === void 0 ? void 0 : _g.filter(function (reading) { return reading.primary; }).map(function (reading) { return reading.reading; }), kanji: item.data.component_subject_ids.map(function (id) {
+                    }); }), auxiliary_readings: [], kana: (_g = item.data.readings) === null || _g === void 0 ? void 0 : _g.filter(function (reading) { return reading.primary; }).map(function (reading) { return reading.reading; }), kanji: item.data.component_subject_ids.map(function (id) {
                         var kanji = items_by_id[id];
                         return {
                             characters: kanji.data.characters,
@@ -407,11 +405,11 @@ var module = {};
                         };
                     }), type: 'Vocabulary', voc: item.data.characters });
             case 'kanji':
-                return __assign(__assign({}, mutual), { auxiliary_readings: (_h = item.data.readings) === null || _h === void 0 ? void 0 : _h.filter(function (reading) { return !reading.primary; }).map(function (reading) { return reading.reading; }), emph: (_k = (_j = item.data.readings.find(function (r) { return r.primary; })) === null || _j === void 0 ? void 0 : _j.type) !== null && _k !== void 0 ? _k : 'kunyomi', kan: item.data.characters, kun: item.data.readings.filter(function (r) { return r.type === 'kunyomi'; }).map(function (r) { return r.reading; }), nanori: item.data.readings.filter(function (r) { return r.type === 'nanori'; }).map(function (r) { return r.reading; }), on: item.data.readings.filter(function (r) { return r.type === 'onyomi'; }).map(function (r) { return r.reading; }), type: 'Kanji' });
+                return __assign(__assign({}, mutual), { auxiliary_readings: [], emph: (_j = (_h = item.data.readings.find(function (r) { return r.primary; })) === null || _h === void 0 ? void 0 : _h.type) !== null && _j !== void 0 ? _j : 'kunyomi', kan: item.data.characters, kun: item.data.readings.filter(function (r) { return r.type === 'kunyomi'; }).map(function (r) { return r.reading; }), nanori: item.data.readings.filter(function (r) { return r.type === 'nanori'; }).map(function (r) { return r.reading; }), on: item.data.readings.filter(function (r) { return r.type === 'onyomi'; }).map(function (r) { return r.reading; }), type: 'Kanji' });
             case 'radical':
                 return __assign(__assign({}, mutual), { character_image_url: item.data.characters
                         ? undefined
-                        : (_m = (_l = item.data.character_images) === null || _l === void 0 ? void 0 : _l.find(function (i) { return i.content_type === 'image/png' && i.metadata.dimensions === '1024x1024'; })) === null || _m === void 0 ? void 0 : _m.url, rad: item.data.characters, type: 'Radical' });
+                        : (_l = (_k = item.data.character_images) === null || _k === void 0 ? void 0 : _k.find(function (i) { return i.content_type === 'image/png' && i.metadata.dimensions === '1024x1024'; })) === null || _l === void 0 ? void 0 : _l.url, rad: item.data.characters, type: 'Radical' });
         }
     }
     // Updates the radical, kanji, and vocab counts in lessons
