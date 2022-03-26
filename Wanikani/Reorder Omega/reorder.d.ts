@@ -85,6 +85,8 @@ export namespace Settings {
         voice_actor: 'default' | 'random' | 'alternate'
         back2back: boolean
         prioritize: 'none' | 'reading' | 'reading'
+        paste_preset?: string
+        paste_action?: string
     }
 
     type Preset = {

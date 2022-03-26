@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.23
+// @version      1.0.0
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -775,7 +775,7 @@ var module = {};
     }
     // Installs the CSS
     function install_css() {
-        var css = "\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #active_preset {\n                font-size: 1rem;\n                line-height: 1rem;\n                padding: 0.5rem;\n                position: absolute;\n                bottom: 0;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n            }\n\n            #active_preset select option { color: black; }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n        ";
+        var css = "\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #active_preset {\n                font-size: 1rem;\n                line-height: 1rem;\n                padding: 0.5rem;\n                position: absolute;\n                bottom: 0;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n            }\n\n            #active_preset select option { color: black; }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n\n            #wkof_ds #paste_preset,\n            #wkof_ds #paste_action {\n                height: 0;\n                padding: 0;\n                border: 0;\n                display: block;\n            }\n        ";
         $('head').append("<style id=\"".concat(script_id, "_css\">").concat(css, "</style>"));
     }
     // -----------------------------------------------------------------------------------------------------------------
@@ -1109,6 +1109,47 @@ var module = {};
         dialog.find('[name="filter_type"]').closest('.row').addClass('filter');
         dialog.find('[name="filter_invert"]').closest('.row').addClass('filter');
         dialog.find('[name="sort_type"]').closest('.row').addClass('sort');
+        // Add pasting inputs
+        dialog
+            .find("fieldset#".concat(script_id, "_presets"))
+            .append($('<input id="paste_preset">').on('change', function (e) { return paste_settings('preset', e); }));
+        dialog
+            .find("fieldset#".concat(script_id, "_preset"))
+            .append($('<input id="paste_action">').on('change', function (e) { return paste_settings('action', e); }));
+        // Add paste/copy listeners
+        dialog.on('keydown', 'select', function (e) {
+            if (e.ctrlKey && e.key === 'c') {
+                try {
+                    switch ($(e.target).attr('name')) {
+                        case 'selected_preset':
+                            var originalPreset = settings.presets[Number($(e.target).find(':selected').attr('name'))];
+                            var preset = JSON.parse(JSON.stringify(originalPreset));
+                            preset.actions = preset.actions.map(delete_action_defaults);
+                            return navigator.clipboard.writeText(JSON.stringify({ preset: preset }));
+                        case 'selected_action':
+                            var originalAction = settings.presets[settings.selected_preset].actions[Number($(e.target).find(':selected').attr('name'))];
+                            var actionCopy = JSON.parse(JSON.stringify(originalAction));
+                            var action = delete_action_defaults(actionCopy);
+                            return navigator.clipboard.writeText(JSON.stringify({ action: action }));
+                    }
+                }
+                catch (error) {
+                    return;
+                }
+            }
+            else if (e.ctrlKey && e.key === 'v') {
+                // Focus hidden input before the paste event is triggered, then reset the focus
+                switch ($(e.target).attr('name')) {
+                    case 'selected_preset':
+                        $("#paste_preset")[0].focus();
+                        break;
+                    case 'selected_action':
+                        $("#paste_action")[0].focus();
+                        break;
+                }
+                setTimeout(function () { return e.target.focus(); }, 1);
+            }
+        });
         // Refresh
         refresh_settings();
     }
@@ -1295,6 +1336,21 @@ var module = {};
             defaults.sort[type] = 'asc';
         }
         return defaults;
+    }
+    // Deletes all unused data from an action
+    function delete_action_defaults(action) {
+        var _a, _b;
+        if (action.type !== 'filter' && action.type !== 'sort')
+            return { name: action.name, type: action.type };
+        return _a = {
+                name: action.name,
+                type: action.type
+            },
+            _a[action.type] = (_b = {},
+                _b[action.type] = action[action.type][action.type],
+                _b[action[action.type][action.type]] = action[action.type][action[action.type][action.type]],
+                _b),
+            _a;
     }
     // Populate the active preset dropdowns in the general tabs with the available presets for those pages
     function populate_active_preset_options(active_presets) {
@@ -1509,6 +1565,38 @@ var module = {};
         settings_dialog.refresh();
         if (btn === 'new')
             $("#".concat(script_id, "_").concat(ref, "_name")).focus().select();
+    }
+    // Handles the pasting of presets and actions from the clipboard
+    function paste_settings(type, e) {
+        var val = e.target.value;
+        e.target.value = '';
+        try {
+            var obj = JSON.parse(val);
+            switch (type) {
+                case 'preset':
+                    if (!obj.preset)
+                        return;
+                    // Add in defaults
+                    obj.preset.actions = obj.preset.actions.map(function (action) {
+                        return $.extend(true, get_action_defaults(), action);
+                    });
+                    obj.preset = $.extend(true, get_preset_defaults(), obj.preset);
+                    settings.presets.push(obj.preset);
+                    settings.selected_preset = settings.presets.length - 1;
+                    settings_dialog.refresh();
+                    break;
+                case 'action':
+                    if (!obj.action)
+                        return;
+                    obj.action = $.extend(true, get_action_defaults(), obj.action); // Add defaults
+                    var preset = settings.presets[settings.selected_preset];
+                    preset.actions.push(obj.action);
+                    preset.selected_action = preset.actions.length - 1;
+                    settings_dialog.refresh();
+                    break;
+            }
+        }
+        catch (error) { }
     }
     var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, trace_function_test, egg_timer_location, preset_selection_location, settings, settings_dialog, items_by_id, SRS_DURATIONS, base64BellAudio;
     return __generator(this, function (_a) {

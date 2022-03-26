@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      0.1.23
+// @version      1.0.0
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -893,6 +893,14 @@ declare global {
             }
 
             body > div[data-react-class="Lesson/Lesson"] #egg_timer { color: white; }
+
+            #wkof_ds #paste_preset,
+            #wkof_ds #paste_action {
+                height: 0;
+                padding: 0;
+                border: 0;
+                display: block;
+            }
         `
 
         $('head').append(`<style id="${script_id}_css">${css}</style>`)
@@ -1238,6 +1246,51 @@ declare global {
         dialog.find('[name="filter_invert"]').closest('.row').addClass('filter')
         dialog.find('[name="sort_type"]').closest('.row').addClass('sort')
 
+        // Add pasting inputs
+        dialog
+            .find(`fieldset#${script_id}_presets`)
+            .append($('<input id="paste_preset">').on('change', (e) => paste_settings('preset', e)))
+        dialog
+            .find(`fieldset#${script_id}_preset`)
+            .append($('<input id="paste_action">').on('change', (e) => paste_settings('action', e)))
+
+        // Add paste/copy listeners
+        dialog.on('keydown', 'select', (e) => {
+            if (e.ctrlKey && e.key === 'c') {
+                try {
+                    switch ($(e.target).attr('name')) {
+                        case 'selected_preset':
+                            const originalPreset: any =
+                                settings.presets[Number($(e.target).find(':selected').attr('name'))]
+                            const preset = JSON.parse(JSON.stringify(originalPreset))
+                            preset.actions = preset.actions.map(delete_action_defaults)
+                            return navigator.clipboard.writeText(JSON.stringify({ preset }))
+                        case 'selected_action':
+                            const originalAction =
+                                settings.presets[settings.selected_preset].actions[
+                                    Number($(e.target).find(':selected').attr('name'))
+                                ]
+                            const actionCopy = JSON.parse(JSON.stringify(originalAction))
+                            const action = delete_action_defaults(actionCopy)
+                            return navigator.clipboard.writeText(JSON.stringify({ action }))
+                    }
+                } catch (error) {
+                    return
+                }
+            } else if (e.ctrlKey && e.key === 'v') {
+                // Focus hidden input before the paste event is triggered, then reset the focus
+                switch ($(e.target).attr('name')) {
+                    case 'selected_preset':
+                        $(`#paste_preset`)[0].focus()
+                        break
+                    case 'selected_action':
+                        $(`#paste_action`)[0].focus()
+                        break
+                }
+                setTimeout(() => e.target.focus(), 1)
+            }
+        })
+
         // Refresh
         refresh_settings()
     }
@@ -1433,6 +1486,19 @@ declare global {
             defaults.sort[type] = 'asc'
         }
         return defaults
+    }
+
+    // Deletes all unused data from an action
+    function delete_action_defaults(action: any): { [key: string]: any } {
+        if (action.type !== 'filter' && action.type !== 'sort') return { name: action.name, type: action.type }
+        return {
+            name: action.name,
+            type: action.type,
+            [action.type]: {
+                [action.type]: action[action.type][action.type],
+                [action[action.type][action.type]]: action[action.type][action[action.type][action.type]],
+            },
+        }
     }
 
     // Populate the active preset dropdowns in the general tabs with the available presets for those pages
@@ -1639,6 +1705,36 @@ declare global {
         populate_list(elem, list, root[key])
         settings_dialog.refresh()
         if (btn === 'new') $(`#${script_id}_${ref}_name`).focus().select()
+    }
+
+    // Handles the pasting of presets and actions from the clipboard
+    function paste_settings(type: 'preset' | 'action', e: any) {
+        const val = e.target.value
+        e.target.value = ''
+        try {
+            let obj = JSON.parse(val)
+            switch (type) {
+                case 'preset':
+                    if (!obj.preset) return
+                    // Add in defaults
+                    obj.preset.actions = obj.preset.actions.map((action: any) => {
+                        return $.extend(true, get_action_defaults(), action)
+                    })
+                    obj.preset = $.extend(true, get_preset_defaults(), obj.preset)
+                    settings.presets.push(obj.preset)
+                    settings.selected_preset = settings.presets.length - 1
+                    settings_dialog.refresh()
+                    break
+                case 'action':
+                    if (!obj.action) return
+                    obj.action = $.extend(true, get_action_defaults(), obj.action) // Add defaults
+                    const preset = settings.presets[settings.selected_preset]
+                    preset.actions.push(obj.action)
+                    preset.selected_action = preset.actions.length - 1
+                    settings_dialog.refresh()
+                    break
+            }
+        } catch (error) {}
     }
 
     // -----------------------------------------------------------------------------------------------------------------
