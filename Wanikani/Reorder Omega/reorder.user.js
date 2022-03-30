@@ -647,8 +647,10 @@ var module = {};
                     burn(UID);
             }
             function burn(UID) {
-                if (settings.burn_bell)
+                if (settings.burn_bell) {
+                    audio.load(); // Stop if already playing
                     audio.play();
+                }
                 delete listening[UID];
             }
         }

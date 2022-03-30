@@ -707,7 +707,10 @@ declare global {
             }
 
             function burn(UID: string): void {
-                if (settings.burn_bell) audio.play()
+                if (settings.burn_bell) {
+                    audio.load() // Stop if already playing
+                    audio.play()
+                }
                 delete listening[UID]
             }
         }
