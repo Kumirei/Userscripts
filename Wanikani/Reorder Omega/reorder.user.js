@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -817,7 +817,19 @@ var module = {};
             back2back: false,
             prioritize: 'none'
         };
-        return wkof.Settings.load(script_id, defaults).then(function (wkof_settings) { return (settings = wkof_settings); });
+        return wkof.Settings.load(script_id, defaults)
+            .then(
+        // Make settings accessible globally
+        function (wkof_settings) { return (settings = wkof_settings); })
+            .then(insert_filter_defaults);
+    }
+    // Inserts the defaults of registered filters into each action
+    function insert_filter_defaults() {
+        var action_defaults = get_action_defaults();
+        for (var _i = 0, _a = settings.presets; _i < _a.length; _i++) {
+            var preset = _a[_i];
+            preset.actions = preset.actions.map(function (action) { return $.extend(true, {}, action_defaults, action); });
+        }
     }
     // Installs the options button in the menu
     function install_menu() {
@@ -831,6 +843,7 @@ var module = {};
     }
     // Opens settings dialogue when button is pressed
     function open_settings() {
+        insert_filter_defaults(); // Insert any late loaded script filters
         var config = {
             script_id: script_id,
             title: script_name,

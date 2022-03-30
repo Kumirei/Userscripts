@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -927,7 +927,7 @@ declare global {
     }
 
     // Load WKOF settings
-    function load_settings(): Promise<Settings.Settings> {
+    function load_settings(): Promise<void> {
         const defaults: Settings.Settings = {
             selected_preset: 0,
             active_presets: {
@@ -944,13 +944,24 @@ declare global {
             back2back: false,
             prioritize: 'none',
         }
-        return wkof.Settings.load(script_id, defaults).then(
-            (wkof_settings) => (settings = wkof_settings as Settings.Settings),
-        )
+        return wkof.Settings.load(script_id, defaults)
+            .then(
+                // Make settings accessible globally
+                (wkof_settings) => (settings = wkof_settings as Settings.Settings),
+            )
+            .then(insert_filter_defaults)
+    }
+
+    // Inserts the defaults of registered filters into each action
+    function insert_filter_defaults(): void {
+        const action_defaults = get_action_defaults()
+        for (const preset of settings.presets) {
+            preset.actions = preset.actions.map((action) => $.extend(true, {}, action_defaults, action))
+        }
     }
 
     // Installs the options button in the menu
-    function install_menu() {
+    function install_menu(): void {
         const config = {
             name: script_id,
             submenu: 'Settings',
@@ -961,7 +972,8 @@ declare global {
     }
 
     // Opens settings dialogue when button is pressed
-    function open_settings() {
+    function open_settings(): void {
+        insert_filter_defaults() // Insert any late loaded script filters
         const config: SettingsModule.Config = {
             script_id,
             title: script_name,
