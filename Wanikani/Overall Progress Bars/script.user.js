@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Overall Progress Bars
 // @namespace    http://tampermonkey.net/
-// @version      1.3.1
+// @version      1.3.2
 // @description  Creates a progress bar on the dashboard for every level
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -31,10 +31,10 @@
         9: 'Burned',
     }
     const positions = [
-        $('.progress-and-forecast'),
-        $('.srs-progress'),
-        $('.recent-unlocks').closest('.row'),
-        $('.forum-topics-list').closest('.row'),
+        () => $('.progress-and-forecast'),
+        () => $('.srs-progress'),
+        () => $('.recent-unlocks').closest('.row'),
+        () => $('.forum-topics-list').closest('.row'),
     ]
 
     // Init
@@ -62,7 +62,7 @@
         set_color_theme()
         injectCss()
         $('.srs-level-graph').remove()
-        positions[settings.position].before(
+        positions[settings.position]().before(
             `<section class="srs-level-graph">${Object.entries(counts_by_level_and_srs)
                 .map(get_level)
                 .join('')}</section`,
