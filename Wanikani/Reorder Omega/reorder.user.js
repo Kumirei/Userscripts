@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -105,10 +105,10 @@ var module = {};
     // -----------------------------------------------------------------------------------------------------------------
     // PROCESS QUEUE
     // -----------------------------------------------------------------------------------------------------------------
-    // Runs the selected preset on the queue
-    function run() {
+    // Retrieves the queue
+    function get_queue() {
         return __awaiter(this, void 0, void 0, function () {
-            var items, completed_1;
+            var items;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, wkof.ItemData.get_items('assignments,review_statistics,study_materials')];
@@ -119,34 +119,56 @@ var module = {};
                             case 'reviews':
                             case 'lessons':
                             case 'extra_study':
-                                items = get_queue_ids().map(function (id) { return items_by_id[id]; });
+                                original_queue = get_queue_ids().map(function (id) { return items_by_id[id]; });
                                 break;
                             case 'self_study':
-                                completed_1 = get_completed_ids();
-                                items = items.filter(function (item) { return !completed_1.has(item.id); }); // Filter out answered items
-                                shuffle(items); // Always shuffle self study items
-                                $('#reviews').attr('style', 'display: block;'); // Show page
+                                original_queue = items;
                                 break;
                             default:
                                 return [2 /*return*/];
                         }
-                        process_queue(items);
                         return [2 /*return*/];
                 }
             });
         });
     }
+    // Runs the selected preset on the queue
+    function run() {
+        return __awaiter(this, void 0, void 0, function () {
+            var queue, completed_1;
+            return __generator(this, function (_a) {
+                queue = [];
+                // Prepare queue
+                switch (page) {
+                    case 'reviews':
+                    case 'lessons':
+                    case 'extra_study':
+                        queue = original_queue;
+                        break;
+                    case 'self_study':
+                        completed_1 = get_completed_ids();
+                        queue = original_queue.filter(function (item) { return !completed_1.has(item.id); }); // Filter out answered items
+                        shuffle(queue); // Always shuffle self study items
+                        $('#reviews').attr('style', 'display: block;'); // Show page
+                        break;
+                    default:
+                        return [2 /*return*/];
+                }
+                // Process and update queue
+                queue = process_queue(queue);
+                update_queue(queue);
+                return [2 /*return*/];
+            });
+        });
+    }
     // Finds the active preset and runs it against the queue
     function process_queue(items) {
-        page = page;
+        if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page))
+            return []; // @ts-ignore
         var preset = settings.presets[settings.active_presets[page]];
         if (!preset)
-            return display_message('Invalid Preset'); // Active preset not defined
-        var results = process_preset(preset, items);
-        if (!results.length)
-            return display_message('No items in preset');
-        // Load into queue
-        update_queue(results);
+            return [];
+        return process_preset(preset, items);
     }
     // Calls all the preset actions on the items while keeping the items in three categories:
     // keep: Items that are kept by filters and sorted by sorts
@@ -242,10 +264,10 @@ var module = {};
     function display_loading() {
         var callback = function () {
             var queue = $.jStorage.get(inactive_queue_key, []);
-            $.jStorage.set('questionType', 'meaning');
             if ('table' in queue) {
                 // Since the url is invalid the queue will contain an error. We must wait
                 // until the error is set until we can set our queue
+                $.jStorage.set('questionType', 'meaning');
                 display_message('Loading...');
             }
             $.jStorage.stopListening(inactive_queue_key, callback);
@@ -266,6 +288,8 @@ var module = {};
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
+                        if (!items.length)
+                            return [2 /*return*/, display_message('No items in preset')];
                         _a = page;
                         switch (_a) {
                             case 'lessons': return [3 /*break*/, 1];
@@ -318,6 +342,7 @@ var module = {};
                         $.jStorage.set(current_item_key, current_item);
                         $.jStorage.set(active_queue_key, active_queue);
                         $.jStorage.set(inactive_queue_key, rest);
+                        window.wkRefreshAudio();
                         return [2 /*return*/];
                 }
             });
@@ -1621,9 +1646,9 @@ var module = {};
         var audio = new Audio("data:audio/mp3;base64,".concat(base64BellAudio));
         return audio;
     }
-    var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, trace_function_test, egg_timer_location, preset_selection_location, settings, settings_dialog, items_by_id, SRS_DURATIONS;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, trace_function_test, egg_timer_location, preset_selection_location, settings, settings_dialog, items_by_id, original_queue, _a, SRS_DURATIONS;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
                 script_id = 'reorder_omega';
                 script_name = 'Reorder Omega';
@@ -1632,6 +1657,8 @@ var module = {};
                 current_item_key = 'currentItem', active_queue_key = 'activeQueue', inactive_queue_key = 'reviewQueue', question_type_key = 'questionType', UID_prefix = '', trace_function_test = /randomQuestion/, egg_timer_location = '#summary-button', preset_selection_location = '#character';
                 page = set_page_variables();
                 items_by_id = {};
+                original_queue = [] // Stores queue available when loading page for when you change preset
+                ;
                 // This has to be done before WK realizes that the queue is empty and
                 // redirects, thus we have to do it before initializing WKOF
                 if (page === 'self_study')
@@ -1640,34 +1667,41 @@ var module = {};
                 return [4 /*yield*/, confirm_wkof()];
             case 1:
                 // Initiate WKOF
-                _a.sent();
+                _b.sent();
                 wkof.include('Settings,Menu,ItemData,Apiv2'); // Apiv2 purely for the user module
                 wkof.ready('ItemData.registry').then(install_filters);
                 return [4 /*yield*/, wkof.ready('Settings,Menu').then(load_settings).then(install_menu)];
             case 2:
-                _a.sent();
+                _b.sent();
                 return [4 /*yield*/, wkof.ready('ItemData,Apiv2')
                     // Install css
                 ];
             case 3:
-                _a.sent();
+                _b.sent();
                 // Install css
                 install_css();
-                // Decide what to do depending on the page
-                switch (page) {
-                    case 'dashboard':
-                        add_to_extra_study_section();
-                        break;
-                    case 'reviews':
-                    case 'lessons':
-                    case 'extra_study':
-                    case 'self_study':
-                        install_interface();
-                        install_extra_features();
-                        set_body_attributes();
-                        run();
-                        break;
+                _a = page;
+                switch (_a) {
+                    case 'dashboard': return [3 /*break*/, 4];
+                    case 'reviews': return [3 /*break*/, 5];
+                    case 'lessons': return [3 /*break*/, 5];
+                    case 'extra_study': return [3 /*break*/, 5];
+                    case 'self_study': return [3 /*break*/, 5];
                 }
+                return [3 /*break*/, 7];
+            case 4:
+                add_to_extra_study_section();
+                return [3 /*break*/, 7];
+            case 5:
+                install_interface();
+                install_extra_features();
+                set_body_attributes();
+                return [4 /*yield*/, get_queue()];
+            case 6:
+                _b.sent();
+                run();
+                return [3 /*break*/, 7];
+            case 7:
                 SRS_DURATIONS = [4, 8, 23, 47, 167, 335, 719, 2879, Infinity].map(function (time) { return time * MS.hour; });
                 return [2 /*return*/];
         }

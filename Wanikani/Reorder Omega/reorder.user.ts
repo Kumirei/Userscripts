@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -27,6 +27,7 @@ declare global {
         wkof: WKOF & ItemData & Menu & SettingsModule & Apiv2
         $: JQueryStatic
         WaniKani: any
+        wkRefreshAudio: () => void
     }
 }
 
@@ -61,6 +62,7 @@ declare global {
     let settings: Settings.Settings
     let settings_dialog: SettingsModule.Dialog
     let items_by_id: { [key: string]: ItemData.Item } = {}
+    let original_queue: ItemData.Item[] = [] // Stores queue available when loading page for when you change preset
 
     // This has to be done before WK realizes that the queue is empty and
     // redirects, thus we have to do it before initializing WKOF
@@ -88,6 +90,7 @@ declare global {
             install_interface()
             install_extra_features()
             set_body_attributes()
+            await get_queue()
             run()
             break
     }
@@ -134,8 +137,8 @@ declare global {
     // PROCESS QUEUE
     // -----------------------------------------------------------------------------------------------------------------
 
-    // Runs the selected preset on the queue
-    async function run(): Promise<void> {
+    // Retrieves the queue
+    async function get_queue() {
         let items = await wkof.ItemData.get_items('assignments,review_statistics,study_materials')
         items_by_id = wkof.ItemData.get_index<ItemData.Item>(items, 'subject_id')
 
@@ -143,32 +146,48 @@ declare global {
             case 'reviews':
             case 'lessons':
             case 'extra_study':
-                items = get_queue_ids().map((id) => items_by_id[id])
+                original_queue = get_queue_ids().map((id) => items_by_id[id])
+                break
+            case 'self_study':
+                original_queue = items
+                break
+            default:
+                return
+        }
+    }
+
+    // Runs the selected preset on the queue
+    async function run(): Promise<void> {
+        let queue: ItemData.Item[] = []
+
+        // Prepare queue
+        switch (page) {
+            case 'reviews':
+            case 'lessons':
+            case 'extra_study':
+                queue = original_queue
                 break
             case 'self_study':
                 const completed = get_completed_ids()
-                items = items.filter((item) => !completed.has(item.id)) // Filter out answered items
-                shuffle(items) // Always shuffle self study items
+                queue = original_queue.filter((item) => !completed.has(item.id)) // Filter out answered items
+                shuffle(queue) // Always shuffle self study items
                 $('#reviews').attr('style', 'display: block;') // Show page
                 break
             default:
                 return
         }
 
-        process_queue(items)
+        // Process and update queue
+        queue = process_queue(queue)
+        update_queue(queue)
     }
 
     // Finds the active preset and runs it against the queue
-    function process_queue(items: ItemData.Item[]): void {
-        page = page as 'reviews' | 'lessons' | 'extra_study' | 'self_study'
-
+    function process_queue(items: ItemData.Item[]): ItemData.Item[] {
+        if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) return [] // @ts-ignore
         const preset = settings.presets[settings.active_presets[page]]
-        if (!preset) return display_message('Invalid Preset') // Active preset not defined
-        const results = process_preset(preset, items)
-        if (!results.length) return display_message('No items in preset')
-
-        // Load into queue
-        update_queue(results)
+        if (!preset) return []
+        return process_preset(preset, items)
     }
 
     // Type used only in the functions below
@@ -277,10 +296,10 @@ declare global {
     function display_loading(): void {
         const callback = () => {
             const queue = $.jStorage.get<Review.Queue>(inactive_queue_key, [])
-            $.jStorage.set('questionType', 'meaning')
             if ('table' in queue) {
                 // Since the url is invalid the queue will contain an error. We must wait
                 // until the error is set until we can set our queue
+                $.jStorage.set('questionType', 'meaning')
                 display_message('Loading...')
             }
             $.jStorage.stopListening(inactive_queue_key, callback)
@@ -299,6 +318,7 @@ declare global {
     // Takes a list of WKOF item and puts them into the queue
     async function update_queue(items: ItemData.Item[]): Promise<void> {
         let current_item: Review.Item, active_queue: Review.Item[], rest: number[] | Review.Item[]
+        if (!items.length) return display_message('No items in preset')
 
         switch (page) {
             case 'lessons':
@@ -334,6 +354,7 @@ declare global {
         $.jStorage.set(current_item_key, current_item)
         $.jStorage.set(active_queue_key, active_queue)
         $.jStorage.set(inactive_queue_key, rest)
+        window.wkRefreshAudio()
     }
 
     // Retrieves the item's info from the WK api
