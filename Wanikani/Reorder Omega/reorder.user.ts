@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.0.5
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -763,7 +763,7 @@ declare global {
             const original_set = $.jStorage.set
             const new_set = function <T>(key: string, value: T, options: JStorageOptions | undefined): T {
                 const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
-                if (key === item_key) {
+                if (key === item_key && settings.back2back) {
                     const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
                     for (const item of active_queue) {
                         const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id

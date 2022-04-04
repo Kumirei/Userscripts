@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.0.5
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -706,7 +706,7 @@ var module = {};
             var original_set = $.jStorage.set;
             var new_set = function (key, value, options) {
                 var item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key;
-                if (key === item_key) {
+                if (key === item_key && settings.back2back) {
                     var active_queue = $.jStorage.get(active_queue_key, []);
                     for (var _i = 0, active_queue_1 = active_queue; _i < active_queue_1.length; _i++) {
                         var item = active_queue_1[_i];
