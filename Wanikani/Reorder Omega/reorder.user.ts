@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3
+// @version      1.0.4
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -757,61 +757,52 @@ declare global {
         function install_back_to_back(): void {
             if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) return
 
-            // Replace Math.random only for the wanikani script this is done by throwing an error and
-            // checking the trace to see if either of the functions 'randomQuestion' (reviews page),
-            // 'selectItem' (lessons page), or 'selectItem' (extra study page) are present. WK uses
-            // functions with these names to pick the next question, so we must alter the behavior
-            // of Math.random only when called from either of those functions.
-            const old_random = Math.random
-            const new_random = function (): number {
-                const match = !!trace_function_test.exec(new Error().stack as string)
-                if (match && settings.back2back) return 0
-                return old_random()
-            }
-            Math.random = new_random
-
-            console.log(
-                'Beware, "Back To Back" is installed and may cause other scripts using Math.random ' +
-                    `in a function called ${trace_function_test} to misbehave.`,
-            )
-
-            // Set item 0 in active queue to current item so the first item will be back to back
-            if (['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) {
-                // If active queue is not yet populated, wait until it is to set the currentItem
-                const callback = () => {
+            // Wrap jStorage.set(key, value) to ignore the value when the key is for the current item AND one item has
+            // already been partially answered. If an item has been partially answered, then set the current item to
+            // that item instead.
+            const original_set = $.jStorage.set
+            const new_set = function <T>(key: string, value: T, options: JStorageOptions | undefined): T {
+                const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
+                if (key === item_key) {
                     const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
-                    let current_item = active_queue[0]
-                    if (['extra_study', 'self_study'].includes(page))
-                        current_item = active_queue[active_queue.length - 1] // Extra study page picks last item
-                    if (settings.back2back) $.jStorage.set(current_item_key, current_item)
-                    $.jStorage.stopListening(active_queue_key, callback)
-                }
-                if ($.jStorage.get<Review.Item[]>(active_queue_key, []).length) callback()
-                else $.jStorage.listenKeyChange(active_queue_key, callback)
+                    for (const item of active_queue) {
+                        const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
+                        const stats = $.jStorage.get<Review.AnswersObject>(UID_prefix + UID)
+                        // Change the item if it has been answered in the session, regardless of whether the answer
+                        // was correct.
+                        if (stats) {
+                            if (stats.mc) $.jStorage.set(question_type_key, 'reading')
+                            if (stats.rc) $.jStorage.set(question_type_key, 'meaning') // @ts-ignore
+                            return original_set.call(this, key, item, options) as T
+                        }
+                    }
+                } // @ts-ignore
+                return original_set.call(this, key, value, options) as T
             }
+            $.jStorage.set = new_set
         }
 
         // Sets up prioritization of meaning and reading questions in sessions
         function install_prioritization(): void {
             // Run every time item changes
-            $.jStorage.listenKeyChange(current_item_key, prioritize)
+            const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
+            $.jStorage.listenKeyChange(item_key, prioritize)
             // Initialize session to prioritized question type
             prioritize()
 
             // Prioritize reading or meaning
             function prioritize(): void {
                 const prio = settings.prioritize
-                const item = $.jStorage.get<Review.Item>(current_item_key)
+                const item = $.jStorage.get<Review.Item>(item_key)
                 const question_type = $.jStorage.get<'meaning' | 'reading'>(question_type_key, 'meaning')
                 // Skip if item is not defined, it is a radical, it is already the right question, or no priority is selected
                 if (!item || item.type == 'Radical' || question_type == prio || 'none' == prio) return
                 const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
-                const done = $.jStorage.get<Review.AnswersObject>(UID_prefix + UID)
-                // Change the question if no question has been answered yet,
-                // Or the priority question has not been answered correctly yet
-                if (!done || !done[prio == 'reading' ? 'rc' : 'mc']) {
+                const stats = $.jStorage.get<Review.AnswersObject>(UID_prefix + UID)
+                // Change the question if the priority question has not been answered yet
+                if (!stats || !stats[prio == 'reading' ? 'rc' : 'mc']) {
                     $.jStorage.set(question_type_key, prio)
-                    $.jStorage.set(current_item_key, item)
+                    $.jStorage.set(item_key, item)
                 }
             }
         }
