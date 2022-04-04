@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.2.3
+// @version      1.2.4
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(lesson|review|extra_study)/session/
@@ -51,11 +51,6 @@
         install_menu()
         install_back2back()
         install_prioritization()
-
-        console.log(
-            'Beware, "Back To Back" is installed and may cause other scripts using Math.random ' +
-                `in a function called ${traceFunctionName} to misbehave.`,
-        )
     }
 
     // Set up back to back meaning/reading reviews
