@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.2.2
+// @version      1.2.3
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(lesson|review|extra_study)/session/
@@ -60,28 +60,28 @@
 
     // Set up back to back meaning/reading reviews
     function install_back2back() {
-        // Replace Math.random only for the wanikani script this is done by throwing an error and
-        // checking the trace to see if either of the functions 'randomQuestion' (reviews page),
-        // 'selectItem' (lessons page), or 'selectItem' (extra study page) are present. WK uses
-        // functions with these names to pick the next question, so we must alter the behavior
-        // of Math.random only when called from either of those functions.
-        const old_random = Math.random
-        const new_random = function () {
-            const match = traceFunctionName.exec(new Error().stack)
-            if (match && wkof.settings[script_id].active) return 0
-            return old_random()
-        }
-        Math.random = new_random
-        // Set item 0 in active queue to current item so the first item will be back to back
-        if (REVIEWS || EXTRA_STUDY) {
-            // If active queue is not yet populated, wait until it is to set the currentItem
-            const callback = () => {
-                $.jStorage.set(currentItemKey, $.jStorage.get('activeQueue')[0])
-                $.jStorage.stopListening('activeQueue', callback)
+        // Wrap jStorage.set(key, value) to ignore the value when the key is for the current item AND one item has
+        // already been partially answered. If an item has been partially answered, then set the current item to
+        // that item instead.
+        const original_set = $.jStorage.set
+        const new_set = function (key, value, options) {
+            if (key === currentItemKey && wkof.settings[script_id].active) {
+                const active_queue = $.jStorage.get(active_queue_key, [])
+                for (const item of active_queue) {
+                    const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
+                    const stats = $.jStorage.get(UIDPrefix + UID)
+                    // Change the item if it has been answered in the session, regardless of whether the answer
+                    // was correct.
+                    if (stats) {
+                        if (stats.mc) $.jStorage.set(questionTypeKey, 'reading')
+                        if (stats.rc) $.jStorage.set(questionTypeKey, 'meaning')
+                        return original_set.call(this, key, item, options)
+                    }
+                }
             }
-            if ($.jStorage.get('activeQueue').length) callback()
-            else $.jStorage.listenKeyChange('activeQueue', callback)
+            return original_set.call(this, key, value, options)
         }
+        $.jStorage.set = new_set
     }
 
     // Set up prioritization of reading or meaning
