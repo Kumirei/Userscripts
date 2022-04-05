@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.5
+// @version      1.0.6
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -53,7 +53,6 @@ declare global {
         inactive_queue_key: string = 'reviewQueue',
         question_type_key: string = 'questionType',
         UID_prefix: string = '',
-        trace_function_test: RegExp = /randomQuestion/,
         egg_timer_location: string = '#summary-button',
         preset_selection_location: string = '#character'
     page = set_page_variables()
@@ -63,6 +62,7 @@ declare global {
     let settings_dialog: SettingsModule.Dialog
     let items_by_id: { [key: string]: ItemData.Item } = {}
     let original_queue: ItemData.Item[] = [] // Stores queue available when loading page for when you change preset
+    let completed: Set<number> = new Set() // IDs of items that have been completed
 
     // This has to be done before WK realizes that the queue is empty and
     // redirects, thus we have to do it before initializing WKOF
@@ -91,6 +91,7 @@ declare global {
             install_extra_features()
             set_body_attributes()
             await get_queue()
+            track_completed(completed)
             run()
             break
     }
@@ -118,7 +119,6 @@ declare global {
                 inactive_queue_key = 'l/lessonQueue'
                 question_type_key = 'l/questionType'
                 UID_prefix = 'l/stats/'
-                trace_function_test = /selectItem/
                 egg_timer_location = '#header-buttons'
                 preset_selection_location = '#main-info'
                 break
@@ -126,7 +126,6 @@ declare global {
             case 'self_study':
                 inactive_queue_key = 'practiceQueue'
                 UID_prefix = 'e/stats/'
-                // trace_function = /selectQuestion/
                 break
         }
 
@@ -156,6 +155,14 @@ declare global {
         }
     }
 
+    // Keeps track of which items have been completed
+    function track_completed(completed: Set<number>): void {
+        $.jStorage.listenKeyChange('*', (key: string, change: string) => {
+            if (change !== 'deleted' || !new RegExp(UID_prefix + '[rkv]\\d+').test(key)) return
+            completed.add(Number(key.match(/\d+/)?.[0]))
+        })
+    }
+
     // Runs the selected preset on the queue
     async function run(): Promise<void> {
         let queue: ItemData.Item[] = []
@@ -165,10 +172,9 @@ declare global {
             case 'reviews':
             case 'lessons':
             case 'extra_study':
-                queue = original_queue
+                queue = original_queue.filter((item) => !completed.has(item.id)) // Filter out answered items
                 break
             case 'self_study':
-                const completed = get_completed_ids()
                 queue = original_queue.filter((item) => !completed.has(item.id)) // Filter out answered items
                 shuffle(queue) // Always shuffle self study items
                 $('#reviews').attr('style', 'display: block;') // Show page
@@ -278,12 +284,6 @@ declare global {
         const inactive_queue = $.jStorage.get<(Review.Item | number)[]>(inactive_queue_key, [])
         const remaining_queue = inactive_queue.map((item) => (typeof item === 'number' ? item : item.id))
         return active_queue.map((item) => item.id).concat(remaining_queue)
-    }
-
-    // Retrieves the ids of already completed items
-    function get_completed_ids(): Set<number> {
-        const completed = $.jStorage.get<Review.Item[]>('completedItems', []) // Could be a page variable, but only extra study uses this
-        return new Set(completed.map((item) => item.id))
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -915,6 +915,10 @@ declare global {
                 padding: 0;
                 border: 0;
                 display: block;
+            }
+
+            #main-info {
+                position: relative;
             }
         `
 

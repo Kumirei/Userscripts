@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.5
+// @version      1.0.6
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -89,7 +89,6 @@ var module = {};
                 inactive_queue_key = 'l/lessonQueue';
                 question_type_key = 'l/questionType';
                 UID_prefix = 'l/stats/';
-                trace_function_test = /selectItem/;
                 egg_timer_location = '#header-buttons';
                 preset_selection_location = '#main-info';
                 break;
@@ -97,7 +96,6 @@ var module = {};
             case 'self_study':
                 inactive_queue_key = 'practiceQueue';
                 UID_prefix = 'e/stats/';
-                // trace_function = /selectQuestion/
                 break;
         }
         return page;
@@ -132,10 +130,19 @@ var module = {};
             });
         });
     }
+    // Keeps track of which items have been completed
+    function track_completed(completed) {
+        $.jStorage.listenKeyChange('*', function (key, change) {
+            var _a;
+            if (change !== 'deleted' || !new RegExp(UID_prefix + '[rkv]\\d+').test(key))
+                return;
+            completed.add(Number((_a = key.match(/\d+/)) === null || _a === void 0 ? void 0 : _a[0]));
+        });
+    }
     // Runs the selected preset on the queue
     function run() {
         return __awaiter(this, void 0, void 0, function () {
-            var queue, completed_1;
+            var queue;
             return __generator(this, function (_a) {
                 queue = [];
                 // Prepare queue
@@ -143,11 +150,10 @@ var module = {};
                     case 'reviews':
                     case 'lessons':
                     case 'extra_study':
-                        queue = original_queue;
+                        queue = original_queue.filter(function (item) { return !completed.has(item.id); }); // Filter out answered items
                         break;
                     case 'self_study':
-                        completed_1 = get_completed_ids();
-                        queue = original_queue.filter(function (item) { return !completed_1.has(item.id); }); // Filter out answered items
+                        queue = original_queue.filter(function (item) { return !completed.has(item.id); }); // Filter out answered items
                         shuffle(queue); // Always shuffle self study items
                         $('#reviews').attr('style', 'display: block;'); // Show page
                         break;
@@ -249,11 +255,6 @@ var module = {};
         var inactive_queue = $.jStorage.get(inactive_queue_key, []);
         var remaining_queue = inactive_queue.map(function (item) { return (typeof item === 'number' ? item : item.id); });
         return active_queue.map(function (item) { return item.id; }).concat(remaining_queue);
-    }
-    // Retrieves the ids of already completed items
-    function get_completed_ids() {
-        var completed = $.jStorage.get('completedItems', []); // Could be a page variable, but only extra study uses this
-        return new Set(completed.map(function (item) { return item.id; }));
     }
     // -----------------------------------------------------------------------------------------------------------------
     // QUEUE MANAGEMENT
@@ -796,7 +797,7 @@ var module = {};
     }
     // Installs the CSS
     function install_css() {
-        var css = "\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #active_preset {\n                font-size: 1rem;\n                line-height: 1rem;\n                padding: 0.5rem;\n                position: absolute;\n                bottom: 0;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n            }\n\n            #active_preset select option { color: black; }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n\n            #wkof_ds #paste_preset,\n            #wkof_ds #paste_action {\n                height: 0;\n                padding: 0;\n                border: 0;\n                display: block;\n            }\n        ";
+        var css = "\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #active_preset {\n                font-size: 1rem;\n                line-height: 1rem;\n                padding: 0.5rem;\n                position: absolute;\n                bottom: 0;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n            }\n\n            #active_preset select option { color: black; }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n\n            #wkof_ds #paste_preset,\n            #wkof_ds #paste_action {\n                height: 0;\n                padding: 0;\n                border: 0;\n                display: block;\n            }\n\n            #main-info {\n                position: relative;\n            }\n        ";
         $('head').append("<style id=\"".concat(script_id, "_css\">").concat(css, "</style>"));
     }
     // -----------------------------------------------------------------------------------------------------------------
@@ -1640,7 +1641,7 @@ var module = {};
         var audio = new Audio("data:audio/mp3;base64,".concat(base64BellAudio));
         return audio;
     }
-    var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, trace_function_test, egg_timer_location, preset_selection_location, settings, settings_dialog, items_by_id, original_queue, _a, SRS_DURATIONS;
+    var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, egg_timer_location, preset_selection_location, settings, settings_dialog, items_by_id, original_queue, completed, _a, SRS_DURATIONS;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -1648,10 +1649,12 @@ var module = {};
                 script_name = 'Reorder Omega';
                 wkof = window.wkof, $ = window.$, WaniKani = window.WaniKani;
                 MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 };
-                current_item_key = 'currentItem', active_queue_key = 'activeQueue', inactive_queue_key = 'reviewQueue', question_type_key = 'questionType', UID_prefix = '', trace_function_test = /randomQuestion/, egg_timer_location = '#summary-button', preset_selection_location = '#character';
+                current_item_key = 'currentItem', active_queue_key = 'activeQueue', inactive_queue_key = 'reviewQueue', question_type_key = 'questionType', UID_prefix = '', egg_timer_location = '#summary-button', preset_selection_location = '#character';
                 page = set_page_variables();
                 items_by_id = {};
                 original_queue = [] // Stores queue available when loading page for when you change preset
+                ;
+                completed = new Set() // IDs of items that have been completed
                 ;
                 // This has to be done before WK realizes that the queue is empty and
                 // redirects, thus we have to do it before initializing WKOF
@@ -1693,6 +1696,7 @@ var module = {};
                 return [4 /*yield*/, get_queue()];
             case 6:
                 _b.sent();
+                track_completed(completed);
                 run();
                 return [3 /*break*/, 7];
             case 7:
