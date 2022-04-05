@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.2.4
+// @version      1.2.5
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(lesson|review|extra_study)/session/
@@ -11,24 +11,27 @@
 
 ;(function (wkof, $) {
     // Page related info
-    let currentItemKey, questionTypeKey, UIDPrefix, traceFunctionName
+    let currentItemKey, questionTypeKey, activeQueueKey, UIDPrefix, traceFunctionName
     let REVIEWS, LESSONS, EXTRA_STUDY
     if (/REVIEW/i.test(location.pathname)) {
         REVIEWS = true
         currentItemKey = 'currentItem'
         questionTypeKey = 'questionType'
+        activeQueueKey = 'activeQueue'
         UIDPrefix = ''
         traceFunctionName = /randomQuestion/
     } else if (/LESSON/i.test(location.pathname)) {
         LESSONS = true
         currentItemKey = 'l/currentQuizItem'
         questionTypeKey = 'l/questionType'
+        activeQueueKey = 'l/activeQueue'
         UIDPrefix = 'l/stats/'
         traceFunctionName = /selectItem/
     } else if (/EXTRA_STUDY/i.test(location.pathname)) {
         EXTRA_STUDY = true
         currentItemKey = 'currentItem'
         questionTypeKey = 'questionType'
+        activeQueueKey = 'practiceQueue'
         UIDPrefix = 'e/stats/'
         traceFunctionName = /selectQuestion/
     }
@@ -61,7 +64,7 @@
         const original_set = $.jStorage.set
         const new_set = function (key, value, options) {
             if (key === currentItemKey && wkof.settings[script_id].active) {
-                const active_queue = $.jStorage.get(active_queue_key, [])
+                const active_queue = $.jStorage.get(activeQueueKey, [])
                 for (const item of active_queue) {
                     const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
                     const stats = $.jStorage.get(UIDPrefix + UID)
