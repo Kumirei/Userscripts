@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.7
+// @version      1.0.8
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -310,9 +310,9 @@ declare global {
     // Displays a message to the user by setting the current item to a vocabulary word with the message
     function display_message(message: string): void {
         const dummy = { type: 'Vocabulary', voc: message, id: 0 }
-        $.jStorage.set(current_item_key, dummy)
-        $.jStorage.set(active_queue_key, [dummy])
         $.jStorage.set(inactive_queue_key, [])
+        $.jStorage.set(active_queue_key, [dummy])
+        $.jStorage.set(current_item_key, dummy)
     }
 
     // Takes a list of WKOF item and puts them into the queue
@@ -351,9 +351,9 @@ declare global {
         }
 
         if (current_item.type === 'Radical') $.jStorage.set(question_type_key, 'meaning') // Has to be set before currentItem
-        $.jStorage.set(current_item_key, current_item)
-        $.jStorage.set(active_queue_key, active_queue)
         $.jStorage.set(inactive_queue_key, rest)
+        $.jStorage.set(active_queue_key, active_queue)
+        $.jStorage.set(current_item_key, current_item)
         window.wkRefreshAudio()
     }
 
@@ -468,8 +468,8 @@ declare global {
     // -----------------------------------------------------------------------------------------------------------------
 
     // Calculate how overdue an item is based on its available_at date and SRS stage
-    const SRS_DURATIONS = [4, 8, 23, 47, 167, 335, 719, 2879, Infinity].map((time) => time * MS.hour)
     function calculate_overdue(item: ItemData.Item): number {
+        const SRS_DURATIONS = [4, 8, 23, 47, 167, 335, 719, 2879, Infinity].map((time) => time * MS.hour)
         // Items without assignments or due dates, and burned items, are not overdue
         if (!item.assignments || !item.assignments.available_at || item.assignments.srs_stage == 9) return -1
         const dueMsAgo = Date.now() - Date.parse(item.assignments.available_at)
@@ -755,27 +755,19 @@ declare global {
         // Sets up the back2back features so that meaning and reading questions
         // can be made to appear after each other
         function install_back_to_back(): void {
-            if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) return
+            if (!['reviews', 'lessons'].includes(page)) return
 
-            // Wrap jStorage.set(key, value) to ignore the value when the key is for the current item AND one item has
-            // already been partially answered. If an item has been partially answered, then set the current item to
-            // that item instead.
+            // Wrap jStorage.set(key, value) to ignore the value and pick the item when the key is for the current item.
+            // Unlike the standalone version of this feature (the Back To Back script), this version does not only
+            // choose the item when there is already a partially answered item in the active queue, but rather always
+            // picks the item. This is to ensure that sorted items appear in the sorted order when using back to back.
             const original_set = $.jStorage.set
             const new_set = function <T>(key: string, value: T, options: JStorageOptions | undefined): T {
                 const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
                 if (key === item_key && settings.back2back) {
                     const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
-                    for (const item of active_queue) {
-                        const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
-                        const stats = $.jStorage.get<Review.AnswersObject>(UID_prefix + UID)
-                        // Change the item if it has been answered in the session, regardless of whether the answer
-                        // was correct.
-                        if (stats) {
-                            if (stats.mc) $.jStorage.set(question_type_key, 'reading')
-                            if (stats.rc) $.jStorage.set(question_type_key, 'meaning') // @ts-ignore
-                            return original_set.call(this, key, item, options) as T
-                        }
-                    }
+                    const item = active_queue[0] ?? value // @ts-ignore // If active queue is empty, pass the original value
+                    return original_set.call(this, key, item, options) as T
                 } // @ts-ignore
                 return original_set.call(this, key, value, options) as T
             }

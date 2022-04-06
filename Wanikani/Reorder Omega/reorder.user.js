@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.7
+// @version      1.0.8
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -278,9 +278,9 @@ var module = {};
     // Displays a message to the user by setting the current item to a vocabulary word with the message
     function display_message(message) {
         var dummy = { type: 'Vocabulary', voc: message, id: 0 };
-        $.jStorage.set(current_item_key, dummy);
-        $.jStorage.set(active_queue_key, [dummy]);
         $.jStorage.set(inactive_queue_key, []);
+        $.jStorage.set(active_queue_key, [dummy]);
+        $.jStorage.set(current_item_key, dummy);
     }
     // Takes a list of WKOF item and puts them into the queue
     function update_queue(items) {
@@ -340,9 +340,9 @@ var module = {};
                     case 11:
                         if (current_item.type === 'Radical')
                             $.jStorage.set(question_type_key, 'meaning'); // Has to be set before currentItem
-                        $.jStorage.set(current_item_key, current_item);
-                        $.jStorage.set(active_queue_key, active_queue);
                         $.jStorage.set(inactive_queue_key, rest);
+                        $.jStorage.set(active_queue_key, active_queue);
+                        $.jStorage.set(current_item_key, current_item);
                         window.wkRefreshAudio();
                         return [2 /*return*/];
                 }
@@ -446,7 +446,12 @@ var module = {};
         $.jStorage.set('l/count/kan', (_d = (_c = counts.kanji) === null || _c === void 0 ? void 0 : _c.length) !== null && _d !== void 0 ? _d : 0);
         $.jStorage.set('l/count/voc', (_f = (_e = counts.vocabulary) === null || _e === void 0 ? void 0 : _e.length) !== null && _f !== void 0 ? _f : 0);
     }
+    // -----------------------------------------------------------------------------------------------------------------
+    // ITEM INFORMATION
+    // -----------------------------------------------------------------------------------------------------------------
+    // Calculate how overdue an item is based on its available_at date and SRS stage
     function calculate_overdue(item) {
+        var SRS_DURATIONS = [4, 8, 23, 47, 167, 335, 719, 2879, Infinity].map(function (time) { return time * MS.hour; });
         // Items without assignments or due dates, and burned items, are not overdue
         if (!item.assignments || !item.assignments.available_at || item.assignments.srs_stage == 9)
             return -1;
@@ -699,30 +704,20 @@ var module = {};
         // Sets up the back2back features so that meaning and reading questions
         // can be made to appear after each other
         function install_back_to_back() {
-            if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page))
+            if (!['reviews', 'lessons'].includes(page))
                 return;
-            // Wrap jStorage.set(key, value) to ignore the value when the key is for the current item AND one item has
-            // already been partially answered. If an item has been partially answered, then set the current item to
-            // that item instead.
+            // Wrap jStorage.set(key, value) to ignore the value and pick the item when the key is for the current item.
+            // Unlike the standalone version of this feature (the Back To Back script), this version does not only
+            // choose the item when there is already a partially answered item in the active queue, but rather always
+            // picks the item. This is to ensure that sorted items appear in the sorted order when using back to back.
             var original_set = $.jStorage.set;
             var new_set = function (key, value, options) {
+                var _a;
                 var item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key;
                 if (key === item_key && settings.back2back) {
                     var active_queue = $.jStorage.get(active_queue_key, []);
-                    for (var _i = 0, active_queue_1 = active_queue; _i < active_queue_1.length; _i++) {
-                        var item = active_queue_1[_i];
-                        var UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id;
-                        var stats = $.jStorage.get(UID_prefix + UID);
-                        // Change the item if it has been answered in the session, regardless of whether the answer
-                        // was correct.
-                        if (stats) {
-                            if (stats.mc)
-                                $.jStorage.set(question_type_key, 'reading');
-                            if (stats.rc)
-                                $.jStorage.set(question_type_key, 'meaning'); // @ts-ignore
-                            return original_set.call(this, key, item, options);
-                        }
-                    }
+                    var item = (_a = active_queue[0]) !== null && _a !== void 0 ? _a : value; // @ts-ignore // If active queue is empty, pass the original value
+                    return original_set.call(this, key, item, options);
                 } // @ts-ignore
                 return original_set.call(this, key, value, options);
             };
@@ -1642,7 +1637,7 @@ var module = {};
         var audio = new Audio("data:audio/mp3;base64,".concat(base64BellAudio));
         return audio;
     }
-    var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, egg_timer_location, preset_selection_location, settings, settings_dialog, items_by_id, original_queue, completed, _a, SRS_DURATIONS;
+    var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, egg_timer_location, preset_selection_location, settings, settings_dialog, items_by_id, original_queue, completed, _a;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -1701,7 +1696,6 @@ var module = {};
                 run();
                 return [3 /*break*/, 7];
             case 7:
-                SRS_DURATIONS = [4, 8, 23, 47, 167, 335, 719, 2879, Infinity].map(function (time) { return time * MS.hour; });
                 return [2 /*return*/];
         }
     });
