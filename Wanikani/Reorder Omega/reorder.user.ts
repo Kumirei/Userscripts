@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.8
+// @version      1.0.9
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -766,7 +766,14 @@ declare global {
                 const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
                 if (key === item_key && settings.back2back) {
                     const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
-                    const item = active_queue[0] ?? value // @ts-ignore // If active queue is empty, pass the original value
+                    const item = active_queue[0] ?? (value as unknown as Review.Item) // If active queue is empty, pass the original value
+                    // Set the question type before calling the original `set` with the new item
+                    const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
+                    const stats = $.jStorage.get<Review.AnswersObject>(UID_prefix + UID)
+                    if (stats) {
+                        if (stats.mc) $.jStorage.set(question_type_key, 'reading')
+                        if (stats.rc) $.jStorage.set(question_type_key, 'meaning')
+                    } // @ts-ignore
                     return original_set.call(this, key, item, options) as T
                 } // @ts-ignore
                 return original_set.call(this, key, value, options) as T

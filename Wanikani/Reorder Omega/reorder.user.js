@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.8
+// @version      1.0.9
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -716,7 +716,16 @@ var module = {};
                 var item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key;
                 if (key === item_key && settings.back2back) {
                     var active_queue = $.jStorage.get(active_queue_key, []);
-                    var item = (_a = active_queue[0]) !== null && _a !== void 0 ? _a : value; // @ts-ignore // If active queue is empty, pass the original value
+                    var item = (_a = active_queue[0]) !== null && _a !== void 0 ? _a : value; // If active queue is empty, pass the original value
+                    // Set the question type before calling the original `set` with the new item
+                    var UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id;
+                    var stats = $.jStorage.get(UID_prefix + UID);
+                    if (stats) {
+                        if (stats.mc)
+                            $.jStorage.set(question_type_key, 'reading');
+                        if (stats.rc)
+                            $.jStorage.set(question_type_key, 'meaning');
+                    } // @ts-ignore
                     return original_set.call(this, key, item, options);
                 } // @ts-ignore
                 return original_set.call(this, key, value, options);
