@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.6
+// @version      1.0.7
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?|((review|lesson|extra_study)/session))/
@@ -1127,6 +1127,7 @@ var module = {};
     }
     // Edits the settings dialog to insert some buttons, add some classes, and refresh, before it opens
     function settings_pre_open(dialog) {
+        settings = wkof.settings[script_id];
         // Add buttons to the presets and actions lists
         var buttons = function (type) {
             return "<div class=\"list_buttons\">" +
@@ -1468,6 +1469,7 @@ var module = {};
     // -----------------------------------------------------------------------------------------------------------------
     // Actions to take when the user saves their settings
     function settings_on_save() {
+        settings = wkof.settings[script_id];
         set_body_attributes(); // Update attributes on body to hide/show stuff
         install_interface(); // Reinstall interface in order to update it
         run(); // Re-run preset in case something changed
@@ -1572,30 +1574,29 @@ var module = {};
             list = root.actions;
             key = 'selected_action';
         }
-        // I don't know how to type this so that Typescript doesn't complain
         switch (btn) {
-            case 'new': // @ts-ignore
-                list.push(default_item); // @ts-ignore
+            case 'new':
+                list.push(default_item);
                 root[key] = list.length - 1;
                 break;
-            case 'delete': // @ts-ignore
-                list.push.apply(// @ts-ignore
-                list, list.splice(root[key]).slice(1)); // @ts-ignore // Remove from list by index
+            case 'delete':
+                list.push.apply(list, list.splice(root[key]).slice(1)); // Remove from list by index
                 if (root[key] && root[key] >= list.length)
-                    root[key]--; // @ts-ignore
+                    root[key]--;
                 if (list.length === 0)
                     list.push(default_item);
                 break;
-            case 'up': // @ts-ignore
-                swap(list, root[key] - 1, root[key]); // @ts-ignore
-                root[key]--;
+            case 'up':
+                swap(list, root[key] - 1, root[key]);
+                if (root[key] > 0)
+                    root[key]--;
                 break;
-            case 'down': // @ts-ignore
-                swap(list, root[key] + 1, root[key]); // @ts-ignore
-                root[key]++;
+            case 'down':
+                swap(list, root[key] + 1, root[key]);
+                if (root[key] < list.length - 1)
+                    root[key]++;
                 break;
         }
-        // @ts-ignore
         populate_list(elem, list, root[key]);
         settings_dialog.refresh();
         if (btn === 'new')
