@@ -2243,7 +2243,7 @@
     function createRow(item, now) {
         const date = new Date(item.date)
         var day = getDateString(new Date(date.getTime()))
-        var daysLeft = Math.ceil((date - now.getTime()) / (1000 * 60 * 60 * 24))
+        var daysLeft = 0 + Math.ceil((date - now.getTime()) / (1000 * 60 * 60 * 24))
         if (daysLeft < 0) return ''
         var big = daysLeft < 2 ? ['<big><b>', '<b>'] : ['', '']
         var dates = [date.getFullYear(), date.getMonth() + 1, date.getDate()]
