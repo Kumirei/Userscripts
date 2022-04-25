@@ -39,12 +39,11 @@ var buttonsBar = (function () {
                 #buttonsBar .barButton {
                     flex: 1;
                     margin: 2.5px;
-                    color: black;
                 }
                 #buttonsBar .barButton input {
                     background: ${bg};
                     height: 100% !important;
-                    color: white;
+                    color: black;
                     border: 0;
                 }
                 #buttonsBar .barButton input:hover {
