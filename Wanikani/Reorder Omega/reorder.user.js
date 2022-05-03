@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.11
+// @version      1.0.12
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -352,40 +352,45 @@ var module = {};
     // Retrieves the item's info from the WK api
     function get_item_data(items) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, active_queue, inactive_queue, lesson_items_1, ids, response, data_1;
+            var _a, res, queue, data_by_id_1, ids, response, data_1;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         _a = page;
                         switch (_a) {
                             case 'lessons': return [3 /*break*/, 1];
-                            case 'reviews': return [3 /*break*/, 2];
-                            case 'extra_study': return [3 /*break*/, 2];
-                            case 'self_study': return [3 /*break*/, 5];
+                            case 'reviews': return [3 /*break*/, 4];
+                            case 'extra_study': return [3 /*break*/, 4];
+                            case 'self_study': return [3 /*break*/, 7];
                         }
-                        return [3 /*break*/, 6];
-                    case 1:
-                        active_queue = $.jStorage.get(active_queue_key, []);
-                        inactive_queue = $.jStorage.get(inactive_queue_key, []);
-                        lesson_items_1 = Object.fromEntries(active_queue.concat(inactive_queue).map(function (item) { return [item.id, item]; })) // Map id to item
-                        ;
-                        return [2 /*return*/, items.map(function (item) { return lesson_items_1[item.id]; })]; // Replace WKOF item with WK item
+                        return [3 /*break*/, 8];
+                    case 1: return [4 /*yield*/, fetch("/lesson/queue")];
                     case 2:
-                        ids = items.map(function (item) { return item.id; });
-                        return [4 /*yield*/, fetch("/extra_study/items?ids=".concat(ids.join(',')))]; // Can use this endpoint for all pages
+                        res = _b.sent();
+                        if (res.status !== 200) {
+                            console.error('Could not fetch lesson queue');
+                            return [2 /*return*/, []];
+                        }
+                        return [4 /*yield*/, res.json()];
                     case 3:
-                        response = _b.sent() // Can use this endpoint for all pages
-                        ;
+                        queue = (_b.sent()).queue;
+                        data_by_id_1 = Object.fromEntries(queue.map(function (item) { return [item.id, item]; }));
+                        return [2 /*return*/, items.map(function (item) { return data_by_id_1[item.id]; })];
+                    case 4:
+                        ids = items.map(function (item) { return item.id; });
+                        return [4 /*yield*/, fetch("/extra_study/items?ids=".concat(ids.join(',')))];
+                    case 5:
+                        response = _b.sent();
                         if (response.status !== 200) {
                             console.error('Could not fetch active queue');
                             return [2 /*return*/, []];
                         }
                         return [4 /*yield*/, response.json()];
-                    case 4:
+                    case 6:
                         data_1 = (_b.sent());
                         return [2 /*return*/, ids.map(function (id) { return data_1.find(function (item) { return item.id === id; }); })]; // Re-sort
-                    case 5: return [2 /*return*/, items.map(transform_item)];
-                    case 6: return [2 /*return*/, []];
+                    case 7: return [2 /*return*/, items.map(transform_item)];
+                    case 8: return [2 /*return*/, []];
                 }
             });
         });

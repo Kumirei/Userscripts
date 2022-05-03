@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.11
+// @version      1.0.12
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -361,16 +361,18 @@ declare global {
     async function get_item_data(items: ItemData.Item[]): Promise<Review.Item[]> {
         switch (page) {
             case 'lessons':
-                const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
-                const inactive_queue = $.jStorage.get<Review.Item[]>(inactive_queue_key, [])
-                const lesson_items = Object.fromEntries(
-                    active_queue.concat(inactive_queue).map((item) => [item.id, item]),
-                ) // Map id to item
-                return items.map((item) => lesson_items[item.id]) // Replace WKOF item with WK item
+                const res = await fetch(`/lesson/queue`)
+                if (res.status !== 200) {
+                    console.error('Could not fetch lesson queue')
+                    return []
+                }
+                const queue = (await res.json()).queue as Review.Item[]
+                const data_by_id = Object.fromEntries(queue.map((item) => [item.id, item]))
+                return items.map((item) => data_by_id[item.id])
             case 'reviews':
             case 'extra_study':
                 const ids = items.map((item) => item.id)
-                const response = await fetch(`/extra_study/items?ids=${ids.join(',')}`) // Can use this endpoint for all pages
+                const response = await fetch(`/extra_study/items?ids=${ids.join(',')}`)
                 if (response.status !== 200) {
                     console.error('Could not fetch active queue')
                     return []
