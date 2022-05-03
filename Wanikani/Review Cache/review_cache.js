@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.0.11
+// @version      1.1.0
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // @include      *wanikani.com*
@@ -10,15 +10,18 @@
     // Manually increment to initiate reload for all users
     const cache_version = 1
 
+    // Script version. Starts with q to make it larger than numerical versions
+    const version = 'q1.1.0'
+
     // Reveal functions to window
-    if (!window.review_cache || !window.review_cache.version || window.review_cache.version < GM_info.script.version) {
-        window.review_cache = { get_reviews, reload, version: GM_info.script.version }
+    if (!window.review_cache || !window.review_cache.version || window.review_cache.version < version) {
+        window.review_cache = { get_reviews, reload, version: version }
     }
 
     // Fetch reviews from storage
     function get_reviews() {
         wkof.include('Apiv2')
-        return wkof.ready('Apiv2').then(load_data).then(update_data)
+        return wkof.ready('Apiv2').then(load_data).then(update_data_after_session)
     }
 
     // Deletes cache and refetches reviews
@@ -56,10 +59,22 @@
         return { cache_version: data.cache_version, date: data.date, reviews: pressed }
     }
 
-    // Updates the cache
-    async function update_data(data) {
+    // Modified to only check for new reviews if a review session occurred in the mean time
+    async function update_data_after_session(data) {
         if (!data.cache_version || data.cache_version < cache_version)
             data = { cache_version, date: '1970-01-01T00:00:00.000Z', reviews: [] }
+
+        // insert extra check
+        var lastReviewSessionDate = wkof.load_file('/review').then(parse_last_review_session, fail_last_review_session)
+        if (lastReviewSessionDate) {
+            if (new Date(lastReviewSessionDate).getTime() < new Date(data.date).getTime()) {
+                // no new review sessions since last fetch, simply returned cached data
+                return data.reviews
+            }
+        }
+        // else fetch new
+        // end insert extra check
+
         let [date, new_reviews] = await fetch_new_reviews(data.date)
         if (new_reviews.length) {
             for (let new_review of new_reviews) data.reviews.push(new_review)
@@ -68,6 +83,15 @@
             save(data)
         }
         return data.reviews
+
+        //====================
+        function parse_last_review_session(html) {
+            return $(html).find('#last-session-date time')[0].getAttribute('datetime')
+        }
+        function fail_last_review_session(reason) {
+            console.log('failed to check last review session date: ' + reason)
+            return null
+        }
     }
 
     // Fetches any new reviews from the API
