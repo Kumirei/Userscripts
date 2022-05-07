@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.1.0
+// @version      1.1.1
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // @include      *wanikani.com*
 // ==/UserScript==
 
-;(function (wkof) {
+; (function (wkof) {
     // Manually increment to initiate reload for all users
     const cache_version = 1
 
@@ -107,4 +107,4 @@
         ])
         return [updated_reviews.data_updated_at, new_reviews]
     }
-})(window.wkof)
+})(window.wkof);
