@@ -19,6 +19,98 @@
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'Kumi Applies for Citizenship',
+            date: 'feb 28 2025',
+            user: 'Kumi',
+            message0: '',
+            message1: 'The day has come',
+            modifier: '',
+            extra: '',
+        },
+        {
+            title: 'Kumi Files For ROC',
+            date: 'nov 30 2023',
+            user: 'Kumi',
+            message0: 'Get your form I-751 ready!',
+            message1: 'Time to mail it!',
+            modifier: '',
+            extra: '',
+        },
+        {
+            title: 'Valentine',
+            date: 'feb 14 2023',
+            user: 'Kumi',
+            message0: '',
+            message1: 'Boo!!!',
+            modifier: '',
+            extra: '',
+        },
+        {
+            title: 'International Tea Day',
+            date: 'may 21 2023',
+            user: 'Kumi',
+            message0: '',
+            message1: 'Drink more tea!',
+            modifier: '',
+            extra: '',
+        },
+        {
+            title: 'International Tea Day',
+            date: 'may 21 2022',
+            user: 'Kumi',
+            message0: '',
+            message1: 'Drink more tea!',
+            modifier: '',
+            extra: '',
+        },
+        { title: 'World Vegan Day', date: 'aug 9 2022', user: '', message0: '', message1: '', modifier: '', extra: '' },
+        {
+            title: 'Spook Day',
+            date: 'oct 31 2022',
+            user: 'Kumi',
+            message0: '',
+            message1: 'Boo!',
+            modifier: '',
+            extra: '',
+        },
+        {
+            title: 'World Vegan Day',
+            date: 'nov 1 2022',
+            user: 'Kumi',
+            message0: '',
+            message1: 'No meat or dairy today!',
+            modifier: '',
+            extra: '',
+        },
+        {
+            title: 'Fifth Anniversary of Counting',
+            date: 'jan 11 2023',
+            user: 'Kumi',
+            message0: '',
+            message1: 'Happy Counting!',
+            modifier: '',
+            extra: '',
+        },
+        {
+            title: 'Earth Day',
+            date: 'Apr 22 2023',
+            user: 'Redglare',
+            message0: '',
+            message1: 'Turn the lights of to save the planet!',
+            modifier: '',
+            extra: '',
+        },
+        {
+            title: 'WaniKani Cake Day',
+            date: 'may 11 2023',
+            user: 'Redglare',
+            message0: '',
+            message1: 'Happy Holidays!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'Mortias’ 3rd Anniversary :durtle_love:',
             date: 'jun 10 2022',
@@ -813,7 +905,7 @@
             extra: '',
         },
         {
-            title: 'YoungAdam passes their Red Cross Lifeguarding Certification!',
+            title: 'YoungAdam gets the Red Cross Lifeguarding Certification!',
             date: '6 jul 2020',
             user: 'YoungAdam',
             message0: '',
@@ -885,13 +977,13 @@
             extra: '',
         },
         {
-            title: 'Avalia starts their exchange year in Osaka',
+            title: "Avalia's exchange year in Osaka starts",
             date: '15 sep 2020',
             user: 'Avalia',
             message0: '',
             message1: '',
             modifier: '<s>',
-            extra: '</s> Cancelled due to Covid-19',
+            extra: '</s><small> Cancelled due to Covid-19',
         },
         {
             title: 'Midori_no_Sora’s Release',
@@ -1476,7 +1568,7 @@
             extra: '',
         },
         {
-            title: 'TheMusicalNinja finally says goodbye to her horrible school!!!',
+            title: 'TheMusicalNinja finally says goodbye to her school!',
             date: '28 jun 2019',
             user: 'TheMusicalNinja',
             message0: '',
@@ -1821,7 +1913,7 @@
             extra: '',
         },
         {
-            title: 'Blu-Ray release of Hibike! Euphonium Movie 3: Chikai no Finale!',
+            title: 'Blu-Ray release of Hibike! Euphonium Movie 3',
             date: '26 feb 2020',
             user: '2OC3aOdKgwSGlxfz',
             message0: '',
@@ -1863,7 +1955,7 @@
             message0: '',
             message1: '',
             modifier: '<s>',
-            extra: '</s> Cancelled due to Covid-19',
+            extra: '</s><small> Cancelled due to Covid-19',
         },
         {
             title: 'Release of Final Fantasy 7 remake',
@@ -1899,7 +1991,7 @@
             message0: '',
             message1: '',
             modifier: '<s>',
-            extra: '</s> Cancelled due to Covid-19',
+            extra: '</s><small> Cancelled due to Covid-19',
         },
         {
             title: "Gojarappe's Second anniversary!!!",
@@ -1935,7 +2027,7 @@
             message0: '',
             message1: '',
             modifier: '<s>',
-            extra: '</s> Cancelled due to Covid-19',
+            extra: '</s><small> Cancelled due to Covid-19',
         },
         {
             title: 'Keril goes to Japan!',
@@ -1944,7 +2036,7 @@
             message0: '',
             message1: '',
             modifier: '<s>',
-            extra: '</s> Cancelled due to Covid-19',
+            extra: '</s><small> Cancelled due to Covid-19',
         },
         {
             title: "RysingDragon's Birthday!",
@@ -1962,7 +2054,7 @@
             message0: '',
             message1: '',
             modifier: '<s>',
-            extra: '</s> Cancelled due to Covid-19',
+            extra: '</s><small> Cancelled due to Covid-19',
         },
         {
             title: 'Mortias third dating anniversary!!!!',
@@ -2116,7 +2208,7 @@
             message0: '@TobyOne Is this still happening?',
             message1: "TobyOne's move has been postponed",
             modifier: '<s>',
-            extra: '</s> Postponed',
+            extra: '</s><small> Postponed',
         },
         {
             title: 'Tobias Moves To Japan',
@@ -2169,7 +2261,12 @@
     })
 
     var todaysDate = getDateString(new Date())
-    window.countdown = createPost
+    window.countdown = {
+        get_post: createPost,
+        get_main: (id) => {
+            mainPost(countdowns, id ?? 0)
+        },
+    }
 
     function doStuff() {
         if (new Date().getHours() >= 0) {
