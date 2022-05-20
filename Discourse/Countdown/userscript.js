@@ -65,7 +65,15 @@
             modifier: '',
             extra: '',
         },
-        { title: 'World Vegan Day', date: 'aug 9 2022', user: '', message0: '', message1: '', modifier: '', extra: '' },
+        {
+            title: 'World Vegan Day',
+            date: 'aug 9 2022',
+            user: 'Kumi',
+            message0: '',
+            message1: 'No meats!!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'Spook Day',
             date: 'oct 31 2022',
@@ -114,7 +122,7 @@
         {
             title: 'Mortias’ 3rd Anniversary :durtle_love:',
             date: 'jun 10 2022',
-            user: '',
+            user: 'Glias',
             message0: '',
             message1: '@Glias @Mortiii Happy third anniversary!!! So happy for you!',
             modifier: '',
