@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.12
+// @version      1.0.13
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -924,6 +924,8 @@ declare global {
             #main-info {
                 position: relative;
             }
+
+            #stats { z-index: 1 }
         `
 
         $('head').append(`<style id="${script_id}_css">${css}</style>`)
