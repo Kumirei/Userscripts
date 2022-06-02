@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.14
+// @version      1.0.15
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -575,7 +575,7 @@ var module = {};
             run();
         });
         $('#active_preset').remove();
-        $(preset_selection_location).append($("<div id=\"active_preset\">Preset: </div>").append(select));
+        $(preset_selection_location).append($("<div id=\"active_preset\" ".concat(!settings.display_selection ? 'class="hidden"' : '', ">Preset: </div>")).append(select));
     }
     // Installs all the extra optional features
     function install_extra_features() {
@@ -842,6 +842,7 @@ var module = {};
                 extra_study: 0,
                 self_study: 0
             },
+            display_selection: true,
             presets: get_default_presets(),
             display_egg_timer: true,
             display_streak: true,
@@ -927,6 +928,12 @@ var module = {};
                                     content: {
                                     // Will be populated
                                     }
+                                },
+                                display_selection: {
+                                    type: 'checkbox',
+                                    "default": true,
+                                    label: 'Display Dropdown',
+                                    hover_tip: 'Display the preset selection dropdown during reviews, lessons, and extra study sessions'
                                 }
                             }
                         },

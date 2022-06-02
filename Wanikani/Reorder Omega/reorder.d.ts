@@ -78,6 +78,7 @@ export namespace Settings {
             extra_study: number
             self_study: number
         }
+        display_selection: boolean
         presets: Preset[]
         display_egg_timer: boolean
         display_streak: boolean
