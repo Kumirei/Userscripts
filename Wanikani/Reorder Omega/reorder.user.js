@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.15
+// @version      1.0.16
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -711,31 +711,26 @@ var module = {};
         function install_back_to_back() {
             if (!['reviews', 'lessons'].includes(page))
                 return;
-            // Wrap jStorage.set(key, value) to ignore the value and pick the item when the key is for the current item.
-            // Unlike the standalone version of this feature (the Back To Back script), this version does not only
-            // choose the item when there is already a partially answered item in the active queue, but rather always
-            // picks the item. This is to ensure that sorted items appear in the sorted order when using back to back.
+            // Wrap jStorage.set(key, value) to ignore the value when the key is for the current item AND one item has
+            // already been partially answered. If an item has been partially answered, then set the current item to
+            // that item instead.
             var original_set = $.jStorage.set;
             var new_set = function (key, value, options) {
-                var _a;
                 var item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key;
                 if (key === item_key && settings.back2back) {
                     var active_queue = $.jStorage.get(active_queue_key, []);
-                    var item = (_a = active_queue[0]) !== null && _a !== void 0 ? _a : value; // If active queue is empty, pass the original value
-                    // Set the question type before calling the original `set` with the new item
-                    if (item.type === 'Radical')
-                        $.jStorage.set(question_type_key, 'meaning');
-                    else {
+                    for (var _i = 0, active_queue_1 = active_queue; _i < active_queue_1.length; _i++) {
+                        var item = active_queue_1[_i];
                         var UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id;
                         var stats = $.jStorage.get(UID_prefix + UID);
                         if (stats) {
                             if (stats.mc)
                                 $.jStorage.set(question_type_key, 'reading');
                             if (stats.rc)
-                                $.jStorage.set(question_type_key, 'meaning');
+                                $.jStorage.set(question_type_key, 'meaning'); // @ts-ignore
+                            return original_set.call(this, key, item, options);
                         }
-                    } // @ts-ignore
-                    return original_set.call(this, key, item, options);
+                    }
                 } // @ts-ignore
                 return original_set.call(this, key, value, options);
             };

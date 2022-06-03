@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.15
+// @version      1.0.16
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -763,27 +763,23 @@ declare global {
         function install_back_to_back(): void {
             if (!['reviews', 'lessons'].includes(page)) return
 
-            // Wrap jStorage.set(key, value) to ignore the value and pick the item when the key is for the current item.
-            // Unlike the standalone version of this feature (the Back To Back script), this version does not only
-            // choose the item when there is already a partially answered item in the active queue, but rather always
-            // picks the item. This is to ensure that sorted items appear in the sorted order when using back to back.
+            // Wrap jStorage.set(key, value) to ignore the value when the key is for the current item AND one item has
+            // already been partially answered. If an item has been partially answered, then set the current item to
+            // that item instead.
             const original_set = $.jStorage.set
             const new_set = function <T>(key: string, value: T, options: JStorageOptions | undefined): T {
                 const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
                 if (key === item_key && settings.back2back) {
                     const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
-                    const item = active_queue[0] ?? (value as unknown as Review.Item) // If active queue is empty, pass the original value
-                    // Set the question type before calling the original `set` with the new item
-                    if (item.type === 'Radical') $.jStorage.set(question_type_key, 'meaning')
-                    else {
+                    for (const item of active_queue) {
                         const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
                         const stats = $.jStorage.get<Review.AnswersObject>(UID_prefix + UID)
                         if (stats) {
                             if (stats.mc) $.jStorage.set(question_type_key, 'reading')
-                            if (stats.rc) $.jStorage.set(question_type_key, 'meaning')
+                            if (stats.rc) $.jStorage.set(question_type_key, 'meaning') // @ts-ignore
+                            return original_set.call(this, key, item, options) as T
                         }
-                    } // @ts-ignore
-                    return original_set.call(this, key, item, options) as T
+                    }
                 } // @ts-ignore
                 return original_set.call(this, key, value, options) as T
             }
