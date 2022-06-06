@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.18
+// @version      1.0.19
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -778,7 +778,7 @@ declare global {
                             if (stats.rc) $.jStorage.set(question_type_key, 'meaning') // @ts-ignore
                             const new_active_queue = [item, ...active_queue.filter((i) => i !== item)]
                             // Set active queue such that the new current item is at the front
-                            $.jStorage.set('activeQueue', new_active_queue) // @ts-ignore
+                            $.jStorage.set(active_queue_key, new_active_queue) // @ts-ignore
                             return original_set.call(this, key, item, options) as T
                         }
                     }
