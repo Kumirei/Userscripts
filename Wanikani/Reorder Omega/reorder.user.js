@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.17
+// @version      1.0.18
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -56,6 +56,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
+};
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
 };
 // These lines are necessary to make sure that TSC does not put any exports in the
 // compiled js, which causes the script to crash
@@ -719,8 +728,7 @@ var module = {};
                 var item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key;
                 if (key === item_key && settings.back2back) {
                     var active_queue = $.jStorage.get(active_queue_key, []);
-                    for (var _i = 0, active_queue_1 = active_queue; _i < active_queue_1.length; _i++) {
-                        var item = active_queue_1[_i];
+                    var _loop_1 = function (item) {
                         var UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id;
                         var stats = $.jStorage.get(UID_prefix + UID);
                         if (stats) {
@@ -728,8 +736,18 @@ var module = {};
                                 $.jStorage.set(question_type_key, 'reading');
                             if (stats.rc)
                                 $.jStorage.set(question_type_key, 'meaning'); // @ts-ignore
-                            return original_set.call(this, key, item, options);
+                            var new_active_queue = __spreadArray([item], active_queue.filter(function (i) { return i !== item; }), true);
+                            // Set active queue such that the new current item is at the front
+                            $.jStorage.set('activeQueue', new_active_queue); // @ts-ignore
+                            return { value: original_set.call(this_1, key, item, options) };
                         }
+                    };
+                    var this_1 = this;
+                    for (var _i = 0, active_queue_1 = active_queue; _i < active_queue_1.length; _i++) {
+                        var item = active_queue_1[_i];
+                        var state_1 = _loop_1(item);
+                        if (typeof state_1 === "object")
+                            return state_1.value;
                     }
                 } // @ts-ignore
                 return original_set.call(this, key, value, options);
