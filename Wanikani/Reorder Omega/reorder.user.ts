@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.16
+// @version      1.0.17
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -574,7 +574,7 @@ declare global {
 
     // On the dashboard, adds a button to take you to the extra study page for the script
     function add_to_extra_study_section(): void {
-        const button = $(`<li class="md:mr-3">
+        const button = $(`
             <div class=" border border-blue-300 border-solid rounded flex flex-row ">
                 <a href="/extra_study/session?title=${script_name}" class="active:no-underline active:text-black
                 appearance-none bg-transparent box-border disabled:border-gray-700 disabled:cursor-not-allowed
@@ -583,8 +583,7 @@ declare global {
                 outline-none py-3 px-3 text-blue-500 text-left text-base sm:text-sm transition w-full border-0"
                 data-test="extra-study-button">Self Study
                 </a>
-            </div>
-        </li>`)
+            </div>`)
         $('.extra-study ul').append(button)
     }
 
