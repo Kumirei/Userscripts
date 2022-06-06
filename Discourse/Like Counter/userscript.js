@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.1.7
+// @version      3.1.8
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -12,6 +12,11 @@
     const settings = {
         update_interval: 10, // Interval (minutes) for fetching summary page data and likes
         lifetime_purple: false, // Set to true for purple info bubbles
+        hideReceived: false,
+    }
+
+    function getUsername() {
+        return ($('#current-user a').attr('href') || '').split('/u/')[1] || ''
     }
 
     // Global variable
@@ -86,7 +91,7 @@
 
     // Updates the LC variable with info from the summary page
     async function update_summary() {
-        const username = $('#current-user a').attr('href').split('/u/')[1]
+        const username = getUsername()
         const f = await fetch(`https://community.wanikani.com/u/${username}/summary`, {
             headers: {
                 accept: 'application/json, text/javascript, */*; q=0.01',
@@ -114,7 +119,7 @@
     async function update_day() {
         const msday = 24 * 60 * 60 * 1000
         const now = Date.now()
-        const username = $('#current-user a').attr('href').split('/u/')[1]
+        const username = getUsername()
         const summary = LC.stored.summary
         const day = LC.stored.day
         day.given = (await fetch_likes(username, 1, 24)).reverse()
@@ -173,14 +178,27 @@
         const main_content = $('#main-outlet')
         $('body').addClass('float_wkappnav')
         wk_app_nav.addClass('wanikani-app-nav-container')
+        wk_app_nav.find('li').each((_, el) => {
+            const $el = $(el)
+            if (!$el.attr('data-name')) {
+                $el.attr('data-name', 'original')
+            }
+        })
         top_menu.find('>.wrap > .contents:eq(0)').after(wk_app_nav)
         // Adjust the main content's top padding, so it won't be hidden under the new taller top menu.
         const main_content_toppad = Number(main_content.css('padding-top').match(/[0-9]*/)[0])
         main_content.css('padding-top', main_content_toppad + 25 + 'px')
         // END code by rfindley
         LC.elems = {
+            // dashboard: $(
+            //     '<li class="show-on-small-screen">' +
+            //     '<a href="https://www.wanikani.com" target="_blank" rel="noopener noreferrer">WaniKani</a>' +
+            //     '</li>',
+            // ),
             received: $(
-                '<li data-highlight="true" data-name="likes-received">Likes Received<span id="likes_received" class="dashboard_bubble">0</span></li>',
+                '<li data-highlight="true" data-name="likes-received"' +
+                    (settings.hideReceived ? ' style="display:none"' : '') +
+                    '>Likes Received<span id="likes_received" class="dashboard_bubble">0</span></li>',
             ),
             given: $(
                 '<li data-highlight="true" data-name="likes-left">Likes Left<span id="likes_given" class="dashboard_bubble">0</span></li>',
@@ -247,6 +265,10 @@
         )
     }
 
+    function comma(n) {
+        return n.toLocaleString('en-US')
+    }
+
     // Update the timer for the next like
     function update_next() {
         const msday = 24 * 60 * 60 * 1000
@@ -263,33 +285,45 @@
     // Adds the CSS
     function add_CSS() {
         let bubble_color = settings.lifetime_purple ? 'rgb(213, 128, 255)' : '#6cf'
-        $('head').append(
-            '    <style id=like_counter>' +
-                '    body[theme="dark"] .wanikani-app-nav ul li {color:#999;}' +
-                '    li[data-highlight="true"] span.dashboard_bubble {background-color: ' +
-                bubble_color +
-                ' !important;}' +
-                '    bbody.no-likes .like > .fa.d-icon-d-unliked {color: red !important}' +
-                '    .wanikani-app-nav > ul {display: flex;}' +
-                '    .wanikani-app-nav li[data-name="likes-received"] {order: 1;}' +
-                '    .wanikani-app-nav li[data-name="likes-left"] {order: 2;}' +
-                '    .wanikani-app-nav li[data-name="likes-next"] {order: 3;}' +
-                '    .wanikani-app-nav li[data-name="lesson_count"],' +
-                '    .wanikani-app-nav li[data-name="review_count"],' +
-                '    .wanikani-app-nav li[data-name="next_review"] {order: 0;}' +
-                '    .float_wkappnav .d-header {padding-bottom: 2em;}' +
-                '    .float_wkappnav .d-header {height: 4em !important;}' +
-                '    .float_wkappnav .d-header .title {height:4em;}' +
-                '    .float_wkappnav .wanikani-app-nav-container {border-top:1px solid #ccc; line-height:2em;}' +
-                '    .float_wkappnav .wanikani-app-nav ul {padding-bottom:0; margin-bottom:0; border-bottom:inherit;}' +
-                '    .dashboard_bubble {color:#fff; background-color:#bdbdbd; font-size:0.8em; border-radius:0.5em; padding:0 6px; margin:0 0 0 4px; font-weight:bold;}' +
-                '    li[data-highlight="true"] .dashboard_bubble {background-color:#6cf;}' +
-                '    body[theme="dark"] .dashboard_bubble {background-color:#646464;}' +
-                '    body[theme="dark"] li[data-highlight="true"] .dashboard_bubble {color:#000; background-color:#6cf;}' +
-                '    body[theme="dark"] .wanikani-app-nav[data-highlight-labels="true"] li[data-highlight="true"] a {color:#6cf;}' +
-                '    body[theme="dark"] .wanikani-app-nav ul li a {color:#999;}' +
-                '</style>',
-        )
+        $('head')
+            .append(
+                '    <style id=like_counter>' +
+                    '    body[theme="dark"] .wanikani-app-nav ul li {color:#999;}' +
+                    '    li[data-highlight="true"] span.dashboard_bubble {background-color: ' +
+                    bubble_color +
+                    ' !important;}' +
+                    '    bbody.no-likes .like > .fa.d-icon-d-unliked {color: red !important}' +
+                    '    .wanikani-app-nav > ul {display: flex;}' +
+                    '    .wanikani-app-nav li[data-name="likes-received"] {order: 1;}' +
+                    '    .wanikani-app-nav li[data-name="likes-left"] {order: 2;}' +
+                    '    .wanikani-app-nav li[data-name="likes-next"] {order: 3;}' +
+                    '    .wanikani-app-nav li[data-name="lesson_count"],' +
+                    '    .wanikani-app-nav li[data-name="review_count"],' +
+                    '    .wanikani-app-nav li[data-name="next_review"] {order: 0;}' +
+                    '    .float_wkappnav .d-header {padding-bottom: 2em;}' +
+                    '    .float_wkappnav .d-header {height: 4em !important;}' +
+                    '    .float_wkappnav .d-header .title {height:4em;}' +
+                    '    .float_wkappnav .wanikani-app-nav-container {border-top:1px solid #ccc; line-height:2em;}' +
+                    '    .float_wkappnav .wanikani-app-nav ul {padding-bottom:0; margin-bottom:0; border-bottom:inherit;}' +
+                    '    .dashboard_bubble {color:#fff; background-color:#bdbdbd; font-size:0.8em; border-radius:0.5em; padding:0 6px; margin:0 0 0 4px; font-weight:bold;}' +
+                    '    li[data-highlight="true"] .dashboard_bubble {background-color:#6cf;}' +
+                    '    body[theme="dark"] .dashboard_bubble {background-color:#646464;}' +
+                    '    body[theme="dark"] li[data-highlight="true"] .dashboard_bubble {color:#000; background-color:#6cf;}' +
+                    '    body[theme="dark"] .wanikani-app-nav[data-highlight-labels="true"] li[data-highlight="true"] a {color:#6cf;}' +
+                    '    body[theme="dark"] .wanikani-app-nav ul li a {color:#999;}' +
+                    '</style>',
+            )
+            .append(
+                '<style id="responsive-wanikani-app-nav-list-header">' +
+                    '.wanikani-app-nav .show-on-small-screen {display: none;}' +
+                    '@media screen and (max-width: 799px) {' +
+                    '    .wanikani-app-nav {margin-top: 0; float: right;}' +
+                    '    .wanikani-app-nav .hide-on-small-screen,' +
+                    '    .wanikani-app-nav li[data-name="original"] {display: none !important;}' +
+                    '    .wanikani-app-nav .show-on-small-screen {display: block !important;}' +
+                    '}' +
+                    '</style>',
+            )
     }
 
     // Returns a string with the time remaining until the given date
