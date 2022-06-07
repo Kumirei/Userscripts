@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.20
+// @version      1.0.21
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -1606,30 +1606,31 @@ var module = {};
             list = root.actions;
             key = 'selected_action';
         }
+        var index = Number(root[key]);
         switch (btn) {
             case 'new':
                 list.push(default_item);
                 root[key] = list.length - 1;
                 break;
             case 'delete':
-                list.push.apply(list, list.splice(root[key]).slice(1)); // Remove from list by index
-                if (root[key] && root[key] >= list.length)
+                list.push.apply(list, list.splice(index).slice(1));
+                if (index && index >= list.length)
                     root[key]--;
                 if (list.length === 0)
                     list.push(default_item);
                 break;
             case 'up':
-                swap(list, root[key] - 1, root[key]);
-                if (root[key] > 0)
+                swap(list, index - 1, index);
+                if (index > 0)
                     root[key]--;
                 break;
             case 'down':
-                swap(list, root[key] + 1, root[key]);
-                if (root[key] < list.length - 1)
+                swap(list, index + 1, index);
+                if (index < list.length - 1)
                     root[key]++;
                 break;
         }
-        populate_list(elem, list, root[key]);
+        populate_list(elem, list, index);
         settings_dialog.refresh();
         if (btn === 'new')
             $("#".concat(script_id, "_").concat(ref, "_name")).focus().select();
