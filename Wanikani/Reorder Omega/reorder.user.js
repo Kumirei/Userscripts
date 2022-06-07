@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.19
+// @version      1.0.20
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -343,7 +343,6 @@ var module = {};
                         _c.label = 9;
                     case 9:
                         rest = _b;
-                        rest.reverse(); // Reverse because items are popped from inactive queue
                         return [3 /*break*/, 11];
                     case 10: return [2 /*return*/];
                     case 11:
