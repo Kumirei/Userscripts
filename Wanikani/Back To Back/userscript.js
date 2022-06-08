@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.2.6
+// @version      1.2.7
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(lesson|review|extra_study)/session/
@@ -75,7 +75,7 @@
                         if (stats.rc) $.jStorage.set(questionTypeKey, 'meaning')
                         // Set active queue such that the new current item is at the front
                         const new_active_queue = [item, ...active_queue.filter((i) => i !== item)]
-                        $.jStorage.set(active_queue_key, new_active_queue)
+                        $.jStorage.set(activeQueueKey, new_active_queue)
                         // Set the item
                         return original_set.call(this, key, item, options)
                     }
