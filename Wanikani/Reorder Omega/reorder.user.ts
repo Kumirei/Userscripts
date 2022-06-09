@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.21
+// @version      1.1.0
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -761,28 +761,59 @@ declare global {
         function install_back_to_back(): void {
             if (!['reviews', 'lessons'].includes(page)) return
 
+            // Keep track of the latest answer to decide whether to show the next question right away
+            let last_answer = false
+
             // Wrap jStorage.set(key, value) to ignore the value when the key is for the current item AND one item has
             // already been partially answered. If an item has been partially answered, then set the current item to
             // that item instead.
             const original_set = $.jStorage.set
             const new_set = function <T>(key: string, value: T, options: JStorageOptions | undefined): T {
                 const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
-                if (key === item_key && settings.back2back) {
-                    const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
-                    for (const item of active_queue) {
-                        const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
-                        const stats = $.jStorage.get<Review.AnswersObject>(UID_prefix + UID)
-                        if (stats) {
-                            if (stats.mc) $.jStorage.set(question_type_key, 'reading')
-                            if (stats.rc) $.jStorage.set(question_type_key, 'meaning') // @ts-ignore
-                            const new_active_queue = [item, ...active_queue.filter((i) => i !== item)]
-                            // Set active queue such that the new current item is at the front
-                            $.jStorage.set(active_queue_key, new_active_queue) // @ts-ignore
-                            return original_set.call(this, key, item, options) as T
-                        }
+
+                // @ts-ignore
+                const pass = (val) => original_set.call(this, key, val, options) as T
+
+                // If an answer is being registered
+                if (RegExp(`^${UID_prefix}[rkv]\\d+$`).test(key)) {
+                    const prev = { mc: 0, rc: 0, mi: 0, ri: 0, ...$.jStorage.get<Review.AnswersObject>(key, {}) }
+                    const curr = { mc: 0, rc: 0, mi: 0, ri: 0, ...(value as unknown as Review.AnswersObject) }
+
+                    if (prev.mc < curr.mc || prev.rc < curr.rc) last_answer = true
+                    else if (prev.mi < curr.mi || prev.ri < curr.ri) {
+                        last_answer = false
+                        // If the script is set to always show both answers, remove any correct answers already registered
+                        if (settings.back2back_behavior === 'true')
+                            return pass({ ...curr, mc: undefined, rc: undefined })
                     }
+                }
+                // If the current item is being set
+                else if (key === item_key && settings.back2back) {
+                    let item = $.jStorage.get<Review.Item>(item_key)
+                    const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
+                    if (!item) return pass(value)
+                    if (settings.back2back_behavior !== 'always' && !last_answer) return pass(value)
+                    // ! Potential issue when reordering and the current item is still in the active queue
+                    // ! If behavior is 'always' or last answer was correct, the current item will stay the current item
+                    // Find the item in the active queue. If it is not there, pass
+                    item = active_queue.find((i) => i.id === item.id)
+                    if (!item) return pass(value)
+
+                    // Bring the item to the front of the active queue
+                    const new_active_queue = [item, ...active_queue.filter((i) => i !== item)]
+                    $.jStorage.set(active_queue_key, new_active_queue)
+                    // Set the question type
+                    let question = 'meaning'
+                    if (item.type !== 'Radical') {
+                        const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
+                        const stats = $.jStorage.get<Review.AnswersObject>(UID_prefix + UID, {})
+                        question = ['meaning', 'reading'][stats.mc ? 1 : stats.rc ? 0 : Math.floor(Math.random() * 2)]
+                    }
+                    $.jStorage.set(question_type_key, question)
+                    // Pass the value to the original set function
+                    return pass(item)
                 } // @ts-ignore
-                return original_set.call(this, key, value, options) as T
+                return pass(value)
             }
             $.jStorage.set = new_set
         }
@@ -966,6 +997,7 @@ declare global {
             burn_bell: false,
             voice_actor: 'default',
             back2back: false,
+            back2back_behavior: 'always',
             prioritize: 'none',
         }
         return wkof.Settings.load(script_id, defaults)
@@ -1087,6 +1119,18 @@ declare global {
                                     default: false,
                                     label: 'Back To Back',
                                     hover_tip: 'Get reading and meaning question back to back',
+                                },
+                                back2back_behavior: {
+                                    type: 'dropdown',
+                                    default: 'always',
+                                    label: 'Back To Back Behavior',
+                                    hover_tip:
+                                        'Choose whether to:\n1. Keep repeating the same question until you get it right\n2. Only keep the item if you answered the first question correctly\n3. Make it so that you have to answer both questions correctly back to back',
+                                    content: {
+                                        always: 'Repeat until correct',
+                                        correct: 'Shuffle incorrect',
+                                        true: 'True Back To Back',
+                                    },
                                 },
                                 prioritize: {
                                     type: 'dropdown',

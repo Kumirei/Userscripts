@@ -49,10 +49,10 @@ export namespace Review {
     }
 
     type AnswersObject = {
-        mi: number
-        ri: number
-        mc: number
-        rc: number
+        mi?: number
+        ri?: number
+        mc?: number
+        rc?: number
     }
 
     type DummyItem = { type: string; voc: string; id: 0 }
@@ -85,6 +85,7 @@ export namespace Settings {
         burn_bell: boolean
         voice_actor: 'default' | 'random' | 'alternate'
         back2back: boolean
+        back2back_behavior: 'always' | 'correct' | 'true'
         prioritize: 'none' | 'reading' | 'reading'
         paste_preset?: string
         paste_action?: string

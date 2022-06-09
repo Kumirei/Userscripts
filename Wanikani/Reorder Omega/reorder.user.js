@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.0.21
+// @version      1.1.0
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -719,37 +719,59 @@ var module = {};
         function install_back_to_back() {
             if (!['reviews', 'lessons'].includes(page))
                 return;
+            // Keep track of the latest answer to decide whether to show the next question right away
+            var last_answer = false;
             // Wrap jStorage.set(key, value) to ignore the value when the key is for the current item AND one item has
             // already been partially answered. If an item has been partially answered, then set the current item to
             // that item instead.
             var original_set = $.jStorage.set;
             var new_set = function (key, value, options) {
+                var _this = this;
                 var item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key;
-                if (key === item_key && settings.back2back) {
-                    var active_queue = $.jStorage.get(active_queue_key, []);
-                    var _loop_1 = function (item) {
-                        var UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id;
-                        var stats = $.jStorage.get(UID_prefix + UID);
-                        if (stats) {
-                            if (stats.mc)
-                                $.jStorage.set(question_type_key, 'reading');
-                            if (stats.rc)
-                                $.jStorage.set(question_type_key, 'meaning'); // @ts-ignore
-                            var new_active_queue = __spreadArray([item], active_queue.filter(function (i) { return i !== item; }), true);
-                            // Set active queue such that the new current item is at the front
-                            $.jStorage.set(active_queue_key, new_active_queue); // @ts-ignore
-                            return { value: original_set.call(this_1, key, item, options) };
-                        }
-                    };
-                    var this_1 = this;
-                    for (var _i = 0, active_queue_1 = active_queue; _i < active_queue_1.length; _i++) {
-                        var item = active_queue_1[_i];
-                        var state_1 = _loop_1(item);
-                        if (typeof state_1 === "object")
-                            return state_1.value;
+                // @ts-ignore
+                var pass = function (val) { return original_set.call(_this, key, val, options); };
+                // If an answer is being registered
+                if (RegExp("^".concat(UID_prefix, "[rkv]\\d+$")).test(key)) {
+                    var prev = __assign({ mc: 0, rc: 0, mi: 0, ri: 0 }, $.jStorage.get(key, {}));
+                    var curr = __assign({ mc: 0, rc: 0, mi: 0, ri: 0 }, value);
+                    if (prev.mc < curr.mc || prev.rc < curr.rc)
+                        last_answer = true;
+                    else if (prev.mi < curr.mi || prev.ri < curr.ri) {
+                        last_answer = false;
+                        // If the script is set to always show both answers, remove any correct answers already registered
+                        if (settings.back2back_behavior === 'true')
+                            return pass(__assign(__assign({}, curr), { mc: undefined, rc: undefined }));
                     }
+                }
+                // If the current item is being set
+                else if (key === item_key && settings.back2back) {
+                    var item_1 = $.jStorage.get(item_key);
+                    var active_queue = $.jStorage.get(active_queue_key, []);
+                    if (!item_1)
+                        return pass(value);
+                    if (settings.back2back_behavior !== 'always' && !last_answer)
+                        return pass(value);
+                    // ! Potential issue when reordering and the current item is still in the active queue
+                    // ! If behavior is 'always' or last answer was correct, the current item will stay the current item
+                    // Find the item in the active queue. If it is not there, pass
+                    item_1 = active_queue.find(function (i) { return i.id === item_1.id; });
+                    if (!item_1)
+                        return pass(value);
+                    // Bring the item to the front of the active queue
+                    var new_active_queue = __spreadArray([item_1], active_queue.filter(function (i) { return i !== item_1; }), true);
+                    $.jStorage.set(active_queue_key, new_active_queue);
+                    // Set the question type
+                    var question = 'meaning';
+                    if (item_1.type !== 'Radical') {
+                        var UID = (item_1.type == 'Kanji' ? 'k' : 'v') + item_1.id;
+                        var stats = $.jStorage.get(UID_prefix + UID, {});
+                        question = ['meaning', 'reading'][stats.mc ? 1 : stats.rc ? 0 : Math.floor(Math.random() * 2)];
+                    }
+                    $.jStorage.set(question_type_key, question);
+                    // Pass the value to the original set function
+                    return pass(item_1);
                 } // @ts-ignore
-                return original_set.call(this, key, value, options);
+                return pass(value);
             };
             $.jStorage.set = new_set;
         }
@@ -861,6 +883,7 @@ var module = {};
             burn_bell: false,
             voice_actor: 'default',
             back2back: false,
+            back2back_behavior: 'always',
             prioritize: 'none'
         };
         return wkof.Settings.load(script_id, defaults)
@@ -978,6 +1001,17 @@ var module = {};
                                     "default": false,
                                     label: 'Back To Back',
                                     hover_tip: 'Get reading and meaning question back to back'
+                                },
+                                back2back_behavior: {
+                                    type: 'dropdown',
+                                    "default": 'always',
+                                    label: 'Back To Back Behavior',
+                                    hover_tip: 'Choose whether to:\n1. Keep repeating the same question until you get it right\n2. Only keep the item if you answered the first question correctly\n3. Make it so that you have to answer both questions correctly back to back',
+                                    content: {
+                                        always: 'Repeat until correct',
+                                        correct: 'Shuffle incorrect',
+                                        "true": 'True Back To Back'
+                                    }
                                 },
                                 prioritize: {
                                     type: 'dropdown',
