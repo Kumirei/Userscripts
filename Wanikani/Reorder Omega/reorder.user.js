@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -348,8 +348,8 @@ var module = {};
                     case 11:
                         if (current_item.type === 'Radical')
                             $.jStorage.set(question_type_key, 'meaning'); // Has to be set before currentItem
+                        $.jStorage.set(active_queue_key, active_queue); // Has to be set before inactive queue for legacy lessons
                         $.jStorage.set(inactive_queue_key, rest);
-                        $.jStorage.set(active_queue_key, active_queue);
                         $.jStorage.set(current_item_key, current_item);
                         window.wkRefreshAudio();
                         return [2 /*return*/];
