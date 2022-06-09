@@ -336,7 +336,7 @@ var module = {};
                         if (!WaniKani.wanikani_compatibility_mode) return [3 /*break*/, 8];
                         return [4 /*yield*/, get_item_data(items)];
                     case 7:
-                        _b = _c.sent();
+                        _b = (_c.sent()).reverse();
                         return [3 /*break*/, 9];
                     case 8:
                         _b = items.map(function (item) { return item.id; });

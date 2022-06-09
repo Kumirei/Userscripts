@@ -343,7 +343,9 @@ declare global {
             case 'reviews':
                 active_queue = await get_item_data(items.splice(0, 10))
                 current_item = active_queue[0]
-                rest = WaniKani.wanikani_compatibility_mode ? await get_item_data(items) : items.map((item) => item.id)
+                rest = WaniKani.wanikani_compatibility_mode
+                    ? (await get_item_data(items)).reverse()
+                    : items.map((item) => item.id)
                 break
             default:
                 return
@@ -796,7 +798,7 @@ declare global {
                     // ! Potential issue when reordering and the current item is still in the active queue
                     // ! If behavior is 'always' or last answer was correct, the current item will stay the current item
                     // Find the item in the active queue. If it is not there, pass
-                    item = active_queue.find((i) => i.id === item.id)
+                    item = active_queue.find((i) => i.id === item.id) as Review.Item
                     if (!item) return pass(value)
 
                     // Bring the item to the front of the active queue
