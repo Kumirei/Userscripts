@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Fast Vocab Breakdown
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
+// @version      1.1.1
 // @description  Automatically displays the meanings of the kanji when you get a vocab item wrong
 // @author       Kumirei
 // @include      *wanikani.com/review/session
@@ -28,8 +28,8 @@
     // Setup
     let items, elem
     let answer = document.querySelector('#answer-form fieldset')
-    wkof.include('ItemData,Settings')
-    wkof.ready('ItemData,Settings').then(load_settings).then(install_menu).then(fetch_items)
+    wkof.include('ItemData,Settings,Menu')
+    wkof.ready('ItemData,Settings,Menu').then(load_settings).then(install_menu).then(fetch_items)
     install_element()
 
     // Initialize
@@ -89,6 +89,7 @@
     margin-top: -30px;
 }
 #${script_id}.hidden {visibility: hidden;}
+.srs { top: -3em;}
 </style>`,
         )
     }
