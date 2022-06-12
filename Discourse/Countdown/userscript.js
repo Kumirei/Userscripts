@@ -18,8 +18,24 @@
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'JLPT',
+            date: 'dec 4 2022',
+            user: 'Redglare',
+            message0: '@Redglare Get your nihongos sorted!',
+            message1: '@Redglare I believe in you!',
+            modifier: '',
+            extra: '',
+        },
+        {
+            title: 'JLPT',
+            date: 'jul 3 2022',
+            user: 'Redglare',
+            message0: '@Redglare Get your nihongos together!',
+            message1: '@Redglare I believe in you!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'Kumi Applies for Citizenship',
             date: 'feb 28 2025',
