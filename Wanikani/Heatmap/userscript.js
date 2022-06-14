@@ -11,7 +11,7 @@
 // ==/UserScript==
 
 ;(function (wkof, review_cache, Heatmap) {
-    const CSS_COMMIT = 'f2a57d16f124c729ac13cfbafe2776a7948d6d96'
+    const CSS_COMMIT = '808efd6a4c2a880dfde335cc61843e066488069d'
     let msh = 60 * 60 * 1000,
         msd = 24 * msh // Milliseconds in hour and day
 
@@ -1029,6 +1029,7 @@
         let settings_button = create_elem({
             type: 'button',
             class: 'settings-button hover-wrapper-target',
+            "aria-label": 'Settings',
             children: [
                 create_elem({ type: 'div', class: 'hover-wrapper above', child: 'Settings' }),
                 create_elem({ type: 'i', class: 'fa fa-gear' }),
@@ -1038,6 +1039,7 @@
         let toggle_button = create_elem({
             type: 'button',
             class: 'toggle-button hover-wrapper-target',
+            "aria-label": 'Toggle between reviews and lessons',
             children: [
                 create_elem({ type: 'div', class: 'hover-wrapper above', child: 'Toggle view' }),
                 create_elem({ type: 'i', class: 'fa fa-inbox' }),
@@ -1173,7 +1175,7 @@
         for (let [year, map] of Object.entries(heatmap.maps)) {
             let target = map.querySelector('.year-labels')
             let up = create_elem({
-                type: 'a',
+                type: 'div',
                 class: 'toggle-year up hover-wrapper-target',
                 onclick: toggle_year,
                 children: [
@@ -1190,7 +1192,7 @@
                 ],
             })
             let down = create_elem({
-                type: 'a',
+                type: 'div',
                 class: 'toggle-year down hover-wrapper-target',
                 onclick: toggle_year,
                 children: [
