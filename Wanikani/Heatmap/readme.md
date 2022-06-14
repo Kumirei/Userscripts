@@ -3,7 +3,7 @@
 This addon adds a a panel to the Wanikani dashboard which gives you a good overview of your
 past and present studies through heat maps of your reviewing and learning efforts as well as related stats.
 
-To use this addon you first and foremost need to have a [Wanikani](wanikani.com) account. Once you are logged in you can
+To use this addon you first and foremost need to have a [Wanikani](https://wanikani.com) account. Once you are logged in you can
 then install a script management extension such as [Tampermonkey](https://www.tampermonkey.net/), then
 install the dependency [Wanikani Open Framework](https://community.wanikani.com/t/installing-wanikani-open-framework/28549),
 and then lastly install [Wanikani Heatmap](https://greasyfork.org/en/scripts/377336-wanikani-heatmap). Once you have
