@@ -40,7 +40,7 @@ basic stats of your history with either reviews or lessons. This will tell you h
 how much effort you have put in (done daily), your current streak, how many review or lessons sessions you have completed,
 how many total reviews or lessons you have completed, and the time you have spend doing reviews or lessons. 
 
-![Popper](imgages/popper.png)
+![Popper](images/popper.png)
 
 Additionally, if you want more detailed stats on a single day you can click on it to bring up a pop-up element with more information.
 You can also click and drag to select a range of days to get more information about. This popper contains a number of 
