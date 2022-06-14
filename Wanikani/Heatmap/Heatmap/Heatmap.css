@@ -51,7 +51,7 @@
 }
 
 .heatmap .month-label {
-	font-size: 10px;
+	font-size: 12px;
 	line-height: 10px;
 	text-align: center;
 	margin-bottom: 4px;
@@ -89,7 +89,7 @@
 }
 
 .heatmap .day-label {
-	font-size: calc(var(--day-size));
+	font-size: calc(var(--day-size) + 1px);
 	line-height: calc(var(--day-size) + var(--day-gap));
 	text-align: center;
 }
