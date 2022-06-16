@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.3
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -302,7 +302,7 @@ declare global {
                 $.jStorage.set('questionType', 'meaning')
                 display_message('Loading...')
             }
-            $.jStorage.stopListening(inactive_queue_key, callback)
+            setTimeout(() => $.jStorage.stopListening(inactive_queue_key, callback))
         }
         $.jStorage.listenKeyChange(inactive_queue_key, callback)
     }
