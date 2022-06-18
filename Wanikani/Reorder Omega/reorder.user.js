@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.1.3
+// @version      1.1.4
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -761,11 +761,16 @@ var module = {};
                     var new_active_queue = __spreadArray([item_1], active_queue.filter(function (i) { return i !== item_1; }), true);
                     $.jStorage.set(active_queue_key, new_active_queue);
                     // Set the question type
-                    var question = 'meaning';
-                    if (item_1.type !== 'Radical') {
+                    var question = $.jStorage.get(question_type_key, 'meaning');
+                    if (item_1.type === 'Radical')
+                        question = 'meaning';
+                    else {
                         var UID = (item_1.type == 'Kanji' ? 'k' : 'v') + item_1.id;
                         var stats = $.jStorage.get(UID_prefix + UID, {});
-                        question = ['meaning', 'reading'][stats.mc ? 1 : stats.rc ? 0 : Math.floor(Math.random() * 2)];
+                        if (stats.mc)
+                            question = 'reading';
+                        else if (stats.rc)
+                            question = 'meaning';
                     }
                     $.jStorage.set(question_type_key, question);
                     // Pass the value to the original set function
