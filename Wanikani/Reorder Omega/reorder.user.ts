@@ -805,11 +805,13 @@ declare global {
                     const new_active_queue = [item, ...active_queue.filter((i) => i !== item)]
                     $.jStorage.set(active_queue_key, new_active_queue)
                     // Set the question type
-                    let question = 'meaning'
-                    if (item.type !== 'Radical') {
+                    let question = $.jStorage.get<'meaning' | 'reading'>(question_type_key, 'meaning')
+                    if (item.type === 'Radical') question = 'meaning'
+                    else {
                         const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
                         const stats = $.jStorage.get<Review.AnswersObject>(UID_prefix + UID, {})
-                        question = ['meaning', 'reading'][stats.mc ? 1 : stats.rc ? 0 : Math.floor(Math.random() * 2)]
+                        if (stats.mc) question = 'reading'
+                        else if (stats.rc) question = 'meaning'
                     }
                     $.jStorage.set(question_type_key, question)
                     // Pass the value to the original set function
