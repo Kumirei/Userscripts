@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.1.4
+// @version      1.1.5
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -727,9 +727,11 @@ var module = {};
             var original_set = $.jStorage.set;
             var new_set = function (key, value, options) {
                 var _this = this;
-                var item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key;
                 // @ts-ignore
                 var pass = function (val) { return original_set.call(_this, key, val, options); };
+                if (options === null || options === void 0 ? void 0 : options.b2b_ignore)
+                    pass(value); // Ignore if b2b_ignore flag is present
+                var item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key;
                 // If an answer is being registered
                 if (RegExp("^".concat(UID_prefix, "[rkv]\\d+$")).test(key)) {
                     var prev = __assign({ mc: 0, rc: 0, mi: 0, ri: 0 }, $.jStorage.get(key, {}));
