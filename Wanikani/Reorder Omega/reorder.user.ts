@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.1.4
+// @version      1.1.5
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -770,11 +770,16 @@ declare global {
             // already been partially answered. If an item has been partially answered, then set the current item to
             // that item instead.
             const original_set = $.jStorage.set
-            const new_set = function <T>(key: string, value: T, options: JStorageOptions | undefined): T {
-                const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
-
+            const new_set = function <T>(
+                key: string,
+                value: T,
+                options: (JStorageOptions & { b2b_ignore?: boolean }) | undefined,
+            ): T {
                 // @ts-ignore
                 const pass = (val) => original_set.call(this, key, val, options) as T
+                if (options?.b2b_ignore) pass(value) // Ignore if b2b_ignore flag is present
+
+                const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
 
                 // If an answer is being registered
                 if (RegExp(`^${UID_prefix}[rkv]\\d+$`).test(key)) {
