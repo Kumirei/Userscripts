@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.1.7
+// @version      1.1.8
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -781,7 +781,7 @@ declare global {
             ): T {
                 // @ts-ignore
                 const pass = (val) => original_set.call(this, key, val, options) as T
-                if (options?.b2b_ignore) return pass(value) // Ignore if b2b_ignore flag is present
+                if (!settings.back2back || options?.b2b_ignore) return pass(value) // Ignore if b2b_ignore flag is present
 
                 const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
 
@@ -799,7 +799,7 @@ declare global {
                     }
                 }
                 // If the current item is being set
-                else if (key === item_key && settings.back2back) {
+                else if (key === item_key) {
                     let item = $.jStorage.get<Review.Item>(item_key)
                     const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
                     if (!item) return pass(value)

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.3.4
+// @version      1.3.5
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(lesson|review|extra_study)/session/
@@ -66,7 +66,7 @@
         const original_set = $.jStorage.set
         const new_set = function (key, value, options) {
             const pass = (val) => original_set.call(this, key, val, options)
-            if (options?.b2b_ignore) return pass(value) // Ignore if b2b_ignore flag is present
+            if (!settings.active || options?.b2b_ignore) return pass(value) // Ignore if b2b_ignore flag is present
 
             // If an answer is being registered
             if (RegExp(`^${UID_prefix}[rkv]\\d+$`).test(key)) {
@@ -81,7 +81,7 @@
                 }
             }
             // If the current item is being set
-            else if (key === current_item_key && settings.active) {
+            else if (key === current_item_key) {
                 let item = $.jStorage.get(current_item_key)
                 const active_queue = $.jStorage.get(active_queue_key, [])
                 if (!item) return pass(value)
