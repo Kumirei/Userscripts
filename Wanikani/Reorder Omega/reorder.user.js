@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.1.5
+// @version      1.1.6
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -289,7 +289,7 @@ var module = {};
         var dummy = { type: 'Vocabulary', voc: message, id: 0 };
         $.jStorage.set(inactive_queue_key, []);
         $.jStorage.set(active_queue_key, [dummy]);
-        $.jStorage.set(current_item_key, dummy);
+        $.jStorage.set(current_item_key, dummy, { b2b_ignore: true });
     }
     // Takes a list of WKOF item and puts them into the queue
     function update_queue(items) {
@@ -350,7 +350,7 @@ var module = {};
                             $.jStorage.set(question_type_key, 'meaning'); // Has to be set before currentItem
                         $.jStorage.set(active_queue_key, active_queue); // Has to be set before inactive queue for legacy lessons
                         $.jStorage.set(inactive_queue_key, rest);
-                        $.jStorage.set(current_item_key, current_item);
+                        $.jStorage.set(current_item_key, current_item, { b2b_ignore: true });
                         window.wkRefreshAudio();
                         return [2 /*return*/];
                 }
