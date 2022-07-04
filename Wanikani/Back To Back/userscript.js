@@ -66,7 +66,7 @@
         const original_set = $.jStorage.set
         const new_set = function (key, value, options) {
             const pass = (val) => original_set.call(this, key, val, options)
-            if (!settings.active || options?.b2b_ignore) return pass(value) // Ignore if b2b_ignore flag is present
+            if (!settings.behavior === 'disabled' || options?.b2b_ignore) return pass(value) // Ignore if b2b_ignore flag is present
 
             // If an answer is being registered
             if (RegExp(`^${UID_prefix}[rkv]\\d+$`).test(key)) {
@@ -160,7 +160,6 @@
         const defaults = {
             prioritize: 'none',
             behavior: 'always',
-            active: true,
         }
         return wkof.Settings.load(script_id, defaults)
     }
@@ -183,17 +182,17 @@
             title: script_name,
             on_save: prioritize,
             content: {
-                active: { type: 'checkbox', label: 'Active', default: true },
                 behavior: {
                     type: 'dropdown',
                     default: 'always',
                     label: 'Behavior',
                     hover_tip:
-                        'Choose whether to:\n1. Keep repeating the same question until you get it right\n2. Only keep the item if you answered the first question correctly\n3. Make it so that you have to answer both questions correctly back to back',
+                        'Choose whether to:\n1. Keep repeating the same question until you get it right\n2. Only keep the item if you answered the first question correctly\n3. Make it so that you have to answer both questions correctly back to back\n4. Disable any redordering, falling back to WaniKani\'s default behavior',
                     content: {
                         always: 'Repeat until correct',
                         correct: 'Shuffle incorrect',
                         true: 'True Back To Back',
+                        disabled: 'Disabled',
                     },
                 },
                 prioritize: {
