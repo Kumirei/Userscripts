@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.50
+// @version      3.0.51
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -708,7 +708,8 @@
                     item.data.level,
                     Date.parse(item.assignments.unlocked_at),
                 ])
-                if (Date.parse(item.assignments.available_at) > Date.now()) {
+                // If item is in the future and it is not hidden by Wanikani, add the item to the forecast array
+                if (Date.parse(item.assignments.available_at) > Date.now() && item.data.hidden_at === null) {
                     // If the assignment is scheduled add a forecast item ready for sending to the heatmap module
                     let forecast_item = [
                         Date.parse(item.assignments.available_at) + vacation_offset,
@@ -1029,7 +1030,7 @@
         let settings_button = create_elem({
             type: 'button',
             class: 'settings-button hover-wrapper-target',
-            "aria-label": 'Settings',
+            'aria-label': 'Settings',
             children: [
                 create_elem({ type: 'div', class: 'hover-wrapper above', child: 'Settings' }),
                 create_elem({ type: 'i', class: 'fa fa-gear' }),
@@ -1039,7 +1040,7 @@
         let toggle_button = create_elem({
             type: 'button',
             class: 'toggle-button hover-wrapper-target',
-            "aria-label": 'Toggle between reviews and lessons',
+            'aria-label': 'Toggle between reviews and lessons',
             children: [
                 create_elem({ type: 'div', class: 'hover-wrapper above', child: 'Toggle view' }),
                 create_elem({ type: 'i', class: 'fa fa-inbox' }),
