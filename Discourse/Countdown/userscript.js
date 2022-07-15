@@ -17,7 +17,15 @@
 ;(function () {
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'First Frost Date in Reading PA',
+            date: 'OCt 22 2022',
+            user: 'RoseWagsBlue',
+            message0: '@RoseWagsBlue Quick, get the pots!',
+            message1: '@RoseWagsBlue Oh no, not the frost!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'JLPT',
             date: 'dec 4 2022',
