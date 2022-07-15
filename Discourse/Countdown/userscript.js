@@ -17,9 +17,22 @@
 ;(function () {
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'RoseWagsBlue’s Return to 京都',
+            date: 'Feb 1 2024',
+            user: 'RoseWagsBlue',
+            message0: "@RoseWagsBlue omg it's going to be so much fun!",
+            message1: '@RoseWagsBlue Safe trip!!! Come back to us alive, please',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'First Frost Date in Reading PA',
-            date: 'OCt 22 2022',
+            date: 'Oct 22 2022',
             user: 'RoseWagsBlue',
             message0: '@RoseWagsBlue Quick, get the pots!',
             message1: '@RoseWagsBlue Oh no, not the frost!',
@@ -1000,11 +1013,11 @@
             extra: '',
         },
         {
-            title: "RoseWagsBlue's Return to 京都",
+            title: "RoseWagsBlue's non-Return to 京都",
             date: '01 feb 2023',
             user: 'RoseWagsBlue',
-            message0: "@RoseWagsBlue omg it's going to be so much fun!",
-            message1: '@RoseWagsBlue Safe trip!!! Come back to us alive, please',
+            message0: '',
+            message1: `@RoseWagsBlue It sucks that you couldn't make it!`,
             modifier: '',
             extra: '',
         },
