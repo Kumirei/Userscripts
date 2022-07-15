@@ -90,11 +90,11 @@
             extra: '',
         },
         {
-            title: 'World Vegan Day',
+            title: `Kumi's and Gojarappe's and Sansarret's birthday!`,
             date: 'aug 9 2022',
             user: 'Kumi',
             message0: '',
-            message1: 'No meats!!',
+            message1: 'Happy b day to me! And @Gojarappe and @sansarret',
             modifier: '',
             extra: '',
         },
