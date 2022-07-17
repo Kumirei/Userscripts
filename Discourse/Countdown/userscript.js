@@ -20,7 +20,15 @@
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: "Glias' Road Trip!",
+            date: 'aug 6 2022',
+            user: 'Glias',
+            message0: '@Glias can I come?',
+            message1: '@Glias stash the kitties and hit the road!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'RoseWagsBlue’s Return to 京都',
             date: 'Feb 1 2024',
