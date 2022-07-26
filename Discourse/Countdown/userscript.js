@@ -18,7 +18,15 @@
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'More Stone Ocean Episodes',
+            date: 'sep 1 2022',
+            user: 'DIO-Berry',
+            message0: '',
+            message1: '@DIO-Berry Yay, more episodes!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: "Glias' 10 Year Work Anniversary",
             date: 'aug 21 2022',
