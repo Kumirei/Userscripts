@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.0
+// @version      1.3.1
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -1262,7 +1262,7 @@ var module = {};
                                         srs: 'SRS Level',
                                         leech: 'Leech Score',
                                         overdue: 'Overdue (%)',
-                                        overdue_absolute: 'Overdue (absolute)',
+                                        overdue_absolute: 'Overdue (days)',
                                         critical: 'Critical'
                                     },
                                     on_change: refresh_action
