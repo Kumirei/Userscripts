@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.1.9
+// @version      1.2.0
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -560,6 +560,29 @@ var module = {};
             time += seconds + 's ';
         return time;
     }
+    // Returns a random number which is the same for identical input
+    function seeded_prng(seed) {
+        return mulberry32(xmur3(seed)())();
+    }
+    // Seed generator for PRNG
+    function xmur3(str) {
+        for (var i = 0, h = 1779033703 ^ str.length; i < str.length; i++)
+            (h = Math.imul(h ^ str.charCodeAt(i), 3432918353)), (h = (h << 13) | (h >>> 19));
+        return function () {
+            h = Math.imul(h ^ (h >>> 16), 2246822507);
+            h = Math.imul(h ^ (h >>> 13), 3266489909);
+            return (h ^= h >>> 16) >>> 0;
+        };
+    }
+    // Seedable PRNG
+    function mulberry32(a) {
+        return function () {
+            var t = (a += 0x6d2b79f5);
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
     // -----------------------------------------------------------------------------------------------------------------
     // INITIAL SETUP
     // -----------------------------------------------------------------------------------------------------------------
@@ -851,6 +874,22 @@ var module = {};
             filter_value_map: function (value) {
                 return { value: value, nonce: Math.random() };
             }
+        };
+        // Spreads reviews out by a random amount within a given range by filtering them out if they are not due enough
+        wkof.ItemData.registry.sources.wk_items.filters["".concat(script_id, "_random_interval_spread")] = {
+            type: 'number',
+            "default": 0,
+            label: 'Spread Review Intervals (%)',
+            hover_tip: 'The maximum percentage to spread the interval by. For example, if this is set to 10, then the interval will be extended by a random amount between 0% and 10%.',
+            filter_func: function (value, item) {
+                var _a;
+                if (!((_a = item.assignments) === null || _a === void 0 ? void 0 : _a.available_at))
+                    return false;
+                var overdue = calculate_overdue(item);
+                var spread = (seeded_prng(item.assignments.available_at) * value) / 100;
+                return overdue > spread;
+            },
+            set_options: function (options) { return (options.assignments = true); }
         };
     }
     // Installs the CSS
