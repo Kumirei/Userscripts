@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         BunPro: JLPT Percentage
 // @namespace    http://tampermonkey.net/
-// @version      0.2.11
+// @version      0.2.12
 // @description  Adds percentages to the progress bars.
 // @author       Kumirei
 // @match        https://bunpro.jp/*
@@ -29,14 +29,20 @@
         } else if (percentNumber === 100) {
             return '100%'
         } else {
-            return percentNumber.toFixed(1) + '%'
+            return (percentNumber.toFixed(1) + '%').replace('.0%', '%')
         }
     }
     wfs.wait('.profile-jlpt-level .progress-bar', function (e) {
         var percentNumber = Number($(e).attr('aria-valuenow'))
         var percentString = percentNumberToString(percentNumber)
 
-        $(e.parentNode).append('<span class="percentage">' + percentString + '</span>')
+        const parentNode = $(e.parentNode)
+        for (const child of parentNode[0].children) {
+            if (child.classList.contains('percentage')) {
+                return
+            }
+        }
+        parentNode.append('<span class="percentage">' + percentString + '</span>')
     })
 
     wfs.wait('.profile-jlpt-level', function (e) {
