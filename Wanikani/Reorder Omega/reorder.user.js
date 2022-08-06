@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.3.0
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -210,7 +210,7 @@ var module = {};
             case 'freeze & restore':
                 return { keep: items.discard, discard: [], final: items.final.concat(items.keep) };
             case 'shuffle':
-                return { keep: shuffle(items.keep), discard: items.discard, final: items.final };
+                return { keep: process_shuffle_action(action, items.keep), discard: items.discard, final: items.final };
             default:
                 // ? Maybe return nothing and display a message?
                 return items; // Invalid action type
@@ -246,6 +246,11 @@ var module = {};
             case 'overdue':
                 sort = function (a, b) { return numerical_sort(calculate_overdue(a), calculate_overdue(b), action.sort.overdue); };
                 break;
+            case 'overdue_absolute':
+                sort = function (a, b) {
+                    return numerical_sort(calculate_overdue_days(a), calculate_overdue_days(b), action.sort.overdue_absolute);
+                };
+                break;
             case 'leech':
                 sort = function (a, b) { return numerical_sort(calculate_leech_score(a), calculate_leech_score(b), action.sort.leech); };
                 break;
@@ -253,6 +258,18 @@ var module = {};
                 return []; // Invalid sort key
         }
         return items.sort(sort);
+    }
+    // Shuffles items based on the provided shuffle setting
+    function process_shuffle_action(action, items) {
+        switch (action.shuffle.shuffle) {
+            case undefined:
+            case 'random':
+                return shuffle(items);
+            case 'relative':
+                return relative_shuffle(items, action.shuffle.relative / 100);
+            default:
+                return []; // Invalid shuffle type
+        }
     }
     // Retrieves the ids of the the items in the current queue
     function get_queue_ids() {
@@ -462,6 +479,13 @@ var module = {};
     // -----------------------------------------------------------------------------------------------------------------
     // ITEM INFORMATION
     // -----------------------------------------------------------------------------------------------------------------
+    // Calculate how many days overdue an item is
+    function calculate_overdue_days(item) {
+        var _a;
+        if (!((_a = item.assignments) === null || _a === void 0 ? void 0 : _a.available_at))
+            return 0;
+        return (Date.now() - Date.parse(item.assignments.available_at)) / MS.day;
+    }
     // Calculate how overdue an item is based on its available_at date and SRS stage
     function calculate_overdue(item) {
         var SRS_DURATIONS = [4, 8, 23, 47, 167, 335, 719, 2879, Infinity].map(function (time) { return time * MS.hour; });
@@ -530,6 +554,12 @@ var module = {};
             arr[j] = x;
         }
         return arr;
+    }
+    // Relative shuffle of items in the array based on the relative distance value
+    function relative_shuffle(arr, distance) {
+        var sort_indices = new Map();
+        arr.forEach(function (item, i) { return sort_indices.set(item, i + distance * arr.length * Math.random()); });
+        return arr.sort(function (a, b) { var _a, _b; return ((_a = sort_indices.get(a)) !== null && _a !== void 0 ? _a : 0) - ((_b = sort_indices.get(b)) !== null && _b !== void 0 ? _b : 0); });
     }
     // Swap two members of a list
     function swap(list, i, j) {
@@ -840,9 +870,19 @@ var module = {};
         wkof.ItemData.registry.sources.wk_items.filters["".concat(script_id, "_overdue")] = {
             type: 'number',
             "default": 0,
-            label: 'Overdue%',
+            label: 'Overdue (%)',
             hover_tip: 'Items more overdue than this. A percentage.\nNegative: Not due yet\nZero: due now\nPositive: Overdue',
-            filter_func: function (value, item) { return calculate_overdue(item) * 100 > value; }
+            filter_func: function (value, item) { return calculate_overdue(item) * 100 > value; },
+            set_options: function (options) { return (options.assignments = true); }
+        };
+        // Filters by how overdue items are (absolute value)
+        wkof.ItemData.registry.sources.wk_items.filters["".concat(script_id, "_overdue_absolute")] = {
+            type: 'number',
+            "default": 0,
+            label: 'Overdue (days)',
+            hover_tip: 'Items more overdue than this. A number of days.\nNegative: X days until due\nZero: due now\nPositive: Due X days ago',
+            filter_func: function (value, item) { return calculate_overdue_days(item) > value; },
+            set_options: function (options) { return (options.assignments = true); }
         };
         // Filters by whether the item is critical to leveling up
         wkof.ItemData.registry.sources.wk_items.filters["".concat(script_id, "_critical")] = {
@@ -850,7 +890,8 @@ var module = {};
             "default": true,
             label: 'Critical',
             hover_tip: 'Filter for items critical to leveling up',
-            filter_func: function (value, item) { return value === is_critical(item); }
+            filter_func: function (value, item) { return value === is_critical(item); },
+            set_options: function (options) { return (options.assignments = true); }
         };
         // Retrieves the first N number of items from the queue
         wkof.ItemData.registry.sources.wk_items.filters["".concat(script_id, "_first")] = {
@@ -1220,8 +1261,21 @@ var module = {};
                                         level: 'Level',
                                         srs: 'SRS Level',
                                         leech: 'Leech Score',
-                                        overdue: 'Overdue',
+                                        overdue: 'Overdue (%)',
+                                        overdue_absolute: 'Overdue (absolute)',
                                         critical: 'Critical'
+                                    },
+                                    on_change: refresh_action
+                                },
+                                shuffle_type: {
+                                    type: 'dropdown',
+                                    "default": 'random',
+                                    label: 'Shuffle Type',
+                                    hover_tip: 'Choose what kind of shuffle this is',
+                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.shuffle',
+                                    content: {
+                                        random: 'Random',
+                                        relative: 'Relative'
                                     },
                                     on_change: refresh_action
                                 }
@@ -1261,6 +1315,7 @@ var module = {};
         dialog.find('[name="filter_type"]').closest('.row').addClass('filter');
         dialog.find('[name="filter_invert"]').closest('.row').addClass('filter');
         dialog.find('[name="sort_type"]').closest('.row').addClass('sort');
+        dialog.find('[name="shuffle_type"]').closest('.row').addClass('shuffle');
         // Add pasting inputs
         dialog
             .find("fieldset#".concat(script_id, "_presets"))
@@ -1477,13 +1532,17 @@ var module = {};
             sort: {
                 sort: 'level',
                 type: 'rad, kan, voc'
+            },
+            shuffle: {
+                shuffle: 'random',
+                relative: 10
             }
         }; // Casting because it is still incomplete
         for (var _i = 0, _a = Object.entries(wkof.ItemData.registry.sources.wk_items.filters); _i < _a.length; _i++) {
             var _b = _a[_i], name_1 = _b[0], filter = _b[1];
             defaults.filter[name_1] = filter["default"];
         }
-        for (var _c = 0, _d = ['level', 'srs', 'leech', 'overdue']; _c < _d.length; _c++) {
+        for (var _c = 0, _d = ['level', 'srs', 'leech', 'overdue', 'overdue_absolute']; _c < _d.length; _c++) {
             var type = _d[_c];
             defaults.sort[type] = 'asc';
         }
@@ -1575,10 +1634,19 @@ var module = {};
             path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.type"
         };
         // Other sorts are identical
-        for (var _f = 0, _g = ['level', 'srs', 'leech', 'overdue', 'critical']; _f < _g.length; _f++) {
+        for (var _f = 0, _g = ['level', 'srs', 'leech', 'overdue', 'critical', 'overdue_absolute']; _f < _g.length; _f++) {
             var type = _g[_f];
             config.content["sort_by_".concat(type)] = numerical_sort_config(type);
         }
+        // Add shuffle type
+        // Relative shuffle config
+        config.content.shuffle_by_relative = {
+            type: 'number',
+            "default": 10,
+            label: 'Shuffle Distance (%)',
+            hover_tip: 'The distance you want any given item to be able to move relative to its start position. Percentage of total number of items.',
+            path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.relative"
+        };
     }
     // -----------------------------------------------------------------------------------------------------------------
     // WKOF DYNAMIC SETTINGS
@@ -1621,7 +1689,7 @@ var module = {};
         var preset = settings.presets[settings.selected_preset];
         var action = preset.actions[preset.selected_action];
         $('.visible_action_value').removeClass('visible_action_value');
-        if (['sort', 'filter'].includes(action.type)) {
+        if (['sort', 'filter', 'shuffle'].includes(action.type)) {
             // @ts-ignore
             // Don't know how to type this properly
             $("#".concat(script_id, "_").concat(action.type, "_by_").concat(action[action.type][action.type]))

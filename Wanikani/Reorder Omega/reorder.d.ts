@@ -107,21 +107,22 @@ export namespace Settings {
         name: string
         type: 'none' | 'filter' | 'sort' | 'shuffle' | 'freeze & restore'
         sort: {
-            sort: 'level' | 'srs' | 'leech' | 'overdue' | 'type'
+            sort: 'level' | 'srs' | 'leech' | 'overdue' | 'type' | 'overdue_absolute'
             level: 'asc' | 'desc'
             srs: 'asc' | 'desc'
             leech: 'asc' | 'desc'
             overdue: 'asc' | 'desc'
-            /**
-             * @remark Comma separated list of short item type names
-             * @example "kan, rad, voc"
-             */
+            overdue_absolute: 'asc' | 'desc'
             type: string
         }
         filter: {
             [key: string]: any
             filter: string
             invert: boolean
+        }
+        shuffle: {
+            shuffle: 'random' | 'relative'
+            relative: number
         }
     }
 }

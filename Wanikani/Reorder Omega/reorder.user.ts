@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.3.0
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -228,7 +228,7 @@ declare global {
             case 'freeze & restore':
                 return { keep: items.discard, discard: [], final: items.final.concat(items.keep) }
             case 'shuffle':
-                return { keep: shuffle<ItemData.Item>(items.keep), discard: items.discard, final: items.final }
+                return { keep: process_shuffle_action(action, items.keep), discard: items.discard, final: items.final }
             default:
                 // ? Maybe return nothing and display a message?
                 return items // Invalid action type
@@ -266,6 +266,10 @@ declare global {
             case 'overdue':
                 sort = (a, b) => numerical_sort(calculate_overdue(a), calculate_overdue(b), action.sort.overdue)
                 break
+            case 'overdue_absolute':
+                sort = (a, b) =>
+                    numerical_sort(calculate_overdue_days(a), calculate_overdue_days(b), action.sort.overdue_absolute)
+                break
             case 'leech':
                 sort = (a, b) => numerical_sort(calculate_leech_score(a), calculate_leech_score(b), action.sort.leech)
                 break
@@ -274,6 +278,19 @@ declare global {
         }
 
         return items.sort(sort)
+    }
+
+    // Shuffles items based on the provided shuffle setting
+    function process_shuffle_action(action: Settings.Action, items: ItemData.Item[]): ItemData.Item[] {
+        switch (action.shuffle.shuffle) {
+            case undefined:
+            case 'random':
+                return shuffle(items)
+            case 'relative':
+                return relative_shuffle(items, action.shuffle.relative / 100)
+            default:
+                return [] // Invalid shuffle type
+        }
     }
 
     // Retrieves the ids of the the items in the current queue
@@ -474,6 +491,12 @@ declare global {
     // ITEM INFORMATION
     // -----------------------------------------------------------------------------------------------------------------
 
+    // Calculate how many days overdue an item is
+    function calculate_overdue_days(item: ItemData.Item): number {
+        if (!item.assignments?.available_at) return 0
+        return (Date.now() - Date.parse(item.assignments.available_at)) / MS.day
+    }
+
     // Calculate how overdue an item is based on its available_at date and SRS stage
     function calculate_overdue(item: ItemData.Item): number {
         const SRS_DURATIONS = [4, 8, 23, 47, 167, 335, 719, 2879, Infinity].map((time) => time * MS.hour)
@@ -548,6 +571,13 @@ declare global {
             arr[j] = x
         }
         return arr
+    }
+
+    // Relative shuffle of items in the array based on the relative distance value
+    function relative_shuffle<T>(arr: T[], distance: number): T[] {
+        const sort_indices = new Map<T, number>()
+        arr.forEach((item, i) => sort_indices.set(item, i + distance * arr.length * Math.random()))
+        return arr.sort((a, b) => (sort_indices.get(a) ?? 0) - (sort_indices.get(b) ?? 0))
     }
 
     // Swap two members of a list
@@ -893,10 +923,22 @@ declare global {
         wkof.ItemData.registry.sources.wk_items.filters[`${script_id}_overdue`] = {
             type: 'number',
             default: 0,
-            label: 'Overdue%',
+            label: 'Overdue (%)',
             hover_tip:
                 'Items more overdue than this. A percentage.\nNegative: Not due yet\nZero: due now\nPositive: Overdue',
             filter_func: (value, item) => calculate_overdue(item) * 100 > value,
+            set_options: (options) => (options.assignments = true),
+        }
+
+        // Filters by how overdue items are (absolute value)
+        wkof.ItemData.registry.sources.wk_items.filters[`${script_id}_overdue_absolute`] = {
+            type: 'number',
+            default: 0,
+            label: 'Overdue (days)',
+            hover_tip:
+                'Items more overdue than this. A number of days.\nNegative: X days until due\nZero: due now\nPositive: Due X days ago',
+            filter_func: (value, item) => calculate_overdue_days(item) > value,
+            set_options: (options) => (options.assignments = true),
         }
 
         // Filters by whether the item is critical to leveling up
@@ -906,6 +948,7 @@ declare global {
             label: 'Critical',
             hover_tip: 'Filter for items critical to leveling up',
             filter_func: (value, item) => value === is_critical(item),
+            set_options: (options) => (options.assignments = true),
         }
 
         // Retrieves the first N number of items from the queue
@@ -1348,8 +1391,21 @@ declare global {
                                         level: 'Level',
                                         srs: 'SRS Level',
                                         leech: 'Leech Score',
-                                        overdue: 'Overdue',
+                                        overdue: 'Overdue (%)',
+                                        overdue_absolute: 'Overdue (absolute)',
                                         critical: 'Critical',
+                                    },
+                                    on_change: refresh_action,
+                                },
+                                shuffle_type: {
+                                    type: 'dropdown',
+                                    default: 'random',
+                                    label: 'Shuffle Type',
+                                    hover_tip: 'Choose what kind of shuffle this is',
+                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.shuffle',
+                                    content: {
+                                        random: 'Random',
+                                        relative: 'Relative',
                                     },
                                     on_change: refresh_action,
                                 },
@@ -1396,6 +1452,7 @@ declare global {
         dialog.find('[name="filter_type"]').closest('.row').addClass('filter')
         dialog.find('[name="filter_invert"]').closest('.row').addClass('filter')
         dialog.find('[name="sort_type"]').closest('.row').addClass('sort')
+        dialog.find('[name="shuffle_type"]').closest('.row').addClass('shuffle')
 
         // Add pasting inputs
         dialog
@@ -1626,14 +1683,18 @@ declare global {
                 sort: 'level',
                 type: 'rad, kan, voc',
             },
+            shuffle: {
+                shuffle: 'random',
+                relative: 10,
+            },
         } as Settings.Action // Casting because it is still incomplete
 
         for (let [name, filter] of Object.entries(wkof.ItemData.registry.sources.wk_items.filters)) {
             defaults.filter[name] = filter.default
         }
 
-        type SortType = 'level' | 'srs' | 'leech' | 'overdue'
-        for (let type of ['level', 'srs', 'leech', 'overdue'] as SortType[]) {
+        type SortType = 'level' | 'srs' | 'leech' | 'overdue' | 'overdue_absolute'
+        for (let type of ['level', 'srs', 'leech', 'overdue', 'overdue_absolute'] as SortType[]) {
             defaults.sort[type] = 'asc'
         }
         return defaults
@@ -1718,8 +1779,20 @@ declare global {
         }
 
         // Other sorts are identical
-        for (let type of ['level', 'srs', 'leech', 'overdue', 'critical'])
+        for (let type of ['level', 'srs', 'leech', 'overdue', 'critical', 'overdue_absolute'])
             config.content[`sort_by_${type}`] = numerical_sort_config(type)
+
+        // Add shuffle type
+
+        // Relative shuffle config
+        config.content.shuffle_by_relative = {
+            type: 'number',
+            default: 10,
+            label: 'Shuffle Distance (%)',
+            hover_tip:
+                'The distance you want any given item to be able to move relative to its start position. Percentage of total number of items.',
+            path: `@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.relative`,
+        }
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -1769,7 +1842,7 @@ declare global {
         const preset = settings.presets[settings.selected_preset]
         const action = preset.actions[preset.selected_action]
         $('.visible_action_value').removeClass('visible_action_value')
-        if (['sort', 'filter'].includes(action.type)) {
+        if (['sort', 'filter', 'shuffle'].includes(action.type)) {
             // @ts-ignore
             // Don't know how to type this properly
             $(`#${script_id}_${action.type}_by_${action[action.type][action.type]}`)
