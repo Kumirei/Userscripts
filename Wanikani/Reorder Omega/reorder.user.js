@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.1.8
+// @version      1.1.9
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -237,7 +237,7 @@ var module = {};
                 sort = function (a, b) { return numerical_sort(a.data.level, b.data.level, action.sort.level); };
                 break;
             case 'type':
-                var order_1 = parse_short_subject_type_string(action.sort.type);
+                var order_1 = parse_subject_type_string(action.sort.type);
                 sort = function (a, b) { return sort_by_list(a.object, b.object, order_1); };
                 break;
             case 'srs':
@@ -489,11 +489,15 @@ var module = {};
         return Math.max(meaning_score, reading_score);
     }
     // Parses strings such as "kan, rad, voc" into lists of strings
-    function parse_short_subject_type_string(str) {
+    function parse_subject_type_string(str) {
         var type_map = { rad: 'radical', kan: 'kanji', voc: 'vocabulary' };
         return str
             .replace(/\s/g, '')
+            .replace(/r(ads?(icals?)?)?(,|$)/gi, 'rad,')
+            .replace(/k(ans?(jis?)?)?(,|$)/gi, 'kan,')
+            .replace(/v(ocs?(abs?(ulary?(ies)?)?)?)?(,|$)/gi, 'voc,')
             .split(',')
+            .filter(function (s) { return s === 'rad' || s === 'kan' || s === 'voc'; })
             .map(function (type) { return type_map[type]; });
     }
     // -----------------------------------------------------------------------------------------------------------------

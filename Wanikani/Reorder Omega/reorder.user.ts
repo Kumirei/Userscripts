@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.1.8
+// @version      1.1.9
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -256,7 +256,7 @@ declare global {
                 sort = (a, b) => numerical_sort(a.data.level, b.data.level, action.sort.level)
                 break
             case 'type':
-                const order = parse_short_subject_type_string(action.sort.type)
+                const order = parse_subject_type_string(action.sort.type)
                 sort = (a, b) => sort_by_list(a.object, b.object, order)
                 break
             case 'srs':
@@ -501,11 +501,15 @@ declare global {
     }
 
     // Parses strings such as "kan, rad, voc" into lists of strings
-    function parse_short_subject_type_string(str: string): SubjectType[] {
+    function parse_subject_type_string(str: string): SubjectType[] {
         const type_map: { [key: string]: SubjectType } = { rad: 'radical', kan: 'kanji', voc: 'vocabulary' }
         return str
             .replace(/\s/g, '')
+            .replace(/r(ads?(icals?)?)?(,|$)/gi, 'rad,')
+            .replace(/k(ans?(jis?)?)?(,|$)/gi, 'kan,')
+            .replace(/v(ocs?(abs?(ulary?(ies)?)?)?)?(,|$)/gi, 'voc,')
             .split(',')
+            .filter((s) => s === 'rad' || s === 'kan' || s === 'voc')
             .map((type) => type_map[type])
     }
 
