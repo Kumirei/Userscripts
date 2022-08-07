@@ -23,7 +23,6 @@
 
     async function update_counts() {
         const interval = wkof.settings[script_id].spread
-        console.log(interval)
         const items = await wkof.ItemData.get_items('assignments')
         const count = items.filter((item) => {
             if (!item?.assignments?.available_at) return false
@@ -34,6 +33,7 @@
         $('.navigation-shortcut--reviews span').text(String(count))
         $('.lessons-and-reviews__reviews-button span').text(String(count))
         $('#reviews-summary #review-queue-count').text(String(count))
+        setTimeout(update_counts, (60 - new Date().getMinutes()) * 1000 * 60 + 1000) // Update counts within a minute of top of the hour
     }
 
     // Makes sure that WKOF is installed
