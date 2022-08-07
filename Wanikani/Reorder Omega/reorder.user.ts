@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.1
+// @version      1.3.2
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -1889,22 +1889,20 @@ declare global {
 
     // Take action when one of the list buttons have been pressed
     function list_button_pressed(e: any) {
-        const ref = (e.currentTarget as any).attributes.ref.value
+        const ref = (e.currentTarget as any).attributes.ref.value as string
         const btn = (e.currentTarget as any).attributes.action.value
         const elem = $(`#${script_id}_active_` + ref)
 
-        let default_item, root: { [key: string]: any }, list, key
+        let default_item, root: any
         if (ref === 'preset') {
             default_item = get_preset_defaults()
             root = settings
-            list = settings.presets
-            key = 'selected_preset'
         } else {
             default_item = get_action_defaults()
             root = settings.presets[settings.selected_preset]
-            list = root.actions
-            key = 'selected_action'
         }
+        const list = root[`${ref}s`]
+        const key = `selected_${ref}`
         const index = Number(root[key])
 
         switch (btn) {
@@ -1914,19 +1912,30 @@ declare global {
                 break
             case 'delete':
                 list.push(...list.splice(index).slice(1))
-                if (index && index >= list.length) root[key]--
                 if (list.length === 0) list.push(default_item)
+                if (index && index >= list.length) root[key] = list.length - 1
                 break
             case 'up':
                 swap(list, index - 1, index)
+                // Update selected preset
+                if (ref === 'preset' && index > 0) {
+                    for (let key in settings.active_presets) // @ts-ignore
+                        if (settings.active_presets[key] == index) settings.active_presets[key]--
+                }
                 if (index > 0) root[key]--
                 break
             case 'down':
                 swap(list, index + 1, index)
+                // Update selected preset
+                if (ref === 'preset' && index < list.length - 1) {
+                    for (let key in settings.active_presets) // @ts-ignore
+                        if (settings.active_presets[key] == index) settings.active_presets[key]++
+                }
                 if (index < list.length - 1) root[key]++
                 break
         }
         populate_list(elem, list, index)
+        refresh_active_preset_selection()
         settings_dialog.refresh()
         if (btn === 'new') $(`#${script_id}_${ref}_name`).focus().select()
     }

@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.1
+// @version      1.3.2
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -1745,19 +1745,17 @@ var module = {};
         var ref = e.currentTarget.attributes.ref.value;
         var btn = e.currentTarget.attributes.action.value;
         var elem = $("#".concat(script_id, "_active_") + ref);
-        var default_item, root, list, key;
+        var default_item, root;
         if (ref === 'preset') {
             default_item = get_preset_defaults();
             root = settings;
-            list = settings.presets;
-            key = 'selected_preset';
         }
         else {
             default_item = get_action_defaults();
             root = settings.presets[settings.selected_preset];
-            list = root.actions;
-            key = 'selected_action';
         }
+        var list = root["".concat(ref, "s")];
+        var key = "selected_".concat(ref);
         var index = Number(root[key]);
         switch (btn) {
             case 'new':
@@ -1766,23 +1764,36 @@ var module = {};
                 break;
             case 'delete':
                 list.push.apply(list, list.splice(index).slice(1));
-                if (index && index >= list.length)
-                    root[key]--;
                 if (list.length === 0)
                     list.push(default_item);
+                if (index && index >= list.length)
+                    root[key] = list.length - 1;
                 break;
             case 'up':
                 swap(list, index - 1, index);
+                // Update selected preset
+                if (ref === 'preset' && index > 0) {
+                    for (var key_1 in settings.active_presets) // @ts-ignore
+                        if (settings.active_presets[key_1] == index)
+                            settings.active_presets[key_1]--;
+                }
                 if (index > 0)
                     root[key]--;
                 break;
             case 'down':
                 swap(list, index + 1, index);
+                // Update selected preset
+                if (ref === 'preset' && index < list.length - 1) {
+                    for (var key_2 in settings.active_presets) // @ts-ignore
+                        if (settings.active_presets[key_2] == index)
+                            settings.active_presets[key_2]++;
+                }
                 if (index < list.length - 1)
                     root[key]++;
                 break;
         }
         populate_list(elem, list, index);
+        refresh_active_preset_selection();
         settings_dialog.refresh();
         if (btn === 'new')
             $("#".concat(script_id, "_").concat(ref, "_name")).focus().select();
