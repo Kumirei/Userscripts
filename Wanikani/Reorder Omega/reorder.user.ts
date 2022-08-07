@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.2
+// @version      1.3.3
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -237,13 +237,13 @@ declare global {
 
     // Filters items according to the filter action
     function process_filter(action: Settings.Action, items: ItemData.Item[]): KeepAndDiscard<ItemData.Item> {
-        const filter = wkof.ItemData.registry.sources.wk_items.filters[action.filter.filter]
+        const filter = wkof.ItemData.registry.sources.wk_items.filters[action.filter.type]
         if (!filter) return { keep: items, discard: [] } // Invalid filter, keep everything
         const filter_value = filter.filter_value_map
-            ? filter.filter_value_map(action.filter[action.filter.filter])
-            : action.filter[action.filter.filter]
+            ? filter.filter_value_map(action.filter.values[action.filter.type])
+            : action.filter.values[action.filter.type]
         const filter_func = (item: ItemData.Item): boolean =>
-            xor(action.filter.invert, filter.filter_func(filter_value, item))
+            xor(action.filter.values.invert, filter.filter_func(filter_value, item))
         return keep_and_discard(items, filter_func)
     }
 
@@ -251,27 +251,36 @@ declare global {
     function process_sort_action(action: Settings.Action, items: ItemData.Item[]): ItemData.Item[] {
         let sort: (a: ItemData.Item, b: ItemData.Item) => number
 
-        switch (action.sort.sort) {
+        switch (action.sort.type) {
             case 'level':
-                sort = (a, b) => numerical_sort(a.data.level, b.data.level, action.sort.level)
+                sort = (a, b) => numerical_sort(a.data.level, b.data.level, action.sort.values.level)
                 break
             case 'type':
-                const order = parse_subject_type_string(action.sort.type)
+                const order = parse_subject_type_string(action.sort.values.type)
                 sort = (a, b) => sort_by_list(a.object, b.object, order)
                 break
             case 'srs':
                 sort = (a, b) =>
-                    numerical_sort(a.assignments?.srs_stage ?? -1, b.assignments?.srs_stage ?? -1, action.sort.srs)
+                    numerical_sort(
+                        a.assignments?.srs_stage ?? -1,
+                        b.assignments?.srs_stage ?? -1,
+                        action.sort.values.srs,
+                    )
                 break
             case 'overdue':
-                sort = (a, b) => numerical_sort(calculate_overdue(a), calculate_overdue(b), action.sort.overdue)
+                sort = (a, b) => numerical_sort(calculate_overdue(a), calculate_overdue(b), action.sort.values.overdue)
                 break
             case 'overdue_absolute':
                 sort = (a, b) =>
-                    numerical_sort(calculate_overdue_days(a), calculate_overdue_days(b), action.sort.overdue_absolute)
+                    numerical_sort(
+                        calculate_overdue_days(a),
+                        calculate_overdue_days(b),
+                        action.sort.values.overdue_absolute,
+                    )
                 break
             case 'leech':
-                sort = (a, b) => numerical_sort(calculate_leech_score(a), calculate_leech_score(b), action.sort.leech)
+                sort = (a, b) =>
+                    numerical_sort(calculate_leech_score(a), calculate_leech_score(b), action.sort.values.leech)
                 break
             default:
                 return [] // Invalid sort key
@@ -282,12 +291,12 @@ declare global {
 
     // Shuffles items based on the provided shuffle setting
     function process_shuffle_action(action: Settings.Action, items: ItemData.Item[]): ItemData.Item[] {
-        switch (action.shuffle.shuffle) {
+        switch (action.shuffle.type) {
             case undefined:
             case 'random':
                 return shuffle(items)
             case 'relative':
-                return relative_shuffle(items, action.shuffle.relative / 100)
+                return relative_shuffle(items, action.shuffle.values.relative / 100)
             default:
                 return [] // Invalid shuffle type
         }
@@ -841,7 +850,7 @@ declare global {
             ): T {
                 // @ts-ignore
                 const pass = (val) => original_set.call(this, key, val, options) as T
-                if (!settings.back2back || options?.b2b_ignore) return pass(value) // Ignore if b2b_ignore flag is present
+                if (settings.back2back_behavior === 'disabled' || options?.b2b_ignore) return pass(value) // Ignore if b2b_ignore flag is present
 
                 const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
 
@@ -1098,16 +1107,55 @@ declare global {
             display_streak: true,
             burn_bell: false,
             voice_actor: 'default',
-            back2back: false,
             back2back_behavior: 'always',
             prioritize: 'none',
         }
         return wkof.Settings.load(script_id, defaults)
-            .then(
-                // Make settings accessible globally
-                (wkof_settings) => (settings = wkof_settings as Settings.Settings),
-            )
+            .then((settings) => settings as Settings.Settings) // Type cast
+            .then((wkof_settings) => (settings = wkof_settings)) // Make settings accessible globally
+            .then(migrate_settings) // Migrate settings
+            .then(() => wkof.Settings.save(script_id)) // Save migrated settings
             .then(insert_filter_defaults)
+    }
+
+    // Migrates settings from old formats to new
+    function migrate_settings(settings: Settings.Settings) {
+        // Consolidate Back2Back settings
+        // @ts-ignore
+        if (settings.back2back === false) {
+            settings.back2back_behavior = 'disabled'
+        } // @ts-ignore
+        delete settings.back2back
+
+        // Better structure for actions
+        for (let preset of settings.presets) {
+            for (let action of preset.actions) {
+                // @ts-ignore
+                if (action.sort.sort === undefined) continue
+                // Make sure shuffle setting is correct
+                // @ts-ignore
+                if (action.shuffle === undefined) action.shuffle = { shuffle: 'random', relative: 10 }
+
+                // Improve structure by moving type to .type and values to .values
+                const types: any = {
+                    // @ts-ignore
+                    sort: { type: action.sort.sort, values: {} }, // @ts-ignore
+                    filter: { type: action.filter.filter, values: {} }, // @ts-ignore
+                    shuffle: { type: action.shuffle.shuffle, values: {} },
+                }
+                for (let type of ['sort', 'filter', 'shuffle']) {
+                    // @ts-ignore
+                    for (let key in action[type]) {
+                        if (key === type) continue // @ts-ignore
+                        types[type].values[key] = action[type][key] // @ts-ignore
+                    }
+                }
+                action.sort = types.sort
+                action.filter = types.filter
+                action.shuffle = types.shuffle
+            }
+        }
+        return settings
     }
 
     // Inserts the defaults of registered filters into each action
@@ -1216,19 +1264,14 @@ declare global {
                                     label: 'Burn Bell',
                                     hover_tip: 'Play a bell sound when you burn an item',
                                 },
-                                back2back: {
-                                    type: 'checkbox',
-                                    default: false,
-                                    label: 'Back To Back',
-                                    hover_tip: 'Get reading and meaning question back to back',
-                                },
                                 back2back_behavior: {
                                     type: 'dropdown',
                                     default: 'always',
                                     label: 'Back To Back Behavior',
                                     hover_tip:
-                                        'Choose whether to:\n1. Keep repeating the same question until you get it right\n2. Only keep the item if you answered the first question correctly\n3. Make it so that you have to answer both questions correctly back to back',
+                                        'Choose whether to:\n1. Have the vanilla experience\n2. Keep repeating the same question until you get it right\n3. Only keep the item if you answered the first question correctly\n4. Make it so that you have to answer both questions correctly back to back',
                                     content: {
+                                        disabled: 'Disabled',
                                         always: 'Repeat until correct',
                                         correct: 'Shuffle incorrect',
                                         true: 'True Back To Back',
@@ -1374,7 +1417,7 @@ declare global {
                                     default: 'level',
                                     label: 'Filter Type',
                                     hover_tip: 'Choose what kind of filter this is',
-                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.filter',
+                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.type',
                                     content: {
                                         // Will be populated
                                     },
@@ -1385,7 +1428,7 @@ declare global {
                                     default: 'level',
                                     label: 'Sort Type',
                                     hover_tip: 'Choose what kind of sort this is',
-                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.sort',
+                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.type',
                                     content: {
                                         type: 'Type',
                                         level: 'Level',
@@ -1402,7 +1445,7 @@ declare global {
                                     default: 'random',
                                     label: 'Shuffle Type',
                                     hover_tip: 'Choose what kind of shuffle this is',
-                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.shuffle',
+                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.type',
                                     content: {
                                         random: 'Random',
                                         relative: 'Relative',
@@ -1531,16 +1574,16 @@ declare global {
                     name: 'Filter out non-critical items',
                     type: 'filter',
                     filter: {
-                        filter: `${script_id}_critical`,
-                        [`${script_id}_critical`]: true,
+                        type: `${script_id}_critical`,
+                        values: { [`${script_id}_critical`]: true },
                     },
                 }),
                 $.extend(true, get_action_defaults(), {
                     name: 'Get radicals first',
                     type: 'sort',
                     sort: {
-                        sort: 'type',
-                        type: 'rad',
+                        type: 'type',
+                        values: { type: 'rad' },
                     },
                 }),
                 $.extend(true, get_action_defaults(), {
@@ -1558,7 +1601,7 @@ declare global {
                 $.extend(true, get_action_defaults(), {
                     name: 'Sort by level',
                     type: 'sort',
-                    sort: { sort: 'level' },
+                    sort: { type: 'level' },
                 }),
             ] as Settings.Action[],
         })
@@ -1571,7 +1614,7 @@ declare global {
                 $.extend(true, get_action_defaults(), {
                     name: 'Sort by SRS',
                     type: 'sort',
-                    sort: { sort: 'srs' },
+                    sort: { type: 'srs' },
                 }),
             ] as Settings.Action[],
         })
@@ -1585,8 +1628,8 @@ declare global {
                     name: 'Sort by item type',
                     type: 'sort',
                     sort: {
-                        sort: 'type',
-                        type: 'rad, kan, voc',
+                        type: 'type',
+                        values: { type: 'rad, kan, voc' },
                     },
                 }),
             ] as Settings.Action[],
@@ -1601,16 +1644,16 @@ declare global {
                     name: 'Filter burns',
                     type: 'filter',
                     filter: {
-                        filter: 'srs',
-                        srs: { burn: true },
+                        type: 'srs',
+                        values: { srs: { burn: true } },
                     },
                 }),
                 $.extend(true, get_action_defaults(), {
                     name: 'Get first 100 items',
                     type: 'filter',
                     filter: {
-                        filter: `${script_id}_first`,
-                        [`${script_id}_first`]: 100,
+                        type: `${script_id}_first`,
+                        values: { [`${script_id}_first`]: 100 },
                     },
                 }),
             ] as Settings.Action[],
@@ -1624,14 +1667,14 @@ declare global {
                 $.extend(true, get_action_defaults(), {
                     name: 'Sort by level to follow SRS',
                     type: 'sort',
-                    sort: { sort: 'srs' },
+                    sort: { type: 'srs' },
                 }),
                 $.extend(true, get_action_defaults(), {
                     name: 'Do 100 items a day to avoid burnout',
                     type: 'filter',
                     filter: {
-                        filter: `${script_id}_first`,
-                        [`${script_id}_first`]: 100,
+                        type: `${script_id}_first`,
+                        values: { [`${script_id}_first`]: 100 },
                     },
                 }),
                 $.extend(true, get_action_defaults(), {
@@ -1650,9 +1693,8 @@ declare global {
                     name: 'Filter learned items',
                     type: 'filter',
                     filter: {
-                        filter: `srs`,
-                        srs: { lock: true, init: true },
-                        invert: true,
+                        type: `srs`,
+                        values: { srs: { lock: true, init: true }, invert: true },
                     },
                 }),
             ] as Settings.Action[],
@@ -1678,37 +1720,49 @@ declare global {
         const defaults = {
             name: 'New Action',
             type: 'none',
-            filter: { filter: 'level', invert: false },
+            filter: {
+                type: 'level',
+                values: {
+                    invert: false,
+                },
+            },
             sort: {
-                sort: 'level',
-                type: 'rad, kan, voc',
+                type: 'level',
+                values: {
+                    type: 'rad, kan, voc',
+                },
             },
             shuffle: {
-                shuffle: 'random',
-                relative: 10,
+                type: 'random',
+                values: {
+                    relative: 10,
+                },
             },
         } as Settings.Action // Casting because it is still incomplete
 
         for (let [name, filter] of Object.entries(wkof.ItemData.registry.sources.wk_items.filters)) {
-            defaults.filter[name] = filter.default
+            defaults.filter.values[name] = filter.default
         }
 
         type SortType = 'level' | 'srs' | 'leech' | 'overdue' | 'overdue_absolute'
         for (let type of ['level', 'srs', 'leech', 'overdue', 'overdue_absolute'] as SortType[]) {
-            defaults.sort[type] = 'asc'
+            defaults.sort.values[type] = 'asc'
         }
         return defaults
     }
 
     // Deletes all unused data from an action
     function delete_action_defaults(action: any): { [key: string]: any } {
-        if (action.type !== 'filter' && action.type !== 'sort') return { name: action.name, type: action.type }
+        if (action.type !== 'filter' && action.type !== 'sort' && action.type !== 'shuffle')
+            return { name: action.name, type: action.type }
         return {
             name: action.name,
             type: action.type,
             [action.type]: {
-                [action.type]: action[action.type][action.type],
-                [action[action.type][action.type]]: action[action.type][action[action.type][action.type]],
+                type: action[action.type].type,
+                values: {
+                    [action[action.type].type]: action[action.type].values[action[action.type].type],
+                },
             },
         }
     }
@@ -1743,7 +1797,7 @@ declare global {
                 multi: filter.type === 'multi',
                 label: filter.label ?? 'Filter Value',
                 hover_tip: filter.hover_tip ?? 'Choose a value for your filter',
-                path: `@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.${name}`,
+                path: `@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.values.${name}`,
                 content: filter.content,
             } as SettingsModule.Component
         }
@@ -1754,7 +1808,7 @@ declare global {
             default: false,
             label: 'Invert Filter',
             hover_tip: 'Check this box if you want to invert the effect of this filter.',
-            path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.invert',
+            path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.values.invert',
         }
 
         // Populate sort values
@@ -1764,7 +1818,7 @@ declare global {
                 default: 'asc',
                 label: 'Order',
                 hover_tip: 'Sort in ascending or descending order',
-                path: `@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.${type}`,
+                path: `@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.values.${type}`,
                 content: { asc: 'Ascending', desc: 'Descending' },
             } as SettingsModule.Dropdown)
 
@@ -1775,7 +1829,7 @@ declare global {
             placeholder: 'rad, kan, voc',
             label: 'Order',
             hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad"',
-            path: `@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.type`,
+            path: `@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.values.type`,
         }
 
         // Other sorts are identical
@@ -1791,7 +1845,7 @@ declare global {
             label: 'Shuffle Distance (%)',
             hover_tip:
                 'The distance you want any given item to be able to move relative to its start position. Percentage of total number of items.',
-            path: `@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.relative`,
+            path: `@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.values.relative`,
         }
     }
 
@@ -1845,7 +1899,7 @@ declare global {
         if (['sort', 'filter', 'shuffle'].includes(action.type)) {
             // @ts-ignore
             // Don't know how to type this properly
-            $(`#${script_id}_${action.type}_by_${action[action.type][action.type]}`)
+            $(`#${script_id}_${action.type}_by_${action[action.type].type}`)
                 .closest('.row')
                 .addClass('visible_action_value')
         }
@@ -1917,21 +1971,29 @@ declare global {
                 break
             case 'up':
                 swap(list, index - 1, index)
+                if (index > 0) root[key]--
                 // Update selected preset
                 if (ref === 'preset' && index > 0) {
-                    for (let key in settings.active_presets) // @ts-ignore
-                        if (settings.active_presets[key] == index) settings.active_presets[key]--
+                    for (let p in settings.active_presets) {
+                        // @ts-ignore
+                        if (settings.active_presets[p] == index) settings.active_presets[p] = root[key]
+                        // @ts-ignore
+                        else if (settings.active_presets[p] == root[key]) settings.active_presets[p] = index
+                    }
                 }
-                if (index > 0) root[key]--
                 break
             case 'down':
                 swap(list, index + 1, index)
+                if (index < list.length - 1) root[key]++
                 // Update selected preset
                 if (ref === 'preset' && index < list.length - 1) {
-                    for (let key in settings.active_presets) // @ts-ignore
-                        if (settings.active_presets[key] == index) settings.active_presets[key]++
+                    for (let p in settings.active_presets) {
+                        // @ts-ignore
+                        if (settings.active_presets[p] == index) settings.active_presets[p] = root[key]
+                        // @ts-ignore
+                        else if (settings.active_presets[p] == root[key]) settings.active_presets[p] = index
+                    }
                 }
-                if (index < list.length - 1) root[key]++
                 break
         }
         populate_list(elem, list, index)
@@ -1955,6 +2017,7 @@ declare global {
                     })
                     obj.preset = $.extend(true, get_preset_defaults(), obj.preset)
                     settings.presets.push(obj.preset)
+                    migrate_settings(settings)
                     settings.selected_preset = settings.presets.length - 1
                     settings_dialog.refresh()
                     break
@@ -1963,6 +2026,7 @@ declare global {
                     obj.action = $.extend(true, get_action_defaults(), obj.action) // Add defaults
                     const preset = settings.presets[settings.selected_preset]
                     preset.actions.push(obj.action)
+                    migrate_settings(settings)
                     preset.selected_action = preset.actions.length - 1
                     settings_dialog.refresh()
                     break

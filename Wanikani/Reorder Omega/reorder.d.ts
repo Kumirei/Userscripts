@@ -84,8 +84,7 @@ export namespace Settings {
         display_streak: boolean
         burn_bell: boolean
         voice_actor: 'default' | 'random' | 'alternate'
-        back2back: boolean
-        back2back_behavior: 'always' | 'correct' | 'true'
+        back2back_behavior: 'disabled' | 'always' | 'correct' | 'true'
         prioritize: 'none' | 'reading' | 'reading'
         paste_preset?: string
         paste_action?: string
@@ -107,22 +106,28 @@ export namespace Settings {
         name: string
         type: 'none' | 'filter' | 'sort' | 'shuffle' | 'freeze & restore'
         sort: {
-            sort: 'level' | 'srs' | 'leech' | 'overdue' | 'type' | 'overdue_absolute'
-            level: 'asc' | 'desc'
-            srs: 'asc' | 'desc'
-            leech: 'asc' | 'desc'
-            overdue: 'asc' | 'desc'
-            overdue_absolute: 'asc' | 'desc'
-            type: string
+            type: 'level' | 'srs' | 'leech' | 'overdue' | 'type' | 'overdue_absolute'
+            values: {
+                level: 'asc' | 'desc'
+                srs: 'asc' | 'desc'
+                leech: 'asc' | 'desc'
+                overdue: 'asc' | 'desc'
+                overdue_absolute: 'asc' | 'desc'
+                type: string
+            }
         }
         filter: {
-            [key: string]: any
-            filter: string
-            invert: boolean
+            type: string
+            values: {
+                [key: string]: any
+                invert: boolean
+            }
         }
         shuffle: {
-            shuffle: 'random' | 'relative'
-            relative: number
+            type: 'random' | 'relative'
+            values: {
+                relative: number
+            }
         }
     }
 }

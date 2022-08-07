@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.2
+// @version      1.3.3
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -218,41 +218,46 @@ var module = {};
     }
     // Filters items according to the filter action
     function process_filter(action, items) {
-        var filter = wkof.ItemData.registry.sources.wk_items.filters[action.filter.filter];
+        var filter = wkof.ItemData.registry.sources.wk_items.filters[action.filter.type];
         if (!filter)
             return { keep: items, discard: [] }; // Invalid filter, keep everything
         var filter_value = filter.filter_value_map
-            ? filter.filter_value_map(action.filter[action.filter.filter])
-            : action.filter[action.filter.filter];
+            ? filter.filter_value_map(action.filter.values[action.filter.type])
+            : action.filter.values[action.filter.type];
         var filter_func = function (item) {
-            return xor(action.filter.invert, filter.filter_func(filter_value, item));
+            return xor(action.filter.values.invert, filter.filter_func(filter_value, item));
         };
         return keep_and_discard(items, filter_func);
     }
     // Sorts the items based on the provided action settings
     function process_sort_action(action, items) {
         var sort;
-        switch (action.sort.sort) {
+        switch (action.sort.type) {
             case 'level':
-                sort = function (a, b) { return numerical_sort(a.data.level, b.data.level, action.sort.level); };
+                sort = function (a, b) { return numerical_sort(a.data.level, b.data.level, action.sort.values.level); };
                 break;
             case 'type':
-                var order_1 = parse_subject_type_string(action.sort.type);
+                var order_1 = parse_subject_type_string(action.sort.values.type);
                 sort = function (a, b) { return sort_by_list(a.object, b.object, order_1); };
                 break;
             case 'srs':
-                sort = function (a, b) { var _a, _b, _c, _d; return numerical_sort((_b = (_a = a.assignments) === null || _a === void 0 ? void 0 : _a.srs_stage) !== null && _b !== void 0 ? _b : -1, (_d = (_c = b.assignments) === null || _c === void 0 ? void 0 : _c.srs_stage) !== null && _d !== void 0 ? _d : -1, action.sort.srs); };
+                sort = function (a, b) {
+                    var _a, _b, _c, _d;
+                    return numerical_sort((_b = (_a = a.assignments) === null || _a === void 0 ? void 0 : _a.srs_stage) !== null && _b !== void 0 ? _b : -1, (_d = (_c = b.assignments) === null || _c === void 0 ? void 0 : _c.srs_stage) !== null && _d !== void 0 ? _d : -1, action.sort.values.srs);
+                };
                 break;
             case 'overdue':
-                sort = function (a, b) { return numerical_sort(calculate_overdue(a), calculate_overdue(b), action.sort.overdue); };
+                sort = function (a, b) { return numerical_sort(calculate_overdue(a), calculate_overdue(b), action.sort.values.overdue); };
                 break;
             case 'overdue_absolute':
                 sort = function (a, b) {
-                    return numerical_sort(calculate_overdue_days(a), calculate_overdue_days(b), action.sort.overdue_absolute);
+                    return numerical_sort(calculate_overdue_days(a), calculate_overdue_days(b), action.sort.values.overdue_absolute);
                 };
                 break;
             case 'leech':
-                sort = function (a, b) { return numerical_sort(calculate_leech_score(a), calculate_leech_score(b), action.sort.leech); };
+                sort = function (a, b) {
+                    return numerical_sort(calculate_leech_score(a), calculate_leech_score(b), action.sort.values.leech);
+                };
                 break;
             default:
                 return []; // Invalid sort key
@@ -261,12 +266,12 @@ var module = {};
     }
     // Shuffles items based on the provided shuffle setting
     function process_shuffle_action(action, items) {
-        switch (action.shuffle.shuffle) {
+        switch (action.shuffle.type) {
             case undefined:
             case 'random':
                 return shuffle(items);
             case 'relative':
-                return relative_shuffle(items, action.shuffle.relative / 100);
+                return relative_shuffle(items, action.shuffle.values.relative / 100);
             default:
                 return []; // Invalid shuffle type
         }
@@ -786,7 +791,7 @@ var module = {};
                 var _this = this;
                 // @ts-ignore
                 var pass = function (val) { return original_set.call(_this, key, val, options); };
-                if (!settings.back2back || (options === null || options === void 0 ? void 0 : options.b2b_ignore))
+                if (settings.back2back_behavior === 'disabled' || (options === null || options === void 0 ? void 0 : options.b2b_ignore))
                     return pass(value); // Ignore if b2b_ignore flag is present
                 var item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key;
                 // If an answer is being registered
@@ -973,15 +978,58 @@ var module = {};
             display_streak: true,
             burn_bell: false,
             voice_actor: 'default',
-            back2back: false,
             back2back_behavior: 'always',
             prioritize: 'none'
         };
         return wkof.Settings.load(script_id, defaults)
-            .then(
-        // Make settings accessible globally
-        function (wkof_settings) { return (settings = wkof_settings); })
+            .then(function (settings) { return settings; }) // Type cast
+            .then(function (wkof_settings) { return (settings = wkof_settings); }) // Make settings accessible globally
+            .then(migrate_settings) // Migrate settings
+            .then(function () { return wkof.Settings.save(script_id); }) // Save migrated settings
             .then(insert_filter_defaults);
+    }
+    // Migrates settings from old formats to new
+    function migrate_settings(settings) {
+        // Consolidate Back2Back settings
+        // @ts-ignore
+        if (settings.back2back === false) {
+            settings.back2back_behavior = 'disabled';
+        } // @ts-ignore
+        delete settings.back2back;
+        // Better structure for actions
+        for (var _i = 0, _a = settings.presets; _i < _a.length; _i++) {
+            var preset = _a[_i];
+            for (var _b = 0, _c = preset.actions; _b < _c.length; _b++) {
+                var action = _c[_b];
+                // @ts-ignore
+                if (action.sort.sort === undefined)
+                    continue;
+                // Make sure shuffle setting is correct
+                // @ts-ignore
+                if (action.shuffle === undefined)
+                    action.shuffle = { shuffle: 'random', relative: 10 };
+                // Improve structure by moving type to .type and values to .values
+                var types = {
+                    // @ts-ignore
+                    sort: { type: action.sort.sort, values: {} },
+                    filter: { type: action.filter.filter, values: {} },
+                    shuffle: { type: action.shuffle.shuffle, values: {} }
+                };
+                for (var _d = 0, _e = ['sort', 'filter', 'shuffle']; _d < _e.length; _d++) {
+                    var type = _e[_d];
+                    // @ts-ignore
+                    for (var key in action[type]) {
+                        if (key === type)
+                            continue; // @ts-ignore
+                        types[type].values[key] = action[type][key]; // @ts-ignore
+                    }
+                }
+                action.sort = types.sort;
+                action.filter = types.filter;
+                action.shuffle = types.shuffle;
+            }
+        }
+        return settings;
     }
     // Inserts the defaults of registered filters into each action
     function insert_filter_defaults() {
@@ -1087,18 +1135,13 @@ var module = {};
                                     label: 'Burn Bell',
                                     hover_tip: 'Play a bell sound when you burn an item'
                                 },
-                                back2back: {
-                                    type: 'checkbox',
-                                    "default": false,
-                                    label: 'Back To Back',
-                                    hover_tip: 'Get reading and meaning question back to back'
-                                },
                                 back2back_behavior: {
                                     type: 'dropdown',
                                     "default": 'always',
                                     label: 'Back To Back Behavior',
-                                    hover_tip: 'Choose whether to:\n1. Keep repeating the same question until you get it right\n2. Only keep the item if you answered the first question correctly\n3. Make it so that you have to answer both questions correctly back to back',
+                                    hover_tip: 'Choose whether to:\n1. Have the vanilla experience\n2. Keep repeating the same question until you get it right\n3. Only keep the item if you answered the first question correctly\n4. Make it so that you have to answer both questions correctly back to back',
                                     content: {
+                                        disabled: 'Disabled',
                                         always: 'Repeat until correct',
                                         correct: 'Shuffle incorrect',
                                         "true": 'True Back To Back'
@@ -1244,7 +1287,7 @@ var module = {};
                                     "default": 'level',
                                     label: 'Filter Type',
                                     hover_tip: 'Choose what kind of filter this is',
-                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.filter',
+                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.type',
                                     content: {
                                     // Will be populated
                                     },
@@ -1255,7 +1298,7 @@ var module = {};
                                     "default": 'level',
                                     label: 'Sort Type',
                                     hover_tip: 'Choose what kind of sort this is',
-                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.sort',
+                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.type',
                                     content: {
                                         type: 'Type',
                                         level: 'Level',
@@ -1272,7 +1315,7 @@ var module = {};
                                     "default": 'random',
                                     label: 'Shuffle Type',
                                     hover_tip: 'Choose what kind of shuffle this is',
-                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.shuffle',
+                                    path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.type',
                                     content: {
                                         random: 'Random',
                                         relative: 'Relative'
@@ -1386,18 +1429,17 @@ var module = {};
                 $.extend(true, get_action_defaults(), {
                     name: 'Filter out non-critical items',
                     type: 'filter',
-                    filter: (_a = {
-                            filter: "".concat(script_id, "_critical")
-                        },
-                        _a["".concat(script_id, "_critical")] = true,
-                        _a)
+                    filter: {
+                        type: "".concat(script_id, "_critical"),
+                        values: (_a = {}, _a["".concat(script_id, "_critical")] = true, _a)
+                    }
                 }),
                 $.extend(true, get_action_defaults(), {
                     name: 'Get radicals first',
                     type: 'sort',
                     sort: {
-                        sort: 'type',
-                        type: 'rad'
+                        type: 'type',
+                        values: { type: 'rad' }
                     }
                 }),
                 $.extend(true, get_action_defaults(), {
@@ -1414,7 +1456,7 @@ var module = {};
                 $.extend(true, get_action_defaults(), {
                     name: 'Sort by level',
                     type: 'sort',
-                    sort: { sort: 'level' }
+                    sort: { type: 'level' }
                 }),
             ]
         });
@@ -1426,7 +1468,7 @@ var module = {};
                 $.extend(true, get_action_defaults(), {
                     name: 'Sort by SRS',
                     type: 'sort',
-                    sort: { sort: 'srs' }
+                    sort: { type: 'srs' }
                 }),
             ]
         });
@@ -1439,8 +1481,8 @@ var module = {};
                     name: 'Sort by item type',
                     type: 'sort',
                     sort: {
-                        sort: 'type',
-                        type: 'rad, kan, voc'
+                        type: 'type',
+                        values: { type: 'rad, kan, voc' }
                     }
                 }),
             ]
@@ -1454,18 +1496,17 @@ var module = {};
                     name: 'Filter burns',
                     type: 'filter',
                     filter: {
-                        filter: 'srs',
-                        srs: { burn: true }
+                        type: 'srs',
+                        values: { srs: { burn: true } }
                     }
                 }),
                 $.extend(true, get_action_defaults(), {
                     name: 'Get first 100 items',
                     type: 'filter',
-                    filter: (_b = {
-                            filter: "".concat(script_id, "_first")
-                        },
-                        _b["".concat(script_id, "_first")] = 100,
-                        _b)
+                    filter: {
+                        type: "".concat(script_id, "_first"),
+                        values: (_b = {}, _b["".concat(script_id, "_first")] = 100, _b)
+                    }
                 }),
             ]
         });
@@ -1477,16 +1518,15 @@ var module = {};
                 $.extend(true, get_action_defaults(), {
                     name: 'Sort by level to follow SRS',
                     type: 'sort',
-                    sort: { sort: 'srs' }
+                    sort: { type: 'srs' }
                 }),
                 $.extend(true, get_action_defaults(), {
                     name: 'Do 100 items a day to avoid burnout',
                     type: 'filter',
-                    filter: (_c = {
-                            filter: "".concat(script_id, "_first")
-                        },
-                        _c["".concat(script_id, "_first")] = 100,
-                        _c)
+                    filter: {
+                        type: "".concat(script_id, "_first"),
+                        values: (_c = {}, _c["".concat(script_id, "_first")] = 100, _c)
+                    }
                 }),
                 $.extend(true, get_action_defaults(), {
                     name: 'Shuffle for the benefits of interleaving',
@@ -1503,9 +1543,8 @@ var module = {};
                     name: 'Filter learned items',
                     type: 'filter',
                     filter: {
-                        filter: "srs",
-                        srs: { lock: true, init: true },
-                        invert: true
+                        type: "srs",
+                        values: { srs: { lock: true, init: true }, invert: true }
                     }
                 }),
             ]
@@ -1528,39 +1567,50 @@ var module = {};
         var defaults = {
             name: 'New Action',
             type: 'none',
-            filter: { filter: 'level', invert: false },
+            filter: {
+                type: 'level',
+                values: {
+                    invert: false
+                }
+            },
             sort: {
-                sort: 'level',
-                type: 'rad, kan, voc'
+                type: 'level',
+                values: {
+                    type: 'rad, kan, voc'
+                }
             },
             shuffle: {
-                shuffle: 'random',
-                relative: 10
+                type: 'random',
+                values: {
+                    relative: 10
+                }
             }
         }; // Casting because it is still incomplete
         for (var _i = 0, _a = Object.entries(wkof.ItemData.registry.sources.wk_items.filters); _i < _a.length; _i++) {
             var _b = _a[_i], name_1 = _b[0], filter = _b[1];
-            defaults.filter[name_1] = filter["default"];
+            defaults.filter.values[name_1] = filter["default"];
         }
         for (var _c = 0, _d = ['level', 'srs', 'leech', 'overdue', 'overdue_absolute']; _c < _d.length; _c++) {
             var type = _d[_c];
-            defaults.sort[type] = 'asc';
+            defaults.sort.values[type] = 'asc';
         }
         return defaults;
     }
     // Deletes all unused data from an action
     function delete_action_defaults(action) {
         var _a, _b;
-        if (action.type !== 'filter' && action.type !== 'sort')
+        if (action.type !== 'filter' && action.type !== 'sort' && action.type !== 'shuffle')
             return { name: action.name, type: action.type };
         return _a = {
                 name: action.name,
                 type: action.type
             },
-            _a[action.type] = (_b = {},
-                _b[action.type] = action[action.type][action.type],
-                _b[action[action.type][action.type]] = action[action.type][action[action.type][action.type]],
-                _b),
+            _a[action.type] = {
+                type: action[action.type].type,
+                values: (_b = {},
+                    _b[action[action.type].type] = action[action.type].values[action[action.type].type],
+                    _b)
+            },
             _a;
     }
     // Populate the active preset dropdowns in the general tabs with the available presets for those pages
@@ -1601,7 +1651,7 @@ var module = {};
                 multi: filter.type === 'multi',
                 label: (_b = filter.label) !== null && _b !== void 0 ? _b : 'Filter Value',
                 hover_tip: (_c = filter.hover_tip) !== null && _c !== void 0 ? _c : 'Choose a value for your filter',
-                path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.".concat(name_2),
+                path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.values.".concat(name_2),
                 content: filter.content
             };
         }
@@ -1611,7 +1661,7 @@ var module = {};
             "default": false,
             label: 'Invert Filter',
             hover_tip: 'Check this box if you want to invert the effect of this filter.',
-            path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.invert'
+            path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.values.invert'
         };
         // Populate sort values
         var numerical_sort_config = function (type) {
@@ -1620,7 +1670,7 @@ var module = {};
                 "default": 'asc',
                 label: 'Order',
                 hover_tip: 'Sort in ascending or descending order',
-                path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.".concat(type),
+                path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.values.".concat(type),
                 content: { asc: 'Ascending', desc: 'Descending' }
             });
         };
@@ -1631,7 +1681,7 @@ var module = {};
             placeholder: 'rad, kan, voc',
             label: 'Order',
             hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad"',
-            path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.type"
+            path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.values.type"
         };
         // Other sorts are identical
         for (var _f = 0, _g = ['level', 'srs', 'leech', 'overdue', 'critical', 'overdue_absolute']; _f < _g.length; _f++) {
@@ -1645,7 +1695,7 @@ var module = {};
             "default": 10,
             label: 'Shuffle Distance (%)',
             hover_tip: 'The distance you want any given item to be able to move relative to its start position. Percentage of total number of items.',
-            path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.relative"
+            path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.values.relative"
         };
     }
     // -----------------------------------------------------------------------------------------------------------------
@@ -1692,7 +1742,7 @@ var module = {};
         if (['sort', 'filter', 'shuffle'].includes(action.type)) {
             // @ts-ignore
             // Don't know how to type this properly
-            $("#".concat(script_id, "_").concat(action.type, "_by_").concat(action[action.type][action.type]))
+            $("#".concat(script_id, "_").concat(action.type, "_by_").concat(action[action.type].type))
                 .closest('.row')
                 .addClass('visible_action_value');
         }
@@ -1771,25 +1821,35 @@ var module = {};
                 break;
             case 'up':
                 swap(list, index - 1, index);
-                // Update selected preset
-                if (ref === 'preset' && index > 0) {
-                    for (var key_1 in settings.active_presets) // @ts-ignore
-                        if (settings.active_presets[key_1] == index)
-                            settings.active_presets[key_1]--;
-                }
                 if (index > 0)
                     root[key]--;
+                // Update selected preset
+                if (ref === 'preset' && index > 0) {
+                    for (var p in settings.active_presets) {
+                        // @ts-ignore
+                        if (settings.active_presets[p] == index)
+                            settings.active_presets[p] = root[key];
+                        // @ts-ignore
+                        else if (settings.active_presets[p] == root[key])
+                            settings.active_presets[p] = index;
+                    }
+                }
                 break;
             case 'down':
                 swap(list, index + 1, index);
-                // Update selected preset
-                if (ref === 'preset' && index < list.length - 1) {
-                    for (var key_2 in settings.active_presets) // @ts-ignore
-                        if (settings.active_presets[key_2] == index)
-                            settings.active_presets[key_2]++;
-                }
                 if (index < list.length - 1)
                     root[key]++;
+                // Update selected preset
+                if (ref === 'preset' && index < list.length - 1) {
+                    for (var p in settings.active_presets) {
+                        // @ts-ignore
+                        if (settings.active_presets[p] == index)
+                            settings.active_presets[p] = root[key];
+                        // @ts-ignore
+                        else if (settings.active_presets[p] == root[key])
+                            settings.active_presets[p] = index;
+                    }
+                }
                 break;
         }
         populate_list(elem, list, index);
@@ -1814,6 +1874,7 @@ var module = {};
                     });
                     obj.preset = $.extend(true, get_preset_defaults(), obj.preset);
                     settings.presets.push(obj.preset);
+                    migrate_settings(settings);
                     settings.selected_preset = settings.presets.length - 1;
                     settings_dialog.refresh();
                     break;
@@ -1823,6 +1884,7 @@ var module = {};
                     obj.action = $.extend(true, get_action_defaults(), obj.action); // Add defaults
                     var preset = settings.presets[settings.selected_preset];
                     preset.actions.push(obj.action);
+                    migrate_settings(settings);
                     preset.selected_action = preset.actions.length - 1;
                     settings_dialog.refresh();
                     break;
