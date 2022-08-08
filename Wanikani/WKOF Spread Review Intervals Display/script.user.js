@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Spread Review Intervals Display
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Extends the SRS interval by a random amount by filtering out items that are not within the interval.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?/
@@ -27,7 +27,7 @@
         const count = items.filter((item) => {
             if (!item?.assignments?.available_at) return false
             const overdue = calculate_overdue(item)
-            const spread = (seeded_prng(item.assignments.available_at) * interval) / 100
+            const spread = (seeded_prng(item.assignments.available_at + item.id) * interval) / 100
             return overdue > spread
         }).length
         $('.navigation-shortcut--reviews span').text(String(count))

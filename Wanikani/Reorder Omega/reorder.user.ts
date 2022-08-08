@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.3
+// @version      1.3.4
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -993,7 +993,7 @@ declare global {
             filter_func: (value, item) => {
                 if (!item.assignments?.available_at) return false
                 const overdue = calculate_overdue(item)
-                const spread = (seeded_prng(item.assignments.available_at) * value) / 100
+                const spread = (seeded_prng(item.assignments.available_at + item.id) * value) / 100
                 return overdue > spread
             },
             set_options: (options) => (options.assignments = true),

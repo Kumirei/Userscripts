@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.3
+// @version      1.3.4
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -932,7 +932,7 @@ var module = {};
                 if (!((_a = item.assignments) === null || _a === void 0 ? void 0 : _a.available_at))
                     return false;
                 var overdue = calculate_overdue(item);
-                var spread = (seeded_prng(item.assignments.available_at) * value) / 100;
+                var spread = (seeded_prng(item.assignments.available_at + item.id) * value) / 100;
                 return overdue > spread;
             },
             set_options: function (options) { return (options.assignments = true); }
