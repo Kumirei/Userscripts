@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Settings Exporter & Importer
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Imports and exports your WKOF settings
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?/
@@ -266,7 +266,7 @@ declare global {
         const elem = porter.dialog.find('[name="select_scripts_import"]')
         let html = ''
         for (let script of Object.keys(settings))
-            html += `<option value="${script}">${prettify_script_id(script)}</option>`
+            html += `<option value="${script}" selected>${prettify_script_id(script)}</option>`
         elem.html(html)
     }
 

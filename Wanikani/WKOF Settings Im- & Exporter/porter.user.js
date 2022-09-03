@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Settings Exporter & Importer
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Imports and exports your WKOF settings
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?/
@@ -255,7 +255,7 @@ var module = {};
         var html = '';
         for (var _i = 0, _a = Object.keys(settings); _i < _a.length; _i++) {
             var script = _a[_i];
-            html += "<option value=\"".concat(script, "\">").concat(prettify_script_id(script), "</option>");
+            html += "<option value=\"".concat(script, "\" selected>").concat(prettify_script_id(script), "</option>");
         }
         elem.html(html);
     }
