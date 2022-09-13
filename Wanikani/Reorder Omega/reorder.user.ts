@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.4
+// @version      1.3.5
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
 // @grant        none
-// @run-at       document-idle
+// @run-at       document-start
 // @license      MIT
 // ==/UserScript==
 
@@ -72,15 +72,19 @@ declare global {
     // redirects, thus we have to do it before initializing WKOF
     if (page === 'self_study') display_loading()
 
+    function loading_screen(state: boolean) {
+        $('#character > span:first-child').text('Loading Omega...')
+    }
+
+    // Install css
+    install_css()
+
     // Initiate WKOF
     await confirm_wkof()
     wkof.include('Settings,Menu,ItemData,Apiv2') // Apiv2 purely for the user module
     wkof.ready('ItemData.registry').then(install_filters)
     await wkof.ready('Settings,Menu').then(load_settings).then(install_menu)
     await wkof.ready('ItemData,Apiv2')
-
-    // Install css
-    install_css()
 
     // Decide what to do depending on the page
     switch (page) {
@@ -97,6 +101,7 @@ declare global {
             await get_queue()
             track_completed(completed)
             run()
+            loading_screen(false)
             break
     }
 
@@ -1003,6 +1008,8 @@ declare global {
     // Installs the CSS
     function install_css() {
         const css = `
+            body.reorder_omega_loading > #loading { display: block !important; }
+
             #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }
 
             #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {
@@ -1107,7 +1114,7 @@ declare global {
             display_streak: true,
             burn_bell: false,
             voice_actor: 'default',
-            back2back_behavior: 'always',
+            back2back_behavior: 'disabled',
             prioritize: 'none',
         }
         return wkof.Settings.load(script_id, defaults)
