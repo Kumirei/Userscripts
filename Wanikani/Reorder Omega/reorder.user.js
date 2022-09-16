@@ -2,12 +2,12 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.4
+// @version      1.3.6
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
 // @grant        none
-// @run-at       document-start
+// @run-at       document-idle
 // @license      MIT
 // ==/UserScript==
 var __assign = (this && this.__assign) || function () {
@@ -981,7 +981,7 @@ var module = {};
             display_streak: true,
             burn_bell: false,
             voice_actor: 'default',
-            back2back_behavior: 'always',
+            back2back_behavior: 'disabled',
             prioritize: 'none'
         };
         return wkof.Settings.load(script_id, defaults)
@@ -1912,7 +1912,6 @@ var module = {};
                 script_id = 'reorder_omega';
                 script_name = 'Reorder Omega';
                 wkof = window.wkof, $ = window.$, WaniKani = window.WaniKani;
-                loading_screen(true);
                 MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 };
                 current_item_key = 'currentItem', active_queue_key = 'activeQueue', inactive_queue_key = 'reviewQueue', question_type_key = 'questionType', UID_prefix = '', egg_timer_location = '#summary-button', preset_selection_location = '#character';
                 page = set_page_variables();
