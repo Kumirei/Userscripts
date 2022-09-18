@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.7
+// @version      1.3.8
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -72,14 +72,11 @@ declare global {
     // redirects, thus we have to do it before initializing WKOF
     if (page === 'self_study') display_loading()
 
-    function loading_screen(state: boolean) {
-        $('#character > span:first-child').text('Loading Omega...')
-    }
-
     // Install css
     install_css()
 
     // Initiate WKOF
+    loading_screen(true) // Hide session until script has loaded
     await confirm_wkof()
     wkof.include('Settings,Menu,ItemData,Apiv2') // Apiv2 purely for the user module
     wkof.ready('ItemData.registry').then(install_filters)
@@ -100,10 +97,10 @@ declare global {
             set_body_attributes()
             await get_queue()
             track_completed(completed)
-            run()
-            loading_screen(false)
+            await run()
             break
     }
+    loading_screen(false)
 
     // Set all the global variables which have different values on different pages
     function set_page_variables(): 'other' | 'dashboard' | 'reviews' | 'lessons' | 'extra_study' | 'self_study' {
@@ -139,6 +136,11 @@ declare global {
         }
 
         return page
+    }
+
+    function loading_screen(state: boolean) {
+        if (state) $('body').addClass('reorder_omega_loading')
+        else $('body').removeClass('reorder_omega_loading')
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -194,7 +196,7 @@ declare global {
 
         // Process and update queue
         queue = process_queue(queue)
-        update_queue(queue)
+        return update_queue(queue)
     }
 
     // Finds the active preset and runs it against the queue
@@ -1008,7 +1010,7 @@ declare global {
     // Installs the CSS
     function install_css() {
         const css = `
-            body.reorder_omega_loading > #loading { display: block !important; }
+            body.reorder_omega_loading > #loading { display: block !important; opacity: 1 !important  }
 
             #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }
 

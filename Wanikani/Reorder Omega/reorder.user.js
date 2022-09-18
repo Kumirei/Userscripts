@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.7
+// @version      1.3.8
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -72,9 +72,6 @@ var module = {};
 // Actual script
 ;
 (function () { return __awaiter(void 0, void 0, void 0, function () {
-    function loading_screen(state) {
-        $('#character > span:first-child').text('Loading Omega...');
-    }
     // Set all the global variables which have different values on different pages
     function set_page_variables() {
         var path = window.location.pathname;
@@ -111,6 +108,12 @@ var module = {};
                 break;
         }
         return page;
+    }
+    function loading_screen(state) {
+        if (state)
+            $('body').addClass('reorder_omega_loading');
+        else
+            $('body').removeClass('reorder_omega_loading');
     }
     // -----------------------------------------------------------------------------------------------------------------
     // PROCESS QUEUE
@@ -174,8 +177,7 @@ var module = {};
                 }
                 // Process and update queue
                 queue = process_queue(queue);
-                update_queue(queue);
-                return [2 /*return*/];
+                return [2 /*return*/, update_queue(queue)];
             });
         });
     }
@@ -943,7 +945,7 @@ var module = {};
     }
     // Installs the CSS
     function install_css() {
-        var css = "\n            body.reorder_omega_loading > #loading { display: block !important; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #active_preset {\n                font-size: 1rem;\n                line-height: 1rem;\n                padding: 0.5rem;\n                position: absolute;\n                bottom: 0;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n            }\n\n            #active_preset select option { color: black; }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n\n            #wkof_ds #paste_preset,\n            #wkof_ds #paste_action {\n                height: 0;\n                padding: 0;\n                border: 0;\n                display: block;\n            }\n\n            #main-info {\n                position: relative;\n            }\n\n            #stats { z-index: 1 }\n        ";
+        var css = "\n            body.reorder_omega_loading > #loading { display: block !important; opacity: 1 !important  }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #active_preset {\n                font-size: 1rem;\n                line-height: 1rem;\n                padding: 0.5rem;\n                position: absolute;\n                bottom: 0;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n            }\n\n            #active_preset select option { color: black; }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n\n            #wkof_ds #paste_preset,\n            #wkof_ds #paste_action {\n                height: 0;\n                padding: 0;\n                border: 0;\n                display: block;\n            }\n\n            #main-info {\n                position: relative;\n            }\n\n            #stats { z-index: 1 }\n        ";
         $('head').append("<style id=\"".concat(script_id, "_css\">").concat(css, "</style>"));
     }
     // -----------------------------------------------------------------------------------------------------------------
@@ -1927,9 +1929,9 @@ var module = {};
                 // Install css
                 install_css();
                 // Initiate WKOF
+                loading_screen(true); // Hide session until script has loaded
                 return [4 /*yield*/, confirm_wkof()];
             case 1:
-                // Initiate WKOF
                 _b.sent();
                 wkof.include('Settings,Menu,ItemData,Apiv2'); // Apiv2 purely for the user module
                 wkof.ready('ItemData.registry').then(install_filters);
@@ -1949,10 +1951,10 @@ var module = {};
                     case 'extra_study': return [3 /*break*/, 5];
                     case 'self_study': return [3 /*break*/, 5];
                 }
-                return [3 /*break*/, 7];
+                return [3 /*break*/, 8];
             case 4:
                 add_to_extra_study_section();
-                return [3 /*break*/, 7];
+                return [3 /*break*/, 8];
             case 5:
                 install_interface();
                 install_extra_features();
@@ -1961,10 +1963,12 @@ var module = {};
             case 6:
                 _b.sent();
                 track_completed(completed);
-                run();
-                loading_screen(false);
-                return [3 /*break*/, 7];
+                return [4 /*yield*/, run()];
             case 7:
+                _b.sent();
+                return [3 /*break*/, 8];
+            case 8:
+                loading_screen(false);
                 return [2 /*return*/];
         }
     });
