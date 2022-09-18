@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.6
+// @version      1.3.7
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -427,7 +427,7 @@ declare global {
         const mutual = {
             auxiliary_meanings: item.data.auxiliary_meanings ?? [],
             characters: item.data.characters,
-            en: item.data.meanings.filter((meaning) => meaning.primary).map((meaning) => meaning.meaning),
+            en: item.data.meanings.filter((meaning) => meaning.accepted_answer).map((meaning) => meaning.meaning),
             id: item.id,
             slug: item.data.slug,
             srs: item.assignments?.srs_stage,

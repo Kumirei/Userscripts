@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.6
+// @version      1.3.7
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -435,7 +435,7 @@ var module = {};
         var mutual = (_a = {
                 auxiliary_meanings: (_b = item.data.auxiliary_meanings) !== null && _b !== void 0 ? _b : [],
                 characters: item.data.characters,
-                en: item.data.meanings.filter(function (meaning) { return meaning.primary; }).map(function (meaning) { return meaning.meaning; }),
+                en: item.data.meanings.filter(function (meaning) { return meaning.accepted_answer; }).map(function (meaning) { return meaning.meaning; }),
                 id: item.id,
                 slug: item.data.slug,
                 srs: (_c = item.assignments) === null || _c === void 0 ? void 0 : _c.srs_stage,
