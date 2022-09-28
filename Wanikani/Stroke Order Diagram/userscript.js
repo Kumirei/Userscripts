@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        WaniKani Stroke Order
 // @namespace   japanese
-// @version     1.1.13
+// @version     1.1.14
 // @description Shows a kanji's stroke order on its page and during lessons and reviews.
 // @license     GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 // @include     http*://*wanikani.com/kanji/*
@@ -67,7 +67,7 @@
         return new Promise((resolve, reject) =>
             GM_xmlhttpRequest({
                 method: 'GET',
-                url: new URL(urlText),
+                url: urlText,
                 onload: (xhr) => {
                     xhr.status === 200 ? resolve(xhr) : reject(xhr.responseText)
                 },
