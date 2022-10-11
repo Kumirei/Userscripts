@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Settings Exporter & Importer
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Imports and exports your WKOF settings
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?/
@@ -327,20 +327,26 @@ var module = {};
     }
     var script_id, script_name, wkof, porter;
     return __generator(this, function (_a) {
-        script_id = 'settings_exporter';
-        script_name = 'Settings Exporter';
-        wkof = window.wkof;
-        porter = {
-            available_scripts: [],
-            exported_settings: '{}',
-            imported_settings: {},
-            dialog: $()
-        };
-        // Init
-        confirm_wkof();
-        wkof.include('Menu,Settings');
-        wkof.ready('Menu,Settings').then(install_menu).then(install_css);
-        return [2 /*return*/];
+        switch (_a.label) {
+            case 0:
+                script_id = 'settings_exporter';
+                script_name = 'Settings Exporter';
+                wkof = window.wkof;
+                // Init
+                confirm_wkof();
+                wkof.include('Menu,Settings,Jquery');
+                wkof.ready('Menu,Settings').then(install_menu).then(install_css);
+                return [4 /*yield*/, wkof.ready('Jquery')];
+            case 1:
+                _a.sent();
+                porter = {
+                    available_scripts: [],
+                    exported_settings: '{}',
+                    imported_settings: {},
+                    dialog: $()
+                };
+                return [2 /*return*/];
+        }
     });
 }); })();
 module.exports = null;

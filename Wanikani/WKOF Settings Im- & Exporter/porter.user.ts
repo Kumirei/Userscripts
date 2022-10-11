@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Settings Exporter & Importer
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Imports and exports your WKOF settings
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?/
@@ -36,17 +36,19 @@ declare global {
     // Globals
     const { wkof } = window
     type settings = { [key: string]: { [key: string]: any } }
+
+    // Init
+    confirm_wkof()
+    wkof.include('Menu,Settings,Jquery')
+    wkof.ready('Menu,Settings').then(install_menu).then(install_css)
+    await wkof.ready('Jquery')
+
     const porter = {
         available_scripts: [] as string[],
         exported_settings: '{}',
         imported_settings: {} as settings,
         dialog: $() as JQuery,
     }
-
-    // Init
-    confirm_wkof()
-    wkof.include('Menu,Settings')
-    wkof.ready('Menu,Settings').then(install_menu).then(install_css)
 
     // Makes sure that WKOF is installed
     async function confirm_wkof(): Promise<void> {

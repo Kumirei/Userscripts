@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: True Level
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Don't level up until you finish all lessons from previous levels
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?/
@@ -10,7 +10,7 @@
 // @license      MIT
 // ==/UserScript==
 
-;(async (wkof, $) => {
+;(async (wkof) => {
     // Script info
     const script_id = 'true_level'
     const script_name = 'True Level'
@@ -45,16 +45,21 @@
         let lessons = items.filter((item) => item.assignments?.srs_stage === 0 && item.assignments.unlocked_at)
         lowestLessonLevel = lessons.reduce((lowest, item) => Math.min(lowest, item.data.level), lowestLessonLevel)
         const count = lessons.filter((item) => item.data.level === lowestLessonLevel).length
-        // Update header count
-        $('.navigation-shortcut--lessons span').text(count)
-        $('.navigation-shortcut--lessons').attr('data-count', count)
-        // Update summary page count
-        $('#lessons-summary #lesson-queue-count').text(count)
-        // Update big button count
-        $('.lessons-and-reviews__lessons-button span').text(count)
-        $('.lessons-and-reviews__lessons-button').attr('class', getClass(count))
+        // Update counts
+        const counts = [
+            '.navigation-shortcut--lessons span',
+            '#lessons-summary #lesson-queue-count',
+            '.lessons-and-reviews__lessons-button span',
+        ]
+        counts
+            .map((selector) => document.querySelector('.navigation-shortcut--lessons span'))
+            .filter((a) => a)
+            .forEach((elem) => (elem.textContent = count))
+        document.querySelector('.navigation-shortcut--lessons')?.setAttribute('data-count', count)
+        document.querySelector('.lessons-and-reviews__lessons-button')?.setAttribute('class', getClass(count))
         // Update level
-        $('.user-summary__attributes > li:first-child a').text(`Level ${lowestLessonLevel}`)
+        const levelElem = document.querySelector('.user-summary__attributes > li:first-child a')
+        if (levelElem) levelElem.textContent = `Level ${lowestLessonLevel}`
         // TODO: Update progress
         //$('.dashboard-progress .progress-component h1').text(`Level ${lowestLessonLevel} Progress`)
         setTimeout(update_counts, (60 - new Date().getMinutes()) * 1000 * 60 + 1000) // Update counts within a minute of top of the hour
@@ -77,4 +82,4 @@
             }
         }
     }
-})(window.wkof, window.jQuery)
+})(window.wkof)
