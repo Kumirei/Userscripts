@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        WaniKani Stroke Order
 // @namespace   japanese
-// @version     1.1.16
+// @version     1.1.17
 // @description Shows a kanji's stroke order on its page and during lessons and reviews.
 // @license     GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 // @include     http*://*wanikani.com/kanji/*
@@ -103,7 +103,7 @@
     }
 
     /*
-     * Lifted from jisho.org
+     * Lifted from jisho.org, modified to allow multiple rows
      */
     var strokeOrderDiagram = function (element, svgDocument) {
         var s = Snap(element)
@@ -113,9 +113,11 @@
         var f = Snap(svgDocument.getElementsByTagName('svg')[0])
         var allPaths = f.selectAll('path')
         var drawnPaths = []
-        var canvasWidth = (allPaths.length * diagramSize) / 2
-        var canvasHeight = diagramSize / 2
+        var framesPerRow = 10
+        var rowCount = Math.floor(allPaths.length / framesPerRow) + 1
+        var canvasWidth = (Math.min(framesPerRow, allPaths.length) * diagramSize) / 2
         var frameSize = diagramSize / 2
+        var canvasHeight = frameSize * rowCount
         var frameOffsetMatrix = new Snap.Matrix()
         frameOffsetMatrix.translate(-frameSize / 16 + 2, -frameSize / 16 + 2)
 
@@ -127,27 +129,37 @@
         // Draw global guides
         var boundingBoxTop = s.line(1, 1, canvasWidth - 1, 1)
         var boundingBoxLeft = s.line(1, 1, 1, canvasHeight - 1)
-        var boundingBoxBottom = s.line(1, canvasHeight - 1, canvasWidth - 1, canvasHeight - 1)
-        var horizontalGuide = s.line(0, canvasHeight / 2, canvasWidth, canvasHeight / 2)
+        for (var i = 0; i < rowCount; i++) {
+            var horizontalY = frameSize / 2 + i * frameSize
+            var horizontalGuide = s.line(0, horizontalY, canvasWidth, horizontalY)
+            horizontalGuide.attr({ class: 'stroke_order_diagram--guide_line' })
+            var boundingBoxBottom = s.line(1, frameSize * (i + 1) - 1, canvasWidth - 1, frameSize * (i + 1) - 1)
+            boundingBoxBottom.attr({ class: 'stroke_order_diagram--bounding_box' })
+        }
         boundingBoxTop.attr({ class: 'stroke_order_diagram--bounding_box' })
         boundingBoxLeft.attr({ class: 'stroke_order_diagram--bounding_box' })
-        boundingBoxBottom.attr({ class: 'stroke_order_diagram--bounding_box' })
-        horizontalGuide.attr({ class: 'stroke_order_diagram--guide_line' })
 
         // Draw strokes
         var pathNumber = 1
         allPaths.forEach(function (currentPath) {
+            var effectivePathNumber = ((pathNumber - 1) % framesPerRow) + 1
+            var effectiveY = Math.floor((pathNumber - 1) / framesPerRow) * frameSize
             var moveFrameMatrix = new Snap.Matrix()
-            moveFrameMatrix.translate(frameSize * (pathNumber - 1) - 4, -4)
+            moveFrameMatrix.translate(frameSize * (effectivePathNumber - 1) - 4, -4 + effectiveY)
 
             // Draw frame guides
             var verticalGuide = s.line(
-                frameSize * pathNumber - frameSize / 2,
+                frameSize * effectivePathNumber - frameSize / 2,
                 1,
-                frameSize * pathNumber - frameSize / 2,
+                frameSize * effectivePathNumber - frameSize / 2,
                 canvasHeight - 1,
             )
-            var frameBoxRight = s.line(frameSize * pathNumber - 1, 1, frameSize * pathNumber - 1, canvasHeight - 1)
+            var frameBoxRight = s.line(
+                frameSize * effectivePathNumber - 1,
+                1,
+                frameSize * effectivePathNumber - 1,
+                canvasHeight - 1,
+            )
             verticalGuide.attr({ class: 'stroke_order_diagram--guide_line' })
             frameBoxRight.attr({ class: 'stroke_order_diagram--bounding_box' })
 
