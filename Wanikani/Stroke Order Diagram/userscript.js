@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        WaniKani Stroke Order
 // @namespace   japanese
-// @version     1.1.15
+// @version     1.1.16
 // @description Shows a kanji's stroke order on its page and during lessons and reviews.
 // @license     GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 // @include     http*://*wanikani.com/kanji/*
@@ -82,7 +82,7 @@
      * Adds the diagram section element to the appropriate location
      */
     async function loadDiagram(injectorState) {
-        let xhr = await xmlHttpRequest(JISHO + '/search/' + injectorState.characters + '%20%23kanji')
+        let xhr = await xmlHttpRequest(JISHO + '/search/' + encodeURI(injectorState.characters) + '%20%23kanji')
 
         let strokeOrderSvg = xhr.responseText.match(/var url = '\/\/(.+)';/)
         if (!strokeOrderSvg) return null
