@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Bottled WaniMeKani
 // @namespace    http://tampermonkey.net/
-// @version      1.18.4
+// @version      1.18.5
 // @description  Adds WaniMeKani functions to your own posts
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -18,11 +18,13 @@
 
     // Inject if the save function is defined
     function tryInject() {
-        const old_save = unsafeWindow.require('discourse/controllers/composer').default.prototype.save
-        if (old_save) {
-            clearInterval(i)
-            inject(old_save)
-        }
+        try {
+            const old_save = unsafeWindow.require?.('discourse/controllers/composer')?.default.prototype.save
+            if (old_save) {
+                clearInterval(i)
+                inject(old_save)
+            }
+        } catch {}
     }
 
     // Wrap the save function with our own function
