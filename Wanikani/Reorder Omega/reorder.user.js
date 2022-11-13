@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.8
+// @version      1.3.9
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -313,9 +313,18 @@ var module = {};
     }
     // Displays a message to the user by setting the current item to a vocabulary word with the message
     function display_message(message) {
-        var dummy = { type: 'Vocabulary', voc: message, id: 0 };
-        $.jStorage.set(inactive_queue_key, []);
+        var dummy = {
+            type: 'Vocabulary',
+            voc: message,
+            id: 0,
+            collocations: [],
+            kanji: [],
+            en: [],
+            parts_of_speech: [],
+            sentences: []
+        };
         $.jStorage.set(active_queue_key, [dummy]);
+        $.jStorage.set(inactive_queue_key, [dummy]);
         $.jStorage.set(current_item_key, dummy, { b2b_ignore: true });
     }
     // Takes a list of WKOF item and puts them into the queue
