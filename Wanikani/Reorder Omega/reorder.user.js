@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.10
+// @version      1.3.11
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -330,9 +330,9 @@ var module = {};
     // Takes a list of WKOF item and puts them into the queue
     function update_queue(items) {
         return __awaiter(this, void 0, void 0, function () {
-            var current_item, active_queue, rest, _a, active_queue_composition, _b;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            var current_item, active_queue, rest, _a, active_queue_composition;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
                         if (!items.length)
                             return [2 /*return*/, display_message('No items in preset')];
@@ -343,15 +343,15 @@ var module = {};
                             case 'self_study': return [3 /*break*/, 3];
                             case 'reviews': return [3 /*break*/, 5];
                         }
-                        return [3 /*break*/, 10];
+                        return [3 /*break*/, 7];
                     case 1:
                         update_lesson_counts(items);
                         return [4 /*yield*/, get_item_data(items)];
                     case 2:
-                        rest = _c.sent();
+                        rest = _b.sent();
                         active_queue = rest.splice(0, $.jStorage.get('l/batchSize', 5));
                         current_item = active_queue[0];
-                        return [3 /*break*/, 11];
+                        return [3 /*break*/, 8];
                     case 3:
                         active_queue_composition = void 0;
                         if (items.length >= 10)
@@ -360,28 +360,19 @@ var module = {};
                             active_queue_composition = items.splice(0, 10);
                         return [4 /*yield*/, get_item_data(active_queue_composition.reverse())];
                     case 4:
-                        active_queue = _c.sent();
+                        active_queue = _b.sent();
                         current_item = active_queue[active_queue.length - 1];
                         rest = items.map(function (item) { return item.id; });
                         rest.reverse(); // Reverse because items are popped from inactive queue
-                        return [3 /*break*/, 11];
+                        return [3 /*break*/, 8];
                     case 5: return [4 /*yield*/, get_item_data(items.splice(0, 10))];
                     case 6:
-                        active_queue = _c.sent();
+                        active_queue = _b.sent();
                         current_item = active_queue[0];
-                        if (!WaniKani.wanikani_compatibility_mode) return [3 /*break*/, 8];
-                        return [4 /*yield*/, get_item_data(items)];
-                    case 7:
-                        _b = (_c.sent()).reverse();
-                        return [3 /*break*/, 9];
+                        rest = items.map(function (item) { return item.id; });
+                        return [3 /*break*/, 8];
+                    case 7: return [2 /*return*/];
                     case 8:
-                        _b = items.map(function (item) { return item.id; });
-                        _c.label = 9;
-                    case 9:
-                        rest = _b;
-                        return [3 /*break*/, 11];
-                    case 10: return [2 /*return*/];
-                    case 11:
                         if (current_item.type === 'Radical')
                             $.jStorage.set(question_type_key, 'meaning'); // Has to be set before currentItem
                         $.jStorage.set(active_queue_key, active_queue); // Has to be set before inactive queue for legacy lessons

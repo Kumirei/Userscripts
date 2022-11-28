@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.10
+// @version      1.3.11
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -389,9 +389,7 @@ declare global {
             case 'reviews':
                 active_queue = await get_item_data(items.splice(0, 10))
                 current_item = active_queue[0]
-                rest = WaniKani.wanikani_compatibility_mode
-                    ? (await get_item_data(items)).reverse()
-                    : items.map((item) => item.id)
+                rest = items.map((item) => item.id)
                 break
             default:
                 return
