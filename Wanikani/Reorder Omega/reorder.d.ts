@@ -82,7 +82,7 @@ export namespace Settings {
         presets: Preset[]
         display_egg_timer: boolean
         display_streak: boolean
-        burn_bell: boolean
+        burn_bell: 'disabled' | 'high' | 'low'
         voice_actor: 'default' | 'random' | 'alternate'
         back2back_behavior: 'disabled' | 'always' | 'correct' | 'true'
         prioritize: 'none' | 'reading' | 'reading'
