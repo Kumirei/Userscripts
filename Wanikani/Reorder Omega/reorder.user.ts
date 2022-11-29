@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.12
+// @version      1.3.13
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -67,6 +67,7 @@ declare global {
     let items_by_id: { [key: string]: ItemData.Item } = {}
     let original_queue: ItemData.Item[] = [] // Stores queue available when loading page for when you change preset
     let completed: Set<number> = new Set() // IDs of items that have been completed
+    let burn_bell_audio = new Audio() // Burn bell audio element
 
     // This has to be done before WK realizes that the queue is empty and
     // redirects, thus we have to do it before initializing WKOF
@@ -700,7 +701,6 @@ declare global {
     }
 
     // Installs all the extra optional features
-    let burn_bell_audio = new Audio()
     function install_extra_features(): void {
         install_egg_timer()
         install_streak()
