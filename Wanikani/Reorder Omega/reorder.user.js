@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.15
+// @version      1.3.16
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -485,13 +485,13 @@ var module = {};
                             kan: kanji.data.characters,
                             type: 'Kanji'
                         };
-                    }), type: 'Vocabulary', voc: item.data.characters });
+                    }), type: 'Vocabulary', voc: item.data.characters, category: 'Vocabulary' });
             case 'kanji':
-                return __assign(__assign({}, mutual), { auxiliary_readings: [], emph: (_j = (_h = item.data.readings.find(function (r) { return r.primary; })) === null || _h === void 0 ? void 0 : _h.type) !== null && _j !== void 0 ? _j : 'kunyomi', kan: item.data.characters, kun: item.data.readings.filter(function (r) { return r.type === 'kunyomi'; }).map(function (r) { return r.reading; }), nanori: item.data.readings.filter(function (r) { return r.type === 'nanori'; }).map(function (r) { return r.reading; }), on: item.data.readings.filter(function (r) { return r.type === 'onyomi'; }).map(function (r) { return r.reading; }), type: 'Kanji' });
+                return __assign(__assign({}, mutual), { auxiliary_readings: [], emph: (_j = (_h = item.data.readings.find(function (r) { return r.primary; })) === null || _h === void 0 ? void 0 : _h.type) !== null && _j !== void 0 ? _j : 'kunyomi', kan: item.data.characters, kun: item.data.readings.filter(function (r) { return r.type === 'kunyomi'; }).map(function (r) { return r.reading; }), nanori: item.data.readings.filter(function (r) { return r.type === 'nanori'; }).map(function (r) { return r.reading; }), on: item.data.readings.filter(function (r) { return r.type === 'onyomi'; }).map(function (r) { return r.reading; }), type: 'Kanji', category: 'Kanji' });
             case 'radical':
                 return __assign(__assign({}, mutual), { character_image_url: item.data.characters
                         ? undefined
-                        : (_l = (_k = item.data.character_images) === null || _k === void 0 ? void 0 : _k.find(function (i) { return i.content_type === 'image/png' && i.metadata.dimensions === '1024x1024'; })) === null || _l === void 0 ? void 0 : _l.url, rad: item.data.characters, type: 'Radical' });
+                        : (_l = (_k = item.data.character_images) === null || _k === void 0 ? void 0 : _k.find(function (i) { return i.content_type === 'image/png' && i.metadata.dimensions === '1024x1024'; })) === null || _l === void 0 ? void 0 : _l.url, rad: item.data.characters, type: 'Radical', category: 'Radical' });
         }
     }
     // Updates the radical, kanji, and vocab counts in lessons

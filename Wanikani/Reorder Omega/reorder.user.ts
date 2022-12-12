@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.15
+// @version      1.3.16
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -495,6 +495,7 @@ declare global {
                     }),
                     type: 'Vocabulary',
                     voc: item.data.characters,
+                    category: 'Vocabulary',
                 }
             case 'kanji':
                 return {
@@ -506,6 +507,7 @@ declare global {
                     nanori: item.data.readings.filter((r) => r.type === 'nanori').map((r) => r.reading),
                     on: item.data.readings.filter((r) => r.type === 'onyomi').map((r) => r.reading),
                     type: 'Kanji',
+                    category: 'Kanji',
                 }
             case 'radical':
                 return {
@@ -517,6 +519,7 @@ declare global {
                           )?.url,
                     rad: item.data.characters,
                     type: 'Radical',
+                    category: 'Radical',
                 }
         }
     }

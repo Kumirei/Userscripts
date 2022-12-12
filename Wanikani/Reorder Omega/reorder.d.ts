@@ -29,23 +29,26 @@ export namespace Review {
             type: string
         }[]
         type: 'Vocabulary'
+        category: 'Vocabulary'
         voc: string
     }
 
     type KanjiItem = {
         auxiliary_readings: { reading: string; type: 'whitelist' | 'blacklist' }[]
         emph: 'onyomi' | 'kunyomi' | 'nanori'
-        kan: string
         kun: string[]
         nanori: string[]
         on: string[]
         type: 'Kanji'
+        category: 'Kanji'
+        kan: string
     }
 
     type RadicalItem = {
         character_image_url?: string
-        rad: string
         type: 'Radical'
+        category: 'Radical'
+        rad: string
     }
 
     type AnswersObject = {
