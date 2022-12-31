@@ -17,7 +17,15 @@
 ;(function () {
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: '@Beyond_Sleepy level 40 by today',
+            date: 'dec 31 2023',
+            user: 'Beyond_Sleepy',
+            message0: 'Just one more day!',
+            message1: '@Beyond_Sleepy I knew I was right to believe in you',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'More Stone Ocean Episodes',
             date: 'sep 1 2022',
