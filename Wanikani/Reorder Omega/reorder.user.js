@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.16
+// @version      1.3.17
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -747,9 +747,6 @@ var module = {};
         function install_burn_bell() {
             if (page !== 'reviews')
                 return;
-            // The base 64 audio is a very long string and is, as such, located at the end of the script
-            set_bell_audio();
-            update_bell_audio();
             var listening = {};
             var getUID = function (item) {
                 return (item.type === 'Radical' ? 'r' : item.type === 'Kanji' ? 'k' : 'v') + item.id;
@@ -1993,10 +1990,13 @@ var module = {};
             case 2:
                 _b.sent();
                 return [4 /*yield*/, wkof.ready('ItemData,Apiv2')
-                    // Decide what to do depending on the page
+                    // Initialize burn bell audio
                 ];
             case 3:
                 _b.sent();
+                // Initialize burn bell audio
+                set_bell_audio();
+                update_bell_audio();
                 _a = page;
                 switch (_a) {
                     case 'dashboard': return [3 /*break*/, 4];

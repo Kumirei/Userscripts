@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.16
+// @version      1.3.17
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -84,6 +84,10 @@ declare global {
     wkof.ready('ItemData.registry').then(install_filters)
     await wkof.ready('Settings,Menu').then(load_settings).then(install_menu)
     await wkof.ready('ItemData,Apiv2')
+
+    // Initialize burn bell audio
+    set_bell_audio()
+    update_bell_audio()
 
     // Decide what to do depending on the page
     switch (page) {
@@ -815,10 +819,6 @@ declare global {
         // Installs the burn bell, which plays a sound whenever an item is burned
         function install_burn_bell(): void {
             if (page !== 'reviews') return
-
-            // The base 64 audio is a very long string and is, as such, located at the end of the script
-            set_bell_audio()
-            update_bell_audio()
 
             let listening: { [key: string]: { failed: boolean } } = {}
             let getUID = (item: Review.Item): string =>
