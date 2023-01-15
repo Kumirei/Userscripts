@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.18
+// @version      1.3.19
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -316,6 +316,7 @@ var module = {};
         var dummy = {
             type: 'Vocabulary',
             voc: message,
+            characters: message,
             id: 0,
             collocations: [],
             kanji: [],
@@ -323,26 +324,13 @@ var module = {};
             parts_of_speech: [],
             sentences: [],
             category: 'Vocabulary',
-            kana: ''
+            kana: [''],
+            mmne: '',
+            rmne: ''
         };
         $.jStorage.set(active_queue_key, [dummy]);
         $.jStorage.set(inactive_queue_key, page === 'lessons' ? [dummy] : []);
         $.jStorage.set(current_item_key, dummy, { b2b_ignore: true });
-        // Directly change DOM
-        switch (page) {
-            case 'dashboard':
-                break;
-            case 'lessons':
-                $('#character').text(message);
-                $('#stats > ul > li > span').text(0);
-                break;
-            case 'reviews':
-            case 'extra_study':
-            case 'self_study':
-                $('#character > span').text(message);
-                $('#available-count').text(0);
-                break;
-        }
     }
     // Takes a list of WKOF item and puts them into the queue
     function update_queue(items) {
