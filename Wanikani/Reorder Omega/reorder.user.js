@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.17
+// @version      1.3.18
 // @description  Reorders n stuff
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
@@ -322,7 +322,8 @@ var module = {};
             en: [],
             parts_of_speech: [],
             sentences: [],
-            category: 'Vocabulary'
+            category: 'Vocabulary',
+            kana: ''
         };
         $.jStorage.set(active_queue_key, [dummy]);
         $.jStorage.set(inactive_queue_key, page === 'lessons' ? [dummy] : []);
