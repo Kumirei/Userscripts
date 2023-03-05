@@ -19,7 +19,15 @@
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'JLPT',
+            date: 'dec 3 2023',
+            user: 'rokon',
+            message0: '@Rokon get your nihongeese ready!',
+            message1: '@Rokon good luck!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'End of World Expo 2025 in Osaka (2025年日本国際博覧会)',
             date: 'oct 13 2025',
