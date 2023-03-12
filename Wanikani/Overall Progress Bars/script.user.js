@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Overall Progress Bars
 // @namespace    http://tampermonkey.net/
-// @version      1.3.2
+// @version      1.4.0
 // @description  Creates a progress bar on the dashboard for every level
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -64,6 +64,11 @@
         $('.srs-level-graph').remove()
         positions[settings.position]().before(
             `<section class="srs-level-graph">${Object.entries(counts_by_level_and_srs)
+                .filter(([level]) => {
+                    if (level > settings.max_level) return false
+                    if (settings.hide_locked && level > wkof.user.level) return false
+                    return true
+                })
                 .map(get_level)
                 .join('')}</section`,
         )
@@ -232,6 +237,8 @@ ${srs_css}`
     function load_settings() {
         const defaults = {
             display: 'stack',
+            max_level: 60,
+            hide_locked: false,
             theme: 'default',
             position: 0,
         }
@@ -267,6 +274,19 @@ ${srs_css}`
                         avg_srs: 'Single Color (average SRS)',
                         blend: 'Single Color (blend)',
                     },
+                },
+                max_level: {
+                    type: 'number',
+                    label: 'Max Level',
+                    hover_tip: 'The highest level to display',
+                    max: 60,
+                    min: 1,
+                },
+                hide_locked: {
+                    type: 'checkbox',
+                    default: false,
+                    label: 'Hide Locked Levels',
+                    hover_tip: 'Do not display bars above your current level',
                 },
                 theme: {
                     type: 'dropdown',
