@@ -2,10 +2,12 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.19
+// @version      1.3.20
 // @description  Reorders n stuff
 // @author       Kumirei
-// @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
+// @match        https://www.wanikani.com/*
+// @match        https://preview.wanikani.com/*
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1166399
 // @grant        none
 // @run-at       document-idle
 // @license      MIT
@@ -57,138 +59,95 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 // These lines are necessary to make sure that TSC does not put any exports in the
 // compiled js, which causes the script to crash
 var module = {};
 // Actual script
 ;
 (function () { return __awaiter(void 0, void 0, void 0, function () {
+    function init() {
+        set_page_variables();
+        install_interface();
+        add_to_extra_study_section();
+        install_extra_features();
+        set_body_attributes();
+    }
     // Set all the global variables which have different values on different pages
     function set_page_variables() {
         var path = window.location.pathname;
-        var self_study_url = window.location.search === "?title=".concat(encodeURIComponent(script_name));
+        var self_study_url = window.location.search.startsWith("?".concat(encodeURIComponent(script_name)));
         if (/^\/(DASHBOARD)?$/i.test(path))
             page = 'dashboard';
-        else if (/REVIEW\/session/i.test(path))
+        else if (/REVIEW(\/session)?/i.test(path))
             page = 'reviews';
-        else if (/LESSON\/session/i.test(path))
+        else if (/LESSON(\/session)?/i.test(path))
             page = 'lessons';
-        else if (/EXTRA_STUDY\/session/i.test(path))
+        else if (/EXTRA_STUDY(\/session)?/i.test(path))
             page = self_study_url ? 'self_study' : 'extra_study';
         else
             page = 'other';
-        switch (page) {
-            case 'dashboard':
-            case 'other':
-                break; // These don't need those variables
-            case 'reviews':
-                break; // Defaults are for review
-            case 'lessons':
-                current_item_key = 'l/currentLesson';
-                active_queue_key = 'l/activeQueue';
-                inactive_queue_key = 'l/lessonQueue';
-                question_type_key = 'l/questionType';
-                UID_prefix = 'l/stats/';
-                egg_timer_location = '#header-buttons';
-                preset_selection_location = '#main-info';
-                break;
-            case 'extra_study':
-            case 'self_study':
-                inactive_queue_key = 'practiceQueue';
-                UID_prefix = 'e/stats/';
-                break;
+        if (page === 'self_study') {
+            $('.character-header__menu-title').text('Reorder Omega: Self Study');
         }
         return page;
     }
+    function is_quiz_page() {
+        set_page_variables();
+        return ['reviews', 'lessons', 'extra_study', 'self_study'].includes(page);
+    }
     function loading_screen(state) {
         if (state)
-            $('body').addClass('reorder_omega_loading');
+            document.body.classList.add('reorder_omega_loading');
         else
-            $('body').removeClass('reorder_omega_loading');
+            document.body.classList.remove('reorder_omega_loading');
     }
     // -----------------------------------------------------------------------------------------------------------------
     // PROCESS QUEUE
     // -----------------------------------------------------------------------------------------------------------------
-    // Retrieves the queue
-    function get_queue() {
+    function apply_preset(queue) {
         return __awaiter(this, void 0, void 0, function () {
-            var items;
+            var wkQueueItems, _i, queue_1, item, wkofQueue;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, wkof.ItemData.get_items('assignments,review_statistics,study_materials')];
-                    case 1:
-                        items = _a.sent();
-                        items_by_id = wkof.ItemData.get_index(items, 'subject_id');
-                        switch (page) {
-                            case 'reviews':
-                            case 'lessons':
-                            case 'extra_study':
-                                original_queue = get_queue_ids().map(function (id) { return items_by_id[id]; });
-                                break;
-                            case 'self_study':
-                                original_queue = items;
-                                break;
-                            default:
-                                return [2 /*return*/];
+                    case 0:
+                        set_page_variables();
+                        wkQueueItems = new Map();
+                        for (_i = 0, queue_1 = queue; _i < queue_1.length; _i++) {
+                            item = queue_1[_i];
+                            wkQueueItems.set(item.id, item);
                         }
-                        return [2 /*return*/];
+                        return [4 /*yield*/, process_queue(queue.map(function (item) { return item.item; }))];
+                    case 1:
+                        wkofQueue = _a.sent();
+                        if (!wkofQueue.length) {
+                            return [2 /*return*/, [3169]]; // Displays 終了
+                        }
+                        return [2 /*return*/, wkofQueue.map(function (item) { return wkQueueItems.get(item.id) || item.id; })]; // item.id needed for self_study where we convert from WKOF object
                 }
-            });
-        });
-    }
-    // Keeps track of which items have been completed
-    function track_completed(completed) {
-        $.jStorage.listenKeyChange('*', function (key, change) {
-            var _a;
-            if (change !== 'deleted' || !new RegExp(UID_prefix + '[rkv]\\d+').test(key))
-                return;
-            completed.add(Number((_a = key.match(/\d+/)) === null || _a === void 0 ? void 0 : _a[0]));
-        });
-    }
-    // Runs the selected preset on the queue
-    function run() {
-        return __awaiter(this, void 0, void 0, function () {
-            var queue;
-            return __generator(this, function (_a) {
-                queue = [];
-                // Prepare queue
-                switch (page) {
-                    case 'reviews':
-                    case 'lessons':
-                    case 'extra_study':
-                        queue = original_queue.filter(function (item) { return !completed.has(item.id); }); // Filter out answered items
-                        break;
-                    case 'self_study':
-                        queue = original_queue.filter(function (item) { return !completed.has(item.id); }); // Filter out answered items
-                        shuffle(queue); // Always shuffle self study items
-                        $('#reviews').attr('style', 'display: block;'); // Show page
-                        break;
-                    default:
-                        return [2 /*return*/];
-                }
-                // Process and update queue
-                queue = process_queue(queue);
-                return [2 /*return*/, update_queue(queue)];
             });
         });
     }
     // Finds the active preset and runs it against the queue
     function process_queue(items) {
-        if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page))
-            return []; // @ts-ignore
-        var preset = settings.presets[settings.active_presets[page]];
-        if (!preset)
-            return [];
-        return process_preset(preset, items);
+        return __awaiter(this, void 0, void 0, function () {
+            var preset;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page))
+                            return [2 /*return*/, []]; // @ts-ignore
+                        preset = settings.presets[settings.active_presets[page]];
+                        if (!preset)
+                            return [2 /*return*/, []];
+                        if (!(page === 'self_study')) return [3 /*break*/, 2];
+                        return [4 /*yield*/, wkof.ItemData.get_items()];
+                    case 1:
+                        items = _a.sent();
+                        _a.label = 2;
+                    case 2: return [2 /*return*/, process_preset(preset, items)];
+                }
+            });
+        });
     }
     // Calls all the preset actions on the items while keeping the items in three categories:
     // keep: Items that are kept by filters and sorted by sorts
@@ -280,216 +239,6 @@ var module = {};
             default:
                 return []; // Invalid shuffle type
         }
-    }
-    // Retrieves the ids of the the items in the current queue
-    function get_queue_ids() {
-        var active_queue = $.jStorage.get(active_queue_key, []);
-        // Swap current item into first position so that the current item doesn't change
-        var current_item = $.jStorage.get(current_item_key);
-        var current_item_index = active_queue.findIndex(function (item) { return item.id === current_item.id; });
-        swap(active_queue, 0, current_item_index);
-        var inactive_queue = $.jStorage.get(inactive_queue_key, []);
-        var remaining_queue = inactive_queue.map(function (item) { return (typeof item === 'number' ? item : item.id); });
-        return active_queue.map(function (item) { return item.id; }).concat(remaining_queue);
-    }
-    // -----------------------------------------------------------------------------------------------------------------
-    // QUEUE MANAGEMENT
-    // -----------------------------------------------------------------------------------------------------------------
-    // This function is crucial to the script working on the extra_study page as it is needed to stop WK
-    // from thinking that the queue is empty. So we insert an item into the queue saying "Loading..." while
-    // we wait for everything to load
-    function display_loading() {
-        var callback = function () {
-            var queue = $.jStorage.get(inactive_queue_key, []);
-            if ('table' in queue) {
-                // Since the url is invalid the queue will contain an error. We must wait
-                // until the error is set until we can set our queue
-                $.jStorage.set('questionType', 'meaning');
-                display_message('Loading...');
-            }
-            setTimeout(function () { return $.jStorage.stopListening(inactive_queue_key, callback); });
-        };
-        $.jStorage.listenKeyChange(inactive_queue_key, callback);
-    }
-    // Displays a message to the user by setting the current item to a vocabulary word with the message
-    function display_message(message) {
-        var dummy = {
-            type: 'Vocabulary',
-            voc: message,
-            characters: message,
-            id: 0,
-            collocations: [],
-            kanji: [],
-            en: [],
-            parts_of_speech: [],
-            sentences: [],
-            category: 'Vocabulary',
-            kana: [''],
-            mmne: '',
-            rmne: ''
-        };
-        $.jStorage.set(active_queue_key, [dummy]);
-        $.jStorage.set(inactive_queue_key, page === 'lessons' ? [dummy] : []);
-        $.jStorage.set(current_item_key, dummy, { b2b_ignore: true });
-    }
-    // Takes a list of WKOF item and puts them into the queue
-    function update_queue(items) {
-        return __awaiter(this, void 0, void 0, function () {
-            var current_item, active_queue, rest, _a, active_queue_composition;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        if (!items.length)
-                            return [2 /*return*/, display_message('No items in preset')];
-                        _a = page;
-                        switch (_a) {
-                            case 'lessons': return [3 /*break*/, 1];
-                            case 'extra_study': return [3 /*break*/, 3];
-                            case 'self_study': return [3 /*break*/, 3];
-                            case 'reviews': return [3 /*break*/, 5];
-                        }
-                        return [3 /*break*/, 7];
-                    case 1:
-                        update_lesson_counts(items);
-                        return [4 /*yield*/, get_item_data(items)];
-                    case 2:
-                        rest = _b.sent();
-                        active_queue = rest.splice(0, $.jStorage.get('l/batchSize', 5));
-                        current_item = active_queue[0];
-                        return [3 /*break*/, 8];
-                    case 3:
-                        active_queue_composition = void 0;
-                        if (items.length >= 10)
-                            active_queue_composition = items.splice(0, 1).concat(items.splice(-9, 9));
-                        else
-                            active_queue_composition = items.splice(0, 10);
-                        return [4 /*yield*/, get_item_data(active_queue_composition.reverse())];
-                    case 4:
-                        active_queue = _b.sent();
-                        current_item = active_queue[active_queue.length - 1];
-                        rest = items.map(function (item) { return item.id; });
-                        rest.reverse(); // Reverse because items are popped from inactive queue
-                        return [3 /*break*/, 8];
-                    case 5: return [4 /*yield*/, get_item_data(items.splice(0, 10))];
-                    case 6:
-                        active_queue = _b.sent();
-                        current_item = active_queue[0];
-                        rest = items.map(function (item) { return item.id; });
-                        return [3 /*break*/, 8];
-                    case 7: return [2 /*return*/];
-                    case 8:
-                        if (current_item.type === 'Radical')
-                            $.jStorage.set(question_type_key, 'meaning'); // Has to be set before currentItem
-                        $.jStorage.set(active_queue_key, active_queue); // Has to be set before inactive queue for legacy lessons
-                        $.jStorage.set(inactive_queue_key, rest);
-                        $.jStorage.set(current_item_key, current_item, { b2b_ignore: true });
-                        window.wkRefreshAudio();
-                        return [2 /*return*/];
-                }
-            });
-        });
-    }
-    // Retrieves the item's info from the WK api
-    function get_item_data(items) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a, res, queue, data_by_id_1, ids, response, data_1;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _a = page;
-                        switch (_a) {
-                            case 'lessons': return [3 /*break*/, 1];
-                            case 'reviews': return [3 /*break*/, 4];
-                            case 'extra_study': return [3 /*break*/, 4];
-                            case 'self_study': return [3 /*break*/, 7];
-                        }
-                        return [3 /*break*/, 8];
-                    case 1: return [4 /*yield*/, fetch("/lesson/queue")];
-                    case 2:
-                        res = _b.sent();
-                        if (res.status !== 200) {
-                            console.error('Could not fetch lesson queue');
-                            return [2 /*return*/, []];
-                        }
-                        return [4 /*yield*/, res.json()];
-                    case 3:
-                        queue = (_b.sent()).queue;
-                        data_by_id_1 = Object.fromEntries(queue.map(function (item) { return [item.id, item]; }));
-                        return [2 /*return*/, items.map(function (item) { return data_by_id_1[item.id]; })];
-                    case 4:
-                        ids = items.map(function (item) { return item.id; });
-                        return [4 /*yield*/, fetch("/extra_study/items?ids=".concat(ids.join(',')))];
-                    case 5:
-                        response = _b.sent();
-                        if (response.status !== 200) {
-                            console.error('Could not fetch active queue');
-                            return [2 /*return*/, []];
-                        }
-                        return [4 /*yield*/, response.json()];
-                    case 6:
-                        data_1 = (_b.sent());
-                        return [2 /*return*/, ids.map(function (id) { return data_1.find(function (item) { return item.id === id; }); })]; // Re-sort
-                    case 7: return [2 /*return*/, items.map(transform_item)];
-                    case 8: return [2 /*return*/, []];
-                }
-            });
-        });
-    }
-    // Transforms a wkof item into a review item
-    function transform_item(item) {
-        var _a;
-        var _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
-        var mutual = (_a = {
-                auxiliary_meanings: (_b = item.data.auxiliary_meanings) !== null && _b !== void 0 ? _b : [],
-                characters: item.data.characters,
-                en: item.data.meanings.filter(function (meaning) { return meaning.accepted_answer; }).map(function (meaning) { return meaning.meaning; }),
-                id: item.id,
-                slug: item.data.slug,
-                srs: (_c = item.assignments) === null || _c === void 0 ? void 0 : _c.srs_stage,
-                syn: (_e = (_d = item.study_materials) === null || _d === void 0 ? void 0 : _d.meaning_synonyms) !== null && _e !== void 0 ? _e : [],
-                type: (item.object[0].toUpperCase() + item.object.slice(1))
-            },
-            _a[item.object == 'vocabulary' ? 'voc' : item.object == 'kanji' ? 'kan' : 'rad'] = item.data.characters,
-            _a);
-        switch (item.object) {
-            case 'vocabulary':
-                return __assign(__assign({}, mutual), { aud: (_f = item.data.pronunciation_audios) === null || _f === void 0 ? void 0 : _f.map(function (audio) { return ({
-                        content_type: audio.content_type,
-                        pronunciation: audio.metadata.pronunciation,
-                        url: audio.url,
-                        voice_actor_id: audio.metadata.voice_actor_id
-                    }); }), auxiliary_readings: [], kana: (_g = item.data.readings) === null || _g === void 0 ? void 0 : _g.filter(function (reading) { return reading.primary; }).map(function (reading) { return reading.reading; }), kanji: item.data.component_subject_ids.map(function (id) {
-                        var kanji = items_by_id[id];
-                        return {
-                            characters: kanji.data.characters,
-                            en: kanji.data.meanings
-                                .filter(function (m) { return m.accepted_answer; })
-                                .map(function (m) { return m.meaning; })
-                                .join(', '),
-                            id: kanji.id,
-                            ja: kanji.data.readings
-                                .filter(function (r) { return r.accepted_answer; })
-                                .map(function (r) { return r.reading; })
-                                .join(', '),
-                            kan: kanji.data.characters,
-                            type: 'Kanji'
-                        };
-                    }), type: 'Vocabulary', voc: item.data.characters, category: 'Vocabulary' });
-            case 'kanji':
-                return __assign(__assign({}, mutual), { auxiliary_readings: [], emph: (_j = (_h = item.data.readings.find(function (r) { return r.primary; })) === null || _h === void 0 ? void 0 : _h.type) !== null && _j !== void 0 ? _j : 'kunyomi', kan: item.data.characters, kun: item.data.readings.filter(function (r) { return r.type === 'kunyomi'; }).map(function (r) { return r.reading; }), nanori: item.data.readings.filter(function (r) { return r.type === 'nanori'; }).map(function (r) { return r.reading; }), on: item.data.readings.filter(function (r) { return r.type === 'onyomi'; }).map(function (r) { return r.reading; }), type: 'Kanji', category: 'Kanji' });
-            case 'radical':
-                return __assign(__assign({}, mutual), { character_image_url: item.data.characters
-                        ? undefined
-                        : (_l = (_k = item.data.character_images) === null || _k === void 0 ? void 0 : _k.find(function (i) { return i.content_type === 'image/png' && i.metadata.dimensions === '1024x1024'; })) === null || _l === void 0 ? void 0 : _l.url, rad: item.data.characters, type: 'Radical', category: 'Radical' });
-        }
-    }
-    // Updates the radical, kanji, and vocab counts in lessons
-    function update_lesson_counts(items) {
-        var _a, _b, _c, _d, _e, _f;
-        var counts = wkof.ItemData.get_index(items, 'item_type');
-        $.jStorage.set('l/count/rad', (_b = (_a = counts.radical) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0);
-        $.jStorage.set('l/count/kan', (_d = (_c = counts.kanji) === null || _c === void 0 ? void 0 : _c.length) !== null && _d !== void 0 ? _d : 0);
-        $.jStorage.set('l/count/voc', (_f = (_e = counts.vocabulary) === null || _e === void 0 ? void 0 : _e.length) !== null && _f !== void 0 ? _f : 0);
     }
     // -----------------------------------------------------------------------------------------------------------------
     // ITEM INFORMATION
@@ -633,11 +382,13 @@ var module = {};
     // -----------------------------------------------------------------------------------------------------------------
     // On the dashboard, adds a button to take you to the extra study page for the script
     function add_to_extra_study_section() {
-        var button = $("\n            <div class=\" border border-blue-300 border-solid rounded flex flex-row \">\n                <a href=\"/extra_study/session?title=".concat(script_name, "\" class=\"active:no-underline active:text-black\n                appearance-none bg-transparent box-border disabled:border-gray-700 disabled:cursor-not-allowed\n                disabled:opacity-50 disabled:text-gray-700 duration-200 flex focus:no-underline focus:ring\n                font-medium font-sans hover:border-blue-500 hover:no-underline hover:text-blue-700 leading-none m-0\n                outline-none py-3 px-3 text-blue-500 text-left text-base sm:text-sm transition w-full border-0\"\n                data-test=\"extra-study-button\">Self Study\n                </a>\n            </div>"));
+        var button = $("\n            <div class=\" border border-blue-300 border-solid rounded flex flex-row \">\n                <a href=\"/subjects/extra_study?".concat(script_name, "&queue_type=recent_lessons\" class=\"active:no-underline active:text-black\n                appearance-none bg-transparent box-border disabled:border-gray-700 disabled:cursor-not-allowed\n                disabled:opacity-50 disabled:text-gray-700 duration-200 flex focus:no-underline focus:ring\n                font-medium font-sans hover:border-blue-500 hover:no-underline hover:text-blue-700 leading-none m-0\n                outline-none py-3 px-3 text-blue-500 text-left text-base sm:text-sm transition w-full border-0\"\n                data-test=\"extra-study-button\">Self Study\n                </a>\n            </div>"));
         $('.extra-study ul').append(button);
     }
     // Installs the dropdown for selecting the active preset
     function install_interface() {
+        if (!is_quiz_page())
+            return;
         page = page;
         var options = [];
         for (var _i = 0, _a = Object.entries(settings.presets); _i < _a.length; _i++) {
@@ -652,40 +403,39 @@ var module = {};
             settings.active_presets[page] = event.currentTarget.value;
             wkof.Settings.save(script_id);
             // Update
-            run();
+            wkQueue.refresh();
         });
         $('#active_preset').remove();
-        $(preset_selection_location).append($("<div id=\"active_preset\" ".concat(!settings.display_selection ? 'class="hidden"' : '', ">Preset: </div>")).append(select));
+        $(body)
+            .find(preset_selection_location)
+            .append($("<div id=\"active_preset\" ".concat(!settings.display_selection ? 'class="hidden"' : '', ">Preset: </div>")).append(select));
     }
     // Installs all the extra optional features
     function install_extra_features() {
+        var extra_header_row = $("<div id=\"omega_header_row\"><div id=\"egg_timer\"></div><div id=\"\"></div></div>");
+        $(body).find(header_row_location).after(extra_header_row);
         install_egg_timer();
         install_streak();
         install_burn_bell();
-        install_voice_actor_control();
-        install_back_to_back();
-        install_prioritization();
         // Displays the current duration of the sessions
         function install_egg_timer() {
             if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page))
                 return;
             var egg_timer_start = Date.now();
-            var egg_timer = $("<div id=\"egg_timer\">Elapsed: 0s</div>");
+            var egg_timer = extra_header_row.find('#egg_timer');
             setInterval(function () {
                 egg_timer.html("Elapsed: ".concat(ms_to_relative_time(Date.now() - egg_timer_start)));
             }, MS.second);
-            $(egg_timer_location).append(egg_timer);
         }
         // Installs the tracking of streaks of correct answers (note: not items)
         function install_streak() {
             if (!['reviews', 'extra_study', 'self_study'].includes(page))
                 return;
             // Create and insert element into page
-            var elem = $("<span id=\"streak\"><i class=\"fa fa-trophy\"></i><span class=\"current\">0</span>(<span class=\"max\">0</span>)</span>");
-            $('#stats').prepend(elem);
+            var elem = $("\n                <div id=\"streak\" class=\"quiz-statistics__item\"><div class=\"quiz-statistics__item-count\">\n                    <div class=\"quiz-statistics__item-count-icon\"><i class=\"fa fa-trophy\"></i></div>\n                    <div class=\"count quiz-statistics__item-count-text\">0 (0)</div>\n                </div></div>\n                ");
+            $(body).find('.quiz-statistics').prepend(elem);
             function update_display(streak, max) {
-                $('#streak .current').html(String(streak));
-                $('#streak .max').html(String(max));
+                $('#streak .count').html("".concat(streak, " (").concat(max, ")"));
             }
             // The object that keeps track of the current (and previous!) streak
             var streak = {
@@ -719,162 +469,31 @@ var module = {};
             };
             streak.load();
             update_display(streak.current.streak, streak.current.max);
-            $.jStorage.listenKeyChange('questionCount', function () {
-                var questions = $.jStorage.get('questionCount', 0);
-                var incorrect = $.jStorage.get('wrongCount', 0);
-                if (questions < streak.current.questions)
-                    streak.undo();
-                else if (incorrect == streak.current.incorrect)
-                    streak.correct(questions, incorrect);
+            window.addEventListener('didAnswerQuestion', function (e) {
+                var correct = 0;
+                var incorrect = 0;
+                for (var _i = 0, _a = Object.values(e.detail.subjectWithStats.stats); _i < _a.length; _i++) {
+                    var item = _a[_i];
+                    correct += item.complete ? 1 : 0;
+                    incorrect += item.incorrect;
+                }
+                if (e.detail.results.passed)
+                    streak.correct(correct + incorrect, incorrect);
                 else
-                    streak.incorrect(questions, incorrect);
+                    streak.incorrect(correct + incorrect, incorrect);
                 streak.save();
                 update_display(streak.current.streak, streak.current.max);
             });
         }
         // Installs the burn bell, which plays a sound whenever an item is burned
         function install_burn_bell() {
-            if (page !== 'reviews')
-                return;
-            var listening = {};
-            var getUID = function (item) {
-                return (item.type === 'Radical' ? 'r' : item.type === 'Kanji' ? 'k' : 'v') + item.id;
-            };
-            $.jStorage.listenKeyChange('currentItem', initiate_item);
-            function initiate_item() {
-                var item = $.jStorage.get('currentItem');
-                if (item.srs !== 8)
+            window.addEventListener('didChangeSRS', function (e) {
+                var srs = e.detail.newLevelText;
+                if (!/burn/i.test(srs))
                     return;
-                var UID = getUID(item);
-                if (!listening[UID])
-                    listen_for_UID(UID);
-            }
-            function listen_for_UID(UID) {
-                listening[UID] = { failed: false };
-                $.jStorage.listenKeyChange(UID, function () { return check_answer(UID); });
-            }
-            function check_answer(UID) {
-                var answers = $.jStorage.get(UID);
-                if (answers && (answers.ri || answers.mi))
-                    listening[UID].failed = true;
-                if (!answers && !listening[UID].failed)
-                    burn(UID);
-            }
-            function burn(UID) {
-                if (settings.burn_bell) {
-                    burn_bell_audio.load(); // Stop if already playing
-                    burn_bell_audio.play();
-                }
-                delete listening[UID];
-            }
-        }
-        // Sets up the randomization or alternation of the voice actor in the quizzes
-        function install_voice_actor_control() {
-            if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page))
-                return;
-            $.jStorage.listenKeyChange(current_item_key, update_default_voice_actor);
-            $.jStorage.listenKeyChange('l/currentQuizItem', update_default_voice_actor);
-            function update_default_voice_actor() {
-                var voice_actors = WaniKani.voice_actors;
-                var random = voice_actors[Math.floor(Math.random() * voice_actors.length)].voice_actor_id;
-                var alternate = voice_actors[(WaniKani.default_voice_actor_id + 1) % voice_actors.length].voice_actor_id;
-                if (settings.voice_actor === 'random')
-                    WaniKani.default_voice_actor_id = random;
-                else if (settings.voice_actor === 'alternate')
-                    WaniKani.default_voice_actor_id = alternate;
-            }
-        }
-        // Sets up the back2back features so that meaning and reading questions
-        // can be made to appear after each other
-        function install_back_to_back() {
-            if (!['reviews', 'lessons'].includes(page))
-                return;
-            // Keep track of the latest answer to decide whether to show the next question right away
-            var last_answer = false;
-            // Wrap jStorage.set(key, value) to ignore the value when the key is for the current item AND one item has
-            // already been partially answered. If an item has been partially answered, then set the current item to
-            // that item instead.
-            var original_set = $.jStorage.set;
-            var new_set = function (key, value, options) {
-                var _this = this;
-                // @ts-ignore
-                var pass = function (val) { return original_set.call(_this, key, val, options); };
-                if (settings.back2back_behavior === 'disabled' || (options === null || options === void 0 ? void 0 : options.b2b_ignore))
-                    return pass(value); // Ignore if b2b_ignore flag is present
-                var item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key;
-                // If an answer is being registered
-                if (RegExp("^".concat(UID_prefix, "[rkv]\\d+$")).test(key)) {
-                    var prev = __assign({ mc: 0, rc: 0, mi: 0, ri: 0 }, $.jStorage.get(key, {}));
-                    var curr = __assign({ mc: 0, rc: 0, mi: 0, ri: 0 }, value);
-                    if (prev.mc < curr.mc || prev.rc < curr.rc)
-                        last_answer = true;
-                    else if (prev.mi < curr.mi || prev.ri < curr.ri) {
-                        last_answer = false;
-                        // If the script is set to always show both answers, remove any correct answers already registered
-                        if (settings.back2back_behavior === 'true')
-                            return pass(__assign(__assign({}, curr), { mc: undefined, rc: undefined }));
-                    }
-                }
-                // If the current item is being set
-                else if (key === item_key) {
-                    var item_1 = $.jStorage.get(item_key);
-                    var active_queue = $.jStorage.get(active_queue_key, []);
-                    if (!item_1)
-                        return pass(value);
-                    if (settings.back2back_behavior !== 'always' && !last_answer)
-                        return pass(value);
-                    // ! Potential issue when reordering and the current item is still in the active queue
-                    // ! If behavior is 'always' or last answer was correct, the current item will stay the current item
-                    // Find the item in the active queue. If it is not there, pass
-                    item_1 = active_queue.find(function (i) { return i.id === item_1.id; });
-                    if (!item_1)
-                        return pass(value);
-                    // Bring the item to the front of the active queue
-                    var new_active_queue = __spreadArray([item_1], active_queue.filter(function (i) { return i !== item_1; }), true);
-                    $.jStorage.set(active_queue_key, new_active_queue);
-                    // Set the question type
-                    var question = $.jStorage.get(question_type_key, 'meaning');
-                    if (item_1.type === 'Radical')
-                        question = 'meaning';
-                    else {
-                        var UID = (item_1.type == 'Kanji' ? 'k' : 'v') + item_1.id;
-                        var stats = $.jStorage.get(UID_prefix + UID, {});
-                        if (stats.mc)
-                            question = 'reading';
-                        else if (stats.rc)
-                            question = 'meaning';
-                    }
-                    $.jStorage.set(question_type_key, question);
-                    // Pass the value to the original set function
-                    return pass(item_1);
-                } // @ts-ignore
-                return pass(value);
-            };
-            $.jStorage.set = new_set;
-        }
-        // Sets up prioritization of meaning and reading questions in sessions
-        function install_prioritization() {
-            // Run every time item changes
-            var item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key;
-            $.jStorage.listenKeyChange(item_key, prioritize);
-            // Initialize session to prioritized question type
-            prioritize();
-            // Prioritize reading or meaning
-            function prioritize() {
-                var prio = settings.prioritize;
-                var item = $.jStorage.get(item_key);
-                var question_type = $.jStorage.get(question_type_key, 'meaning');
-                // Skip if item is not defined, it is a radical, it is already the right question, or no priority is selected
-                if (!item || item.type == 'Radical' || question_type == prio || 'none' == prio)
-                    return;
-                var UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id;
-                var stats = $.jStorage.get(UID_prefix + UID);
-                // Change the question if the priority question has not been answered yet
-                if (!stats || !stats[prio == 'reading' ? 'rc' : 'mc']) {
-                    $.jStorage.set(question_type_key, prio);
-                    $.jStorage.set(item_key, item);
-                }
-            }
+                burn_bell_audio.load(); // Stop if already playing
+                burn_bell_audio.play();
+            });
         }
     }
     // Installs a couple of custom filters for the user
@@ -948,7 +567,7 @@ var module = {};
     }
     // Installs the CSS
     function install_css() {
-        var css = "\n            body.reorder_omega_loading > #loading { display: block !important; opacity: 1 !important  }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #active_preset {\n                font-size: 1rem;\n                line-height: 1rem;\n                padding: 0.5rem;\n                position: absolute;\n                bottom: 0;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n            }\n\n            #active_preset select option { color: black; }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n\n            #wkof_ds #paste_preset,\n            #wkof_ds #paste_action {\n                height: 0;\n                padding: 0;\n                border: 0;\n                display: block;\n            }\n\n            #main-info {\n                position: relative;\n            }\n\n            #stats { z-index: 1 }\n\n            .burn_bell_wrapper {\n                display: flex;\n                gap: 0.4em;\n            }\n\n            .burn_bell_wrapper > button {\n                width: 30px !important;\n                padding: 0 !important;\n            }\n\n            .burn_bell_wrapper > button > i {\n                width: 30px;\n            }\n        ";
+        var css = "\n            body.reorder_omega_loading > #loading { display: block !important; opacity: 1 !important  }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #omega_header_row {\n                display: flex;\n                width: 100%;\n                position: absolute;\n                top: 2em;\n                left: 20px;\n            }\n\n            #active_preset {\n                font-size: 1em;\n                line-height: 1rem;\n                padding: 0.5rem;\n                position: absolute;\n                bottom: 0;\n                left: 0;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n                font-size: 1em;\n            }\n\n            #active_preset select option { color: black; }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n\n            #wkof_ds #paste_preset,\n            #wkof_ds #paste_action {\n                height: 0;\n                padding: 0;\n                border: 0;\n                display: block;\n            }\n\n            #main-info {\n                position: relative;\n            }\n\n            #stats { z-index: 1 }\n\n            #streak { width: max-content; }\n\n            .burn_bell_wrapper {\n                display: flex;\n                gap: 0.4em;\n            }\n\n            .burn_bell_wrapper > button {\n                width: 30px !important;\n                padding: 0 !important;\n            }\n\n            .burn_bell_wrapper > button > i {\n                width: 30px;\n            }\n        ";
         $('head').append("<style id=\"".concat(script_id, "_css\">").concat(css, "</style>"));
     }
     // -----------------------------------------------------------------------------------------------------------------
@@ -1160,9 +779,7 @@ var module = {};
                                     hover_tip: 'Choose whether to:\n1. Have the vanilla experience\n2. Keep repeating the same question until you get it right\n3. Only keep the item if you answered the first question correctly\n4. Make it so that you have to answer both questions correctly back to back',
                                     content: {
                                         disabled: 'Disabled',
-                                        always: 'Repeat until correct',
-                                        correct: 'Shuffle incorrect',
-                                        "true": 'True Back To Back'
+                                        always: 'Repeat until correct'
                                     }
                                 },
                                 prioritize: {
@@ -1174,17 +791,6 @@ var module = {};
                                         none: 'None',
                                         reading: 'Reading',
                                         meaning: 'Meaning'
-                                    }
-                                },
-                                voice_actor: {
-                                    type: 'dropdown',
-                                    "default": "default",
-                                    label: 'Voice Actor',
-                                    hover_tip: 'Randomize or alternate the voice that is played',
-                                    content: {
-                                        "default": "Default",
-                                        random: 'Randomize',
-                                        alternate: 'Alternate'
                                     }
                                 }
                             }
@@ -1738,13 +1344,13 @@ var module = {};
         settings = wkof.settings[script_id];
         set_body_attributes(); // Update attributes on body to hide/show stuff
         install_interface(); // Reinstall interface in order to update it
-        run(); // Re-run preset in case something changed
+        wkQueue.refresh(); // Re-run preset in case something changed
         update_bell_audio(); // Update bell audio in case setting changed
     }
     // Set some attributes on the body to hide or show things with CSS
     function set_body_attributes() {
-        $("body").attr("".concat(script_id, "_display_egg_timer"), String(settings.display_egg_timer));
-        $("body").attr("".concat(script_id, "_display_streak"), String(settings.display_streak));
+        $(body).attr("".concat(script_id, "_display_egg_timer"), String(settings.display_egg_timer));
+        $(body).attr("".concat(script_id, "_display_streak"), String(settings.display_streak));
     }
     // Refreshes the preset and action selection
     function refresh_settings() {
@@ -1945,72 +1551,55 @@ var module = {};
         var low_pitched_bell = "data:audio/wav;base64,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KoG6adTqMuZCrQ1JU7eOUtBgEUXMsu+7DYGsKAUq4E6ou761Ik09lC+1MVXsAkJf1oajyummJzNKT2jacr+tkZqma7qpVms2/+OCxPdjPBXwUPc0EFgU6JAu9pWTHZG7VA/yRsMLbXGqNrmTZnpc5Pd1X4X1TVlT12ZLelqqywUSSwa6XCUqaYtFxMm1mEsXlZk0tfs0ztZcjV26ySyUaG7ZofaQ67T1jsba47zdLbDX/aZem1KHkXmRAYCh1ujjutGHvVK0lmCs8ScliLO0XY22ZLluzzLqbG6zlyCIO4/DKngh9vE4JBDzidmocnG5ocGhSdnLKSdqr50KlnZK6cYUZgYuGXCyZGIZjYMjIsNAuo53OjdaOM6po1msDMBNMWCMw8C1UDBKNVQzxi/QgNNGI9fj/yOVw1zEglKQAKZA6CzxoJTCLNBM0DzKBbRcxdUsygBWK12HYgFQDHKLMr1eJE4tMW2QDIpNLLdGGIY4higIbQGiaWlAgIFALRNXSpLkoOqaxWSK2l3UHVBViuq8RdYwxi2rBaR2lMizxaJXUrZUu5QJTZrzXo2piXBQDK6lamKKpd0uSXdQdjbuuChJXqvJIpdwNCLaoqlsUrYgpkoM/UEsCLhFtkAxbIvE5ylJcFMZpzpLqf/jgsT/ZlQV3ALvMhRsgAMtayWClyoSUAqKrJYlL6JPYuCpbYlUulTtOU/TcljM6UCWM4194kxohC0qS8KRJf0vCtWCFhWIrCpiqCtNgJr0uiKPKAFmBeJ5pVK1ysOUCUGa85UWlLKS6pd4tkWudd1aEvagBVK1ph0PrCtdlrpMuZEFATEBUiyJCUik15G4wxkraRpSEpMJl0PRJnU7WjT0qCxSLSl4lUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/44LEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
         burn_bell_audio_sources = { low: low_pitched_bell, high: high_pitched_bell };
     }
-    var script_id, script_name, wkof, $, WaniKani, MS, page, current_item_key, active_queue_key, inactive_queue_key, question_type_key, UID_prefix, egg_timer_location, preset_selection_location, settings, settings_dialog, items_by_id, original_queue, completed, burn_bell_audio, burn_bell_audio_sources, _a;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var script_id, script_name, wkof, wkQueue, MS, page, header_row_location, preset_selection_location, settings, settings_dialog, burn_bell_audio, burn_bell_audio_sources, body;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
             case 0:
                 script_id = 'reorder_omega';
                 script_name = 'Reorder Omega';
-                wkof = window.wkof, $ = window.$, WaniKani = window.WaniKani;
+                wkof = window.wkof, wkQueue = window.wkQueue;
                 MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 };
-                current_item_key = 'currentItem', active_queue_key = 'activeQueue', inactive_queue_key = 'reviewQueue', question_type_key = 'questionType', UID_prefix = '', egg_timer_location = '#summary-button', preset_selection_location = '#character';
-                page = set_page_variables();
-                items_by_id = {};
-                original_queue = [] // Stores queue available when loading page for when you change preset
-                ;
-                completed = new Set() // IDs of items that have been completed
-                ;
+                header_row_location = '.character-header__menu', preset_selection_location = '.character-header__content';
+                settings = {};
                 burn_bell_audio = new Audio() // Burn bell audio element
                 ;
                 // This has to be done before WK realizes that the queue is empty and
                 // redirects, thus we have to do it before initializing WKOF
-                if (page === 'self_study')
-                    display_loading();
-                // Install css
-                install_css();
+                // if (page === 'self_study') display_loading()
                 // Initiate WKOF
                 loading_screen(true); // Hide session until script has loaded
                 return [4 /*yield*/, confirm_wkof()];
             case 1:
-                _b.sent();
-                wkof.include('Settings,Menu,ItemData,Apiv2'); // Apiv2 purely for the user module
+                _a.sent();
+                wkof.include('Settings,Menu,ItemData,Apiv2,Jquery'); // Apiv2 purely for the user module
                 wkof.ready('ItemData.registry').then(install_filters);
-                return [4 /*yield*/, wkof.ready('Settings,Menu').then(load_settings).then(install_menu)];
+                return [4 /*yield*/, wkof.ready('Settings,Menu,Jquery').then(load_settings).then(install_menu)];
             case 2:
-                _b.sent();
+                _a.sent();
                 return [4 /*yield*/, wkof.ready('ItemData,Apiv2')
-                    // Initialize burn bell audio
+                    // Install css
                 ];
             case 3:
-                _b.sent();
+                _a.sent();
+                // Install css
+                install_css();
                 // Initialize burn bell audio
                 set_bell_audio();
                 update_bell_audio();
-                _a = page;
-                switch (_a) {
-                    case 'dashboard': return [3 /*break*/, 4];
-                    case 'reviews': return [3 /*break*/, 5];
-                    case 'lessons': return [3 /*break*/, 5];
-                    case 'extra_study': return [3 /*break*/, 5];
-                    case 'self_study': return [3 /*break*/, 5];
-                }
-                return [3 /*break*/, 8];
-            case 4:
-                add_to_extra_study_section();
-                return [3 /*break*/, 8];
-            case 5:
-                install_interface();
-                install_extra_features();
-                set_body_attributes();
-                return [4 /*yield*/, get_queue()];
-            case 6:
-                _b.sent();
-                track_completed(completed);
-                return [4 /*yield*/, run()];
-            case 7:
-                _b.sent();
-                return [3 /*break*/, 8];
-            case 8:
+                body = document.body;
+                init();
+                // Listen for page changes
+                document.addEventListener("turbo:before-render", function (e) {
+                    e.preventDefault();
+                    body = e.detail.newBody;
+                    init();
+                });
+                // Set up queue manipulation
+                wkQueue.addTotalChange(apply_preset, { openFramework: true });
+                if (settings.back2back_behavior === 'always')
+                    wkQueue.completeSubjectsInOrder = true;
+                if (settings.prioritize !== 'none')
+                    wkQueue.questionOrder = "".concat(settings.prioritize, "First");
                 loading_screen(false);
                 return [2 /*return*/];
         }

@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.19
+// @version      1.3.20
 // @description  Reorders n stuff
 // @author       Kumirei
-// @include      /^https://(www|preview).wanikani.com/((dashboard)?$|((review|lesson|extra_study)/session))/
+// @match        https://www.wanikani.com/*
+// @match        https://preview.wanikani.com/*
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1166399
 // @grant        none
 // @run-at       document-idle
 // @license      MIT
@@ -19,6 +21,20 @@ export = null
 import { WKOF, ItemData, Menu, Settings as SettingsModule, SubjectType, Apiv2 } from '../WKOF Types/wkof'
 import { Review, Settings } from './reorder'
 
+interface WKQItem {
+    id: number
+    get srs(): number
+    get subject(): Review.Item
+    get item(): ItemData.Item
+}
+
+interface WKQOptions {
+    openFramework?: boolean
+    subject?: boolean
+}
+
+type SyncOrAsync<T> = T | Promise<T>
+
 // We have to extend the global window object since the values are already present
 // and we don't provide them ourselves
 declare global {
@@ -28,6 +44,29 @@ declare global {
         $: JQueryStatic
         WaniKani: any
         wkRefreshAudio: () => void
+        wkQueue: {
+            on: string
+            completeSubjectsInOrder: boolean
+            questionOrder: 'meaningFirst' | 'readingFirst'
+            addTotalChange: (
+                callback: (q: WKQItem[]) => SyncOrAsync<(WKQItem | number)[]>,
+                options?: WKQOptions,
+            ) => { remove: () => void }
+            addFilter: (
+                callback: (q: WKQItem[]) => SyncOrAsync<(WKQItem | number)[]>,
+                options?: WKQOptions,
+            ) => { remove: () => void }
+            addReorder: (
+                callback: (q: WKQItem[]) => SyncOrAsync<(WKQItem | number)[]>,
+                options?: WKQOptions,
+            ) => { remove: () => void }
+            applyManipulation: (
+                callback: (q: WKQItem[]) => SyncOrAsync<(WKQItem | number)[]>,
+                options?: WKQOptions,
+            ) => { remove: () => void }
+            refresh: () => void
+            version: number
+        }
     }
 
     interface JStorageOptions {
@@ -45,171 +84,121 @@ declare global {
     const script_name = 'Reorder Omega'
 
     // Globals
-    const { wkof, $, WaniKani } = window
+    const { wkof, wkQueue } = window
 
     // Constants
     const MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 }
 
     // Page variables
     let page: 'other' | 'dashboard' | 'reviews' | 'lessons' | 'extra_study' | 'self_study',
-        current_item_key: string = 'currentItem',
-        active_queue_key: string = 'activeQueue',
-        inactive_queue_key: string = 'reviewQueue',
-        question_type_key: string = 'questionType',
-        UID_prefix: string = '',
-        egg_timer_location: string = '#summary-button',
-        preset_selection_location: string = '#character'
-    page = set_page_variables()
+        header_row_location: string = '.character-header__menu',
+        preset_selection_location: string = '.character-header__content'
 
     // Settings objects
-    let settings: Settings.Settings
+    let settings: Settings.Settings = {} as any
     let settings_dialog: SettingsModule.Dialog
-    let items_by_id: { [key: string]: ItemData.Item } = {}
-    let original_queue: ItemData.Item[] = [] // Stores queue available when loading page for when you change preset
-    let completed: Set<number> = new Set() // IDs of items that have been completed
     let burn_bell_audio = new Audio() // Burn bell audio element
     let burn_bell_audio_sources: Record<string, string>
 
     // This has to be done before WK realizes that the queue is empty and
     // redirects, thus we have to do it before initializing WKOF
-    if (page === 'self_study') display_loading()
-
-    // Install css
-    install_css()
+    // if (page === 'self_study') display_loading()
 
     // Initiate WKOF
     loading_screen(true) // Hide session until script has loaded
+
     await confirm_wkof()
-    wkof.include('Settings,Menu,ItemData,Apiv2') // Apiv2 purely for the user module
+    wkof.include('Settings,Menu,ItemData,Apiv2,Jquery') // Apiv2 purely for the user module
     wkof.ready('ItemData.registry').then(install_filters)
-    await wkof.ready('Settings,Menu').then(load_settings).then(install_menu)
+
+    await wkof.ready('Settings,Menu,Jquery').then(load_settings).then(install_menu)
+
     await wkof.ready('ItemData,Apiv2')
+
+    // Install css
+    install_css()
 
     // Initialize burn bell audio
     set_bell_audio()
     update_bell_audio()
 
-    // Decide what to do depending on the page
-    switch (page) {
-        case 'dashboard':
-            add_to_extra_study_section()
-            break
-        case 'reviews':
-        case 'lessons':
-        case 'extra_study':
-        case 'self_study':
-            install_interface()
-            install_extra_features()
-            set_body_attributes()
-            await get_queue()
-            track_completed(completed)
-            await run()
-            break
-    }
+    let body = document.body
+    init()
+
+    // Listen for page changes
+    document.addEventListener(`turbo:before-render`, (e: any) => {
+        e.preventDefault()
+        body = e.detail.newBody
+        init()
+    })
+
+    // Set up queue manipulation
+    wkQueue.addTotalChange(apply_preset, { openFramework: true })
+    if (settings.back2back_behavior === 'always') wkQueue.completeSubjectsInOrder = true
+    if (settings.prioritize !== 'none') wkQueue.questionOrder = `${settings.prioritize}First`
+
     loading_screen(false)
+
+    function init() {
+        set_page_variables()
+        install_interface()
+        add_to_extra_study_section()
+        install_extra_features()
+        set_body_attributes()
+    }
 
     // Set all the global variables which have different values on different pages
     function set_page_variables(): 'other' | 'dashboard' | 'reviews' | 'lessons' | 'extra_study' | 'self_study' {
         const path = window.location.pathname
-        const self_study_url = window.location.search === `?title=${encodeURIComponent(script_name)}`
+        const self_study_url = window.location.search.startsWith(`?${encodeURIComponent(script_name)}`)
 
         if (/^\/(DASHBOARD)?$/i.test(path)) page = 'dashboard'
-        else if (/REVIEW\/session/i.test(path)) page = 'reviews'
-        else if (/LESSON\/session/i.test(path)) page = 'lessons'
-        else if (/EXTRA_STUDY\/session/i.test(path)) page = self_study_url ? 'self_study' : 'extra_study'
+        else if (/REVIEW(\/session)?/i.test(path)) page = 'reviews'
+        else if (/LESSON(\/session)?/i.test(path)) page = 'lessons'
+        else if (/EXTRA_STUDY(\/session)?/i.test(path)) page = self_study_url ? 'self_study' : 'extra_study'
         else page = 'other'
 
-        switch (page) {
-            case 'dashboard':
-            case 'other':
-                break // These don't need those variables
-            case 'reviews':
-                break // Defaults are for review
-            case 'lessons':
-                current_item_key = 'l/currentLesson'
-                active_queue_key = 'l/activeQueue'
-                inactive_queue_key = 'l/lessonQueue'
-                question_type_key = 'l/questionType'
-                UID_prefix = 'l/stats/'
-                egg_timer_location = '#header-buttons'
-                preset_selection_location = '#main-info'
-                break
-            case 'extra_study':
-            case 'self_study':
-                inactive_queue_key = 'practiceQueue'
-                UID_prefix = 'e/stats/'
-                break
+        if (page === 'self_study') {
+            $('.character-header__menu-title').text('Reorder Omega: Self Study')
         }
 
         return page
     }
 
+    function is_quiz_page() {
+        set_page_variables()
+        return ['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)
+    }
+
     function loading_screen(state: boolean) {
-        if (state) $('body').addClass('reorder_omega_loading')
-        else $('body').removeClass('reorder_omega_loading')
+        if (state) document.body.classList.add('reorder_omega_loading')
+        else document.body.classList.remove('reorder_omega_loading')
     }
 
     // -----------------------------------------------------------------------------------------------------------------
     // PROCESS QUEUE
     // -----------------------------------------------------------------------------------------------------------------
 
-    // Retrieves the queue
-    async function get_queue() {
-        let items = await wkof.ItemData.get_items('assignments,review_statistics,study_materials')
-        items_by_id = wkof.ItemData.get_index<ItemData.Item>(items, 'subject_id')
+    async function apply_preset(queue: WKQItem[]): Promise<(WKQItem | number)[]> {
+        set_page_variables()
 
-        switch (page) {
-            case 'reviews':
-            case 'lessons':
-            case 'extra_study':
-                original_queue = get_queue_ids().map((id) => items_by_id[id])
-                break
-            case 'self_study':
-                original_queue = items
-                break
-            default:
-                return
+        const wkQueueItems = new Map<number, WKQItem>()
+        for (let item of queue) wkQueueItems.set(item.id, item)
+        const wkofQueue = await process_queue(queue.map((item) => item.item))
+        if (!wkofQueue.length) {
+            return [3169] // Displays 終了
         }
-    }
-
-    // Keeps track of which items have been completed
-    function track_completed(completed: Set<number>): void {
-        $.jStorage.listenKeyChange('*', (key: string, change: string) => {
-            if (change !== 'deleted' || !new RegExp(UID_prefix + '[rkv]\\d+').test(key)) return
-            completed.add(Number(key.match(/\d+/)?.[0]))
-        })
-    }
-
-    // Runs the selected preset on the queue
-    async function run(): Promise<void> {
-        let queue: ItemData.Item[] = []
-
-        // Prepare queue
-        switch (page) {
-            case 'reviews':
-            case 'lessons':
-            case 'extra_study':
-                queue = original_queue.filter((item) => !completed.has(item.id)) // Filter out answered items
-                break
-            case 'self_study':
-                queue = original_queue.filter((item) => !completed.has(item.id)) // Filter out answered items
-                shuffle(queue) // Always shuffle self study items
-                $('#reviews').attr('style', 'display: block;') // Show page
-                break
-            default:
-                return
-        }
-
-        // Process and update queue
-        queue = process_queue(queue)
-        return update_queue(queue)
+        return wkofQueue.map((item) => (wkQueueItems.get(item.id) as WKQItem) || item.id) // item.id needed for self_study where we convert from WKOF object
     }
 
     // Finds the active preset and runs it against the queue
-    function process_queue(items: ItemData.Item[]): ItemData.Item[] {
+    async function process_queue(items: ItemData.Item[]): Promise<ItemData.Item[]> {
         if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) return [] // @ts-ignore
         const preset = settings.presets[settings.active_presets[page]]
+
         if (!preset) return []
+        if (page === 'self_study') items = await wkof.ItemData.get_items()
+
         return process_preset(preset, items)
     }
 
@@ -313,215 +302,6 @@ declare global {
             default:
                 return [] // Invalid shuffle type
         }
-    }
-
-    // Retrieves the ids of the the items in the current queue
-    function get_queue_ids(): number[] {
-        const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
-
-        // Swap current item into first position so that the current item doesn't change
-        const current_item = $.jStorage.get<Review.Item>(current_item_key)
-        const current_item_index = active_queue.findIndex((item) => item.id === current_item.id)
-        swap(active_queue, 0, current_item_index)
-
-        const inactive_queue = $.jStorage.get<(Review.Item | number)[]>(inactive_queue_key, [])
-        const remaining_queue = inactive_queue.map((item) => (typeof item === 'number' ? item : item.id))
-        return active_queue.map((item) => item.id).concat(remaining_queue)
-    }
-
-    // -----------------------------------------------------------------------------------------------------------------
-    // QUEUE MANAGEMENT
-    // -----------------------------------------------------------------------------------------------------------------
-
-    // This function is crucial to the script working on the extra_study page as it is needed to stop WK
-    // from thinking that the queue is empty. So we insert an item into the queue saying "Loading..." while
-    // we wait for everything to load
-    function display_loading(): void {
-        const callback = () => {
-            const queue = $.jStorage.get<Review.Queue>(inactive_queue_key, [])
-            if ('table' in queue) {
-                // Since the url is invalid the queue will contain an error. We must wait
-                // until the error is set until we can set our queue
-                $.jStorage.set('questionType', 'meaning')
-                display_message('Loading...')
-            }
-            setTimeout(() => $.jStorage.stopListening(inactive_queue_key, callback))
-        }
-        $.jStorage.listenKeyChange(inactive_queue_key, callback)
-    }
-
-    // Displays a message to the user by setting the current item to a vocabulary word with the message
-    function display_message(message: string): void {
-        const dummy = {
-            type: 'Vocabulary',
-            voc: message,
-            characters: message,
-            id: 0,
-            collocations: [],
-            kanji: [],
-            en: [],
-            parts_of_speech: [],
-            sentences: [],
-            category: 'Vocabulary',
-            kana: [''],
-            mmne: '',
-            rmne: '',
-        }
-        $.jStorage.set(active_queue_key, [dummy])
-        $.jStorage.set(inactive_queue_key, page === 'lessons' ? [dummy] : [])
-        $.jStorage.set(current_item_key, dummy, { b2b_ignore: true })
-    }
-
-    // Takes a list of WKOF item and puts them into the queue
-    async function update_queue(items: ItemData.Item[]): Promise<void> {
-        let current_item: Review.Item, active_queue: Review.Item[], rest: number[] | Review.Item[]
-        if (!items.length) return display_message('No items in preset')
-
-        switch (page) {
-            case 'lessons':
-                update_lesson_counts(items)
-                rest = await get_item_data(items)
-                active_queue = rest.splice(0, $.jStorage.get<number>('l/batchSize', 5))
-                current_item = active_queue[0]
-                break
-            case 'extra_study':
-            case 'self_study':
-                // The extra study active queue is a bit strange. It ever only picks the last item of the queue,
-                // and replenishes it from the back. This means that the first 9 items of the active queue are the
-                // last 9 items you will see...
-                let active_queue_composition: ItemData.Item[]
-                if (items.length >= 10) active_queue_composition = items.splice(0, 1).concat(items.splice(-9, 9))
-                else active_queue_composition = items.splice(0, 10)
-                active_queue = await get_item_data(active_queue_composition.reverse())
-                current_item = active_queue[active_queue.length - 1]
-                rest = items.map((item) => item.id)
-                rest.reverse() // Reverse because items are popped from inactive queue
-                break
-            case 'reviews':
-                active_queue = await get_item_data(items.splice(0, 10))
-                current_item = active_queue[0]
-                rest = items.map((item) => item.id)
-                break
-            default:
-                return
-        }
-
-        if (current_item.type === 'Radical') $.jStorage.set(question_type_key, 'meaning') // Has to be set before currentItem
-        $.jStorage.set(active_queue_key, active_queue) // Has to be set before inactive queue for legacy lessons
-        $.jStorage.set(inactive_queue_key, rest)
-        $.jStorage.set(current_item_key, current_item, { b2b_ignore: true })
-        window.wkRefreshAudio()
-    }
-
-    // Retrieves the item's info from the WK api
-    async function get_item_data(items: ItemData.Item[]): Promise<Review.Item[]> {
-        switch (page) {
-            case 'lessons':
-                const res = await fetch(`/lesson/queue`)
-                if (res.status !== 200) {
-                    console.error('Could not fetch lesson queue')
-                    return []
-                }
-                const queue = (await res.json()).queue as Review.Item[]
-                const data_by_id = Object.fromEntries(queue.map((item) => [item.id, item]))
-                return items.map((item) => data_by_id[item.id])
-            case 'reviews':
-            case 'extra_study':
-                const ids = items.map((item) => item.id)
-                const response = await fetch(`/extra_study/items?ids=${ids.join(',')}`)
-                if (response.status !== 200) {
-                    console.error('Could not fetch active queue')
-                    return []
-                }
-                const data = (await response.json()) as Review.Item[]
-                return ids.map((id) => data.find((item) => item.id === id)) as Review.Item[] // Re-sort
-            case 'self_study':
-                return items.map(transform_item)
-            default:
-                return []
-        }
-    }
-
-    // Transforms a wkof item into a review item
-    function transform_item(item: ItemData.Item): Review.Item {
-        const mutual = {
-            auxiliary_meanings: item.data.auxiliary_meanings ?? [],
-            characters: item.data.characters,
-            en: item.data.meanings.filter((meaning) => meaning.accepted_answer).map((meaning) => meaning.meaning),
-            id: item.id,
-            slug: item.data.slug,
-            srs: item.assignments?.srs_stage,
-            syn: item.study_materials?.meaning_synonyms ?? [],
-            type: (item.object[0].toUpperCase() + item.object.slice(1)) as 'Vocabulary' | 'Kanji' | 'Radical',
-            [item.object == 'vocabulary' ? 'voc' : item.object == 'kanji' ? 'kan' : 'rad']: item.data.characters,
-        }
-
-        switch (item.object) {
-            case 'vocabulary':
-                return {
-                    ...mutual,
-                    aud: item.data.pronunciation_audios?.map((audio) => ({
-                        content_type: audio.content_type,
-                        pronunciation: audio.metadata.pronunciation,
-                        url: audio.url,
-                        voice_actor_id: audio.metadata.voice_actor_id,
-                    })),
-                    auxiliary_readings: [], // Sadly the warn/shake info is not available in the api
-                    kana: item.data.readings?.filter((reading) => reading.primary).map((reading) => reading.reading),
-                    kanji: item.data.component_subject_ids.map((id) => {
-                        const kanji = items_by_id[id]
-                        return {
-                            characters: kanji.data.characters,
-                            en: kanji.data.meanings
-                                .filter((m) => m.accepted_answer)
-                                .map((m) => m.meaning)
-                                .join(', '),
-                            id: kanji.id,
-                            ja: kanji.data.readings
-                                .filter((r) => r.accepted_answer)
-                                .map((r) => r.reading)
-                                .join(', '),
-                            kan: kanji.data.characters,
-                            type: 'Kanji',
-                        }
-                    }),
-                    type: 'Vocabulary',
-                    voc: item.data.characters,
-                    category: 'Vocabulary',
-                }
-            case 'kanji':
-                return {
-                    ...mutual,
-                    auxiliary_readings: [], // Sadly the warn/shake info is not available in the api
-                    emph: item.data.readings.find((r) => r.primary)?.type ?? 'kunyomi',
-                    kan: item.data.characters,
-                    kun: item.data.readings.filter((r) => r.type === 'kunyomi').map((r) => r.reading),
-                    nanori: item.data.readings.filter((r) => r.type === 'nanori').map((r) => r.reading),
-                    on: item.data.readings.filter((r) => r.type === 'onyomi').map((r) => r.reading),
-                    type: 'Kanji',
-                    category: 'Kanji',
-                }
-            case 'radical':
-                return {
-                    ...mutual,
-                    character_image_url: item.data.characters
-                        ? undefined
-                        : item.data.character_images?.find(
-                              (i) => i.content_type === 'image/png' && i.metadata.dimensions === '1024x1024',
-                          )?.url,
-                    rad: item.data.characters,
-                    type: 'Radical',
-                    category: 'Radical',
-                }
-        }
-    }
-
-    // Updates the radical, kanji, and vocab counts in lessons
-    function update_lesson_counts(items: ItemData.Item[]) {
-        const counts = wkof.ItemData.get_index(items, 'item_type') as { [key: string]: ItemData.Item[] }
-        $.jStorage.set('l/count/rad', counts.radical?.length ?? 0)
-        $.jStorage.set('l/count/kan', counts.kanji?.length ?? 0)
-        $.jStorage.set('l/count/voc', counts.vocabulary?.length ?? 0)
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -678,7 +458,7 @@ declare global {
     function add_to_extra_study_section(): void {
         const button = $(`
             <div class=" border border-blue-300 border-solid rounded flex flex-row ">
-                <a href="/extra_study/session?title=${script_name}" class="active:no-underline active:text-black
+                <a href="/subjects/extra_study?${script_name}&queue_type=recent_lessons" class="active:no-underline active:text-black
                 appearance-none bg-transparent box-border disabled:border-gray-700 disabled:cursor-not-allowed
                 disabled:opacity-50 disabled:text-gray-700 duration-200 flex focus:no-underline focus:ring
                 font-medium font-sans hover:border-blue-500 hover:no-underline hover:text-blue-700 leading-none m-0
@@ -691,6 +471,7 @@ declare global {
 
     // Installs the dropdown for selecting the active preset
     function install_interface(): void {
+        if (!is_quiz_page()) return
         page = page as 'reviews' | 'lessons' | 'extra_study' | 'self_study'
         const options: string[] = []
         for (let [i, preset] of Object.entries(settings.presets)) {
@@ -703,34 +484,36 @@ declare global {
             settings.active_presets[page] = event.currentTarget.value
             wkof.Settings.save(script_id)
             // Update
-            run()
+            wkQueue.refresh()
         })
         $('#active_preset').remove()
-        $(preset_selection_location).append(
-            $(`<div id="active_preset" ${!settings.display_selection ? 'class="hidden"' : ''}>Preset: </div>`).append(
-                select,
-            ),
-        )
+
+        $(body)
+            .find(preset_selection_location)
+            .append(
+                $(
+                    `<div id="active_preset" ${!settings.display_selection ? 'class="hidden"' : ''}>Preset: </div>`,
+                ).append(select),
+            )
     }
 
     // Installs all the extra optional features
     function install_extra_features(): void {
+        const extra_header_row = $(`<div id="omega_header_row"><div id="egg_timer"></div><div id=""></div></div>`)
+        $(body).find(header_row_location).after(extra_header_row)
+
         install_egg_timer()
         install_streak()
         install_burn_bell()
-        install_voice_actor_control()
-        install_back_to_back()
-        install_prioritization()
 
         // Displays the current duration of the sessions
         function install_egg_timer(): void {
             if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) return
             const egg_timer_start = Date.now()
-            const egg_timer = $(`<div id="egg_timer">Elapsed: 0s</div>`)
+            const egg_timer = extra_header_row.find('#egg_timer')
             setInterval((): void => {
                 egg_timer.html(`Elapsed: ${ms_to_relative_time(Date.now() - egg_timer_start)}`)
             }, MS.second)
-            $(egg_timer_location).append(egg_timer)
         }
 
         // Installs the tracking of streaks of correct answers (note: not items)
@@ -739,13 +522,17 @@ declare global {
 
             // Create and insert element into page
             const elem = $(
-                `<span id="streak"><i class="fa fa-trophy"></i><span class="current">0</span>(<span class="max">0</span>)</span>`,
+                `
+                <div id="streak" class="quiz-statistics__item"><div class="quiz-statistics__item-count">
+                    <div class="quiz-statistics__item-count-icon"><i class="fa fa-trophy"></i></div>
+                    <div class="count quiz-statistics__item-count-text">0 (0)</div>
+                </div></div>
+                `,
             )
-            $('#stats').prepend(elem)
+            $(body).find('.quiz-statistics').prepend(elem)
 
             function update_display(streak: number, max: number): void {
-                $('#streak .current').html(String(streak))
-                $('#streak .max').html(String(max))
+                $('#streak .count').html(`${streak} (${max})`)
             }
 
             type StreakTracker = {
@@ -793,12 +580,15 @@ declare global {
             streak.load()
             update_display(streak.current.streak, streak.current.max)
 
-            $.jStorage.listenKeyChange('questionCount', (): void => {
-                const questions: number = $.jStorage.get('questionCount', 0)
-                const incorrect: number = $.jStorage.get('wrongCount', 0)
-                if (questions < streak.current.questions) streak.undo()
-                else if (incorrect == streak.current.incorrect) streak.correct(questions, incorrect)
-                else streak.incorrect(questions, incorrect)
+            window.addEventListener('didAnswerQuestion', (e: any) => {
+                let correct = 0
+                let incorrect = 0
+                for (let item of Object.values(e.detail.subjectWithStats.stats) as any[]) {
+                    correct += item.complete ? 1 : 0
+                    incorrect += item.incorrect
+                }
+                if (e.detail.results.passed) streak.correct(correct + incorrect, incorrect)
+                else streak.incorrect(correct + incorrect, incorrect)
                 streak.save()
                 update_display(streak.current.streak, streak.current.max)
             })
@@ -806,148 +596,12 @@ declare global {
 
         // Installs the burn bell, which plays a sound whenever an item is burned
         function install_burn_bell(): void {
-            if (page !== 'reviews') return
-
-            let listening: { [key: string]: { failed: boolean } } = {}
-            let getUID = (item: Review.Item): string =>
-                (item.type === 'Radical' ? 'r' : item.type === 'Kanji' ? 'k' : 'v') + item.id
-            $.jStorage.listenKeyChange('currentItem', initiate_item)
-
-            function initiate_item(): void {
-                let item = $.jStorage.get<Review.Item>('currentItem')
-                if (item.srs !== 8) return
-                let UID = getUID(item)
-                if (!listening[UID]) listen_for_UID(UID)
-            }
-
-            function listen_for_UID(UID: string): void {
-                listening[UID] = { failed: false }
-                $.jStorage.listenKeyChange(UID, () => check_answer(UID))
-            }
-
-            function check_answer(UID: string): void {
-                let answers = $.jStorage.get<Review.AnswersObject>(UID)
-                if (answers && (answers.ri || answers.mi)) listening[UID].failed = true
-                if (!answers && !listening[UID].failed) burn(UID)
-            }
-
-            function burn(UID: string): void {
-                if (settings.burn_bell) {
-                    burn_bell_audio.load() // Stop if already playing
-                    burn_bell_audio.play()
-                }
-                delete listening[UID]
-            }
-        }
-
-        // Sets up the randomization or alternation of the voice actor in the quizzes
-        function install_voice_actor_control(): void {
-            if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) return
-            $.jStorage.listenKeyChange(current_item_key, update_default_voice_actor)
-            $.jStorage.listenKeyChange('l/currentQuizItem', update_default_voice_actor)
-
-            function update_default_voice_actor(): void {
-                const voice_actors = WaniKani.voice_actors
-                const random = voice_actors[Math.floor(Math.random() * voice_actors.length)].voice_actor_id
-                const alternate =
-                    voice_actors[(WaniKani.default_voice_actor_id + 1) % voice_actors.length].voice_actor_id
-                if (settings.voice_actor === 'random') WaniKani.default_voice_actor_id = random
-                else if (settings.voice_actor === 'alternate') WaniKani.default_voice_actor_id = alternate
-            }
-        }
-
-        // Sets up the back2back features so that meaning and reading questions
-        // can be made to appear after each other
-        function install_back_to_back(): void {
-            if (!['reviews', 'lessons'].includes(page)) return
-
-            // Keep track of the latest answer to decide whether to show the next question right away
-            let last_answer = false
-
-            // Wrap jStorage.set(key, value) to ignore the value when the key is for the current item AND one item has
-            // already been partially answered. If an item has been partially answered, then set the current item to
-            // that item instead.
-            const original_set = $.jStorage.set
-            const new_set = function <T>(
-                key: string,
-                value: T,
-                options: (JStorageOptions & { b2b_ignore?: boolean }) | undefined,
-            ): T {
-                // @ts-ignore
-                const pass = (val) => original_set.call(this, key, val, options) as T
-                if (settings.back2back_behavior === 'disabled' || options?.b2b_ignore) return pass(value) // Ignore if b2b_ignore flag is present
-
-                const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
-
-                // If an answer is being registered
-                if (RegExp(`^${UID_prefix}[rkv]\\d+$`).test(key)) {
-                    const prev = { mc: 0, rc: 0, mi: 0, ri: 0, ...$.jStorage.get<Review.AnswersObject>(key, {}) }
-                    const curr = { mc: 0, rc: 0, mi: 0, ri: 0, ...(value as unknown as Review.AnswersObject) }
-
-                    if (prev.mc < curr.mc || prev.rc < curr.rc) last_answer = true
-                    else if (prev.mi < curr.mi || prev.ri < curr.ri) {
-                        last_answer = false
-                        // If the script is set to always show both answers, remove any correct answers already registered
-                        if (settings.back2back_behavior === 'true')
-                            return pass({ ...curr, mc: undefined, rc: undefined })
-                    }
-                }
-                // If the current item is being set
-                else if (key === item_key) {
-                    let item = $.jStorage.get<Review.Item>(item_key)
-                    const active_queue = $.jStorage.get<Review.Item[]>(active_queue_key, [])
-                    if (!item) return pass(value)
-                    if (settings.back2back_behavior !== 'always' && !last_answer) return pass(value)
-                    // ! Potential issue when reordering and the current item is still in the active queue
-                    // ! If behavior is 'always' or last answer was correct, the current item will stay the current item
-                    // Find the item in the active queue. If it is not there, pass
-                    item = active_queue.find((i) => i.id === item.id) as Review.Item
-                    if (!item) return pass(value)
-
-                    // Bring the item to the front of the active queue
-                    const new_active_queue = [item, ...active_queue.filter((i) => i !== item)]
-                    $.jStorage.set(active_queue_key, new_active_queue)
-                    // Set the question type
-                    let question = $.jStorage.get<'meaning' | 'reading'>(question_type_key, 'meaning')
-                    if (item.type === 'Radical') question = 'meaning'
-                    else {
-                        const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
-                        const stats = $.jStorage.get<Review.AnswersObject>(UID_prefix + UID, {})
-                        if (stats.mc) question = 'reading'
-                        else if (stats.rc) question = 'meaning'
-                    }
-                    $.jStorage.set(question_type_key, question)
-                    // Pass the value to the original set function
-                    return pass(item)
-                } // @ts-ignore
-                return pass(value)
-            }
-            $.jStorage.set = new_set
-        }
-
-        // Sets up prioritization of meaning and reading questions in sessions
-        function install_prioritization(): void {
-            // Run every time item changes
-            const item_key = page === 'lessons' ? 'l/currentQuizItem' : current_item_key
-            $.jStorage.listenKeyChange(item_key, prioritize)
-            // Initialize session to prioritized question type
-            prioritize()
-
-            // Prioritize reading or meaning
-            function prioritize(): void {
-                const prio = settings.prioritize
-                const item = $.jStorage.get<Review.Item>(item_key)
-                const question_type = $.jStorage.get<'meaning' | 'reading'>(question_type_key, 'meaning')
-                // Skip if item is not defined, it is a radical, it is already the right question, or no priority is selected
-                if (!item || item.type == 'Radical' || question_type == prio || 'none' == prio) return
-                const UID = (item.type == 'Kanji' ? 'k' : 'v') + item.id
-                const stats = $.jStorage.get<Review.AnswersObject>(UID_prefix + UID)
-                // Change the question if the priority question has not been answered yet
-                if (!stats || !stats[prio == 'reading' ? 'rc' : 'mc']) {
-                    $.jStorage.set(question_type_key, prio)
-                    $.jStorage.set(item_key, item)
-                }
-            }
+            window.addEventListener('didChangeSRS', (e: any) => {
+                const srs = e.detail.newLevelText
+                if (!/burn/i.test(srs)) return
+                burn_bell_audio.load() // Stop if already playing
+                burn_bell_audio.play()
+            })
         }
     }
 
@@ -1059,12 +713,21 @@ declare global {
 
             #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }
 
+            #omega_header_row {
+                display: flex;
+                width: 100%;
+                position: absolute;
+                top: 2em;
+                left: 20px;
+            }
+
             #active_preset {
-                font-size: 1rem;
+                font-size: 1em;
                 line-height: 1rem;
                 padding: 0.5rem;
                 position: absolute;
                 bottom: 0;
+                left: 0;
             }
 
             #active_preset select {
@@ -1072,6 +735,7 @@ declare global {
                 border: none;
                 box-shadow: none !important;
                 color: currentColor;
+                font-size: 1em;
             }
 
             #active_preset select option { color: black; }
@@ -1096,6 +760,8 @@ declare global {
             }
 
             #stats { z-index: 1 }
+
+            #streak { width: max-content; }
 
             .burn_bell_wrapper {
                 display: flex;
@@ -1326,8 +992,8 @@ declare global {
                                     content: {
                                         disabled: 'Disabled',
                                         always: 'Repeat until correct',
-                                        correct: 'Shuffle incorrect',
-                                        true: 'True Back To Back',
+                                        // correct: 'Shuffle incorrect',
+                                        // true: 'True Back To Back',
                                     },
                                 },
                                 prioritize: {
@@ -1341,17 +1007,17 @@ declare global {
                                         meaning: 'Meaning',
                                     },
                                 },
-                                voice_actor: {
-                                    type: 'dropdown',
-                                    default: `default`,
-                                    label: 'Voice Actor',
-                                    hover_tip: 'Randomize or alternate the voice that is played',
-                                    content: {
-                                        default: `Default`,
-                                        random: 'Randomize',
-                                        alternate: 'Alternate',
-                                    },
-                                },
+                                // voice_actor: {
+                                //     type: 'dropdown',
+                                //     default: `default`,
+                                //     label: 'Voice Actor',
+                                //     hover_tip: 'Randomize or alternate the voice that is played',
+                                //     content: {
+                                //         default: `Default`,
+                                //         random: 'Randomize',
+                                //         alternate: 'Alternate',
+                                //     },
+                                // },
                             },
                         },
                     },
@@ -1926,14 +1592,14 @@ declare global {
         settings = wkof.settings[script_id] as Settings.Settings
         set_body_attributes() // Update attributes on body to hide/show stuff
         install_interface() // Reinstall interface in order to update it
-        run() // Re-run preset in case something changed
+        wkQueue.refresh() // Re-run preset in case something changed
         update_bell_audio() // Update bell audio in case setting changed
     }
 
     // Set some attributes on the body to hide or show things with CSS
     function set_body_attributes() {
-        $(`body`).attr(`${script_id}_display_egg_timer`, String(settings.display_egg_timer))
-        $(`body`).attr(`${script_id}_display_streak`, String(settings.display_streak))
+        $(body).attr(`${script_id}_display_egg_timer`, String(settings.display_egg_timer))
+        $(body).attr(`${script_id}_display_streak`, String(settings.display_streak))
     }
 
     // Refreshes the preset and action selection

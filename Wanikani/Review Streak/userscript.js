@@ -1,68 +1,101 @@
 // ==UserScript==
 // @name         Wanikani: Review Answer Streak
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Counts the number of times you have get review questions right in a row
 // @author       Kumirei
-// @include      /^https://(www|preview).wanikani.com/review/session/
+// @match        https://www.wanikani.com/*
+// @match        https://preview.wanikani.com/*
 // @grant        none
 // ==/UserScript==
 /*jshint esversion: 8 */
 
-;(function (wkof, $) {
-    let script_name = 'Review Answer Streak'
-    let script_id = 'review_streak'
+;(function ($) {
+    let body = document.body
+    let page
 
-    // Make sure WKOF is installed
-    if (!wkof) {
-        let response = confirm(
-            script_name +
-                ' requires WaniKani Open Framework.\n Click "OK" to be forwarded to installation instructions.',
-        )
-        if (response) {
-            window.location.href =
-                'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549'
-        }
-        return
-    }
-    wkof.include('Settings')
-    wkof.ready('Settings').then(load_settings).then(install_streak_count)
+    get_page()
+    install_streak_count()
 
-    // Load WKOF settings
-    function load_settings() {
-        let defaults = {
-            streak: 0,
-            streak_max: 0,
-        }
-        return wkof.Settings.load(script_id, defaults)
+    // Listen for page changes
+    document.addEventListener(`turbo:before-render`, (e) => {
+        body = e.detail.newBody
+        get_page()
+        install_streak_count()
+    })
+
+    function get_page() {
+        const path = window.location.pathname
+        if (/^\/(DASHBOARD)?$/i.test(path)) page = 'dashboard'
+        else if (/REVIEW(\/session)?/i.test(path)) page = 'reviews'
+        else if (/LESSON(\/session)?/i.test(path)) page = 'lessons'
+        else if (/EXTRA_STUDY(\/session)?/i.test(path)) page = 'extra_study'
+        else page = 'other'
     }
 
     function install_streak_count() {
-        let settings = wkof.settings[script_id]
-        let elem = `<span id="streak"><i class="fa fa-trophy"></i><span class="current">${settings.streak}</span>(<span class="max">${settings.streak_max}</span>)</span>`
-        document.getElementById('stats').insertAdjacentHTML('afterbegin', elem)
-        let curr_elem = document.querySelector('#streak .current')
-        let max_elem = document.querySelector('#streak .max')
+        // Create and insert element into page
+        const elem = `
+                <div id="streak" class="quiz-statistics__item"><div class="quiz-statistics__item-count">
+                    <div class="quiz-statistics__item-count-icon"><i class="fa fa-trophy"></i></div>
+                    <div class="count quiz-statistics__item-count-text">0 (0)</div>
+                </div></div>
+                `
+        body.querySelector('.quiz-statistics').insertAdjacentHTML('afterbegin', elem)
 
-        let lastlast = [0, 0, settings.streak, settings.streak_max] // Question, incorrect, streak, max streak
-        let last = [0, 0, settings.streak, settings.streak_max] // Question, incorrect, streak, max streak
-        $.jStorage.listenKeyChange('questionCount', (_) => {
-            let curr = [$.jStorage.get('questionCount'), $.jStorage.get('wrongCount')]
-            if (curr[0] < last[0]) {
-                // Undone answer
-                curr = lastlast
-                last = lastlast // Lock in undone answer. Can't un-undo, after all
-                settings.streak = curr[2]
-                settings.streak_max = curr[3]
-            } else if (curr[1] == last[1]) settings.streak++
-            // Correct answer
-            else if (curr[1] > last[1]) settings.streak = 0 // Incorrect answer
-            if (settings.streak > settings.streak_max) settings.streak_max = settings.streak
-            lastlast = last
-            last = [curr[0], curr[1], settings.streak, settings.streak_max]
-            curr_elem.innerText = last[2]
-            max_elem.innerText = last[3]
-            wkof.Settings.save(script_id)
+        function update_display(streak, max) {
+            body.querySelector('#streak .count').innerHTML = `${streak} (${max})`
+        }
+
+        // The object that keeps track of the current (and previous!) streak
+        const streak = {
+            current: {},
+            prev: {},
+            save: () =>
+                localStorage.setItem(
+                    `${page}_streak`,
+                    JSON.stringify({ streak: streak.current.streak, max: streak.current.max }),
+                ),
+            load: () => {
+                const data = {
+                    questions: 0,
+                    incorrect: 0,
+                    ...JSON.parse(localStorage.getItem(`${page}_streak`) ?? '{"streak": 0, "max": 0}'),
+                }
+                streak.current = data
+                streak.prev = data
+            },
+            undo: () => {
+                streak.current = streak.prev
+            },
+            correct: (questions, incorrect) => {
+                streak.prev = streak.current
+                streak.current = {
+                    questions,
+                    incorrect,
+                    streak: streak.current.streak + 1,
+                    max: Math.max(streak.current.streak + 1, streak.current.max),
+                }
+            },
+            incorrect: (questions, incorrect) => {
+                streak.prev = streak.current
+                streak.current = { questions, incorrect, streak: 0, max: streak.current.max }
+            },
+        }
+        streak.load()
+        update_display(streak.current.streak, streak.current.max)
+
+        window.addEventListener('didAnswerQuestion', (e) => {
+            let correct = 0
+            let incorrect = 0
+            for (let item of Object.values(e.detail.subjectWithStats.stats)) {
+                correct += item.complete ? 1 : 0
+                incorrect += item.incorrect
+            }
+            if (e.detail.results.passed) streak.correct(correct + incorrect, incorrect)
+            else streak.incorrect(correct + incorrect, incorrect)
+            streak.save()
+            update_display(streak.current.streak, streak.current.max)
         })
     }
 })(window.wkof, window.jQuery)
