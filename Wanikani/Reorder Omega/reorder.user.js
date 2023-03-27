@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.20
+// @version      1.3.21
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -1595,7 +1595,10 @@ var module = {};
                     init();
                 });
                 // Set up queue manipulation
-                wkQueue.addTotalChange(apply_preset, { openFramework: true });
+                wkQueue.addTotalChange(apply_preset, {
+                    openFramework: true,
+                    openFrameworkGetItemsConfig: 'assignments,review_statistics,study_materials'
+                });
                 if (settings.back2back_behavior === 'always')
                     wkQueue.completeSubjectsInOrder = true;
                 if (settings.prioritize !== 'none')
