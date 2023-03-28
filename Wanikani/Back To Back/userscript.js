@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.3.7
+// @version      1.3.8
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -31,8 +31,12 @@
     // Installs script functions on page
     function install() {
         install_menu()
+        run()
+    }
+
+    function run() {
         const settings = wkof.settings[script_id]
-        if (settings.back2back_behavior === 'always') wkQueue.completeSubjectsInOrder = true
+        if (settings.behavior === 'always') wkQueue.completeSubjectsInOrder = true
         if (settings.prioritize !== 'none') wkQueue.questionOrder = `${settings.prioritize}First`
     }
 
@@ -79,7 +83,7 @@
         let config = {
             script_id: script_id,
             title: script_name,
-            on_save: prioritize,
+            on_save: run,
             content: {
                 behavior: {
                     type: 'dropdown',
