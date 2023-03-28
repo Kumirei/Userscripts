@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Burn Bell
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.3
 // @description  Plays a bell sound when you burn an item
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -82,7 +82,7 @@
 
     window.addEventListener('didChangeSRS', (e) => {
         const srs = e.detail.newLevelText
-        if (/master/i.test(srs) && settings.bell !== 'disabled') bellSound.play()
+        if (/burn/i.test(srs) && settings.bell !== 'disabled') bellSound.play()
     })
 
     function updateBellSound(play) {
