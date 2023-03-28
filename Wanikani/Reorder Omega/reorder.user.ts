@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.21
+// @version      1.3.22
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -127,8 +127,7 @@ declare global {
     init()
 
     // Listen for page changes
-    document.addEventListener(`turbo:before-render`, (e: any) => {
-        e.preventDefault()
+    window.addEventListener(`turbo:before-render`, (e: any) => {
         body = e.detail.newBody
         init()
     })
@@ -189,9 +188,14 @@ declare global {
         const wkQueueItems = new Map<number, WKQItem>()
         for (let item of queue) wkQueueItems.set(item.id, item)
         const wkofQueue = await process_queue(queue.map((item) => item.item))
+
+        // If preset has no items show a message
+        body.classList.remove('omegaNoItems')
         if (!wkofQueue.length) {
+            body.classList.add('omegaNoItems')
             return [3169] // Displays 終了
         }
+
         return wkofQueue.map((item) => (wkQueueItems.get(item.id) as WKQItem) || item.id) // item.id needed for self_study where we convert from WKOF object
     }
 
@@ -779,6 +783,15 @@ declare global {
 
             .burn_bell_wrapper > button > i {
                 width: 30px;
+            }
+
+            body.omegaNoItems .character-header__characters::before {
+                content: "No items in preset";
+                font-size: 100px;
+            }
+
+            body.omegaNoItems .character-header__characters {
+                font-size: 0;
             }
         `
 
