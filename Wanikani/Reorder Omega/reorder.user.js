@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.22
+// @version      1.3.23
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -494,7 +494,7 @@ var module = {};
         function install_burn_bell() {
             window.addEventListener('didChangeSRS', function (e) {
                 var srs = e.detail.newLevelText;
-                if (!/burn/i.test(srs))
+                if (!/burn/i.test(srs) || settings.burn_bell === 'disabled')
                     return;
                 burn_bell_audio.load(); // Stop if already playing
                 burn_bell_audio.play();

@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Wanikani: Burn Bell
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Plays a bell sound when you burn an item
 // @author       Kumirei
-// @include      *wanikani.com/review/session
+// @match        https://www.wanikani.com/*
+// @match        https://preview.wanikani.com/*
 // @license      MIT; http://opensource.org/licenses/MIT
 // @grant        none
 // ==/UserScript==
@@ -61,7 +62,7 @@
         const config = {
             script_id,
             title: script_name,
-            on_save: updateBellSound,
+            on_save: () => updateBellSound(true),
             content: {
                 bell: {
                     type: 'dropdown',
@@ -79,37 +80,15 @@
         new wkof.Settings(config).open()
     }
 
-    let listening = {}
-    let getUID = (item) => (item.rad ? 'r' : item.kan ? 'k' : 'v') + item.id
-    $.jStorage.listenKeyChange('currentItem', initiateItem)
+    window.addEventListener('didChangeSRS', (e) => {
+        const srs = e.detail.newLevelText
+        if (/master/i.test(srs) && settings.bell !== 'disabled') bellSound.play()
+    })
 
-    function initiateItem() {
-        let item = $.jStorage.get('currentItem')
-        if (item.srs !== 8) return
-        let UID = getUID(item)
-        if (!listening[UID]) listenUID(UID, item.srs)
-    }
-
-    function listenUID(UID) {
-        listening[UID] = { failed: false }
-        $.jStorage.listenKeyChange(UID, () => checkAnswer(UID))
-    }
-
-    function checkAnswer(UID) {
-        let answers = $.jStorage.get(UID)
-        if (answers && (answers.ri || answers.mi)) listening[UID].failed = true
-        if (!answers && !listening[UID].failed) burn()
-    }
-
-    function burn(UID) {
-        if (settings.bell !== 'disabled') bellSound.play()
-        delete listening[UID]
-    }
-
-    function updateBellSound() {
+    function updateBellSound(play) {
         if (settings.bell === 'high') bellSound.src = bellSources.high
         else if (settings.bell === 'low') bellSound.src = bellSources.low
-        if (settings.bell !== 'disabled') bellSound.play()
+        if (settings.bell !== 'disabled' && play) bellSound.play()
     }
 
     function setBellSources() {
