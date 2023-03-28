@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Review Answer Streak
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.3
 // @description  Counts the number of times you have get review questions right in a row
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -41,10 +41,11 @@
                     <div class="count quiz-statistics__item-count-text">0 (0)</div>
                 </div></div>
                 `
-        body.querySelector('.quiz-statistics').insertAdjacentHTML('afterbegin', elem)
+        body.querySelector('.quiz-statistics')?.insertAdjacentHTML('afterbegin', elem)
 
         function update_display(streak, max) {
-            body.querySelector('#streak .count').innerHTML = `${streak} (${max})`
+            const elem = body.querySelector('#streak .count')
+            if (elem) elem.innerHTML = `${streak} (${max})`
         }
 
         // The object that keeps track of the current (and previous!) streak
