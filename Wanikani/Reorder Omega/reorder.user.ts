@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.23
+// @version      1.3.24
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -83,6 +83,7 @@ declare global {
     // Script info
     const script_id = 'reorder_omega'
     const script_name = 'Reorder Omega'
+    const wkof_version_needed = '1.1.0'
 
     // Globals
     const { wkof, wkQueue } = window
@@ -811,6 +812,15 @@ declare global {
             if (response) {
                 window.location.href =
                     'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549'
+            }
+        } else {
+            if (!wkof.version || wkof.version.compare_to(wkof_version_needed) === 'older') {
+                let response = confirm(
+                    `${script_name} requires WaniKani Open Framework version ${wkof_version_needed} or higher.\nClick "OK" to be forwarded to the update page.`,
+                )
+                if (response) {
+                    window.location.href = 'https://greasyfork.org/en/scripts/38582-wanikani-open-framework'
+                }
             }
         }
     }
