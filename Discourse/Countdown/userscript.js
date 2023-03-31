@@ -18,7 +18,15 @@
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: "Ninkastmin's Birth- & Last Guru Day!",
+            date: 'dec 28 2023',
+            user: 'Ninkastmin',
+            message0: '@Ninkastmin Get ready to promote your apprentices!',
+            message1: '@Ninkastmin HAPPY BIRTHDAY!!!! How did it go?',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'JLPT',
             date: 'dec 3 2023',
