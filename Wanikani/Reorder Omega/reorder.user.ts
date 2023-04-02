@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.29
+// @version      1.3.30
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -48,7 +48,9 @@ type WKQueue = {
     addFilter: AddWKQueueManipulation
     addReorder: AddWKQueueManipulation
     applyManipulation: AddWKQueueManipulation
-    addPostProcessing: any
+    addPostprocessing: (callback: (q: WKQItem[], data: { on: string }, options: WKQOptions) => void) => {
+        remove: () => void
+    }
     refresh: () => void
     currentLessonQueue: (options?: WKQOptions) => WKQItem[]
     currentReviewQueue: (options?: WKQOptions) => WKQItem[]
@@ -139,8 +141,40 @@ declare global {
         openFramework: true,
         openFrameworkGetItemsConfig: 'assignments,review_statistics,study_materials',
     })
+
+    // Set up back to back
     if (settings.back2back_behavior === 'always') wkQueue.completeSubjectsInOrder = true
+
+    // Set up prioritization
     if (settings.prioritize !== 'none') wkQueue.questionOrder = `${settings.prioritize}First`
+
+    // Set up randomized voice actor
+    wkQueue.addPostprocessing((queue) => {
+        if (settings.voice_actor === 'default') return
+        let last_va_id = -1
+        for (let item of queue) {
+            if (!('readings' in item.subject)) continue // Only vocab items
+            let next_last_va_id = -1
+            for (let reading of item.subject.readings || []) {
+                if (!reading.pronunciations.length) continue // Only items with audio
+                let sources: any[] = []
+                if (settings.voice_actor === 'random') {
+                    // Pick random pronunciation and then set all actors' audio to be that pronunciation
+                    const random_index = Math.floor(Math.random() * reading.pronunciations.length)
+                    sources = reading.pronunciations[random_index]?.sources
+                } else if (settings.voice_actor === 'alternate') {
+                    // Pick next highest voice actor ID, or the lowest VA ID, then set all actors' audio to be that pronunciation
+                    const audio = reading.pronunciations.sort((a, b) => a.actor.id - b.actor.id)
+                    const next = audio.filter((a) => a.actor.id > last_va_id)[0] || audio[0]
+                    next_last_va_id = Math.max(next_last_va_id, next.actor.id)
+                    sources = next.sources
+                }
+                if (!sources.length) continue
+                for (let pronunciation of reading.pronunciations) pronunciation.sources = sources
+            }
+            last_va_id = next_last_va_id
+        }
+    })
 
     loading_screen(false)
 
@@ -1044,17 +1078,17 @@ declare global {
                                         meaning: 'Meaning',
                                     },
                                 },
-                                // voice_actor: {
-                                //     type: 'dropdown',
-                                //     default: `default`,
-                                //     label: 'Voice Actor',
-                                //     hover_tip: 'Randomize or alternate the voice that is played',
-                                //     content: {
-                                //         default: `Default`,
-                                //         random: 'Randomize',
-                                //         alternate: 'Alternate',
-                                //     },
-                                // },
+                                voice_actor: {
+                                    type: 'dropdown',
+                                    default: `default`,
+                                    label: 'Voice Actor',
+                                    hover_tip: 'Randomize or alternate the voice that is played',
+                                    content: {
+                                        default: `Default`,
+                                        random: 'Randomize',
+                                        alternate: 'Alternate',
+                                    },
+                                },
                             },
                         },
                     },

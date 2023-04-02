@@ -1,54 +1,63 @@
 import { SubjectTypeShortString } from '../WKOF Types/wkof'
 
 export namespace Review {
-    type Item = {
-        auxiliary_meanings: { meaning: string; type: 'whitelist' | 'blacklist' }[]
-        characters: string
-        en: string[]
-        id: number
-        slug: string
-        srs: -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | undefined
-        syn: string[]
-    } & (VocabItem | KanjiItem | RadicalItem)
+    type Item = VocabItem | KanjiItem | RadicalItem
 
     type VocabItem = {
-        aud: {
-            content_type: string
-            pronunciation: string
-            url: string
-            voice_actor_id: number
-        }[]
-        auxiliary_readings: { reading: string; type: 'whitelist' | 'blacklist' }[]
-        kana: string[]
-        kanji: {
-            characters: string
-            en: string
-            id: number
-            ja: string
-            kan: string
-            type: string
-        }[]
+        id: number
+        subject_category: 'Vocabulary'
         type: 'Vocabulary'
-        category: 'Vocabulary'
-        voc: string
+        kanji: {
+            id: number
+            meanings: string[]
+            readings: string[]
+        }[]
+        meanings: string[]
+        readings: {
+            reading: string
+            pronunciations: {
+                actor: {
+                    id: number
+                    name: string
+                    description: string
+                    gender: string
+                }
+                sources: {
+                    content_type: string
+                    ur: string
+                }[]
+            }[]
+        }[]
     }
 
     type KanjiItem = {
-        auxiliary_readings: { reading: string; type: 'whitelist' | 'blacklist' }[]
-        emph: 'onyomi' | 'kunyomi' | 'nanori'
-        kun: string[]
-        nanori: string[]
-        on: string[]
+        id: number
+        subject_category: 'Kanji'
         type: 'Kanji'
-        category: 'Kanji'
-        kan: string
+        meanings: string[]
+        auxiliary_meanings: {
+            type: 'whitelist' | 'blacklist'
+            meaning: string
+        }[]
+        auxiliary_readings: {
+            type: 'whitelist' | 'blacklist'
+            reading: string
+        }[]
+        primary_reading_type: 'kunyomi' | 'onyomi' | 'nanori'
+        kunyomi: string[]
+        onyomi: string[]
+        nanori: string[]
     }
 
     type RadicalItem = {
-        character_image_url?: string
+        id: number
+        subject_category: 'Radical'
         type: 'Radical'
-        category: 'Radical'
-        rad: string
+        meanings: string[]
+        auxiliary_meanings: {
+            type: 'whitelist' | 'blacklist'
+            meaning: string
+        }[]
     }
 
     type AnswersObject = {

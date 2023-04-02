@@ -1,23 +1,29 @@
 // ==UserScript==
 // @name        Wanikani: Random voice actor
 // @description Randomizes the preferred voice actor
-// @include     /^https://(www|preview).wanikani.com/(lesson|review|extra_study)/session/
-// @version     1.2.0
+// @match       https://www.wanikani.com/*
+// @match       https://preview.wanikani.com/*
+// @require     https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1170110
+// @version     1.2.1
 // @author      Kumirei
 // @license     MIT; http://opensource.org/licenses/MIT
-// @run-at      document-end
 // @grant       none
 // @namespace   https://greasyfork.org/users/105717
 // ==/UserScript==
 
 ;(function () {
-    $.jStorage.listenKeyChange('currentItem', randomize_voice_actor)
-    $.jStorage.listenKeyChange('l/currentQuizItem', randomize_voice_actor)
-    $.jStorage.listenKeyChange('l/currentLesson', randomize_voice_actor)
-
-    function randomize_voice_actor() {
-        let r = Math.random()
-        let voice_actor = r > 0.5 ? 2 : 1
-        WaniKani.default_voice_actor_id = voice_actor
-    }
+    // Set up randomized voice actor
+    window.wkQueue.addPostprocessing((queue) => {
+        for (let item of queue) {
+            if (!('readings' in item.subject)) continue // Only vocab items
+            for (let reading of item.subject.readings || []) {
+                if (!reading.pronunciations.length) continue // Only items with audio
+                // Pick random pronunciation and then set all actors' audio to be that pronunciation
+                const random_index = Math.floor(Math.random() * reading.pronunciations.length)
+                const sources = reading.pronunciations[random_index]?.sources
+                if (!sources.length) continue
+                for (let pronunciation of reading.pronunciations) pronunciation.sources = sources
+            }
+        }
+    })
 })()

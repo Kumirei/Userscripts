@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.29
+// @version      1.3.30
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -817,6 +817,17 @@ var module = {};
                                         reading: 'Reading',
                                         meaning: 'Meaning'
                                     }
+                                },
+                                voice_actor: {
+                                    type: 'dropdown',
+                                    "default": "default",
+                                    label: 'Voice Actor',
+                                    hover_tip: 'Randomize or alternate the voice that is played',
+                                    content: {
+                                        "default": "Default",
+                                        random: 'Randomize',
+                                        alternate: 'Alternate'
+                                    }
                                 }
                             }
                         }
@@ -1624,10 +1635,50 @@ var module = {};
                     openFramework: true,
                     openFrameworkGetItemsConfig: 'assignments,review_statistics,study_materials'
                 });
+                // Set up back to back
                 if (settings.back2back_behavior === 'always')
                     wkQueue.completeSubjectsInOrder = true;
+                // Set up prioritization
                 if (settings.prioritize !== 'none')
                     wkQueue.questionOrder = "".concat(settings.prioritize, "First");
+                // Set up randomized voice actor
+                wkQueue.addPostprocessing(function (queue) {
+                    var _a;
+                    if (settings.voice_actor === 'default')
+                        return;
+                    var last_va_id = -1;
+                    for (var _i = 0, queue_2 = queue; _i < queue_2.length; _i++) {
+                        var item = queue_2[_i];
+                        if (!('readings' in item.subject))
+                            continue; // Only vocab items
+                        var next_last_va_id = -1;
+                        for (var _b = 0, _c = item.subject.readings || []; _b < _c.length; _b++) {
+                            var reading = _c[_b];
+                            if (!reading.pronunciations.length)
+                                continue; // Only items with audio
+                            var sources = [];
+                            if (settings.voice_actor === 'random') {
+                                // Pick random pronunciation and then set all actors' audio to be that pronunciation
+                                var random_index = Math.floor(Math.random() * reading.pronunciations.length);
+                                sources = (_a = reading.pronunciations[random_index]) === null || _a === void 0 ? void 0 : _a.sources;
+                            }
+                            else if (settings.voice_actor === 'alternate') {
+                                // Pick next highest voice actor ID, or the lowest VA ID, then set all actors' audio to be that pronunciation
+                                var audio = reading.pronunciations.sort(function (a, b) { return a.actor.id - b.actor.id; });
+                                var next = audio.filter(function (a) { return a.actor.id > last_va_id; })[0] || audio[0];
+                                next_last_va_id = Math.max(next_last_va_id, next.actor.id);
+                                sources = next.sources;
+                            }
+                            if (!sources.length)
+                                continue;
+                            for (var _d = 0, _e = reading.pronunciations; _d < _e.length; _d++) {
+                                var pronunciation = _e[_d];
+                                pronunciation.sources = sources;
+                            }
+                        }
+                        last_va_id = next_last_va_id;
+                    }
+                });
                 loading_screen(false);
                 return [2 /*return*/];
         }
