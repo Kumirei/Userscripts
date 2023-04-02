@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.27
+// @version      1.3.28
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -465,9 +465,9 @@ declare global {
 
     // On the dashboard, adds a button to take you to the extra study page for the script
     function add_to_extra_study_section(): void {
-        const elem = document.querySelector('.extra-study')
-        const attr = elem?.getAttribute('data-react-props')
-        const data = JSON.parse(attr as string)
+        const attr = document.querySelector('.extra-study')?.getAttribute('data-react-props')
+        if (!attr) return
+        const data = JSON.parse(attr)
         const type = data.burnedItems?.length
             ? 'burned_items'
             : data.recentLessons?.length
