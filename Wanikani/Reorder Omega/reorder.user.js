@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.28
+// @version      1.3.29
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -104,13 +104,15 @@ var module = {};
     // -----------------------------------------------------------------------------------------------------------------
     // PROCESS QUEUE
     // -----------------------------------------------------------------------------------------------------------------
-    function apply_preset(queue) {
+    function apply_preset(queue, data) {
         return __awaiter(this, void 0, void 0, function () {
             var wkQueueItems, _i, queue_1, item, wkofQueue;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         set_page_variables();
+                        if (data.on === 'lesson')
+                            page = 'lessons'; // Stopgap measure until I refactor page variables
                         wkQueueItems = new Map();
                         for (_i = 0, queue_1 = queue; _i < queue_1.length; _i++) {
                             item = queue_1[_i];

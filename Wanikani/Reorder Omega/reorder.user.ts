@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.28
+// @version      1.3.29
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -35,6 +35,29 @@ interface WKQOptions {
 }
 
 type SyncOrAsync<T> = T | Promise<T>
+type AddWKQueueManipulation = (
+    callback: (q: WKQItem[], data: { on: string }) => SyncOrAsync<(WKQItem | number)[]>,
+    options?: WKQOptions,
+) => { remove: () => void }
+
+type WKQueue = {
+    on: (pages: string) => WKQueue
+    completeSubjectsInOrder: boolean
+    questionOrder: 'meaningFirst' | 'readingFirst'
+    addTotalChange: AddWKQueueManipulation
+    addFilter: AddWKQueueManipulation
+    addReorder: AddWKQueueManipulation
+    applyManipulation: AddWKQueueManipulation
+    addPostProcessing: any
+    refresh: () => void
+    currentLessonQueue: (options?: WKQOptions) => WKQItem[]
+    currentReviewQueue: (options?: WKQOptions) => WKQItem[]
+    lessonBatchSize: number
+    version: number
+    _internal: {
+        replaceWIthNewerVersion: Function
+    }
+}
 
 // We have to extend the global window object since the values are already present
 // and we don't provide them ourselves
@@ -45,29 +68,7 @@ declare global {
         $: JQueryStatic
         WaniKani: any
         wkRefreshAudio: () => void
-        wkQueue: {
-            on: string
-            completeSubjectsInOrder: boolean
-            questionOrder: 'meaningFirst' | 'readingFirst'
-            addTotalChange: (
-                callback: (q: WKQItem[]) => SyncOrAsync<(WKQItem | number)[]>,
-                options?: WKQOptions,
-            ) => { remove: () => void }
-            addFilter: (
-                callback: (q: WKQItem[]) => SyncOrAsync<(WKQItem | number)[]>,
-                options?: WKQOptions,
-            ) => { remove: () => void }
-            addReorder: (
-                callback: (q: WKQItem[]) => SyncOrAsync<(WKQItem | number)[]>,
-                options?: WKQOptions,
-            ) => { remove: () => void }
-            applyManipulation: (
-                callback: (q: WKQItem[]) => SyncOrAsync<(WKQItem | number)[]>,
-                options?: WKQOptions,
-            ) => { remove: () => void }
-            refresh: () => void
-            version: number
-        }
+        wkQueue: WKQueue
     }
 
     interface JStorageOptions {
@@ -183,8 +184,9 @@ declare global {
     // PROCESS QUEUE
     // -----------------------------------------------------------------------------------------------------------------
 
-    async function apply_preset(queue: WKQItem[]): Promise<(WKQItem | number)[]> {
+    async function apply_preset(queue: WKQItem[], data: { on: string }): Promise<(WKQItem | number)[]> {
         set_page_variables()
+        if (data.on === 'lesson') page = 'lessons' // Stopgap measure until I refactor page variables
 
         const wkQueueItems = new Map<number, WKQItem>()
         for (let item of queue) wkQueueItems.set(item.id, item)
