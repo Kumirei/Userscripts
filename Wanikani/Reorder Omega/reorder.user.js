@@ -2,12 +2,12 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.30
+// @version      1.3.31
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1170110
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1172719
 // @grant        none
 // @run-at       document-idle
 // @license      MIT
