@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.31
+// @version      1.3.32
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -61,6 +61,23 @@ type WKQueue = {
     }
 }
 
+type StreakTracker = {
+    questions: number
+    incorrect: number
+    streak: number
+    max: number
+}
+
+type Streak = {
+    current: StreakTracker
+    prev: StreakTracker
+    save: VoidFunction
+    load: VoidFunction
+    undo: VoidFunction
+    correct: (questions: number, incorrect: number) => void
+    incorrect: (questions: number, incorrect: number) => void
+}
+
 // We have to extend the global window object since the values are already present
 // and we don't provide them ourselves
 declare global {
@@ -90,6 +107,7 @@ declare global {
 
     // Globals
     const { wkof, wkQueue } = window
+    let streak: Streak
 
     // Constants
     const MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 }
@@ -128,55 +146,145 @@ declare global {
     update_bell_audio()
 
     let body = document.body
+    set_page_variables()
+    init_once()
     init()
 
-    // Listen for page changes
-    window.addEventListener(`turbo:before-render`, (e: any) => {
-        body = e.detail.newBody
-        init()
-    })
-
-    // Set up queue manipulation
-    wkQueue.addTotalChange(apply_preset, {
-        openFramework: true,
-        openFrameworkGetItemsConfig: 'assignments,review_statistics,study_materials',
-    })
-
-    // Set up back to back
-    if (settings.back2back_behavior === 'always') wkQueue.completeSubjectsInOrder = true
-
-    // Set up prioritization
-    if (settings.prioritize !== 'none') wkQueue.questionOrder = `${settings.prioritize}First`
-
-    // Set up randomized voice actor
-    wkQueue.addPostprocessing((queue) => {
-        if (settings.voice_actor === 'default') return
-        let last_va_id = -1
-        for (let item of queue) {
-            if (!('readings' in item.subject)) continue // Only vocab items
-            let next_last_va_id = -1
-            for (let reading of item.subject.readings || []) {
-                if (!reading.pronunciations.length) continue // Only items with audio
-                let sources: any[] = []
-                if (settings.voice_actor === 'random') {
-                    // Pick random pronunciation and then set all actors' audio to be that pronunciation
-                    const random_index = Math.floor(Math.random() * reading.pronunciations.length)
-                    sources = reading.pronunciations[random_index]?.sources
-                } else if (settings.voice_actor === 'alternate') {
-                    // Pick next highest voice actor ID, or the lowest VA ID, then set all actors' audio to be that pronunciation
-                    const audio = reading.pronunciations.sort((a, b) => a.actor.id - b.actor.id)
-                    const next = audio.filter((a) => a.actor.id > last_va_id)[0] || audio[0]
-                    next_last_va_id = Math.max(next_last_va_id, next.actor.id)
-                    sources = next.sources
-                }
-                if (!sources.length) continue
-                for (let pronunciation of reading.pronunciations) pronunciation.sources = sources
-            }
-            last_va_id = next_last_va_id
-        }
-    })
-
     loading_screen(false)
+
+    function init_once() {
+        install_initializer()
+        install_queue_manipulation()
+        install_back_to_back()
+        install_prioritization()
+        install_random_voice_actor()
+        install_burn_bell()
+        install_streak_tracker()
+
+        function install_initializer() {
+            // Listen for page changes
+            window.addEventListener(`turbo:before-render`, (e: any) => {
+                body = e.detail.newBody
+                init()
+            })
+        }
+
+        function install_queue_manipulation() {
+            // Set up queue manipulation
+            wkQueue.addTotalChange(apply_preset, {
+                openFramework: true,
+                openFrameworkGetItemsConfig: 'assignments,review_statistics,study_materials',
+            })
+        }
+
+        function install_back_to_back() {
+            // Set up back to back
+            if (settings.back2back_behavior === 'always') wkQueue.completeSubjectsInOrder = true
+        }
+
+        function install_prioritization() {
+            // Set up prioritization
+            if (settings.prioritize !== 'none') wkQueue.questionOrder = `${settings.prioritize}First`
+        }
+
+        function install_random_voice_actor() {
+            // Set up randomized voice actor
+            wkQueue.addPostprocessing((queue) => {
+                if (settings.voice_actor === 'default') return
+                let last_va_id = -1
+                for (let item of queue) {
+                    if (!('readings' in item.subject)) continue // Only vocab items
+                    let next_last_va_id = -1
+                    for (let reading of item.subject.readings || []) {
+                        if (!reading.pronunciations.length) continue // Only items with audio
+                        let sources: any[] = []
+                        if (settings.voice_actor === 'random') {
+                            // Pick random pronunciation and then set all actors' audio to be that pronunciation
+                            const random_index = Math.floor(Math.random() * reading.pronunciations.length)
+                            sources = reading.pronunciations[random_index]?.sources
+                        } else if (settings.voice_actor === 'alternate') {
+                            // Pick next highest voice actor ID, or the lowest VA ID, then set all actors' audio to be that pronunciation
+                            const audio = reading.pronunciations.sort((a, b) => a.actor.id - b.actor.id)
+                            const next = audio.filter((a) => a.actor.id > last_va_id)[0] || audio[0]
+                            next_last_va_id = Math.max(next_last_va_id, next.actor.id)
+                            sources = next.sources
+                        }
+                        if (!sources.length) continue
+                        for (let pronunciation of reading.pronunciations) pronunciation.sources = sources
+                    }
+                    last_va_id = next_last_va_id
+                }
+            })
+        }
+
+        // Installs the burn bell, which plays a sound whenever an item is burned
+        function install_burn_bell(): void {
+            window.addEventListener('didChangeSRS', (e: any) => {
+                const srs = e.detail.newLevelText
+                if (!/burn/i.test(srs) || settings.burn_bell === 'disabled') return
+                burn_bell_audio.load() // Stop if already playing
+                burn_bell_audio.play()
+            })
+        }
+
+        function install_streak_tracker() {
+            function update_display(streak: number, max: number): void {
+                $('#streak .count').html(`${streak} (${max})`)
+            }
+
+            // The object that keeps track of the current (and previous!) streak
+            streak = {
+                current: {} as StreakTracker,
+                prev: {} as StreakTracker,
+                save: (): void =>
+                    localStorage.setItem(
+                        `${script_id}_${page}_streak`,
+                        JSON.stringify({ streak: streak.current.streak, max: streak.current.max }),
+                    ),
+                load: (): void => {
+                    const data: StreakTracker = {
+                        questions: 0,
+                        incorrect: 0,
+                        ...JSON.parse(localStorage.getItem(`${script_id}_${page}_streak`) ?? '{"streak": 0, "max": 0}'),
+                    }
+                    streak.current = data
+                    streak.prev = data
+                },
+                undo: (): void => {
+                    streak.current = streak.prev
+                },
+                correct: (questions: number, incorrect: number): void => {
+                    streak.prev = streak.current
+                    streak.current = {
+                        questions,
+                        incorrect,
+                        streak: streak.current.streak + 1,
+                        max: Math.max(streak.current.streak + 1, streak.current.max),
+                    }
+                },
+                incorrect: (questions: number, incorrect: number): void => {
+                    streak.prev = streak.current
+                    streak.current = { questions, incorrect, streak: 0, max: streak.current.max }
+                },
+            }
+            update_display(streak.current.streak, streak.current.max)
+
+            // Listen to WK event for answered question
+            window.addEventListener('didAnswerQuestion', (e: any) => {
+                if (e.constructor.name !== 'DidAnswerQuestionEvent') return // Only count real WK events
+                let correct = 0
+                let incorrect = 0
+                for (let item of Object.values(e.detail.subjectWithStats.stats) as any[]) {
+                    correct += item.complete ? 1 : 0
+                    incorrect += item.incorrect
+                }
+                if (e.detail.results.passed) streak.correct(correct + incorrect, incorrect)
+                else streak.incorrect(correct + incorrect, incorrect)
+                streak.save()
+                update_display(streak.current.streak, streak.current.max)
+            })
+        }
+    }
 
     function init() {
         set_page_variables()
@@ -557,7 +665,6 @@ declare global {
 
         install_egg_timer()
         install_streak()
-        install_burn_bell()
 
         // Displays the current duration of the sessions
         function install_egg_timer(): void {
@@ -573,88 +680,19 @@ declare global {
         function install_streak(): void {
             if (!['reviews', 'extra_study', 'self_study'].includes(page)) return
 
+            streak.load()
             // Create and insert element into page
             const elem = $(
                 `
                 <div id="streak" class="quiz-statistics__item"><div class="quiz-statistics__item-count">
                     <div class="quiz-statistics__item-count-icon"><i class="fa fa-trophy"></i></div>
-                    <div class="count quiz-statistics__item-count-text">0 (0)</div>
+                    <div class="count quiz-statistics__item-count-text">${streak?.current?.streak || 0} (${
+                    streak?.current?.max || 0
+                })</div>
                 </div></div>
                 `,
             )
             $(body).find('.quiz-statistics').prepend(elem)
-
-            function update_display(streak: number, max: number): void {
-                $('#streak .count').html(`${streak} (${max})`)
-            }
-
-            type StreakTracker = {
-                questions: number
-                incorrect: number
-                streak: number
-                max: number
-            }
-
-            // The object that keeps track of the current (and previous!) streak
-            const streak = {
-                current: {} as StreakTracker,
-                prev: {} as StreakTracker,
-                save: (): void =>
-                    localStorage.setItem(
-                        `${script_id}_${page}_streak`,
-                        JSON.stringify({ streak: streak.current.streak, max: streak.current.max }),
-                    ),
-                load: (): void => {
-                    const data: StreakTracker = {
-                        questions: 0,
-                        incorrect: 0,
-                        ...JSON.parse(localStorage.getItem(`${script_id}_${page}_streak`) ?? '{"streak": 0, "max": 0}'),
-                    }
-                    streak.current = data
-                    streak.prev = data
-                },
-                undo: (): void => {
-                    streak.current = streak.prev
-                },
-                correct: (questions: number, incorrect: number): void => {
-                    streak.prev = streak.current
-                    streak.current = {
-                        questions,
-                        incorrect,
-                        streak: streak.current.streak + 1,
-                        max: Math.max(streak.current.streak + 1, streak.current.max),
-                    }
-                },
-                incorrect: (questions: number, incorrect: number): void => {
-                    streak.prev = streak.current
-                    streak.current = { questions, incorrect, streak: 0, max: streak.current.max }
-                },
-            }
-            streak.load()
-            update_display(streak.current.streak, streak.current.max)
-
-            window.addEventListener('didAnswerQuestion', (e: any) => {
-                let correct = 0
-                let incorrect = 0
-                for (let item of Object.values(e.detail.subjectWithStats.stats) as any[]) {
-                    correct += item.complete ? 1 : 0
-                    incorrect += item.incorrect
-                }
-                if (e.detail.results.passed) streak.correct(correct + incorrect, incorrect)
-                else streak.incorrect(correct + incorrect, incorrect)
-                streak.save()
-                update_display(streak.current.streak, streak.current.max)
-            })
-        }
-
-        // Installs the burn bell, which plays a sound whenever an item is burned
-        function install_burn_bell(): void {
-            window.addEventListener('didChangeSRS', (e: any) => {
-                const srs = e.detail.newLevelText
-                if (!/burn/i.test(srs) || settings.burn_bell === 'disabled') return
-                burn_bell_audio.load() // Stop if already playing
-                burn_bell_audio.play()
-            })
         }
     }
 
