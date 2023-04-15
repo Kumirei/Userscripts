@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Fast Vocab Breakdown
 // @namespace    http://tampermonkey.net/
-// @version      1.1.3
+// @version      1.1.4
 // @description  Automatically displays the meanings of the kanji when you get a vocab item wrong
 // @author       Kumirei
 // @include      *wanikani.com/review/session
@@ -26,6 +26,7 @@
         switch (get_page()) {
             case 'reviews':
             case 'extra_study':
+            case 'lesson_quiz':
                 install_element(new_body)
                 break
         }
@@ -35,6 +36,7 @@
         const url = window.location.pathname
         if (/\/subjects\/review/.test(url)) return 'reviews'
         if (/\/subjects\/extra_study/.test(url)) return 'extra_study'
+        if (/\/subjects\/lesson\/quiz/.test(url)) return 'lesson_quiz'
     }
 
     async function init() {
@@ -66,7 +68,7 @@
     // Installs the info element and sets up the page
     function install_element(body) {
         install_css()
-        body.querySelector('.character-header__content').insertAdjacentHTML(
+        body.querySelector('.character-header__content')?.insertAdjacentHTML(
             'beforeend',
             '<div id="' + script_id + '" class="hidden"></div>',
         )
