@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Fast Vocab Breakdown
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.3
 // @description  Automatically displays the meanings of the kanji when you get a vocab item wrong
 // @author       Kumirei
 // @include      *wanikani.com/review/session
@@ -21,17 +21,20 @@
     window.addEventListener(`willShowNextQuestion`, hide_breakdown)
 
     function before_render(event) {
-        const page = get_page()
         const new_body = event.detail.newBody
 
-        if (page === 'reviews') {
-            install_element(new_body)
+        switch (get_page()) {
+            case 'reviews':
+            case 'extra_study':
+                install_element(new_body)
+                break
         }
     }
 
     function get_page() {
         const url = window.location.pathname
         if (/\/subjects\/review/.test(url)) return 'reviews'
+        if (/\/subjects\/extra_study/.test(url)) return 'extra_study'
     }
 
     async function init() {
@@ -72,15 +75,18 @@
 
     // Decides what to do when a new answer is submitted
     function handle_answer(event) {
-        if (event.detail.subjectWithStats.subject.type !== 'Vocabulary') return
         const settings = wkof.settings.fast_vocab_breakdown
+        const item_type = event.detail.subjectWithStats.subject.type
+
+        if (settings.type !== 'both' && item_type !== settings.type) return
+        if (settings.type === 'both' && item_type !== 'Vocabulary' && item_type !== 'Kanji') return
+
         const questionType = event.detail.questionType
         const passed = event.detail.results.passed
 
         const is_quest = settings.question == 'both' || settings.question == questionType
         const is_ans = settings.answer == 'both' || (settings.answer === 'correct') === passed
 
-        console.log({ settings, questionType, passed, is_quest, is_ans })
         if (is_quest && is_ans) insert_info(event.detail.subjectWithStats.subject.id)
         else elem.classList.add('hidden')
     }
@@ -121,7 +127,7 @@
 
     // Load WKOF settings
     function load_settings() {
-        let defaults = { question: 'both', answer: 'incorrect' }
+        let defaults = { question: 'both', answer: 'incorrect', type: 'Vocabulary' }
         return wkof.Settings.load(script_id, defaults)
     }
 
@@ -162,6 +168,17 @@
                         correct: 'Correct',
                         incorrect: 'Incorrect',
                         both: 'Correct & Incorrect',
+                    },
+                },
+                type: {
+                    type: 'dropdown',
+                    label: 'Item Type',
+                    hover_tip: 'Show breakdown on either vocab or kanji',
+                    default: 'Vocabulary',
+                    content: {
+                        Vocabulary: 'Vocabulary',
+                        Kanji: 'Kanji',
+                        both: 'Vocabulary & Kanji',
                     },
                 },
             },
