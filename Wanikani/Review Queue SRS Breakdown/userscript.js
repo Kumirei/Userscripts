@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Review Queue SRS Breakdown
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.0.5
 // @description  Adds a display showing how many items of each SRS stage there are in your queue
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -21,7 +21,6 @@
 
         const elem = `<div id="srs_breakdown" style="position: absolute; top: 2em; right: 24px;">${text}</div>`
         document.querySelector('.character-header__menu-statistics').insertAdjacentHTML('beforeend', elem)
-        console.log('AAA', document, document.querySelector('.character-header__menu-statistics'))
     }
 
     function get_counts(queue) {
