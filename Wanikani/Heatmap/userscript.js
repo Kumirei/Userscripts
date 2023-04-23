@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.52
+// @version      3.0.53
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -41,36 +41,37 @@
 
     // Fetch necessary data then install the heatmap
     async function initiate() {
-        // Fetch data
-        let [reviews, items] = await Promise.all([
-            review_cache.get_reviews(),
-            wkof.ItemData.get_items('assignments,include_hidden'),
-        ])
-        let [forecast, lessons] = get_forecast_and_lessons(items)
-        if (wkof.settings[script_id].lessons.recover_lessons) {
-            let recovered_lessons = await get_recovered_lessons(items, reviews, lessons)
-            lessons = lessons.concat(recovered_lessons).sort((a, b) => (a[0] < b[0] ? -1 : 1))
+        review_cache.subscribe(do_stuff)
+
+        async function do_stuff(reviews) {
+            // Fetch data
+            let items = await wkof.ItemData.get_items('assignments,include_hidden')
+            let [forecast, lessons] = get_forecast_and_lessons(items)
+            if (wkof.settings[script_id].lessons.recover_lessons) {
+                let recovered_lessons = await get_recovered_lessons(items, reviews, lessons)
+                lessons = lessons.concat(recovered_lessons).sort((a, b) => (a[0] < b[0] ? -1 : 1))
+            }
+            // Create heatmap
+            reload = function (new_reviews = false) {
+                // If start date is invalid, set it to the default
+                if (isNaN(Date.parse(wkof.settings[script_id].general.start_date)))
+                    wkof.settings[script_id].general.start_date = '2012-01-01'
+                // Get a timestamp for the start date
+                wkof.settings[script_id].general.start_day =
+                    new Date(wkof.settings[script_id].general.start_date) -
+                    -new Date(wkof.settings[script_id].general.start_date).getTimezoneOffset() * 60 * 1000
+                setTimeout(() => {
+                    // Make settings dialog respond immediately
+                    let stats = {
+                        reviews: calculate_stats('reviews', reviews),
+                        lessons: calculate_stats('lessons', lessons),
+                    }
+                    auto_range(stats, forecast)
+                    install_heatmap(reviews, forecast, lessons, stats, items)
+                }, 0)
+            }
+            reload()
         }
-        // Create heatmap
-        reload = function (new_reviews = false) {
-            // If start date is invalid, set it to the default
-            if (isNaN(Date.parse(wkof.settings[script_id].general.start_date)))
-                wkof.settings[script_id].general.start_date = '2012-01-01'
-            // Get a timestamp for the start date
-            wkof.settings[script_id].general.start_day =
-                new Date(wkof.settings[script_id].general.start_date) -
-                -new Date(wkof.settings[script_id].general.start_date).getTimezoneOffset() * 60 * 1000
-            setTimeout(() => {
-                // Make settings dialog respond immediately
-                let stats = {
-                    reviews: calculate_stats('reviews', reviews),
-                    lessons: calculate_stats('lessons', lessons),
-                }
-                auto_range(stats, forecast)
-                install_heatmap(reviews, forecast, lessons, stats, items)
-            }, 0)
-        }
-        reload()
     }
 
     /*-------------------------------------------------------------------------------------------------------------------------------*/
