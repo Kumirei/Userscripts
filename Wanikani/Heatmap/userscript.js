@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.55
+// @version      3.0.56
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -512,13 +512,13 @@
                                             on_click: generate_colors,
                                         },
                                         reviews_section2: { type: 'section', label: 'Other' },
-                                        reload_button: {
-                                            type: 'button',
-                                            label: 'Reload review data',
-                                            text: 'Reload',
-                                            hover_tip: 'Deletes review cache and starts a new fetch',
-                                            on_click: () => review_cache.reload().then((reviews) => reload(reviews)),
-                                        },
+                                        // reload_button: {
+                                        //     type: 'button',
+                                        //     label: 'Reload review data',
+                                        //     text: 'Reload',
+                                        //     hover_tip: 'Deletes review cache and starts a new fetch',
+                                        //     on_click: () => review_cache.reload().then((reviews) => reload(reviews)),
+                                        // },
                                     },
                                 },
                             },
