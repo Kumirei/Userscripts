@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.2.2
+// @version      1.2.3
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // @include      *wanikani.com*
@@ -12,7 +12,7 @@
     const cache_version = 1
 
     // Script version. Starts with q to make it larger than numerical versions
-    const version = 'q1.2.2'
+    const version = 'q1.2.3'
 
     // Update interval for subscriptions
     const update_interval = 10 // minutes
@@ -42,7 +42,7 @@
     wkof.include('ItemData')
     wkof.ready('ItemData').then(async () => {
         const items = await wkof.ItemData.get_items('assignments')
-        for (let item of items) item_srs[item.id] = item.assignments.srs_stage
+        for (let item of items) item_srs[item.id] = item.assignments?.srs_stage
     })
 
     set_update_interval()
