@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.2.0
+// @version      1.2.1
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // @include      *wanikani.com*
@@ -12,7 +12,7 @@
     const cache_version = 1
 
     // Script version. Starts with q to make it larger than numerical versions
-    const version = 'q1.2.0'
+    const version = 'q1.2.1'
 
     // Update interval for subscriptions
     const update_interval = 10 // minutes
@@ -21,10 +21,33 @@
     if (!window.review_cache?.version || window.review_cache.version < version) {
         const _subscribers = window.review_cache?._subscribers ? window.review_cache?._subscribers : new Set()
         const _fetching = window.review_cache?._fetching ? window.review_cache?._fetching : null
-        window.review_cache = { get_reviews, reload, subscribe, unsubscribe, version: version, _subscribers, _fetching }
+        if (window.review_cache?._reviewListener)
+            window.removeEventListener('didCompleteSubject', window.review_cache?._reviewListener)
+        window.review_cache = {
+            get_reviews,
+            reload,
+            subscribe,
+            unsubscribe,
+            insert,
+            version: version,
+            _subscribers,
+            _fetching,
+            _reviewListener: null,
+        }
     }
 
     set_update_interval()
+    set_review_listener()
+
+    // Listens for completed reviews. Temporary solution while the reviews API is not available
+    function set_review_listener() {
+        const callback = (event) => {
+            const { stats, subject } = event.detail.subjectWithStats
+            window.review_cache.insert([[Date.now(), subject.id, stats.meaning.incorrect, stats.reading.incorrect]])
+        }
+        window.addEventListener('didCompleteSubject', callback)
+        window.review_cache._reviewListener = callback
+    }
 
     // Add a subscriber
     async function subscribe(subscriber) {
@@ -68,6 +91,17 @@
     // Deletes cache and re-fetches reviews
     function reload() {
         return wkof.file_cache.delete('review_cache').then(get_reviews)
+    }
+
+    async function insert(reviews) {
+        const cached = await load_data()
+        const newestDate = reviews.reduce((max, cur) => Math.max(cur[0], max), 0)
+        const updated = {
+            cache_version,
+            date: new Date(newestDate).toISOString(),
+            reviews: cached.reviews.concat(reviews),
+        }
+        save(updated)
     }
 
     // Loads data from cache
