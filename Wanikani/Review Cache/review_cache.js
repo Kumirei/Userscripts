@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.2.1
+// @version      1.2.2
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // @include      *wanikani.com*
@@ -12,7 +12,7 @@
     const cache_version = 1
 
     // Script version. Starts with q to make it larger than numerical versions
-    const version = 'q1.2.1'
+    const version = 'q1.2.2'
 
     // Update interval for subscriptions
     const update_interval = 10 // minutes
@@ -36,14 +36,25 @@
         }
     }
 
+    // Listens for completed reviews. Temporary solution while the reviews API is not available
+    const item_srs = {}
+
+    wkof.include('ItemData')
+    wkof.ready('ItemData').then(async () => {
+        const items = await wkof.ItemData.get_items('assignments')
+        for (let item of items) item_srs[item.id] = item.assignments.srs_stage
+    })
+
     set_update_interval()
     set_review_listener()
 
-    // Listens for completed reviews. Temporary solution while the reviews API is not available
     function set_review_listener() {
-        const callback = (event) => {
+        const callback = async (event) => {
+            await wkof.ready('ItemData')
             const { stats, subject } = event.detail.subjectWithStats
-            window.review_cache.insert([[Date.now(), subject.id, stats.meaning.incorrect, stats.reading.incorrect]])
+            window.review_cache.insert([
+                [Date.now(), subject.id, item_srs[subject.id], stats.meaning.incorrect, stats.reading.incorrect],
+            ])
         }
         window.addEventListener('didCompleteSubject', callback)
         window.review_cache._reviewListener = callback
@@ -101,6 +112,7 @@
             date: new Date(newestDate).toISOString(),
             reviews: cached.reviews.concat(reviews),
         }
+        console.log('insert', { cached, updated })
         save(updated)
     }
 
