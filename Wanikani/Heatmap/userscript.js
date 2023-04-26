@@ -1,43 +1,35 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.56
+// @version      3.0.57
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
-// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=1180551
+// @match        https://www.wanikani.com/*
+// @match        https://preview.wanikani.com/*
+// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=1181959
 // @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=1046781
 // @grant        none
 // ==/UserScript==
 
 ;(function (wkof, review_cache, Heatmap) {
     const CSS_COMMIT = '808efd6a4c2a880dfde335cc61843e066488069d'
+    let script_id = 'heatmap3'
+    let script_name = 'Wanikani Heatmap'
     let msh = 60 * 60 * 1000,
         msd = 24 * msh // Milliseconds in hour and day
 
     /*-------------------------------------------------------------------------------------------------------------------------------*/
 
-    // Make sure WKOF is installed
-    let script_id = 'heatmap3'
-    let script_name = 'Wanikani Heatmap'
-    if (!wkof) {
-        let response = confirm(
-            script_name +
-                ' requires WaniKani Open Framework.\n Click "OK" to be forwarded to installation instructions.',
-        )
-        if (response)
-            window.location.href =
-                'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549'
-        return
+    // Temporary measure to track reviews while the /reviews endpoint is unavailable
+    if (/www.wanikani.com\/(dashboard)?$/.test(window.location.href)) {
+        let reload // Function to reload the heatmap
+
+        // Wait until modules are ready then initiate script
+        confirm_wkof()
+        wkof.include('Menu,Settings,ItemData,Apiv2')
+        wkof.ready('Menu,Settings,ItemData,Apiv2').then(load_settings).then(load_css).then(install_menu).then(initiate)
     }
-
-    /*-------------------------------------------------------------------------------------------------------------------------------*/
-
-    let reload // Function to reload the heatmap
-
-    // Wait until modules are ready then initiate script
-    wkof.include('Menu,Settings,ItemData,Apiv2')
-    wkof.ready('Menu,Settings,ItemData,Apiv2').then(load_settings).then(load_css).then(install_menu).then(initiate)
 
     // Fetch necessary data then install the heatmap
     async function initiate() {
@@ -76,6 +68,19 @@
     }
 
     /*-------------------------------------------------------------------------------------------------------------------------------*/
+
+    function confirm_wkof() {
+        if (!wkof) {
+            let response = confirm(
+                script_name +
+                    ' requires WaniKani Open Framework.\n Click "OK" to be forwarded to installation instructions.',
+            )
+            if (response)
+                window.location.href =
+                    'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549'
+            return
+        }
+    }
 
     // Load settings from WKOF
     function load_settings() {
