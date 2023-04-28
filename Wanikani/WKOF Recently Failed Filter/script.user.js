@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Wanikani: WKOF Recently Failed Filter
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Adds filters for recently failed items
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/.*/
-// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=1048101
+// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=1182852
 // @grant        none
 // @license      MIT
 // ==/UserScript==
