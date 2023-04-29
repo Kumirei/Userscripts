@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Fast Vocab Breakdown
 // @namespace    http://tampermonkey.net/
-// @version      1.1.5
+// @version      1.1.6
 // @description  Automatically displays the meanings of the kanji when you get a vocab item wrong
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -121,6 +121,7 @@
     font-size: 18px;
     bottom: 0;
     padding: 0.5rem;
+    z-index: -1;
 }
 #${script_id}.hidden {visibility: hidden;}
 .srs { top: -3em;}
