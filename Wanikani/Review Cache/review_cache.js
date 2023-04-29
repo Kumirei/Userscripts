@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.2.5
+// @version      1.2.6
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // @include      *wanikani.com*
@@ -12,7 +12,7 @@
     const cache_version = 1
 
     // Script version. Starts with q to make it larger than numerical versions
-    const version = 'q1.2.5'
+    const version = 'q1.2.6'
 
     // Update interval for subscriptions
     const update_interval = 10 // minutes
@@ -50,7 +50,7 @@
 
     function set_review_listener() {
         const callback = async (event) => {
-            if (!window.location.pathname === '/subjects/review') return // Only count reviews, not lessons or extra study
+            if (window.location.pathname !== '/subjects/review') return // Only count reviews, not lessons or extra study
             await wkof.ready('ItemData')
             const { stats, subject } = event.detail.subjectWithStats
             window.review_cache.insert([
