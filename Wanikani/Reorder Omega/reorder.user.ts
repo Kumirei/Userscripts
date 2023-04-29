@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.33
+// @version      1.3.34
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -612,9 +612,9 @@ declare global {
         const attr = document.querySelector('.extra-study')?.getAttribute('data-react-props')
         if (!attr) return
         const data = JSON.parse(attr)
-        const type = data.burnedItems?.length
+        const type = data.burnedItems?.remaining
             ? 'burned_items'
-            : data.recentLessons?.length
+            : data.recentLessons?.remaining
             ? 'recent_lessons'
             : 'recent_mistakes'
         const button = $(`
