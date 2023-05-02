@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.61
+// @version      3.0.62
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=1183366
+// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=1184679
 // @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=1046781
 // @grant        none
 // ==/UserScript==
@@ -317,6 +317,16 @@
             input.addEventListener('change', () => update_label(input))
             update_label(input)
         })
+        // Add functionality to review inserter
+        dialog[0].querySelector('#insert_reviews_button').addEventListener('click', (event) => {
+            const date = dialog[0].querySelector('#insert_reviews_date').value
+            const count = Number(dialog[0].querySelector('#insert_reviews_count').value)
+            if (!date || !count) return
+
+            const time = Date.parse(date + 'T12:00')
+            const reviews = new Array(count).fill(null).map((_) => [time, 1, 1, 0, 0])
+            review_cache.insert(reviews)
+        })
     }
 
     // Open the settings dialog
@@ -516,7 +526,18 @@
                                             hover_tip: 'Generate new colors from the first and last non-zero interval',
                                             on_click: generate_colors,
                                         },
-                                        reviews_section2: { type: 'section', label: 'Other' },
+                                        add_reviews_section: { type: 'section', label: 'Manually Register Reviews' },
+                                        reviews_insert: {
+                                            type: 'html',
+                                            html: `
+                                            <div>
+                                                <div><label>Date <input id="insert_reviews_date" type="date"/></label></div>
+                                                <div><label>Count <input id="insert_reviews_count" type="number" min="0" placeholder="Number of reviews" /></label></div>
+                                                <div style="display: flex; justify-content: flex-end;"><button id="insert_reviews_button">Register</button></div>
+                                            </div>
+                                            `,
+                                        },
+                                        // reviews_section2: { type: 'section', label: 'Other' },
                                         // reload_button: {
                                         //     type: 'button',
                                         //     label: 'Reload review data',
