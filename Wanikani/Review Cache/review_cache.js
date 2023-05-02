@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.2.6
+// @version      1.2.7
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // @include      *wanikani.com*
@@ -12,7 +12,7 @@
     const cache_version = 1
 
     // Script version. Starts with q to make it larger than numerical versions
-    const version = 'q1.2.6'
+    const version = 'q1.2.7'
 
     // Update interval for subscriptions
     const update_interval = 10 // minutes
@@ -113,7 +113,8 @@
             date: new Date(newestDate).toISOString(),
             reviews: cached.reviews.concat(reviews),
         }
-        save(updated)
+        for (let subscriber of window.review_cache._subscribers) subscriber?.(updated.reviews)
+        await save(updated)
     }
 
     // Loads data from cache
