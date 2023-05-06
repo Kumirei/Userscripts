@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Fast Vocab Breakdown
 // @namespace    http://tampermonkey.net/
-// @version      1.1.6
+// @version      1.2.0
 // @description  Automatically displays the meanings of the kanji when you get a vocab item wrong
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -99,16 +99,34 @@
     }
 
     // Finds and inserts the kanji info when an incorrect answer is submitted
-    function insert_info(itemId) {
+    async function insert_info(itemId) {
         let meanings = []
-        items[itemId].data.component_subject_ids.forEach((id) => {
-            items[id].data.meanings.forEach((meaning) => {
-                if (meaning.primary) meanings.push(meaning.meaning)
-            })
-        })
+        for (let componentId of items[itemId].data.component_subject_ids) {
+            const item = items[componentId]
+            for (let meaning of item.data.meanings) {
+                if (meaning.primary) {
+                    if (item.data.characters)
+                        meanings.push(
+                            `<a href="${item.data.document_url}" target="_blank">${item.data.characters}: ${meaning.meaning}</a>`,
+                        )
+                    else {
+                        const svg = await get_radical_image(item)
+                        meanings.push(
+                            `<a href="${item.data.document_url}" target="_blank">${svg}: ${meaning.meaning}</a>`,
+                        )
+                    }
+                }
+            }
+        }
         let text = meanings.join(', ')
-        elem.innerText = text
+        elem.innerHTML = text
         elem.classList.remove('hidden')
+    }
+
+    function get_radical_image(item) {
+        return wkof.load_file(
+            item.data.character_images.find((a) => a.content_type == 'image/svg+xml' && a.metadata.inline_styles).url,
+        )
     }
 
     // Some simple CSS to make things look as they should
@@ -121,9 +139,11 @@
     font-size: 18px;
     bottom: 0;
     padding: 0.5rem;
-    z-index: -1;
 }
 #${script_id}.hidden {visibility: hidden;}
+#${script_id} a {color: currentColor; text-decoration: none;}
+#${script_id} svg {height: 1em; filter: invert(1);}
+.character-header__srs-container { z-index: 1 }
 .srs { top: -3em;}
 </style>`,
         )
