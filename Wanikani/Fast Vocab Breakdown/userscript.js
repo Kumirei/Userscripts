@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Fast Vocab Breakdown
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Automatically displays the meanings of the kanji when you get a vocab item wrong
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -85,7 +85,7 @@
         if (settings.type === 'both' && item_type !== 'Vocabulary' && item_type !== 'Kanji') return
 
         const questionType = event.detail.questionType
-        const passed = event.detail.results.passed
+        const passed = event.detail.results.action === 'pass'
 
         const is_quest = settings.question == 'both' || settings.question == questionType
         const is_ans = settings.answer == 'both' || (settings.answer === 'correct') === passed

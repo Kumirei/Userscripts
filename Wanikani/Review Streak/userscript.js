@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Review Answer Streak
 // @namespace    http://tampermonkey.net/
-// @version      1.1.5
+// @version      1.1.6
 // @description  Counts the number of times you have get review questions right in a row
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -75,7 +75,7 @@
             correct += item.complete ? 1 : 0
             incorrect += item.incorrect
         }
-        if (e.detail.results.passed) streak.correct(correct + incorrect, incorrect)
+        if (e.detail.results.action === 'pass') streak.correct(correct + incorrect, incorrect)
         else streak.incorrect(correct + incorrect, incorrect)
         streak.save()
         update_display(streak.current.streak, streak.current.max)

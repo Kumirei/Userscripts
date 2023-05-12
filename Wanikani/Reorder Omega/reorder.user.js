@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.34
+// @version      1.3.35
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -193,7 +193,7 @@ var module = {};
                     correct += item.complete ? 1 : 0;
                     incorrect += item.incorrect;
                 }
-                if (e.detail.results.passed)
+                if (e.detail.results.action === 'pass')
                     streak.correct(correct + incorrect, incorrect);
                 else
                     streak.incorrect(correct + incorrect, incorrect);
