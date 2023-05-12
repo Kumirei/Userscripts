@@ -278,7 +278,7 @@ declare global {
                     correct += item.complete ? 1 : 0
                     incorrect += item.incorrect
                 }
-                if (e.detail.results.passed) streak.correct(correct + incorrect, incorrect)
+                if (e.detail.results.action === "pass") streak.correct(correct + incorrect, incorrect)
                 else streak.incorrect(correct + incorrect, incorrect)
                 streak.save()
                 update_display(streak.current.streak, streak.current.max)
