@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Open Framework JLPT, Joyo, and Frequency filters
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Adds filters for JLPT level, Joyo grade, total frequency, and adding various relative frequencies
 // @author       Kumirei
 // @include      https://www.wanikani.com/*
@@ -230,8 +230,10 @@
     function accept_jlpt_kanji_waller(filter_value, item) {
         var characters = item.data.characters;
         if (item.object === 'kanji') return accept_jlpt_kanji(filter_value, characters);
-        if (item.object === 'vocabulary') return (filter_value[vocabJLPTData[item.data.characters]] === true);
-        return false;
+        if (item.object === 'vocabulary' || item.object === 'kana_vocabulary') {
+            return (vocabJLPTData[item.data.characters] !== undefined ? filter_value[vocabJLPTData[item.data.characters]] === true : filter_value[0]);
+        };
+         return false;
     }
 
     // Adds two JLPT level filters and a filter to add JLPT data to items
