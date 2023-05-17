@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.62
+// @version      3.0.63
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -31,7 +31,7 @@
         wkof.ready('Menu,Settings,ItemData,Apiv2').then(load_settings).then(load_css).then(install_menu).then(initiate)
     }
 
-    // Fetch necessary data then install the heatmap
+    // Fetch necessary data then install the heatmap    
     async function initiate() {
         review_cache.subscribe(do_stuff)
 
@@ -1569,7 +1569,8 @@
             let item = items_id[id]
             levels[0][Math.floor((item.data.level - 1) / 10)]++
             levels[item.data.level]++
-            item_types[item.object.slice(0, 3)]++
+            const type = item.object === 'kana_vocabulary' ? 'voc' : item.object.slice(0, 3)
+            item_types[type]++
         }
         let srs = new Array(10).fill(null).map((_) => [0, 0])
         for (let i = 1; i < 10; i++) {
@@ -1624,10 +1625,11 @@
         for (let id of ids) {
             let item = items_id[id]
             let burn = burns.includes(id)
+            const type = item.object === 'kana_vocabulary' ? 'vocabulary' :  item.object
             item_elems.push(
                 create_elem({
                     type: 'a',
-                    class: 'item ' + item.object + ' hover-wrapper-target' + (burn ? ' burn' : ''),
+                    class: 'item ' + type + ' hover-wrapper-target' + (burn ? ' burn' : ''),
                     href: item.data.document_url,
                     children: [
                         create_elem({
