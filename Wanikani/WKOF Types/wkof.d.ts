@@ -1,6 +1,6 @@
 type SrsName = 'lock' | 'init' | 'appr1' | 'appr2' | 'appr3' | 'appr4' | 'guru1' | 'guru2' | 'mast' | 'enli' | 'burn'
 type SrsNumber = -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-type SubjectType = 'vocabulary' | 'kanji' | 'radical'
+type SubjectType = 'vocabulary' | 'kanji' | 'radical' | 'kana_vocabulary'
 type SubjectTypeString =
     | `${SubjectType}`
     | `${SubjectType},${SubjectType}`

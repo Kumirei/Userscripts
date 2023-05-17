@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.35
+// @version      1.3.36
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -406,7 +406,11 @@ var module = {};
     // Checks whether an item is critical to leveling up or not
     function is_critical(item) {
         var _a;
-        return item.data.level == wkof.user.level && item.object !== 'vocabulary' && ((_a = item.assignments) === null || _a === void 0 ? void 0 : _a.passed_at) == null;
+        return item.data.level == wkof.user.level && !is_vocab(item) && ((_a = item.assignments) === null || _a === void 0 ? void 0 : _a.passed_at) == null;
+    }
+    // Check whether item is vocab
+    function is_vocab(item) {
+        return /vocabulary|kana_vocabulary/.test(item.object);
     }
     // Borrowed from Prouleau's Item Inspector script
     function calculate_leech_score(item) {
@@ -422,14 +426,15 @@ var module = {};
     }
     // Parses strings such as "kan, rad, voc" into lists of strings
     function parse_subject_type_string(str) {
-        var type_map = { rad: 'radical', kan: 'kanji', voc: 'vocabulary' };
+        var type_map = { rad: 'radical', kan: 'kanji', voc: 'vocabulary', kana: 'kana_vocabulary' };
         return str
             .replace(/\s/g, '')
             .replace(/r(ads?(icals?)?)?(,|$)/gi, 'rad,')
             .replace(/k(ans?(jis?)?)?(,|$)/gi, 'kan,')
             .replace(/v(ocs?(abs?(ulary?(ies)?)?)?)?(,|$)/gi, 'voc,')
+            .replace(/ka(nas?)?(,|$)/gi, 'voc,') // Kana vocab is treated as vocab
             .split(',')
-            .filter(function (s) { return s === 'rad' || s === 'kan' || s === 'voc'; })
+            .filter(function (s) { return s === 'rad' || s === 'kan' || s === 'voc' || s === 'kana'; })
             .map(function (type) { return type_map[type]; });
     }
     // -----------------------------------------------------------------------------------------------------------------
