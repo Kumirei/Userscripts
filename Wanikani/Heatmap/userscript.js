@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.63
+// @version      3.0.64
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=1184679
+// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=1193344
 // @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=1046781
 // @grant        none
 // ==/UserScript==
@@ -31,7 +31,7 @@
         wkof.ready('Menu,Settings,ItemData,Apiv2').then(load_settings).then(load_css).then(install_menu).then(initiate)
     }
 
-    // Fetch necessary data then install the heatmap    
+    // Fetch necessary data then install the heatmap
     async function initiate() {
         review_cache.subscribe(do_stuff)
 
@@ -1625,7 +1625,7 @@
         for (let id of ids) {
             let item = items_id[id]
             let burn = burns.includes(id)
-            const type = item.object === 'kana_vocabulary' ? 'vocabulary' :  item.object
+            const type = item.object === 'kana_vocabulary' ? 'vocabulary' : item.object
             item_elems.push(
                 create_elem({
                     type: 'a',
