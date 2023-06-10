@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.64
+// @version      3.0.65
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -13,7 +13,7 @@
 // ==/UserScript==
 
 ;(function (wkof, review_cache, Heatmap) {
-    const CSS_COMMIT = '808efd6a4c2a880dfde335cc61843e066488069d'
+    const CSS_COMMIT = 'cabbfc4dbc4cae55cd63968abf5aa006806f3c1c'
     let script_id = 'heatmap3'
     let script_name = 'Wanikani Heatmap'
     let msh = 60 * 60 * 1000,
@@ -321,10 +321,12 @@
         dialog[0].querySelector('#insert_reviews_button').addEventListener('click', (event) => {
             const date = dialog[0].querySelector('#insert_reviews_date').value
             const count = Number(dialog[0].querySelector('#insert_reviews_count').value)
+            const spr = Number(dialog[0].querySelector('#insert_reviews_time').value) || 0 // Seconds per review
             if (!date || !count) return
 
-            const time = Date.parse(date + 'T12:00')
-            const reviews = new Array(count).fill(null).map((_) => [time, 1, 1, 0, 0])
+            const mspr = spr * 1000 // MS per review
+            const time = Date.parse(date + 'T00:00')
+            const reviews = new Array(count).fill(null).map((_, i) => [time + i * mspr, 1, 1, 0, 0])
             review_cache.insert(reviews)
         })
     }
@@ -533,6 +535,7 @@
                                             <div>
                                                 <div><label>Date <input id="insert_reviews_date" type="date"/></label></div>
                                                 <div><label>Count <input id="insert_reviews_count" type="number" min="0" placeholder="Number of reviews" /></label></div>
+                                                <div><label>Seconds Per Review <input id="insert_reviews_time" type="number" min="0" placeholder="seconds" value=10 /></label></div>
                                                 <div style="display: flex; justify-content: flex-end;"><button id="insert_reviews_button">Register</button></div>
                                             </div>
                                             `,
@@ -1344,6 +1347,18 @@
         })
         // Create header
         header.append(
+            create_elem({
+                type: 'div',
+                class: 'clear hover-wrapper-target',
+                children: [
+                    create_elem({
+                        type: 'div',
+                        class: 'hover-wrapper above',
+                        child: 'Clear all reviews from this day',
+                    }),
+                    create_elem({ type: 'button', id: 'clear_reviews', class: 'fa fa-trash' }),
+                ],
+            }),
             create_elem({ type: 'div', class: 'date' }),
             create_elem({
                 type: 'div',
@@ -1359,6 +1374,20 @@
                 ],
             }),
         )
+        header.querySelector('#clear_reviews').addEventListener('click', async () => {
+            console.log('CLICK', header)
+            let [start, end] = header
+                .querySelector('.date')
+                .textContent.split('-')
+                .map((d) => new Date(d.replace(/\s*.\s*$/, '')))
+            if (!end) end = start
+            end = new Date(end.getFullYear(), end.getMonth(), end.getDate() + 1).getTime() // Include end of interval
+
+            const reviews = await review_cache.get_reviews()
+            const newReviews = reviews.filter((review) => review[0] < start || review[0] >= end) // Omit reviews
+            await review_cache.reload() // Since API returns empty array this clears cache
+            await review_cache.insert(newReviews)
+        })
         // Create minimap and stats
         stats.append(
             create_table(
