@@ -128,6 +128,16 @@
     position: relative;
 }
 
+#heatmap #popper .header .clear {
+    position: absolute;
+}
+
+#heatmap #popper .header .clear button {
+    border: 0;
+    background-color: transparent;
+    color: currentColor;
+}
+
 #heatmap #popper .header .score {
     position: absolute;
     top: 0;
