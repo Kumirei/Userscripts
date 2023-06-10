@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.36
+// @version      1.3.37
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -500,13 +500,18 @@ declare global {
 
     // Parses strings such as "kan, rad, voc" into lists of strings
     function parse_subject_type_string(str: string): SubjectType[] {
-        const type_map: { [key: string]: SubjectType } = { rad: 'radical', kan: 'kanji', voc: 'vocabulary', kana: 'kana_vocabulary' }
+        const type_map: { [key: string]: SubjectType } = {
+            rad: 'radical',
+            kan: 'kanji',
+            voc: 'vocabulary',
+            kana: 'kana_vocabulary',
+        }
         return str
             .replace(/\s/g, '')
             .replace(/r(ads?(icals?)?)?(,|$)/gi, 'rad,')
             .replace(/k(ans?(jis?)?)?(,|$)/gi, 'kan,')
             .replace(/v(ocs?(abs?(ulary?(ies)?)?)?)?(,|$)/gi, 'voc,')
-            .replace(/ka(nas?)?(,|$)/gi, 'voc,') // Kana vocab is treated as vocab
+            .replace(/ka(nas?)?(,|$)/gi, 'kana,')
             .split(',')
             .filter((s) => s === 'rad' || s === 'kan' || s === 'voc' || s === 'kana')
             .map((type) => type_map[type])
@@ -1675,10 +1680,10 @@ declare global {
         // Sort by type is special
         config.content.sort_by_type = {
             type: 'text',
-            default: 'rad, kan, voc',
-            placeholder: 'rad, kan, voc',
+            default: 'rad, kan, voc, kana',
+            placeholder: 'rad, kan, voc, kana',
             label: 'Order',
-            hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc" or "kan, rad"',
+            hover_tip: 'Comma separated list of short subject type names. Eg. "rad, kan, voc, kana" or "kan, rad"',
             path: `@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.values.type`,
         }
 
