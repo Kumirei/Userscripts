@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.37
+// @version      1.3.38
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -620,14 +620,12 @@ declare global {
 
     // On the dashboard, adds a button to take you to the extra study page for the script
     function add_to_extra_study_section(): void {
-        const attr = document.querySelector('.extra-study')?.getAttribute('data-react-props')
-        if (!attr) return
-        const data = JSON.parse(attr)
-        const type = data.burnedItems?.remaining
-            ? 'burned_items'
-            : data.recentLessons?.remaining
-            ? 'recent_lessons'
-            : 'recent_mistakes'
+        const type = document
+            .querySelector('.extra-study-button a:not([disabled])')
+            ?.getAttribute('href')
+            ?.split('=')
+            .at(-1)
+        if (!type) return
         const button = $(`
             <div class=" border border-blue-300 border-solid rounded flex flex-row ">
                 <a href="/subjects/extra_study?${script_name}&queue_type=${type}" class="active:no-underline active:text-black
@@ -638,7 +636,7 @@ declare global {
                 data-test="extra-study-button">Self Study
                 </a>
             </div>`)
-        $('.extra-study ul').append(button)
+        $('.extra-study .extra-study__buttons').append(button)
     }
 
     // Installs the dropdown for selecting the active preset

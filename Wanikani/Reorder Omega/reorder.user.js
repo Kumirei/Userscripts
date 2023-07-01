@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.37
+// @version      1.3.38
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -536,18 +536,13 @@ var module = {};
     // -----------------------------------------------------------------------------------------------------------------
     // On the dashboard, adds a button to take you to the extra study page for the script
     function add_to_extra_study_section() {
-        var _a, _b, _c;
-        var attr = (_a = document.querySelector('.extra-study')) === null || _a === void 0 ? void 0 : _a.getAttribute('data-react-props');
-        if (!attr)
+        var _a, _b;
+        var type = (_b = (_a = document
+            .querySelector('.extra-study-button a:not([disabled])')) === null || _a === void 0 ? void 0 : _a.getAttribute('href')) === null || _b === void 0 ? void 0 : _b.split('=').at(-1);
+        if (!type)
             return;
-        var data = JSON.parse(attr);
-        var type = ((_b = data.burnedItems) === null || _b === void 0 ? void 0 : _b.remaining)
-            ? 'burned_items'
-            : ((_c = data.recentLessons) === null || _c === void 0 ? void 0 : _c.remaining)
-                ? 'recent_lessons'
-                : 'recent_mistakes';
         var button = $("\n            <div class=\" border border-blue-300 border-solid rounded flex flex-row \">\n                <a href=\"/subjects/extra_study?".concat(script_name, "&queue_type=").concat(type, "\" class=\"active:no-underline active:text-black\n                appearance-none bg-transparent box-border disabled:border-gray-700 disabled:cursor-not-allowed\n                disabled:opacity-50 disabled:text-gray-700 duration-200 flex focus:no-underline focus:ring\n                font-medium font-sans hover:border-blue-500 hover:no-underline hover:text-blue-700 leading-none m-0\n                outline-none py-3 px-3 text-blue-500 text-left text-base sm:text-sm transition w-full border-0\"\n                data-test=\"extra-study-button\">Self Study\n                </a>\n            </div>"));
-        $('.extra-study ul').append(button);
+        $('.extra-study .extra-study__buttons').append(button);
     }
     // Installs the dropdown for selecting the active preset
     function install_interface() {
