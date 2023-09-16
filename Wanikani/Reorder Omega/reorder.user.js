@@ -2,12 +2,12 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.38
+// @version      1.3.39
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1172719
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1251359
 // @grant        none
 // @run-at       document-idle
 // @license      MIT
@@ -219,6 +219,8 @@ var module = {};
             page = 'reviews';
         else if (/LESSON(\/session)?/i.test(path))
             page = 'lessons';
+        else if (/RECENT-MISTAKES\/-?\d+\/quiz/i.test(path))
+            page = 'extra_study';
         else if (/EXTRA_STUDY(\/session)?/i.test(path))
             page = self_study_url ? 'self_study' : 'extra_study';
         else
@@ -541,7 +543,7 @@ var module = {};
             .querySelector('.extra-study-button a:not([disabled])')) === null || _a === void 0 ? void 0 : _a.getAttribute('href')) === null || _b === void 0 ? void 0 : _b.split('=').at(-1);
         if (!type)
             return;
-        var button = $("\n            <div class=\" border border-blue-300 border-solid rounded flex flex-row \">\n                <a href=\"/subjects/extra_study?".concat(script_name, "&queue_type=").concat(type, "\" class=\"active:no-underline active:text-black\n                appearance-none bg-transparent box-border disabled:border-gray-700 disabled:cursor-not-allowed\n                disabled:opacity-50 disabled:text-gray-700 duration-200 flex focus:no-underline focus:ring\n                font-medium font-sans hover:border-blue-500 hover:no-underline hover:text-blue-700 leading-none m-0\n                outline-none py-3 px-3 text-blue-500 text-left text-base sm:text-sm transition w-full border-0\"\n                data-test=\"extra-study-button\">Self Study\n                </a>\n            </div>"));
+        var button = $("\n            <div class=\" border border-blue-300 border-solid rounded flex flex-row \">\n                <a href=\"/subjects/extra_study?".concat(script_name, "&queue_type=").concat(type, "\" class=\"py-3 px-3 w-full border-0\"data-test=\"extra-study-button\">\n                    Self Study\n                </a>\n            </div>"));
         $('.extra-study .extra-study__buttons').append(button);
     }
     // Installs the dropdown for selecting the active preset

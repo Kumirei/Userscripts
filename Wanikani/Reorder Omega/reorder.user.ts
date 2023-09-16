@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.38
+// @version      1.3.39
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1172719
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1251359
 // @grant        none
 // @run-at       document-idle
 // @license      MIT
@@ -302,6 +302,7 @@ declare global {
         if (/^\/(DASHBOARD)?$/i.test(path)) page = 'dashboard'
         else if (/REVIEW(\/session)?/i.test(path)) page = 'reviews'
         else if (/LESSON(\/session)?/i.test(path)) page = 'lessons'
+        else if (/RECENT-MISTAKES\/-?\d+\/quiz/i.test(path)) page = 'extra_study'
         else if (/EXTRA_STUDY(\/session)?/i.test(path)) page = self_study_url ? 'self_study' : 'extra_study'
         else page = 'other'
 
@@ -628,12 +629,8 @@ declare global {
         if (!type) return
         const button = $(`
             <div class=" border border-blue-300 border-solid rounded flex flex-row ">
-                <a href="/subjects/extra_study?${script_name}&queue_type=${type}" class="active:no-underline active:text-black
-                appearance-none bg-transparent box-border disabled:border-gray-700 disabled:cursor-not-allowed
-                disabled:opacity-50 disabled:text-gray-700 duration-200 flex focus:no-underline focus:ring
-                font-medium font-sans hover:border-blue-500 hover:no-underline hover:text-blue-700 leading-none m-0
-                outline-none py-3 px-3 text-blue-500 text-left text-base sm:text-sm transition w-full border-0"
-                data-test="extra-study-button">Self Study
+                <a href="/subjects/extra_study?${script_name}&queue_type=${type}" class="py-3 px-3 w-full border-0"data-test="extra-study-button">
+                    Self Study
                 </a>
             </div>`)
         $('.extra-study .extra-study__buttons').append(button)

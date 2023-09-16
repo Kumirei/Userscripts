@@ -578,6 +578,7 @@ declare namespace Settings {
 
     type Text = {
         type: 'text'
+        default?: string
         placeholder?: string
         match?: RegExp
     } & ComponentDefaults
