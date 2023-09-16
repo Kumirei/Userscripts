@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      1.0.8
+// @version      1.0.9
 // @description  Simple script that can generate heatmaps
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -15,6 +15,8 @@
             this.maps = {}
             this.config = config
             this.data = {}
+
+            this.config.day_labels ??= ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
             // If data is provided, initiate right away
             if (data !== undefined) this.initiate(data)
@@ -115,7 +117,7 @@
                     this._create_elem({
                         type: 'div',
                         class: 'day-label',
-                        child: ['M', 'T', 'W', 'T', 'F', 'S', 'S'][(day + Number(this.config.week_start)) % 7],
+                        child: this.config.day_labels[(day + Number(this.config.week_start)) % 7],
                     }),
                 )
             }
