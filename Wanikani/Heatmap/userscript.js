@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.0.65
+// @version      3.1.0
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=1193344
+// @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=1251299
 // @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=1046781
 // @grant        none
 // ==/UserScript==
@@ -155,6 +155,8 @@
                 ]
             // Load settings from old script if possible
             if (!settings.other.ported) port_settings(settings)
+            migrate_settings(settings)
+
             // Make sure current year is visible
             for (let type of ['reviews', 'lessons']) {
                 wkof.settings[script_id].other.visible_years[type][new Date().getFullYear()] = true
@@ -443,11 +445,12 @@
                                             path: '@general.zero_gap',
                                         },
                                         day_labels: {
-                                            type: 'checkbox',
+                                            type: 'dropdown',
                                             label: 'Day of week labels',
-                                            default: true,
+                                            default: 'english',
                                             hover_tip:
                                                 'Adds letters to the left of the heatmaps indicating which row represents which weekday',
+                                            content: { none: 'None', english: 'English', kanji: 'Kanji' },
                                             path: '@general.day_labels',
                                         },
                                         month_labels: {
@@ -697,6 +700,13 @@
             settings.lessons.count_zeros = old.lessons.count_zeros
         }
         settings.other.ported = true
+    }
+
+    // Updates settings if someone has outdated settings
+    function migrate_settings(settings) {
+        // Changed day labels from checkbox to dropdown
+        if (typeof settings.general.day_labels === 'boolean')
+            settings.general.day_labels = settings.general.day_labels ? 'english' : 'none'
     }
 
     // Reload the heatmap if settings have been changed
@@ -1122,6 +1132,7 @@
                 segment_years: settings.general.segment_years,
                 zero_gap: settings.general.zero_gap,
                 markings: [[new Date(Date.now() - msh * settings.general.day_start), 'today'], ...level_marks],
+                day_labels: settings.general.day_labels === 'kanji' && ['月', '火', '水', '木', '金', '土', '日'],
                 day_hover_callback: (date, day_data) => {
                     let type2 = type
                     let time = new Date(date[0], date[1] - 1, date[2], 0, 0).getTime()
