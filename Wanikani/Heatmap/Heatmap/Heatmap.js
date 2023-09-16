@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      1.0.9
+// @version      1.0.10
 // @description  Simple script that can generate heatmaps
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -16,7 +16,7 @@
             this.config = config
             this.data = {}
 
-            this.config.day_labels ??= ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+            this.config.day_labels ||= ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
             // If data is provided, initiate right away
             if (data !== undefined) this.initiate(data)
