@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Emoter
 // @namespace    http://tampermonkey.net/
-// @version      1.1.7
+// @version      1.1.8
 // @description  Custom emote handler
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -15,8 +15,9 @@
     // Inject if the save function is defined
     function tryInject() {
         const old_save = window.require('discourse/controllers/composer').default.prototype.save
-        const old_cook = window.require('pretty-text/engines/discourse-markdown-it').cook
+        const old_cook = window.require('pretty-text/pretty-text').default.prototype.cook
         if (old_save) {
+            registerEmotes()
             clearInterval(i)
             inject(old_save, old_cook)
         }
@@ -30,11 +31,11 @@
             composer.dispatchEvent(new Event('change', { bubbles: true, cancelable: true })) // Let Discourse know
             old_save.call(this, t) // Call regular save function
         }
-        const new_cook = async function (raw, ops) {
-            return old_cook(emote_cooker(raw), ops)
+        const new_cook = async function (raw, ...ops) {
+            return old_cook.apply(this, [emote_cooker(raw), ...ops])
         }
         window.require('discourse/controllers/composer').default.prototype.save = new_save // Inject
-        window.require('pretty-text/engines/discourse-markdown-it').cook = new_cook // Inject
+        window.require('pretty-text/pretty-text').default.prototype.cook = new_cook // Inject
     }
 
     // Handles emotifications when saving
@@ -70,19 +71,30 @@
         word = word.toLowerCase()
         switch (word) {
             case 'new': // !emote new NAME "URL"
-                if (value) emotes[name] = { url: value }
+                if (value) {
+                    emotes[name] = { url: value }
+                    window.require('pretty-text/emoji').registerEmoji(name, value, 'Emoter')
+                }
                 break
             case 'size': // !emote size NAME "SIZE"
                 if (value && !value.match(/\d+(x\d+)?/i)) break
                 if (name === 'default') cache.size = value
             case 'url': // !emote url NAME "URL"
-                if (value && emotes[name]) emotes[name][word] = value
+                if (value && emotes[name]) {
+                    emotes[name][word] = value
+                    window.require('pretty-text/emoji').extendedEmojiList().set(name, value)
+                }
                 break
             case 'remove': // !emote remove NAME
+                window.require('pretty-text/emoji').extendedEmojiList().delete(name)
                 delete emotes[name]
                 break
             case 'rename': // !emote rename NAME "NAME"
-                if (value && emotes[name]) delete Object.assign(emotes, { [value]: emotes[name] })[name]
+                if (value && emotes[name]) {
+                    delete Object.assign(emotes, { [value]: emotes[name] })[name]
+                    window.require('pretty-text/emoji').extendedEmojiList().delete(name)
+                    window.require('pretty-text/emoji').registerEmoji(value, emotes[name].url, 'Emoter')
+                }
                 break
         }
         if (value || word === 'remove') {
@@ -131,5 +143,12 @@
     // Saves to local storage
     function set_local(cache) {
         localStorage.setItem('Emoter', JSON.stringify(cache))
+    }
+
+    // Register emotes in Discord
+    function registerEmotes() {
+        const cache = get_local()
+        const register = window.require('pretty-text/emoji').registerEmoji
+        for (let [name, { url }] of Object.entries(cache.emotes)) register(name, url, 'Emoter')
     }
 })()
