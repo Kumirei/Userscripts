@@ -100,7 +100,7 @@
             extra: '',
         },
         {
-            title: 'RoseWagsBlue’s Return to 京都',
+            title: 'RoseWagsBlue’s non-Return to 京都',
             date: 'Feb 1 2024',
             user: 'RoseWagsBlue',
             message0: "@RoseWagsBlue omg it's going to be so much fun!",
