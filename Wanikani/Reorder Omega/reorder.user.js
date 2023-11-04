@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.39
+// @version      1.3.40
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -82,6 +82,10 @@ var module = {};
         }
         function install_queue_manipulation() {
             // Set up queue manipulation
+            if (settings.batch_size > 0)
+                wkQueue.lessonBatchSize = settings.batch_size;
+            else
+                wkQueue.lessonBatchSize = null;
             wkQueue.addTotalChange(apply_preset, {
                 openFramework: true,
                 openFrameworkGetItemsConfig: 'assignments,review_statistics,study_materials'
@@ -551,6 +555,8 @@ var module = {};
         if (!is_quiz_page())
             return;
         page = page;
+        var batch_input = $("<input id=\"".concat(script_id, "_batch_size_input\" type=\"number\" min=\"0\" value=\"").concat(settings.batch_size, "\" />"));
+        var batch_button = $("<button id=\"".concat(script_id, "_batch_size_btn\" class=\"wk-button wk-button--default\">Set</button>"));
         var options = [];
         for (var _i = 0, _a = Object.entries(settings.presets); _i < _a.length; _i++) {
             var _b = _a[_i], i = _b[0], preset = _b[1];
@@ -566,10 +572,22 @@ var module = {};
             // Update
             wkQueue.refresh();
         });
+        $('#batch_size').remove();
         $('#active_preset').remove();
         $(body)
             .find(preset_selection_location)
             .append($("<div id=\"active_preset\" ".concat(!settings.display_selection ? 'class="hidden"' : '', ">Preset: </div>")).append(select));
+        if (page === 'lessons') {
+            batch_button.on('click', function (event) {
+                page = page;
+                settings.batch_size = wkQueue.lessonBatchSize = $("#".concat(script_id, "_batch_size_input")).val();
+                wkof.Settings.save(script_id);
+                wkQueue.refresh();
+            });
+            $(body).find('.character-header__meaning').after($("<div id=\"batch_size\" ".concat(!settings.display_selection ? ' class="hidden"' : '', ">Batch: </div>"))
+                .append(batch_input)
+                .append(batch_button));
+        }
     }
     // Installs all the extra optional features
     function install_extra_features() {
@@ -669,7 +687,7 @@ var module = {};
     }
     // Installs the CSS
     function install_css() {
-        var css = "\n            body.reorder_omega_loading > #loading { display: block !important; opacity: 1 !important  }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #omega_header_row {\n                display: flex;\n                width: 100%;\n                position: absolute;\n                top: 2em;\n                left: 16px;\n                z-index: -1;\n            }\n\n            #active_preset {\n                font-size: 1em;\n                line-height: 1rem;\n                padding: 0.5rem;\n                position: absolute;\n                bottom: 0;\n                left: 0;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n                font-size: 1em;\n            }\n\n            #active_preset select option { color: black; }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n\n            #wkof_ds #paste_preset,\n            #wkof_ds #paste_action {\n                height: 0;\n                padding: 0;\n                border: 0;\n                display: block;\n            }\n\n            #main-info {\n                position: relative;\n            }\n\n            #stats { z-index: 1 }\n\n            #streak { width: max-content; }\n\n            .burn_bell_wrapper {\n                display: flex;\n                gap: 0.4em;\n            }\n\n            .burn_bell_wrapper > button {\n                width: 30px !important;\n                padding: 0 !important;\n            }\n\n            .burn_bell_wrapper > button > i {\n                width: 30px;\n            }\n\n            body.omegaNoItems .character-header__characters::before {\n                content: \"No items in preset\";\n                font-size: 100px;\n            }\n\n            body.omegaNoItems .character-header__characters {\n                font-size: 0;\n            }\n        ";
+        var css = "\n            body.reorder_omega_loading > #loading { display: block !important; opacity: 1 !important  }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #omega_header_row {\n                display: flex;\n                width: 100%;\n                position: absolute;\n                top: 2em;\n                left: 16px;\n                z-index: -1;\n            }\n\n            #active_preset {\n                font-size: 1em;\n                line-height: 1rem;\n                padding: 0.5rem;\n                position: absolute;\n                bottom: 0;\n                left: 0;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n                font-size: 1em;\n            }\n\n            #active_preset select option { color: black; }\n\n            #batch_size {\n                position: absolute;\n                bottom: 1.5rem;\n                left: 0;\n                padding: 0.5rem;\n                line-height: 1rem;\n                font-size: 1rem;\n            }\n            \n            #batch_size input {\n                width: 3.5rem;\n                text-align: right;\n                font-size: 1rem;\n            }\n            \n            #batch_size button {\n                font-size: 1rem;\n                padding: 3px;\n                width: auto;\n                margin-left: 3px;\n            }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n\n            #wkof_ds #paste_preset,\n            #wkof_ds #paste_action {\n                height: 0;\n                padding: 0;\n                border: 0;\n                display: block;\n            }\n\n            #main-info {\n                position: relative;\n            }\n\n            #stats { z-index: 1 }\n\n            #streak { width: max-content; }\n\n            .burn_bell_wrapper {\n                display: flex;\n                gap: 0.4em;\n            }\n\n            .burn_bell_wrapper > button {\n                width: 30px !important;\n                padding: 0 !important;\n            }\n\n            .burn_bell_wrapper > button > i {\n                width: 30px;\n            }\n\n            body.omegaNoItems .character-header__characters::before {\n                content: \"No items in preset\";\n                font-size: 100px;\n            }\n\n            body.omegaNoItems .character-header__characters {\n                font-size: 0;\n            }\n        ";
         $('head').append("<style id=\"".concat(script_id, "_css\">").concat(css, "</style>"));
     }
     // -----------------------------------------------------------------------------------------------------------------
@@ -713,6 +731,7 @@ var module = {};
             presets: get_default_presets(),
             display_egg_timer: true,
             display_streak: true,
+            batch_size: 0,
             burn_bell: 'disabled',
             voice_actor: 'default',
             back2back_behavior: 'disabled',
@@ -870,6 +889,13 @@ var module = {};
                                     "default": true,
                                     label: 'Display Streak',
                                     hover_tip: 'Keep track of how many questions in a row you have answered correctly'
+                                },
+                                batch_size: {
+                                    type: 'number',
+                                    "default": 0,
+                                    min: 0,
+                                    label: 'Lesson Batch Size',
+                                    hover_tip: 'Set the batch size that should be applied to your lessons. Overrides WaniKani setting. 0 = use WaniKani setting'
                                 },
                                 burn_bell: {
                                     type: 'dropdown',

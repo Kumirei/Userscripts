@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.39
+// @version      1.3.40
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -54,7 +54,7 @@ type WKQueue = {
     refresh: () => void
     currentLessonQueue: (options?: WKQOptions) => WKQItem[]
     currentReviewQueue: (options?: WKQOptions) => WKQItem[]
-    lessonBatchSize: number
+    lessonBatchSize: number | null
     version: number
     _internal: {
         replaceWIthNewerVersion: Function
@@ -171,6 +171,8 @@ declare global {
 
         function install_queue_manipulation() {
             // Set up queue manipulation
+            if (settings.batch_size > 0) wkQueue.lessonBatchSize = settings.batch_size
+            else wkQueue.lessonBatchSize = null
             wkQueue.addTotalChange(apply_preset, {
                 openFramework: true,
                 openFrameworkGetItemsConfig: 'assignments,review_statistics,study_materials',
@@ -640,6 +642,10 @@ declare global {
     function install_interface(): void {
         if (!is_quiz_page()) return
         page = page as 'reviews' | 'lessons' | 'extra_study' | 'self_study'
+
+        const batch_input = $(`<input id="${script_id}_batch_size_input" type="number" min="0" value="${settings.batch_size}" />`)
+        const batch_button = $(`<button id="${script_id}_batch_size_btn" class="wk-button wk-button--default">Set</button>`)
+
         const options: string[] = []
         for (let [i, preset] of Object.entries(settings.presets)) {
             if (preset.available_on[page]) options.push(`<option value=${i}>${preset.name}</option>`)
@@ -653,6 +659,7 @@ declare global {
             // Update
             wkQueue.refresh()
         })
+        $('#batch_size').remove()
         $('#active_preset').remove()
 
         $(body)
@@ -662,6 +669,20 @@ declare global {
                     `<div id="active_preset" ${!settings.display_selection ? 'class="hidden"' : ''}>Preset: </div>`,
                 ).append(select),
             )
+        
+        if (page === 'lessons') {
+            batch_button.on('click', (event: any) => {
+                page = page as 'reviews' | 'lessons' | 'extra_study' | 'self_study'
+                settings.batch_size = wkQueue.lessonBatchSize = $(`#${script_id}_batch_size_input`).val() as number
+                wkof.Settings.save(script_id)
+                wkQueue.refresh()
+            })
+            $(body).find('.character-header__meaning').after(
+                $(`<div id="batch_size" ${!settings.display_selection ? ' class="hidden"' : ''}>Batch: </div>`)
+                    .append(batch_input)
+                    .append(batch_button)
+            )
+        }
     }
 
     // Installs all the extra optional features
@@ -838,6 +859,28 @@ declare global {
 
             #active_preset select option { color: black; }
 
+            #batch_size {
+                position: absolute;
+                bottom: 1.5rem;
+                left: 0;
+                padding: 0.5rem;
+                line-height: 1rem;
+                font-size: 1rem;
+            }
+            
+            #batch_size input {
+                width: 3.5rem;
+                text-align: right;
+                font-size: 1rem;
+            }
+            
+            #batch_size button {
+                font-size: 1rem;
+                padding: 3px;
+                width: auto;
+                margin-left: 3px;
+            }
+
             body[reorder_omega_display_egg_timer="false"] #egg_timer,
             body[reorder_omega_display_streak="false"] #streak {
                 display: none;
@@ -928,6 +971,7 @@ declare global {
             presets: get_default_presets(),
             display_egg_timer: true,
             display_streak: true,
+            batch_size: 0,
             burn_bell: 'disabled',
             voice_actor: 'default',
             back2back_behavior: 'disabled',
@@ -1087,6 +1131,13 @@ declare global {
                                     default: true,
                                     label: 'Display Streak',
                                     hover_tip: 'Keep track of how many questions in a row you have answered correctly',
+                                },
+                                batch_size: {
+                                    type: 'number',
+                                    default: 0,
+                                    min: 0,
+                                    label: 'Lesson Batch Size',
+                                    hover_tip: 'Set the batch size that should be applied to your lessons. Overrides WaniKani setting. 0 = use WaniKani setting',
                                 },
                                 burn_bell: {
                                     type: 'dropdown',
