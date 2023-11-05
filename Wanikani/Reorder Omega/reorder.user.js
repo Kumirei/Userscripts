@@ -578,13 +578,19 @@ var module = {};
             .find(preset_selection_location)
             .append($("<div id=\"active_preset\" ".concat(!settings.display_selection ? 'class="hidden"' : '', ">Preset: </div>")).append(select));
         if (page === 'lessons') {
+            // In case user set new value in settings while on lesson page, set wkQueue's batch size
+            // However, given the bug with wkof where the settings cog disappears after any change that causes a turbo reload,
+            //   and omega causes one even with preset None selected, this is not likely to be possible currently
+            wkQueue.lessonBatchSize = settings.batch_size;
             batch_button.on('click', function (event) {
                 page = page;
                 settings.batch_size = wkQueue.lessonBatchSize = $("#".concat(script_id, "_batch_size_input")).val();
                 wkof.Settings.save(script_id);
                 wkQueue.refresh();
             });
-            $(body).find('.character-header__meaning').after($("<div id=\"batch_size\" ".concat(!settings.display_selection ? ' class="hidden"' : '', ">Batch: </div>"))
+            $(body)
+                .find('.character-header__meaning')
+                .after($("<div id=\"batch_size\" ".concat(!settings.display_selection ? ' class="hidden"' : '', ">Batch: </div>"))
                 .append(batch_input)
                 .append(batch_button));
         }

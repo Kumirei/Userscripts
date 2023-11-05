@@ -643,8 +643,12 @@ declare global {
         if (!is_quiz_page()) return
         page = page as 'reviews' | 'lessons' | 'extra_study' | 'self_study'
 
-        const batch_input = $(`<input id="${script_id}_batch_size_input" type="number" min="0" value="${settings.batch_size}" />`)
-        const batch_button = $(`<button id="${script_id}_batch_size_btn" class="wk-button wk-button--default">Set</button>`)
+        const batch_input = $(
+            `<input id="${script_id}_batch_size_input" type="number" min="0" value="${settings.batch_size}" />`,
+        )
+        const batch_button = $(
+            `<button id="${script_id}_batch_size_btn" class="wk-button wk-button--default">Set</button>`,
+        )
 
         const options: string[] = []
         for (let [i, preset] of Object.entries(settings.presets)) {
@@ -669,19 +673,25 @@ declare global {
                     `<div id="active_preset" ${!settings.display_selection ? 'class="hidden"' : ''}>Preset: </div>`,
                 ).append(select),
             )
-        
+
         if (page === 'lessons') {
+            // In case user set new value in settings while on lesson page, set wkQueue's batch size
+            // However, given the bug with wkof where the settings cog disappears after any change that causes a turbo reload,
+            //   and omega causes one even with preset None selected, this is not likely to be possible currently
+            wkQueue.lessonBatchSize = settings.batch_size
             batch_button.on('click', (event: any) => {
                 page = page as 'reviews' | 'lessons' | 'extra_study' | 'self_study'
                 settings.batch_size = wkQueue.lessonBatchSize = $(`#${script_id}_batch_size_input`).val() as number
                 wkof.Settings.save(script_id)
                 wkQueue.refresh()
             })
-            $(body).find('.character-header__meaning').after(
-                $(`<div id="batch_size" ${!settings.display_selection ? ' class="hidden"' : ''}>Batch: </div>`)
-                    .append(batch_input)
-                    .append(batch_button)
-            )
+            $(body)
+                .find('.character-header__meaning')
+                .after(
+                    $(`<div id="batch_size" ${!settings.display_selection ? ' class="hidden"' : ''}>Batch: </div>`)
+                        .append(batch_input)
+                        .append(batch_button),
+                )
         }
     }
 
@@ -1137,7 +1147,8 @@ declare global {
                                     default: 0,
                                     min: 0,
                                     label: 'Lesson Batch Size',
-                                    hover_tip: 'Set the batch size that should be applied to your lessons. Overrides WaniKani setting. 0 = use WaniKani setting',
+                                    hover_tip:
+                                        'Set the batch size that should be applied to your lessons. Overrides WaniKani setting. 0 = use WaniKani setting',
                                 },
                                 burn_bell: {
                                     type: 'dropdown',
