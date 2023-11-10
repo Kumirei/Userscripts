@@ -556,7 +556,6 @@ var module = {};
             return;
         page = page;
         var batch_input = $("<input id=\"".concat(script_id, "_batch_size_input\" type=\"number\" min=\"0\" value=\"").concat(settings.batch_size, "\" />"));
-        var batch_button = $("<button id=\"".concat(script_id, "_batch_size_btn\" class=\"wk-button wk-button--default\">Set</button>"));
         var options = [];
         for (var _i = 0, _a = Object.entries(settings.presets); _i < _a.length; _i++) {
             var _b = _a[_i], i = _b[0], preset = _b[1];
@@ -581,18 +580,19 @@ var module = {};
             // In case user set new value in settings while on lesson page, set wkQueue's batch size
             // However, given the bug with wkof where the settings cog disappears after any change that causes a turbo reload,
             //   and omega causes one even with preset None selected, this is not likely to be possible currently
-            wkQueue.lessonBatchSize = settings.batch_size;
-            batch_button.on('click', function (event) {
-                page = page;
-                settings.batch_size = wkQueue.lessonBatchSize = $("#".concat(script_id, "_batch_size_input")).val();
-                wkof.Settings.save(script_id);
-                wkQueue.refresh();
+            var debounceTimer_1 = 0;
+            batch_input.on('change', function () {
+                clearTimeout(debounceTimer_1);
+                debounceTimer_1 = setTimeout(function () {
+                    page = page;
+                    settings.batch_size = wkQueue.lessonBatchSize = $("#".concat(script_id, "_batch_size_input")).val();
+                    wkof.Settings.save(script_id);
+                    wkQueue.refresh();
+                }, 500);
             });
             $(body)
                 .find('.character-header__meaning')
-                .after($("<div id=\"batch_size\" ".concat(!settings.display_selection ? ' class="hidden"' : '', ">Batch: </div>"))
-                .append(batch_input)
-                .append(batch_button));
+                .after($("<div id=\"batch_size\" ".concat(!settings.display_selection ? ' class="hidden"' : '', ">Batch: </div>")).append(batch_input));
         }
     }
     // Installs all the extra optional features
@@ -693,7 +693,7 @@ var module = {};
     }
     // Installs the CSS
     function install_css() {
-        var css = "\n            body.reorder_omega_loading > #loading { display: block !important; opacity: 1 !important  }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #omega_header_row {\n                display: flex;\n                width: 100%;\n                position: absolute;\n                top: 2em;\n                left: 16px;\n                z-index: -1;\n            }\n\n            #active_preset {\n                font-size: 1em;\n                line-height: 1rem;\n                padding: 0.5rem;\n                position: absolute;\n                bottom: 0;\n                left: 0;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n                font-size: 1em;\n            }\n\n            #active_preset select option { color: black; }\n\n            #batch_size {\n                position: absolute;\n                bottom: 1.5rem;\n                left: 0;\n                padding: 0.5rem;\n                line-height: 1rem;\n                font-size: 1rem;\n            }\n            \n            #batch_size input {\n                width: 3.5rem;\n                text-align: right;\n                font-size: 1rem;\n            }\n            \n            #batch_size button {\n                font-size: 1rem;\n                padding: 3px;\n                width: auto;\n                margin-left: 3px;\n            }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n\n            #wkof_ds #paste_preset,\n            #wkof_ds #paste_action {\n                height: 0;\n                padding: 0;\n                border: 0;\n                display: block;\n            }\n\n            #main-info {\n                position: relative;\n            }\n\n            #stats { z-index: 1 }\n\n            #streak { width: max-content; }\n\n            .burn_bell_wrapper {\n                display: flex;\n                gap: 0.4em;\n            }\n\n            .burn_bell_wrapper > button {\n                width: 30px !important;\n                padding: 0 !important;\n            }\n\n            .burn_bell_wrapper > button > i {\n                width: 30px;\n            }\n\n            body.omegaNoItems .character-header__characters::before {\n                content: \"No items in preset\";\n                font-size: 100px;\n            }\n\n            body.omegaNoItems .character-header__characters {\n                font-size: 0;\n            }\n        ";
+        var css = "\n            body.reorder_omega_loading > #loading { display: block !important; opacity: 1 !important  }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap { display: flex; }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons {\n                display: flex;\n                flex-direction: column;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button {\n                height: 25px;\n                aspect-ratio: 1;\n                padding: 0;\n            }\n\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }\n            #wkofs_reorder_omega.wkof_settings .list_wrap .right select { height: 100%; }\n\n            #wkofs_reorder_omega #reorder_omega_action > section ~ *{ display: none; }\n\n            #wkofs_reorder_omega #reorder_omega_action[type=\"None\"] .none,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Sort\"] .sort,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Filter\"] .filter,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Shuffle\"] .shuffle,\n            #wkofs_reorder_omega #reorder_omega_action[type=\"Freeze & Restore\"] .freeze_and_restore,\n            #wkofs_reorder_omega #reorder_omega_action .visible_action_value {\n                display: block;\n            }\n\n            #wkofs_reorder_omega #reorder_omega_action .description { padding-bottom: 0.5em; }\n\n            #omega_header_row {\n                display: flex;\n                width: 100%;\n                position: absolute;\n                top: 2em;\n                left: 16px;\n                z-index: -1;\n            }\n\n            #active_preset {\n                font-size: 1em;\n                line-height: 1rem;\n                padding: 0.5rem;\n                position: absolute;\n                bottom: 0;\n                left: 0;\n            }\n\n            #active_preset select {\n                background: transparent !important;\n                border: none;\n                box-shadow: none !important;\n                color: currentColor;\n                font-size: 1em;\n            }\n\n            #active_preset select option { color: black; }\n\n            #batch_size {\n                position: absolute;\n                bottom: 1.5rem;\n                left: 0;\n                padding: 0.5rem;\n                line-height: 1rem;\n                font-size: 1rem;\n            }\n            \n            #batch_size input {\n                width: 3.5rem;\n                font-size: 1rem;\n                padding: 0.25em 0.4em;\n                font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;\n                height: 23px;\n                background: transparent;\n                color: white;\n            }\n\n            body[reorder_omega_display_egg_timer=\"false\"] #egg_timer,\n            body[reorder_omega_display_streak=\"false\"] #streak,\n            body[reorder_omega_display_batch_size=\"false\"] #batch_size {\n                display: none;\n            }\n\n            body > div[data-react-class=\"Lesson/Lesson\"] #egg_timer { color: white; }\n\n            #wkof_ds #paste_preset,\n            #wkof_ds #paste_action {\n                height: 0;\n                padding: 0;\n                border: 0;\n                display: block;\n            }\n\n            #main-info {\n                position: relative;\n            }\n\n            #stats { z-index: 1 }\n\n            #streak { width: max-content; }\n\n            .burn_bell_wrapper {\n                display: flex;\n                gap: 0.4em;\n            }\n\n            .burn_bell_wrapper > button {\n                width: 30px !important;\n                padding: 0 !important;\n            }\n\n            .burn_bell_wrapper > button > i {\n                width: 30px;\n            }\n\n            body.omegaNoItems .character-header__characters::before {\n                content: \"No items in preset\";\n                font-size: 100px;\n            }\n\n            body.omegaNoItems .character-header__characters {\n                font-size: 0;\n            }\n        ";
         $('head').append("<style id=\"".concat(script_id, "_css\">").concat(css, "</style>"));
     }
     // -----------------------------------------------------------------------------------------------------------------
@@ -737,6 +737,7 @@ var module = {};
             presets: get_default_presets(),
             display_egg_timer: true,
             display_streak: true,
+            display_batch_size: false,
             batch_size: 0,
             burn_bell: 'disabled',
             voice_actor: 'default',
@@ -895,6 +896,12 @@ var module = {};
                                     "default": true,
                                     label: 'Display Streak',
                                     hover_tip: 'Keep track of how many questions in a row you have answered correctly'
+                                },
+                                display_batch_size: {
+                                    type: 'checkbox',
+                                    "default": true,
+                                    label: 'Display Lesson Batch Size',
+                                    hover_tip: 'Display a batch size input on the lessons page'
                                 },
                                 batch_size: {
                                     type: 'number',
@@ -1504,6 +1511,7 @@ var module = {};
     function set_body_attributes() {
         $(body).attr("".concat(script_id, "_display_egg_timer"), String(settings.display_egg_timer));
         $(body).attr("".concat(script_id, "_display_streak"), String(settings.display_streak));
+        $(body).attr("".concat(script_id, "_display_batch_size"), String(settings.display_batch_size));
     }
     // Refreshes the preset and action selection
     function refresh_settings() {

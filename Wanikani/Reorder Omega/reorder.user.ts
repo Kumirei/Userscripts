@@ -646,9 +646,6 @@ declare global {
         const batch_input = $(
             `<input id="${script_id}_batch_size_input" type="number" min="0" value="${settings.batch_size}" />`,
         )
-        const batch_button = $(
-            `<button id="${script_id}_batch_size_btn" class="wk-button wk-button--default">Set</button>`,
-        )
 
         const options: string[] = []
         for (let [i, preset] of Object.entries(settings.presets)) {
@@ -678,19 +675,22 @@ declare global {
             // In case user set new value in settings while on lesson page, set wkQueue's batch size
             // However, given the bug with wkof where the settings cog disappears after any change that causes a turbo reload,
             //   and omega causes one even with preset None selected, this is not likely to be possible currently
-            wkQueue.lessonBatchSize = settings.batch_size
-            batch_button.on('click', (event: any) => {
-                page = page as 'reviews' | 'lessons' | 'extra_study' | 'self_study'
-                settings.batch_size = wkQueue.lessonBatchSize = $(`#${script_id}_batch_size_input`).val() as number
-                wkof.Settings.save(script_id)
-                wkQueue.refresh()
+            let debounceTimer: any = 0
+            batch_input.on('change', () => {
+                clearTimeout(debounceTimer)
+                debounceTimer = setTimeout(() => {
+                    page = page as 'reviews' | 'lessons' | 'extra_study' | 'self_study'
+                    settings.batch_size = wkQueue.lessonBatchSize = $(`#${script_id}_batch_size_input`).val() as number
+                    wkof.Settings.save(script_id)
+                    wkQueue.refresh()
+                }, 500)
             })
             $(body)
                 .find('.character-header__meaning')
                 .after(
-                    $(`<div id="batch_size" ${!settings.display_selection ? ' class="hidden"' : ''}>Batch: </div>`)
-                        .append(batch_input)
-                        .append(batch_button),
+                    $(
+                        `<div id="batch_size" ${!settings.display_selection ? ' class="hidden"' : ''}>Batch: </div>`,
+                    ).append(batch_input),
                 )
         }
     }
@@ -880,19 +880,17 @@ declare global {
             
             #batch_size input {
                 width: 3.5rem;
-                text-align: right;
                 font-size: 1rem;
-            }
-            
-            #batch_size button {
-                font-size: 1rem;
-                padding: 3px;
-                width: auto;
-                margin-left: 3px;
+                padding: 0.25em 0.4em;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                height: 23px;
+                background: transparent;
+                color: white;
             }
 
             body[reorder_omega_display_egg_timer="false"] #egg_timer,
-            body[reorder_omega_display_streak="false"] #streak {
+            body[reorder_omega_display_streak="false"] #streak,
+            body[reorder_omega_display_batch_size="false"] #batch_size {
                 display: none;
             }
 
@@ -981,6 +979,7 @@ declare global {
             presets: get_default_presets(),
             display_egg_timer: true,
             display_streak: true,
+            display_batch_size: false,
             batch_size: 0,
             burn_bell: 'disabled',
             voice_actor: 'default',
@@ -1141,6 +1140,12 @@ declare global {
                                     default: true,
                                     label: 'Display Streak',
                                     hover_tip: 'Keep track of how many questions in a row you have answered correctly',
+                                },
+                                display_batch_size: {
+                                    type: 'checkbox',
+                                    default: true,
+                                    label: 'Display Lesson Batch Size',
+                                    hover_tip: 'Display a batch size input on the lessons page',
                                 },
                                 batch_size: {
                                     type: 'number',
@@ -1778,6 +1783,7 @@ declare global {
     function set_body_attributes() {
         $(body).attr(`${script_id}_display_egg_timer`, String(settings.display_egg_timer))
         $(body).attr(`${script_id}_display_streak`, String(settings.display_streak))
+        $(body).attr(`${script_id}_display_batch_size`, String(settings.display_batch_size))
     }
 
     // Refreshes the preset and action selection
