@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.41
+// @version      1.3.42
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -54,7 +54,7 @@ type WKQueue = {
     refresh: () => void
     currentLessonQueue: (options?: WKQOptions) => WKQItem[]
     currentReviewQueue: (options?: WKQOptions) => WKQItem[]
-    lessonBatchSize: number
+    lessonBatchSize: number | null
     version: number
     _internal: {
         replaceWIthNewerVersion: Function
@@ -171,6 +171,8 @@ declare global {
 
         function install_queue_manipulation() {
             // Set up queue manipulation
+            if (settings.batch_size > 0) wkQueue.lessonBatchSize = settings.batch_size
+            else wkQueue.lessonBatchSize = null
             wkQueue.addTotalChange(apply_preset, {
                 openFramework: true,
                 openFrameworkGetItemsConfig: 'assignments,review_statistics,study_materials',
@@ -640,6 +642,11 @@ declare global {
     function install_interface(): void {
         if (!is_quiz_page()) return
         page = page as 'reviews' | 'lessons' | 'extra_study' | 'self_study'
+
+        const batch_input = $(
+            `<input id="${script_id}_batch_size_input" type="number" min="0" value="${settings.batch_size}" />`,
+        )
+
         const options: string[] = []
         for (let [i, preset] of Object.entries(settings.presets)) {
             if (preset.available_on[page]) options.push(`<option value=${i}>${preset.name}</option>`)
@@ -653,6 +660,7 @@ declare global {
             // Update
             wkQueue.refresh()
         })
+        $('#batch_size').remove()
         $('#active_preset').remove()
 
         $(body)
@@ -662,6 +670,29 @@ declare global {
                     `<div id="active_preset" ${!settings.display_selection ? 'class="hidden"' : ''}>Preset: </div>`,
                 ).append(select),
             )
+
+        if (page === 'lessons') {
+            // In case user set new value in settings while on lesson page, set wkQueue's batch size
+            // However, given the bug with wkof where the settings cog disappears after any change that causes a turbo reload,
+            //   and omega causes one even with preset None selected, this is not likely to be possible currently
+            let debounceTimer: any = 0
+            batch_input.on('change', () => {
+                clearTimeout(debounceTimer)
+                debounceTimer = setTimeout(() => {
+                    page = page as 'reviews' | 'lessons' | 'extra_study' | 'self_study'
+                    settings.batch_size = wkQueue.lessonBatchSize = $(`#${script_id}_batch_size_input`).val() as number
+                    wkof.Settings.save(script_id)
+                    wkQueue.refresh()
+                }, 500)
+            })
+            $(body)
+                .find('.character-header__meaning')
+                .after(
+                    $(
+                        `<div id="batch_size" ${!settings.display_selection ? ' class="hidden"' : ''}>Batch: </div>`,
+                    ).append(batch_input),
+                )
+        }
     }
 
     // Installs all the extra optional features
@@ -838,8 +869,28 @@ declare global {
 
             #active_preset select option { color: black; }
 
+            #batch_size {
+                position: absolute;
+                bottom: 1.5rem;
+                left: 0;
+                padding: 0.5rem;
+                line-height: 1rem;
+                font-size: 1rem;
+            }
+            
+            #batch_size input {
+                width: 3.5rem;
+                font-size: 1rem;
+                padding: 0.25em 0.4em;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                height: 23px;
+                background: transparent;
+                color: white;
+            }
+
             body[reorder_omega_display_egg_timer="false"] #egg_timer,
-            body[reorder_omega_display_streak="false"] #streak {
+            body[reorder_omega_display_streak="false"] #streak,
+            body[reorder_omega_display_batch_size="false"] #batch_size {
                 display: none;
             }
 
@@ -936,6 +987,8 @@ declare global {
             presets: get_default_presets(),
             display_egg_timer: true,
             display_streak: true,
+            display_batch_size: false,
+            batch_size: 0,
             burn_bell: 'disabled',
             voice_actor: 'default',
             back2back_behavior: 'disabled',
@@ -1095,6 +1148,20 @@ declare global {
                                     default: true,
                                     label: 'Display Streak',
                                     hover_tip: 'Keep track of how many questions in a row you have answered correctly',
+                                },
+                                display_batch_size: {
+                                    type: 'checkbox',
+                                    default: true,
+                                    label: 'Display Lesson Batch Size',
+                                    hover_tip: 'Display a batch size input on the lessons page',
+                                },
+                                batch_size: {
+                                    type: 'number',
+                                    default: 0,
+                                    min: 0,
+                                    label: 'Lesson Batch Size',
+                                    hover_tip:
+                                        'Set the batch size that should be applied to your lessons. Overrides WaniKani setting. 0 = use WaniKani setting',
                                 },
                                 burn_bell: {
                                     type: 'dropdown',
@@ -1724,6 +1791,7 @@ declare global {
     function set_body_attributes() {
         $(body).attr(`${script_id}_display_egg_timer`, String(settings.display_egg_timer))
         $(body).attr(`${script_id}_display_streak`, String(settings.display_streak))
+        $(body).attr(`${script_id}_display_batch_size`, String(settings.display_batch_size))
     }
 
     // Refreshes the preset and action selection

@@ -94,6 +94,8 @@ export namespace Settings {
         presets: Preset[]
         display_egg_timer: boolean
         display_streak: boolean
+        display_batch_size: boolean
+        batch_size: number
         burn_bell: 'disabled' | 'high' | 'low'
         voice_actor: 'default' | 'random' | 'alternate'
         back2back_behavior: 'disabled' | 'always' | 'correct' | 'true'

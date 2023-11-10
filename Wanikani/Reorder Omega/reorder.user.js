@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.41
+// @version      1.3.42
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -82,6 +82,10 @@ var module = {};
         }
         function install_queue_manipulation() {
             // Set up queue manipulation
+            if (settings.batch_size > 0)
+                wkQueue.lessonBatchSize = settings.batch_size;
+            else
+                wkQueue.lessonBatchSize = null;
             wkQueue.addTotalChange(apply_preset, {
                 openFramework: true,
                 openFrameworkGetItemsConfig: 'assignments,review_statistics,study_materials'
@@ -551,6 +555,7 @@ var module = {};
         if (!is_quiz_page())
             return;
         page = page;
+        var batch_input = $("<input id=\"".concat(script_id, "_batch_size_input\" type=\"number\" min=\"0\" value=\"").concat(settings.batch_size, "\" />"));
         var options = [];
         for (var _i = 0, _a = Object.entries(settings.presets); _i < _a.length; _i++) {
             var _b = _a[_i], i = _b[0], preset = _b[1];
@@ -566,10 +571,29 @@ var module = {};
             // Update
             wkQueue.refresh();
         });
+        $('#batch_size').remove();
         $('#active_preset').remove();
         $(body)
             .find(preset_selection_location)
             .append($("<div id=\"active_preset\" ".concat(!settings.display_selection ? 'class="hidden"' : '', ">Preset: </div>")).append(select));
+        if (page === 'lessons') {
+            // In case user set new value in settings while on lesson page, set wkQueue's batch size
+            // However, given the bug with wkof where the settings cog disappears after any change that causes a turbo reload,
+            //   and omega causes one even with preset None selected, this is not likely to be possible currently
+            var debounceTimer_1 = 0;
+            batch_input.on('change', function () {
+                clearTimeout(debounceTimer_1);
+                debounceTimer_1 = setTimeout(function () {
+                    page = page;
+                    settings.batch_size = wkQueue.lessonBatchSize = $("#".concat(script_id, "_batch_size_input")).val();
+                    wkof.Settings.save(script_id);
+                    wkQueue.refresh();
+                }, 500);
+            });
+            $(body)
+                .find('.character-header__meaning')
+                .after($("<div id=\"batch_size\" ".concat(!settings.display_selection ? ' class="hidden"' : '', ">Batch: </div>")).append(batch_input));
+        }
     }
     // Installs all the extra optional features
     function install_extra_features() {
@@ -713,6 +737,8 @@ var module = {};
             presets: get_default_presets(),
             display_egg_timer: true,
             display_streak: true,
+            display_batch_size: false,
+            batch_size: 0,
             burn_bell: 'disabled',
             voice_actor: 'default',
             back2back_behavior: 'disabled',
@@ -870,6 +896,19 @@ var module = {};
                                     "default": true,
                                     label: 'Display Streak',
                                     hover_tip: 'Keep track of how many questions in a row you have answered correctly'
+                                },
+                                display_batch_size: {
+                                    type: 'checkbox',
+                                    "default": true,
+                                    label: 'Display Lesson Batch Size',
+                                    hover_tip: 'Display a batch size input on the lessons page'
+                                },
+                                batch_size: {
+                                    type: 'number',
+                                    "default": 0,
+                                    min: 0,
+                                    label: 'Lesson Batch Size',
+                                    hover_tip: 'Set the batch size that should be applied to your lessons. Overrides WaniKani setting. 0 = use WaniKani setting'
                                 },
                                 burn_bell: {
                                     type: 'dropdown',
@@ -1472,6 +1511,7 @@ var module = {};
     function set_body_attributes() {
         $(body).attr("".concat(script_id, "_display_egg_timer"), String(settings.display_egg_timer));
         $(body).attr("".concat(script_id, "_display_streak"), String(settings.display_streak));
+        $(body).attr("".concat(script_id, "_display_batch_size"), String(settings.display_batch_size));
     }
     // Refreshes the preset and action selection
     function refresh_settings() {
