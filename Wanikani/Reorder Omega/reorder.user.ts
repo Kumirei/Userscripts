@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.40
+// @version      1.3.42
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1251359
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1277610
 // @grant        none
 // @run-at       document-idle
 // @license      MIT
@@ -338,10 +338,10 @@ declare global {
         const wkofQueue = await process_queue(queue.map((item) => item.item))
 
         // If preset has no items show a message
-        body.classList.remove('omegaNoItems')
+        document.body.classList.remove('omegaNoItems')
         if (!wkofQueue.length) {
-            body.classList.add('omegaNoItems')
-            return [3169] // Displays 終了
+            document.body.classList.add('omegaNoItems')
+            return queue // Do not manipulate queue, but don't display anything
         }
 
         return wkofQueue.map((item) => (wkQueueItems.get(item.id) as WKQItem) || item.id) // item.id needed for self_study where we convert from WKOF object
@@ -929,6 +929,14 @@ declare global {
             body.omegaNoItems .character-header__characters::before {
                 content: "No items in preset";
                 font-size: 100px;
+            }
+
+            body.omegaNoItems .subject-statistic-counts,
+            body.omegaNoItems .character-header__meaning,
+            body.omegaNoItems .subject-slides__navigation-link,
+            body.omegaNoItems .subject-slide > *,
+            body.omegaNoItems .subject-queue__items {
+                visibility: hidden;
             }
 
             body.omegaNoItems .character-header__characters {

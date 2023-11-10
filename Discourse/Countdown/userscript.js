@@ -17,7 +17,15 @@
 ;(function () {
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'Rose takes CRCST exam',
+            date: 'nov 28 2023',
+            user: 'RoseWagsBlue',
+            message0: '',
+            message1: '@RoseWagsBlue Do your best!!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: "Ninkastmin's Birth- & Last Guru Day!",
             date: 'dec 28 2023',
