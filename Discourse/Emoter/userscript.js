@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Emoter
 // @namespace    http://tampermonkey.net/
-// @version      1.1.8
+// @version      1.1.9
 // @description  Custom emote handler
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -10,7 +10,8 @@
 
 ;(function () {
     // Wait until the save function is defined
-    const i = setInterval(tryInject, 100)
+    // const i = setInterval(tryInject, 100)
+    registerEmotes()
 
     // Inject if the save function is defined
     function tryInject() {
