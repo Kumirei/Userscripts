@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Detailed SRS Popups
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Changes apprentice and guru popups to say their respective numbers. E.G. Apprentice 1 or Guru 2
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -50,7 +50,16 @@
     function change_srs_name(event) {
         if (!last_item) return
         const new_srs = calculate_resulting_srs(last_item)
-        event.detail.newLevelText = srs_stages[new_srs]
+
+        const modified_event = new CustomEvent('didChangeSRS', {
+            detail: {
+                wentUp: event.detail.wentUp,
+                newLevelText: srs_stages[new_srs],
+            },
+        })
+
+        event.preventDefault()
+        window.dispatchEvent(modified_event)
     }
 
     // Calculate resulting SRS based on current SRS level and number of mistakes made
