@@ -52,7 +52,7 @@
 
 ==/UserStyle== */
 
-@-moz-document domain(community.wanikani.com) {
+@-moz-document domain("community.wanikani.com") {
     /*__________________________________________*/
     /* 			      THEME INFO
     /*__________________________________________*/
@@ -3712,34 +3712,34 @@
         background-color: rgb(main-accent);
         color: var(--main-text);
     }
-}
 
-/* Version 2.1.28
-/*_____________________
+    /* Version 2.1.28
+    /*_____________________
 
-Fixed: Fix presence margins
-*/
+    Fixed: Fix presence margins
+    */
 
-.presence {
-    width: 100%;
-}
+    .presence {
+        width: 100%;
+    }
 
-.container.posts {
-    margin-bottom: 0;
-}
+    .container.posts {
+        margin-bottom: 0;
+    }
 
-/* Version 2.1.29
-/*_____________________
+    /* Version 2.1.29
+    /*_____________________
 
-Fixed: Likes, search 
-*/
+    Fixed: Likes, search 
+    */
 
-:root {
-    --primary-low-mid: var(--main-text);
-    --love-low: var(--highlight-background);
-    --tertiary: var(--main-text);
-}
+    :root {
+        --primary-low-mid: var(--main-text);
+        --love-low: var(--highlight-background);
+        --tertiary: var(--main-text);
+    }
 
-.discourse-reactions-double-button:hover .reaction-button {
-    background: transparent !important;
+    .discourse-reactions-double-button:hover .reaction-button {
+        background: transparent !important;
+    }
 }
