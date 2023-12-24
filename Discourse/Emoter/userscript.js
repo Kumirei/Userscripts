@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Emoter
 // @namespace    http://tampermonkey.net/
-// @version      1.1.9
+// @version      1.2.0
 // @description  Custom emote handler
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -9,64 +9,77 @@
 // ==/UserScript==
 
 ;(function () {
-    // Wait until the save function is defined
-    // const i = setInterval(tryInject, 100)
+    const COMMAND_TEMPLATE = /!emote\s+(\w+)\s+(\w+)\s+(["“„](\S+)["”])?/i
+    const EMOTE_TEMPLATE = /<abbr title="\w+">!\[(\w+)\|\d+x\d+\]\([^)]+\)<\/abbr>/g
+
     registerEmotes()
+    setInterval(prepareEditor, 1000)
 
-    // Inject if the save function is defined
-    function tryInject() {
-        const old_save = window.require('discourse/controllers/composer').default.prototype.save
-        const old_cook = window.require('pretty-text/pretty-text').default.prototype.cook
-        if (old_save) {
-            registerEmotes()
-            clearInterval(i)
-            inject(old_save, old_cook)
-        }
-    }
-
-    // Wrap the save function with our own function
-    function inject(old_save, old_cook) {
-        const new_save = async function (t) {
-            const composer = document.querySelector('textarea.d-editor-input') // Reply box
-            composer.value = await emote(composer) // Modify message
-            composer.dispatchEvent(new Event('change', { bubbles: true, cancelable: true })) // Let Discourse know
-            old_save.call(this, t) // Call regular save function
-        }
-        const new_cook = async function (raw, ...ops) {
-            return old_cook.apply(this, [emote_cooker(raw), ...ops])
-        }
-        window.require('discourse/controllers/composer').default.prototype.save = new_save // Inject
-        window.require('pretty-text/pretty-text').default.prototype.cook = new_cook // Inject
-    }
-
-    // Handles emotifications when saving
-    function emote(composer) {
+    // Register emotes in Discord
+    function registerEmotes() {
         const cache = get_local()
-        const original_text = composer.value
-        // Get draft text, without quotes
-        // let text = original_text.replace(/\[quote((?!\[\/quote\]).)*\[\/quote\]/gis, '')
-        // Replace stuffs?!
-        text = replace_stuffs(original_text, cache)
+        const register = window.require('pretty-text/emoji').registerEmoji
+        for (let [name, { url }] of Object.entries(cache.emotes)) register(name, url, 'Emoter')
+    }
+
+    // Fetch local storage cache
+    function get_local() {
+        const cache = JSON.parse(localStorage.getItem('Emoter') || '{}')
+        return Object.assign({ size: 40, emotes: {} }, cache)
+    }
+
+    // Set up the editor to show the input and the preview to render the real content
+    function prepareEditor() {
+        const editor = document.querySelector('.d-editor-input')
+        if (!editor || editor.emoter?.ready) return
+
+        // Sets or wraps getters and setters of textarea element's "value" property
+        let set = (text) => {
+            text = unModifyText(text)
+            return Object.getOwnPropertyDescriptor(Object.getPrototypeOf(editor), 'value').set.call(editor, text)
+        }
+        let get = () => {
+            const text = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(editor), 'value').get.call(editor)
+            return modifyText(text)
+        }
+        const oldSet = Object.getOwnPropertyDescriptor(editor, 'value')?.set
+        const oldGet = Object.getOwnPropertyDescriptor(editor, 'value')?.get
+        if (oldSet) set = (text) => oldSet(unModifyText(text))
+        if (oldGet) get = () => modifyText(oldGet())
+        Object.defineProperty(editor, 'value', {
+            set(text) {
+                return set(text)
+            },
+            get() {
+                return get()
+            },
+            configurable: true,
+        })
+
+        editor.value = editor.value // Trigger unModify and modify
+
+        console.log('emoter ready', editor)
+        editor.emoter = { ready: true }
+    }
+
+    // Replaces cooked emotes with :name:
+    function unModifyText(text) {
+        return text.replace(EMOTE_TEMPLATE, ':$1:')
+    }
+
+    // Replaces :emotes: and !emotelist and other !commands
+    function modifyText(text) {
+        const cache = get_local()
+        text = process_command(text, cache) // Just need to process one command at a time
+        text = replace_emotes(text, cache)
+        text = replace_list(text, cache)
         return text
     }
 
-    // Change the preview
-    function emote_cooker(raw) {
-        const cache = get_local()
-        const command_template = /!emote\s+(\w+)\s+(\w+)\s+(["“„](\S+)["”])?/i
-        const composer = document.querySelector('textarea.d-editor-input') // Reply box
-        const command = composer.value.match(command_template)
-        // Do things if commands are present
-        if (command) process_command(command, composer, command_template, cache)
-        // Replace stuffs?!
-        raw = replace_stuffs(raw, cache)
-        // Update cache
-        set_local(cache)
-        return raw
-    }
-
     // Handles commands
-    function process_command(command, composer, command_template, cache) {
+    function process_command(text, cache) {
+        const command = text.match(COMMAND_TEMPLATE)
+        if (!command) return text
         const emotes = cache.emotes
         let [_, word, name, __, value] = command
         word = word.toLowerCase()
@@ -98,23 +111,12 @@
                 }
                 break
         }
+        set_local(cache)
+
         if (value || word === 'remove') {
-            composer.value = composer.value.replace(command_template, ':$2:')
-            composer.dispatchEvent(new Event('change', { bubbles: true, cancelable: true })) // Let Discourse know
+            return text.replace(COMMAND_TEMPLATE, ':$2:')
         }
-    }
 
-    // Creates an image for the emote
-    function get_image(url, name, size) {
-        let w = (h = size)
-        if (size.match && size.match(/\d+x\d+/i)) [w, h] = size.split('x')
-        return `<abbr title="${name}">![${name}|${w}x${h}](${url})</abbr>`
-    }
-
-    // Replaces :emotes: with images and !emotelist with the list
-    function replace_stuffs(text, cache) {
-        text = replace_emotes(text, cache)
-        text = replace_list(text, cache)
         return text
     }
 
@@ -135,21 +137,16 @@
         return raw.replace(/!emotelist/i, table)
     }
 
-    // Fetch local storage cache
-    function get_local() {
-        const cache = JSON.parse(localStorage.getItem('Emoter') || '{}')
-        return Object.assign({ size: 40, emotes: {} }, cache)
+    // Creates an image for the emote
+    function get_image(url, name, size) {
+        let w = size,
+            h = size
+        if (size.match && size.match(/\d+x\d+/i)) [w, h] = size.split('x')
+        return `<abbr title="${name}">![${name}|${w}x${h}](${url})</abbr>`
     }
 
     // Saves to local storage
     function set_local(cache) {
         localStorage.setItem('Emoter', JSON.stringify(cache))
-    }
-
-    // Register emotes in Discord
-    function registerEmotes() {
-        const cache = get_local()
-        const register = window.require('pretty-text/emoji').registerEmoji
-        for (let [name, { url }] of Object.entries(cache.emotes)) register(name, url, 'Emoter')
     }
 })()
