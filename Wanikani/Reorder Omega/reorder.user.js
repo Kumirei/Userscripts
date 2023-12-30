@@ -59,8 +59,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-// These lines are necessary to make sure that TSC does not put any exports in the
-// compiled js, which causes the script to crash
 var module = {};
 // Actual script
 ;
@@ -371,6 +369,16 @@ var module = {};
             case 'leech':
                 sort = function (a, b) {
                     return numerical_sort(calculate_leech_score(a), calculate_leech_score(b), action.sort.values.leech);
+                };
+                break;
+            case 'level&type':
+                var typeOrder_1 = parse_subject_type_string(action.sort.values.type);
+                sort = function (a, b) {
+                    var levelComparator = numerical_sort(a.data.level, b.data.level, action.sort.values.level);
+                    if (levelComparator !== 0) {
+                        return levelComparator;
+                    }
+                    return sort_by_list(a.object, b.object, typeOrder_1);
                 };
                 break;
             default:
@@ -1347,7 +1355,21 @@ var module = {};
                 }),
             ]
         });
-        return [none, speed_demon, level, srs, type, random_burns, backlog, learned];
+        var levelAndType = $.extend(true, get_preset_defaults(), {
+            name: 'Level & Type',
+            available_on: { reviews: true, lessons: true, extra_study: true, self_study: true },
+            actions: [
+                $.extend(true, get_action_defaults(), {
+                    name: 'Sort first radicals, then kanji, then vocabulary with ascending level',
+                    type: 'filter',
+                    sort: {
+                        type: "level&type",
+                        values: { type: 'rad, kan, voc' }
+                    }
+                }),
+            ]
+        });
+        return [none, speed_demon, level, srs, type, random_burns, backlog, learned, levelAndType];
     }
     // Get a new preset item. This is a function because we want to be able to get a copy of it on demand
     function get_preset_defaults() {
