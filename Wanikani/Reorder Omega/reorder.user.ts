@@ -19,7 +19,7 @@ export = null
 
 // Import types
 import { WKOF, ItemData, Menu, Settings as SettingsModule, SubjectType, Apiv2 } from '../WKOF Types/wkof'
-import { Review, Settings } from './reorder'
+import { Review, Settings, SortOrder } from './reorder'
 
 interface WKQItem {
     id: number
@@ -436,6 +436,10 @@ declare global {
                         action.sort.values.overdue_absolute,
                     )
                 break
+            case 'critical':
+                sort = (a, b) =>
+                    numerical_sort(+is_critical(a), +is_critical(b), action.sort.values.critical as SortOrder)
+                break
             case 'leech':
                 sort = (a, b) =>
                     numerical_sort(calculate_leech_score(a), calculate_leech_score(b), action.sort.values.leech)
@@ -573,7 +577,7 @@ declare global {
     }
 
     // Sorts item in numerical order, either ascending or descending
-    function numerical_sort(a: number, b: number, order: 'asc' | 'desc'): number {
+    function numerical_sort(a: number, b: number, order: SortOrder): number {
         return order === 'asc' ? a - b : order === 'desc' ? b - a : 0
     }
 

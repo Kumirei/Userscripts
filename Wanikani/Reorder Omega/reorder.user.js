@@ -368,6 +368,11 @@ var module = {};
                     return numerical_sort(calculate_overdue_days(a), calculate_overdue_days(b), action.sort.values.overdue_absolute);
                 };
                 break;
+            case 'critical':
+                sort = function (a, b) {
+                    return numerical_sort(+is_critical(a), +is_critical(b), action.sort.values.critical);
+                };
+                break;
             case 'leech':
                 sort = function (a, b) {
                     return numerical_sort(calculate_leech_score(a), calculate_leech_score(b), action.sort.values.leech);

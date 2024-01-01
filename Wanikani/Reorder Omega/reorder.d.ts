@@ -1,5 +1,7 @@
 import { SubjectTypeShortString } from '../WKOF Types/wkof'
 
+export type SortOrder = 'asc' | 'desc'
+
 export namespace Review {
     type Item = VocabItem | KanjiItem | RadicalItem
 
@@ -120,13 +122,14 @@ export namespace Settings {
         name: string
         type: 'none' | 'filter' | 'sort' | 'shuffle' | 'freeze & restore'
         sort: {
-            type: 'level' | 'srs' | 'leech' | 'overdue' | 'type' | 'overdue_absolute'
+            type: 'level' | 'srs' | 'leech' | 'overdue' | 'type' | 'overdue_absolute' | 'critical'
             values: {
-                level: 'asc' | 'desc'
-                srs: 'asc' | 'desc'
-                leech: 'asc' | 'desc'
-                overdue: 'asc' | 'desc'
-                overdue_absolute: 'asc' | 'desc'
+                level: SortOrder
+                srs: SortOrder
+                leech: SortOrder
+                overdue: SortOrder
+                overdue_absolute: SortOrder
+                critical: SortOrder
                 type: string
             }
         }
