@@ -724,8 +724,8 @@ declare global {
                 <div id="streak" class="quiz-statistics__item"><div class="quiz-statistics__item-count">
                     <div class="quiz-statistics__item-count-icon"><i class="fa fa-trophy"></i></div>
                     <div class="count quiz-statistics__item-count-text">${streak?.current?.streak || 0} (${
-                    streak?.current?.max || 0
-                })</div>
+                        streak?.current?.max || 0
+                    })</div>
                 </div></div>
                 `,
             )
@@ -1479,6 +1479,23 @@ declare global {
     function get_default_presets(): Settings.Preset[] {
         if (!!wkof.file_cache.dir[`wkof.settings.${script_id}`]) return [] // If user already change settings don't include these
 
+        const get_default_sort_by_level_action = (): Settings.Action =>
+            $.extend(true, get_action_defaults(), {
+                name: 'Sort by level',
+                type: 'sort',
+                sort: { type: 'level' },
+            })
+
+        const get_default_sort_by_type_action = (): Settings.Action =>
+            $.extend(true, get_action_defaults(), {
+                name: 'Sort by item type',
+                type: 'sort',
+                sort: {
+                    type: 'type',
+                    values: { type: 'rad, kan, voc' },
+                },
+            })
+
         // Do nothing
         const none = $.extend(true, get_preset_defaults(), {
             name: 'None',
@@ -1522,13 +1539,7 @@ declare global {
         const level = $.extend(true, get_preset_defaults(), {
             name: 'Sort by level',
             available_on: { reviews: true, lessons: false, extra_study: false, self_study: false },
-            actions: [
-                $.extend(true, get_action_defaults(), {
-                    name: 'Sort by level',
-                    type: 'sort',
-                    sort: { type: 'level' },
-                }),
-            ] as Settings.Action[],
+            actions: [get_default_sort_by_level_action()],
         })
 
         // Preset to sort by SRS level
@@ -1548,16 +1559,7 @@ declare global {
         const type = $.extend(true, get_preset_defaults(), {
             name: 'Sort by type',
             available_on: { reviews: true, lessons: true, extra_study: true, self_study: false },
-            actions: [
-                $.extend(true, get_action_defaults(), {
-                    name: 'Sort by item type',
-                    type: 'sort',
-                    sort: {
-                        type: 'type',
-                        values: { type: 'rad, kan, voc' },
-                    },
-                }),
-            ] as Settings.Action[],
+            actions: [get_default_sort_by_type_action()],
         })
 
         // Preset to fetch 100 random burned items
@@ -1628,21 +1630,7 @@ declare global {
         const type_and_level = $.extend(true, get_preset_defaults(), {
             name: 'Type And Level',
             available_on: { reviews: true, lessons: true, extra_study: true, self_study: true },
-            actions: [
-                $.extend(true, get_action_defaults(), {
-                    name: 'Sort by item type',
-                    type: 'sort',
-                    sort: {
-                        type: 'type',
-                        values: { type: 'rad, kan, voc' },
-                    },
-                }),
-                $.extend(true, get_action_defaults(), {
-                    name: 'Sort by level',
-                    type: 'sort',
-                    sort: { type: 'level' },
-                }),
-            ] as Settings.Action[],
+            actions: [get_default_sort_by_type_action(), get_default_sort_by_level_action()],
         })
 
         return [none, speed_demon, level, srs, type, random_burns, backlog, learned, type_and_level]
@@ -1765,7 +1753,7 @@ declare global {
                 hover_tip: 'Sort in ascending or descending order',
                 path: `@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.values.${type}`,
                 content: { asc: 'Ascending', desc: 'Descending' },
-            } as SettingsModule.Dropdown)
+            }) as SettingsModule.Dropdown
 
         // Sort by type is special
         config.content.sort_by_type = {
