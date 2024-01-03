@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forum: Regular Tracker
 // @namespace    http://tampermonkey.net/
-// @version      1.1.5
+// @version      1.1.6
 // @description  Tracks how regular you are
 // @author       Kumirei
 // @include      *community.wanikani.com*
@@ -68,8 +68,8 @@
             topics_viewed: s.topics_entered,
             posts_read: s.posts_read_count,
             days_visited: s.days_visited,
-            total_topics: stats.topic_count,
-            total_posts: stats.post_count,
+            total_topics: stats.topics_count,
+            total_posts: stats.posts_count,
             topics_30d: stats.topics_30_days,
             posts_30d: stats.posts_30_days,
         })
@@ -176,7 +176,7 @@
             let likes_given = last100('likes_given')
             let likes_received = last100('likes_received')
             let topics_viewed = last100('topics_viewed')
-            let days_tracked = Math.floor((Date.now() - tracker.history.firstObject.date) / msday)
+            let days_tracked = Math.floor((Date.now() - tracker.history[0].date) / msday)
             let topics_goal = Math.round(last100('total_topics') * 0.25)
             let posts_read = last100('posts_read')
             let post_goal = Math.round(last100('total_posts') * 0.25)
@@ -184,13 +184,13 @@
                 topics_goal = Math.round((topics_goal / days_tracked) * 100) || 0
                 post_goal = Math.round((post_goal / days_tracked) * 100) || 0
                 if (days_tracked < 30) {
-                    topics_goal = Math.round((tracker.history.lastObject.topics_30d / 0.3) * 0.25)
-                    post_goal = Math.round((tracker.history.lastObject.posts_30d / 0.3) * 0.25)
+                    topics_goal = Math.round((tracker.history.at(-1).topics_30d / 0.3) * 0.25)
+                    post_goal = Math.round((tracker.history.at(-1).posts_30d / 0.3) * 0.25)
                 }
             }
             if (topics_goal > 500) topics_goal = 500
             if (post_goal > 20000) post_goal = 20000
-            let total_days_visited = tracker.history.lastObject.days_visited
+            let total_days_visited = tracker.history.at(-1).days_visited
             let visit_streak = tracker.streak[1]
             let title = `
 In the last 100 days
@@ -246,7 +246,8 @@ Visit Streak:               ${visit_streak}`
     }
 
     function last100(key) {
-        return dict_key_diff(tracker.history.lastObject, tracker.history.firstObject, key)
+        const withKey = tracker.history.filter((stats) => key in stats)
+        return dict_key_diff(withKey.at(-1), withKey[0], key)
     }
 
     // Returns the difference between entries in two dicts

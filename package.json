@@ -20,7 +20,7 @@
     "@types/jquery": "^3.5.14",
     "@types/jstorage": "^0.3.30",
     "@types/node": "^17.0.21",
-    "prettier": "^2.5.1",
+    "prettier": "^2.8.8",
     "typedoc": "^0.22.12"
   },
   "dependencies": {

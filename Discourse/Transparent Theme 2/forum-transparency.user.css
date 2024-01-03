@@ -1,4 +1,58 @@
-@-moz-document domain(community.wanikani.com) {
+/* ==UserStyle==
+@name         Forum Transparency 2.0
+@version      2.1.29
+@namespace    kumirei
+@license      GPL-3.0
+@description  Transparent theme for the Wanikani Discourse forum
+@author       Kumirei
+@preprocessor stylus
+
+@var text       background      "Background Image"      "'https://i.imgur.com/idxX0V5.png'"
+
+@var color      main-text       "Main Text"             #f0f0f0
+@var color      second-text     "Second Text"           #c8c8c8
+@var color      main-light-grey "Light Grey Text"       #b4b4b4
+@var color      main-dark       "Dark Text"             #a2a2a2
+@var color      main-grey       "Grey Text"             #545454
+@var color      link-color      "Link Color"            #ffffff
+
+@var text       main-trans   "Main Transparent Color RGB"    "0, 0, 0"
+@var text       main-light-trans  "Light Transparent Color RGB"   "255, 255, 255"
+
+@var number     main-alpha      "Main Opacity Factor"   [0.8, 0, 1, 0.1]
+@var number     second-alpha    "Second Opacity Factor" [0.5, 0, 1, 0.1]
+@var number     third-alpha     "Third Opacity Factor"  [0.3, 0, 1, 0.1]
+@var number     main-light-alpha     "Light Opacity Factor"  [0.2, 0, 1, 0.1]
+
+@var color      fa-heart-color   "Hearts"            #d580ff
+@var color      fa-reply-color   "Reply symbol"      #ef6767
+@var color      fa-quote-color   "Quote Symbol"      #f0f0f0
+@var color      fa-mention-color "Mention Symbol"    #58a2e4
+@var color      fa-edit-color     "Edit Pen"          #71c488
+@var color      fa-pm-color  "PM Symbol"         #f0f0f0
+@var color      fa-checked-box-color   "Checkbox"          #bbf1a5
+@var color      fa-badge-star    "Badge Star"        #e8e86e
+
+@var text       main-accent    "Accent Color RGB"    "213, 128, 255"
+
+@var number     posts-margin         "Posts Margin"              [10, 'px']
+@var number     padding-post        "Posts Padding"             [10, 'px']
+@var number     padding-slider      "Slider Padding"            [15, 'px']
+@var number     slider-width        "Slider Width"              [132, 'px']
+@var number     suggested-topics-width     "Suggested Topics Width"    [150, 'px']
+@var number     suggested-topics-height    "Suggested Topics Height"   [20, 'px']
+@var number     avatar-radius    "Avatar Roundness"          [50, '%']
+
+@var number     list-padding    "List Padding"      [10, 'px']
+@var number     border-radius   "Border Radius"     [0, 'px']
+@var number     glyph-size      "Glyph Size"        [20, 'px']
+@var text       global-footer          "Footer"            "none"
+@var checkbox   wide-posts      "Wide Posts"        0
+@var text       default-avatar-url  "Default Avatar"    "'https://aws1.discourse-cdn.com/business5/uploads/wanikani_community/original/3X/f/d/fd4c154120954695f788402f3bcf4e616499bc2d.png'"
+
+==/UserStyle== */
+
+@-moz-document domain("community.wanikani.com") {
     /*__________________________________________*/
     /* 			      THEME INFO
     /*__________________________________________*/
@@ -28,64 +82,64 @@
 
     :root {
         /* BACKGROUND IMAGE */
-        --background-image-url: url('/*[[background]]*/');
+        --background-image-url: url(background);
 
         /* TEXT */
-        --main-text: /*[[main text]]*/ ; /* Main text color */
-        --second-text: /*[[second text]]*/ ; /* Slightly darker text, used when not much contrast is needed */
-        --main-light-grey: /*[[light grey text]]*/ ; /* Slightly darker than second text */
-        --main-dark: /*[[dark text]]*/ ; /* Main dark text color */
-        --main-grey: /*[[grey text]]*/ ; /* Main grey color. Used in mentions */
-        --link-color: /*[[link color]]*/ ; /* Default color of links */
+        --main-text: main-text; /* Main text color */
+        --second-text: second-text; /* Slightly darker text, used when not much contrast is needed */
+        --main-light-grey: main-light-grey; /* Slightly darker than second text */
+        --main-dark: main-dark; /* Main dark text color */
+        --main-grey: man-grey; /* Main grey color. Used in mentions */
+        --link-color: link-color; /* Default color of links */
 
         /* BACKGROUND COLORS */
-        --main-trans: /*[[main trans bg]]*/ ; /* Main color of transparent areas */
-        --main-light-trans: /*[[light trans bg]]*/ ; /* Color of light transparent areas */
+        --main-trans: main-trans; /* Main color of transparent areas */
+        --main-light-trans: main-light-trans; /* Color of light transparent areas */
 
         /* BACKGROUND ALPHAS */
-        --main-alpha: /*[[main alpha]]*/ ; /* The darker alpha, for headers and menus and such */
-        --second-alpha: /*[[second alpha]]*/ ; /* Alpha value for threads and such */
-        --third-alpha: /*[[third alpha]]*/ ; /* Alpha value of highlighted posts and some other things */
-        --main-light-alpha: /*[[light alpha]]*/ ; /* Alpha value of light transparent areas */
+        --main-alpha: main-alpha; /* The darker alpha, for headers and menus and such */
+        --second-alpha: second-alpha; /* Alpha value for threads and such */
+        --third-alpha: third-alpha; /* Alpha value of highlighted posts and some other things */
+        --main-light-alpha: main-light-alpha; /* Alpha value of light transparent areas */
 
         /* BACKGROUNDS */
-        --header-background: rgba(var(--main-trans), var(--main-alpha)); /* Background for headers and stuff */
-        --content-background: rgba(var(--main-trans), var(--second-alpha)); /* Background for most content */
-        --highlight-background: rgba(var(--main-light-trans), var(--main-light-alpha)); /* Background for highlights */
+        --header-background: rgba(main-trans, main-alpha); /* Background for headers and stuff */
+        --content-background: rgba(main-trans, second-alpha); /* Background for most content */
+        --highlight-background: rgba(main-light-trans, main-light-alpha); /* Background for highlights */
 
         /* SYMBOL COLORS */
-        --fa-heart-color: /*[[heart]]*/ ; /* Color of hearts */
-        --fa-reply-color: /*[[reply]]*/ ; /* Color of reply symbols */
-        --fa-quote-color: /*[[quote]]*/ ; /* Color of quote symbols */
-        --fa-mention-color: /*[[mention]]*/ ; /* Color of @ symbols */
-        --fa-edit-color: /*[[pen]]*/ ; /* Color of pen symbols */
-        --fa-pm-color: /*[[letter]]*/ ; /* Color of pm symbols */
-        --fa-checked-box-color: /*[[check]]*/ ; /* Color of checked boxes */
-        --fa-badge-star: /*[[star]]*/ ; /* Color of badge symbol on user page */
+        --fa-heart-color: fa-heart-color; /* Color of hearts */
+        --fa-reply-color: fa-reply-color; /* Color of reply symbols */
+        --fa-quote-color: fa-quote-color; /* Color of quote symbols */
+        --fa-mention-color: fa-mention-color; /* Color of @ symbols */
+        --fa-edit-color: fa-edit-color; /* Color of pen symbols */
+        --fa-pm-color: fa-pm-color; /* Color of pm symbols */
+        --fa-checked-box-color: fa-checked-box-color; /* Color of checked boxes */
+        --fa-badge-star: fa-badge-star; /* Color of badge symbol on user page */
 
         /* OTHER COLORS */
         --lifetime-purple: 213, 128, 255; /* The color of lifetime subscriptions */
-        --main-accent: /*[[accent]]*/ ; /* Main accent color */
-        --border-color: rgba(var(--main-light-trans), var(--second-alpha)); /* Color for various thin borders */
-        --border-color-faint: rgba(var(--main-light-trans), 0.6); /* Color for certain fainter border */
+        --main-accent: main-accent; /* Main accent color */
+        --border-color: rgba(main-light-trans, second-alpha); /* Color for various thin borders */
+        --border-color-faint: rgba(main-light-trans, 0.6); /* Color for certain fainter border */
 
         /* THREAD VARIABLES */
-        --posts-margin: /*[[post margin]]*/ ; /* Margin between posts in threads, and some other things */
-        --padding-post: /*[[post padding]]*/ ; /* Padding at edges of posts and related elements */
-        --padding-slider: /*[[slider padding]]*/ ; /* Padding on the slider in threads */
-        --slider-width: /*[[slider width]]*/ ; /* Width of the slider in threads */
-        --suggested-topics-width: /*[[suggested width]]*/ ; /* Width of the "Suggested Topics" title */
-        --suggested-topics-height: /*[[suggested height]]*/ ; /* Height of the "Suggested Topics" title */
-        --avatar-radius: /*[[avatar roundness]]*/ ; /* The roundness of avatars */
+        --posts-margin: posts-margin; /* Margin between posts in threads, and some other things */
+        --padding-post: padding-post; /* Padding at edges of posts and related elements */
+        --padding-slider: padding-slider; /* Padding on the slider in threads */
+        --slider-width: slider-width; /* Width of the slider in threads */
+        --suggested-topics-width: suggested-topics-width; /* Width of the "Suggested Topics" title */
+        --suggested-topics-height: suggested-topics-height; /* Height of the "Suggested Topics" title */
+        --avatar-radius: avatar-radius; /* The roundness of avatars */
 
         /* OTHER VARIABLES */
-        --list-padding: /*[[list padding]]*/ ; /* Padding around various lists */
-        --border-radius: /*[[border radius]]*/ ; /* If you want your edges a bit rounded */
-        --glyph-size: /*[[glyph size]]*/ ; /* Size of the symbols in, for example, the header */
-        --global-footer: /*[[footer]]*/ ; /* Use "none" to remove the footer or "block" if you want to keep it */
-        --wide-posts: /*[[wide posts]]*/ ; /* Use 1 for yes, 0 for no. See forum post or userstyle's page to find out what this is */
+        --list-padding: list-padding; /* Padding around various lists */
+        --border-radius: border-radius /* If you want your edges a bit rounded */
+        --glyph-size: glyph-size; /* Size of the symbols in, for example, the header */
+        --global-footer: global-footer; /* Use "none" to remove the footer or "block" if you want to keep it */
+        --wide-posts: wide-posts; /* Use 1 for yes, 0 for no. See forum post or userstyle's page to find out what this is */
         /* prettier-ignore */
-        --default-avatar: url(/*[[default avatar]]*/); /* The avatar for people who has not chosen a personal avatar */
+        --default-avatar: url(default avatar); /* The avatar for people who has not chosen a personal avatar */
     }
 
     /*__________________________________________*/
@@ -263,7 +317,7 @@
     .fa-circle.d-icon-d-tracking,
     .fa-circle.d-tracking,
     .fa-circle.tracking {
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
     }
 
     .fa-check-square,
@@ -298,7 +352,7 @@
     /*____________________*/
 
     .badge-notification {
-        background-color: rgba(var(--main-accent)) !important;
+        background-color: rgb(main-accent) !important;
     }
 
     .badge-notification.new-topic {
@@ -329,7 +383,7 @@
 
     .btn:hover,
     .bullet > a:hover {
-        background-color: rgba(var(--main-trans), var(--third-alpha)) !important;
+        background-color: rgba(main-trans, third-alpha) !important;
     }
 
     .btn-flat .d-icon,
@@ -434,12 +488,12 @@
     }
 
     #list-area .footer-message h3 a {
-        color: rgba(var(--main-accent));
+        color: rgb(main-accent);
     }
 
     #list-area .footer-message .badge.new-topic {
         vertical-align: inherit !important;
-        color: rgba(var(--main-accent));
+        color: rgb(main-accent);
     }
 
     .alert {
@@ -572,7 +626,7 @@
     }
 
     .float_wkappnav li[data-highlight='true'] .dashboard_bubble {
-        background-color: rgba(var(--main-accent));
+        background-color: rgb(main-accent);
     }
 
     li[data-highlight='false'] .float_wkappnav .dashboard_bubble {
@@ -580,7 +634,7 @@
     }
 
     .float_wkappnav #next_review {
-        background-color: rgba(var(--main-accent)) !important;
+        background-color: rgb(main-accent) !important;
     }
 
     /* Notifications
@@ -654,7 +708,7 @@
 
     .d-header .menu-panel .badge-notification {
         background-color: transparent !important;
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
         font-weight: bold;
         font-size: small;
     }
@@ -762,13 +816,13 @@
     .categories-and-latest .new-topic,
     .categories-and-latest .top-row a.new-topic,
     .categories-and-latest .new-posts {
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
         background-color: transparent !important;
     }
 
     .categories-and-latest .topic-post-badges .new-posts {
         color: var(--main-text);
-        background-color: rgba(var(--main-accent)) !important;
+        background-color: rgb(main-accent) !important;
     }
 
     .latest-topic-list .table-heading,
@@ -819,7 +873,7 @@
     }
 
     .topic-list a[title='new topic'] {
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
     }
 
     /* Top
@@ -942,7 +996,7 @@
 
     @keyframes post-highlight {
         from {
-            background-color: rgba(var(--main-accent), var(--third-alpha));
+            background-color: rgba(main-accent, third-alpha);
         }
         to {
             background-color: transparent;
@@ -960,7 +1014,7 @@
     }
 
     .topic-post .read-state .fa-circle {
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
     }
 
     .post-controls .like-count {
@@ -1035,12 +1089,12 @@
     }
 
     .quote-button {
-        background-color: rgba(var(--main-accent));
+        background-color: rgb(main-accent);
         opacity: 1;
     }
 
     .quote-button:hover {
-        background-color: rgba(var(--main-accent), var(--main-alpha));
+        background-color: rgba(main-accent, main-alpha);
     }
 
     #topic .like-button:hover {
@@ -1176,7 +1230,7 @@
     .spoiled {
         padding: 0 2px;
         text-shadow: none !important;
-        background-color: rgba(var(--main-light-trans), var(--third-alpha)) !important;
+        background-color: rgba(main-light-trans, third-alpha) !important;
     }
 
     .spoiled[style*=' 0px;'],
@@ -1213,7 +1267,7 @@
     .poll,
     .poll .poll-info,
     .poll .poll-buttons {
-        border-color: rgba(var(--main-light-trans), var(--third-alpha)) !important;
+        border-color: rgba(main-light-trans, third-alpha) !important;
     }
 
     .poll p,
@@ -1226,7 +1280,7 @@
     }
 
     .poll .results .bar-back {
-        background-color: rgba(var(--main-light-trans), var(--second-alpha)) !important;
+        background-color: rgba(main-light-trans, second-alpha) !important;
     }
 
     .poll .chosen .bar-back div {
@@ -1392,7 +1446,7 @@
 
     #topic-progress .bg {
         border: none;
-        background-color: rgba(var(--main-accent));
+        background-color: rgb(main-accent);
     }
 
     .timeline-fullscreen {
@@ -1430,7 +1484,7 @@
     .posts .select-kit-body {
         z-index: 0 !important;
         border: none !important;
-        background-color: rgba(var(--main-trans), 0.9) !important;
+        background-color: rgba(main-trans, 0.9) !important;
     }
 
     .posts .select-kit-collection {
@@ -1439,7 +1493,7 @@
 
     .posts .select-kit .select-kit-row.is-selected,
     .posts .select-kit .select-kit-row.is-highlighted {
-        background-color: rgba(var(--main-light-trans), var(--main-light-alpha));
+        background-color: rgba(main-light-trans, main-light-alpha);
     }
 
     .posts .select-kit .name {
@@ -1532,7 +1586,7 @@
     }
 
     #suggested-topics .topic-post-badges .new-topic {
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
     }
 
     #suggested-topics .suggested-topics-message {
@@ -1543,7 +1597,7 @@
     }
 
     #suggested-topics .suggested-topics-message a {
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
     }
 
     #suggested-topics .suggested-topics-message .badge-category-bg {
@@ -1634,7 +1688,7 @@
     }
 
     #reply-control .popup-tip {
-        background-color: rgba(var(--main-accent));
+        background-color: rgb(main-accent);
     }
 
     #reply-control .d-editor-button-bar .btn {
@@ -1789,12 +1843,12 @@
     }
 
     .user-main .main-nav .active {
-        background-color: rgba(var(--main-accent), var(--main-alpha));
+        background-color: rgba(main-accent, main-alpha);
     }
 
     .user-main .main-nav > li > a:hover {
         color: var(--main-text);
-        background-color: rgba(var(--main-accent), var(--second-alpha));
+        background-color: rgba(main-accent, second-alpha);
     }
 
     /* FA:s
@@ -1923,7 +1977,7 @@
         border-radius: 0 var(--border-radius) var(--border-radius) 0;
         min-height: 45px;
         border-color: var(--main-text);
-        background-color: rgba(var(--main-trans), var(--third-alpha));
+        background-color: rgba(main-trans, third-alpha);
     }
 
     .user-main .top-section .domain {
@@ -1966,7 +2020,7 @@
     }
 
     .user-notifications-page .user-right .large-notification.unread {
-        background-color: rgba(var(--main-trans), calc(var(--second-alpha) + 0.2));
+        background-color: rgba(main-trans, main-alpha);
     }
 
     .notification-list .active {
@@ -2176,7 +2230,7 @@
     }
 
     .search-page .select-kit .select-kit-collection {
-        background-color: rgba(var(--main-trans), calc(var(--main-alpha) + 0.2));
+        background-color: rgba(main-trans, main-alpha);
     }
 
     .search-page .select-kit .select-kit-row.is-selected,
@@ -2194,7 +2248,7 @@
     }
 
     .search-page .search-notice > div {
-        background-color: rgba(var(--main-accent), var(--main-alpha)) !important;
+        background-color: rgba(main-accent, main-alpha) !important;
         color: var(--main-text) !important;
         border: none !important;
     }
@@ -2214,11 +2268,11 @@
     }
 
     .search-page .menu-panel {
-        background-color: rgba(var(--main-trans), calc(var(--main-alpha) + 0.2));
+        background-color: rgba(main-trans, main-alpha);
     }
 
     .search-page .search-results .search-highlight {
-        color: rgba(var(--main-accent));
+        color: rgb(main-accent);
     }
 
     .search-page .search-results .search-link .topic-title {
@@ -2263,7 +2317,7 @@
 
     .search-page .pika-single {
         border: none;
-        background-color: rgba(var(--main-trans), calc(var(--main-alpha) + 0.2));
+        background-color: rgba(main-trans, main-alpha);
     }
 
     .search-page .pika-label {
@@ -2314,7 +2368,7 @@
     }
 
     .search-menu .search-highlight {
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
     }
 
     .search-menu .blurb {
@@ -2416,7 +2470,7 @@
     .static-tos .nav-pills a.active,
     .static-faq .nav-pills a.active,
     .about-page .nav-pills a.active {
-        background-color: rgba(var(--main-accent), var(--main-alpha));
+        background-color: rgba(main-accent, main-alpha);
     }
 
     .static-privacy .nav-pills a,
@@ -2561,7 +2615,7 @@
     .btn-primary:active,
     .btn-primary.btn-active,
     .btn-danger:active {
-        background-color: rgba(var(--main-trans), var(--third-alpha)) !important;
+        background-color: rgba(main-trans, third-alpha) !important;
         background-image: none;
     }
 
@@ -2570,7 +2624,7 @@
     }
 
     #reply-control .save-or-cancel .cancel:hover {
-        color: rgba(var(--main-accent));
+        color: rgb(main-accent);
         opacity: 0.9;
     }
 
@@ -2587,7 +2641,7 @@
     }
 
     .bookmarked .fa-bookmark {
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
     }
 
     .cakeday > .nav-pills,
@@ -2602,11 +2656,11 @@
     }
 
     .cakeday .nav-pills > li > a:hover {
-        background-color: rgba(var(--main-accent), var(--second-alpha));
+        background-color: rgba(main-accent, second-alpha);
     }
 
     .cakeday .nav-pills > li > a.active {
-        background-color: rgba(var(--main-accent), var(--main-alpha));
+        background-color: rgba(main-accent, main-alpha);
     }
 
     .cakeday.container > div > h2,
@@ -2775,13 +2829,13 @@
     }
 
     .topic-post .read-state .fa.d-icon-circle {
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
     }
 
     .fa.d-icon-d-watching,
     .fa.d-icon-d-tracking,
     .fa.d-icon-d-tracking {
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
     }
 
     .timeline-footer-controls .fa.d-icon-reply {
@@ -3043,14 +3097,14 @@
     .user-main .activity-nav .active,
     .user-main .notifications-nav .active,
     .user-main .preferences-nav .active {
-        background-color: rgba(var(--main-accent), var(--second-alpha)) !important;
+        background-color: rgba(main-accent, second-alpha) !important;
     }
 
     .user-main .activity-nav > li > a:hover,
     .user-main .notifications-nav > li > a:hover,
     .user-main .preferences-nav > li > a:hover {
         color: var(--main-text) !important;
-        background-color: rgba(var(--main-accent), var(--second-alpha)) !important;
+        background-color: rgba(main-accent, second-alpha) !important;
     }
 
     .user-main .user-stream-item {
@@ -3198,7 +3252,7 @@
     }
 
     .badge-notification.new-topic::before {
-        background-color: rgba(var(--main-accent));
+        background-color: rgb(main-accent);
     }
 
     /* Version 2.1.13
@@ -3218,7 +3272,7 @@
     */
 
     li[data-highlight='true'] .dashboard_bubble {
-        background-color: rgba(var(--main-accent)) !important;
+        background-color: rgb(main-accent) !important;
     }
 
     /* Version 2.1.15
@@ -3228,7 +3282,7 @@
     */
 
     .bookmarked .d-icon-bookmark {
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
     }
 
     .post-controls .extra-buttons .accepted .d-icon,
@@ -3243,7 +3297,7 @@
     */
 
     .bookmarked .d-icon-discourse-bookmark-clock {
-        color: rgba(var(--main-accent)) !important;
+        color: rgb(main-accent) !important;
     }
 
     /* Version 2.1.17
@@ -3363,7 +3417,7 @@
     */
 
     .badge-card .check-display.status-checked {
-        background: rgba(var(--main-accent)) !important;
+        background: rgb(main-accent) !important;
     }
 
     .badge-card .check-display.status-checked > svg {
@@ -3446,7 +3500,7 @@
 
     .d-icon-bookmark,
     .d-icon-discourse-bookmark-clock {
-        fill: rgba(var(--main-accent));
+        fill: rgb(main-accent);
     }
 
     .user-bookmarks-link > .d-icon-bookmark {
@@ -3519,7 +3573,7 @@
     }
 
     .select-kit-body {
-        background-color: rgba(var(--main-trans), calc(var(--main-alpha) + 0.2)) !important;
+        background-color: rgba(main-trans, main-alpha) !important;
     }
 
     .topic-post .topic-body .contents {
@@ -3568,7 +3622,7 @@
 
     .quick-access-panel .d-icon-bookmark,
     .quick-access-panel .d-icon-discourse-bookmark-clock {
-        fill: rgba(var(--main-accent));
+        fill: rgb(main-accent);
     }
 
     /* Version 2.1.26
@@ -3651,43 +3705,41 @@
     }
 
     .post-stream .small-action.topic-post-visited .topic-post-visited-line {
-        border-color: rgba(var(--main-accent));
+        border-color: rgb(main-accent);
     }
 
     .post-stream .small-action.topic-post-visited .topic-post-visited-message {
-        background-color: rgba(var(--main-accent));
+        background-color: rgb(main-accent);
         color: var(--main-text);
     }
-}
 
+    /* Version 2.1.28
+    /*_____________________
 
-/* Version 2.1.28
-/*_____________________
+    Fixed: Fix presence margins
+    */
 
-Fixed: Fix presence margins
-*/
+    .presence {
+        width: 100%;
+    }
 
-.presence {
-	width: 100%;
-}
+    .container.posts {
+        margin-bottom: 0;
+    }
 
-.container.posts {
-	margin-bottom: 0;
-}
+    /* Version 2.1.29
+    /*_____________________
 
+    Fixed: Likes, search 
+    */
 
-/* Version 2.1.29
-/*_____________________
+    :root {
+        --primary-low-mid: var(--main-text);
+        --love-low: var(--highlight-background);
+        --tertiary: var(--main-text);
+    }
 
-Fixed: Likes, search 
-*/
-
-:root {
-	--primary-low-mid: var(--main-text);
-	--love-low: var(--highlight-background);
-	--tertiary: var(--main-text);
-}
-
-.discourse-reactions-double-button:hover .reaction-button {
-	background: transparent !important;
+    .discourse-reactions-double-button:hover .reaction-button {
+        background: transparent !important;
+    }
 }
