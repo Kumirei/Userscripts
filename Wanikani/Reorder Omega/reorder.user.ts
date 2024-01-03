@@ -444,16 +444,6 @@ declare global {
                 sort = (a, b) =>
                     numerical_sort(calculate_leech_score(a), calculate_leech_score(b), action.sort.values.leech)
                 break
-            case 'level&type':
-                const typeOrder = parse_subject_type_string(action.sort.values.type)
-                sort = (a, b) => {
-                    const levelComparator = numerical_sort(a.data.level, b.data.level, action.sort.values.level);
-                    if (levelComparator !== 0) {
-                        return levelComparator
-                    }
-                    return sort_by_list(a.object, b.object, typeOrder);
-                }
-                break
             default:
                 return [] // Invalid sort key
         }
@@ -1635,22 +1625,27 @@ declare global {
             ] as Settings.Action[],
         })
 
-        const levelAndType = $.extend(true, get_preset_defaults(), {
-            name: 'Level & Type',
+        const type_and_level = $.extend(true, get_preset_defaults(), {
+            name: 'Type And Level',
             available_on: { reviews: true, lessons: true, extra_study: true, self_study: true },
             actions: [
                 $.extend(true, get_action_defaults(), {
-                    name: 'Sort first radicals, then kanji, then vocabulary with ascending level',
-                    type: 'filter',
+                    name: 'Sort by item type',
+                    type: 'sort',
                     sort: {
-                        type: `level&type`,
+                        type: 'type',
                         values: { type: 'rad, kan, voc' },
                     },
+                }),
+                $.extend(true, get_action_defaults(), {
+                    name: 'Sort by level',
+                    type: 'sort',
+                    sort: { type: 'level' },
                 }),
             ] as Settings.Action[],
         })
 
-        return [none, speed_demon, level, srs, type, random_burns, backlog, learned, levelAndType]
+        return [none, speed_demon, level, srs, type, random_burns, backlog, learned, type_and_level]
     }
 
     // Get a new preset item. This is a function because we want to be able to get a copy of it on demand

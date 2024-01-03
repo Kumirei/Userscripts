@@ -122,7 +122,7 @@ export namespace Settings {
         name: string
         type: 'none' | 'filter' | 'sort' | 'shuffle' | 'freeze & restore'
         sort: {
-            type: 'level' | 'srs' | 'leech' | 'overdue' | 'type' | 'overdue_absolute' | 'critical' | 'level&type'
+            type: 'level' | 'srs' | 'leech' | 'overdue' | 'type' | 'overdue_absolute' | 'critical'
             values: {
                 level: SortOrder
                 srs: SortOrder
