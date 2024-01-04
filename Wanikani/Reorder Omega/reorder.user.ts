@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.44
+// @version      1.3.45
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -724,8 +724,8 @@ declare global {
                 <div id="streak" class="quiz-statistics__item"><div class="quiz-statistics__item-count">
                     <div class="quiz-statistics__item-count-icon"><i class="fa fa-trophy"></i></div>
                     <div class="count quiz-statistics__item-count-text">${streak?.current?.streak || 0} (${
-                        streak?.current?.max || 0
-                    })</div>
+                    streak?.current?.max || 0
+                })</div>
                 </div></div>
                 `,
             )
@@ -1753,7 +1753,7 @@ declare global {
                 hover_tip: 'Sort in ascending or descending order',
                 path: `@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].sort.values.${type}`,
                 content: { asc: 'Ascending', desc: 'Descending' },
-            }) as SettingsModule.Dropdown
+            } as SettingsModule.Dropdown)
 
         // Sort by type is special
         config.content.sort_by_type = {

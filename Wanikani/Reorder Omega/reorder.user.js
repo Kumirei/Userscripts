@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.44
+// @version      1.3.45
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
