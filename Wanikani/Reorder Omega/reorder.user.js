@@ -1214,6 +1214,23 @@ var module = {};
         var _a, _b, _c;
         if (!!wkof.file_cache.dir["wkof.settings.".concat(script_id)])
             return []; // If user already change settings don't include these
+        var get_default_sort_by_level_action = function () {
+            return $.extend(true, get_action_defaults(), {
+                name: 'Sort by level',
+                type: 'sort',
+                sort: { type: 'level' }
+            });
+        };
+        var get_default_sort_by_type_action = function () {
+            return $.extend(true, get_action_defaults(), {
+                name: 'Sort by item type',
+                type: 'sort',
+                sort: {
+                    type: 'type',
+                    values: { type: 'rad, kan, voc' }
+                }
+            });
+        };
         // Do nothing
         var none = $.extend(true, get_preset_defaults(), {
             name: 'None',
@@ -1255,13 +1272,7 @@ var module = {};
         var level = $.extend(true, get_preset_defaults(), {
             name: 'Sort by level',
             available_on: { reviews: true, lessons: false, extra_study: false, self_study: false },
-            actions: [
-                $.extend(true, get_action_defaults(), {
-                    name: 'Sort by level',
-                    type: 'sort',
-                    sort: { type: 'level' }
-                }),
-            ]
+            actions: [get_default_sort_by_level_action()]
         });
         // Preset to sort by SRS level
         var srs = $.extend(true, get_preset_defaults(), {
@@ -1279,16 +1290,7 @@ var module = {};
         var type = $.extend(true, get_preset_defaults(), {
             name: 'Sort by type',
             available_on: { reviews: true, lessons: true, extra_study: true, self_study: false },
-            actions: [
-                $.extend(true, get_action_defaults(), {
-                    name: 'Sort by item type',
-                    type: 'sort',
-                    sort: {
-                        type: 'type',
-                        values: { type: 'rad, kan, voc' }
-                    }
-                }),
-            ]
+            actions: [get_default_sort_by_type_action()]
         });
         // Preset to fetch 100 random burned items
         var random_burns = $.extend(true, get_preset_defaults(), {
@@ -1352,7 +1354,12 @@ var module = {};
                 }),
             ]
         });
-        return [none, speed_demon, level, srs, type, random_burns, backlog, learned];
+        var type_and_level = $.extend(true, get_preset_defaults(), {
+            name: 'Type And Level',
+            available_on: { reviews: true, lessons: true, extra_study: true, self_study: true },
+            actions: [get_default_sort_by_type_action(), get_default_sort_by_level_action()]
+        });
+        return [none, speed_demon, level, srs, type, random_burns, backlog, learned, type_and_level];
     }
     // Get a new preset item. This is a function because we want to be able to get a copy of it on demand
     function get_preset_defaults() {
