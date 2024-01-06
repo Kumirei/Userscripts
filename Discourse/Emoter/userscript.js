@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Emoter
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Custom emote handler
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -12,8 +12,21 @@
     const COMMAND_TEMPLATE = /!emote\s+(\w+)\s+(\w+)\s+(["“„](\S+)["”])?/i
     const EMOTE_TEMPLATE = /<abbr title="\w+">!\[(\w+)\|\d+x\d+\]\([^)]+\)<\/abbr>/g
 
-    registerEmotes()
-    setInterval(prepareEditor, 1000)
+    waitForRequire().then(() => {
+        registerEmotes()
+        setInterval(prepareEditor, 1000)
+    })
+
+    // Waits for window.require to be available
+    function waitForRequire() {
+        return new Promise((res, rej) => {
+            const interval = setInterval(() => {
+                if (!window.require) return
+                clearInterval(interval)
+                res()
+            }, 100)
+        })
+    }
 
     // Register emotes in Discord
     function registerEmotes() {
