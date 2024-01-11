@@ -72,7 +72,6 @@
 
         editor.value = editor.value // Trigger unModify and modify
 
-        console.log('emoter ready', editor)
         editor.emoter = { ready: true }
     }
 
