@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.1.10
+// @version      3.1.11
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -32,7 +32,7 @@
                 likes_given: 0,
                 likes_received: 0,
                 days_visited: 0,
-                max: 200, // 200 is default for *regulars*
+                max: 400, // 400 is default for *regulars*
             },
             day: {
                 given: [],
