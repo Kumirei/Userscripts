@@ -102,7 +102,7 @@
         })
         if (f.status === 200) {
             const data = await f.json()
-            const max = 50 * (1 + data.badges[0].id)
+            const max = 100 * (1 + data.badges[0].id)
             const { likes_given, likes_received, days_visited } = data.user_summary
             LC.stored.summary = {
                 likes_given,
