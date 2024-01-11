@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Wanikani Forums: Emoter
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.2.2
 // @description  Custom emote handler
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
 // @grant        none
+// @run-at       document-end
 // ==/UserScript==
 
 ;(function () {
