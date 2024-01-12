@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Emoter
 // @namespace    http://tampermonkey.net/
-// @version      1.2.2
+// @version      1.2.3
 // @description  Custom emote handler
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -12,6 +12,8 @@
 ;(function () {
     const COMMAND_TEMPLATE = /!emote\s+(\w+)\s+(\w+)\s+(["“„](\S+)["”])?/i
     const EMOTE_TEMPLATE = /<abbr title="\w+">!\[(\w+)\|\d+x\d+\]\([^)]+\)<\/abbr>/g
+
+    let prettyTextEmoji
 
     waitForRequire().then(() => {
         registerEmotes()
@@ -24,6 +26,9 @@
             const interval = setInterval(() => {
                 if (!window.require) return
                 clearInterval(interval)
+                try {
+                    prettyTextEmoji = window.require('pretty-text/emoji')
+                } catch (error) {}
                 res()
             }, 100)
         })
@@ -32,7 +37,7 @@
     // Register emotes in Discord
     function registerEmotes() {
         const cache = get_local()
-        const register = window.require('pretty-text/emoji').registerEmoji
+        const register = prettyTextEmoji?.registerEmoji
         for (let [name, { url }] of Object.entries(cache.emotes)) register(name, url, 'Emoter')
     }
 
@@ -100,7 +105,7 @@
             case 'new': // !emote new NAME "URL"
                 if (value) {
                     emotes[name] = { url: value }
-                    window.require('pretty-text/emoji').registerEmoji(name, value, 'Emoter')
+                    prettyTextEmoji?.registerEmoji(name, value, 'Emoter')
                 }
                 break
             case 'size': // !emote size NAME "SIZE"
@@ -109,18 +114,18 @@
             case 'url': // !emote url NAME "URL"
                 if (value && emotes[name]) {
                     emotes[name][word] = value
-                    window.require('pretty-text/emoji').extendedEmojiList().set(name, value)
+                    prettyTextEmoji?.extendedEmojiList().set(name, value)
                 }
                 break
             case 'remove': // !emote remove NAME
-                window.require('pretty-text/emoji').extendedEmojiList().delete(name)
+                prettyTextEmoji?.extendedEmojiList().delete(name)
                 delete emotes[name]
                 break
             case 'rename': // !emote rename NAME "NAME"
                 if (value && emotes[name]) {
                     delete Object.assign(emotes, { [value]: emotes[name] })[name]
-                    window.require('pretty-text/emoji').extendedEmojiList().delete(name)
-                    window.require('pretty-text/emoji').registerEmoji(value, emotes[name].url, 'Emoter')
+                    prettyTextEmoji?.extendedEmojiList().delete(name)
+                    prettyTextEmoji?.registerEmoji(value, emotes[name].url, 'Emoter')
                 }
                 break
         }
