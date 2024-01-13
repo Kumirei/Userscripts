@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Emoter
 // @namespace    http://tampermonkey.net/
-// @version      1.2.3
+// @version      1.2.4
 // @description  Custom emote handler
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -38,7 +38,7 @@
     function registerEmotes() {
         const cache = get_local()
         const register = prettyTextEmoji?.registerEmoji
-        for (let [name, { url }] of Object.entries(cache.emotes)) register(name, url, 'Emoter')
+        for (let [name, { url }] of Object.entries(cache.emotes)) register?.(name, url, 'Emoter')
     }
 
     // Fetch local storage cache
