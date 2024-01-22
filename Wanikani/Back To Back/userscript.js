@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.3.11
+// @version      1.3.12
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1172719
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1279923
 // @license      MIT
 // @grant        none
 // ==/UserScript==
@@ -36,6 +36,7 @@
 
     function run() {
         const settings = wkof.settings[script_id]
+        if (settings.behavior !== 'none') settings.behavior = 'always' // Map unavailable behavior modes to "always"
         if (settings.behavior === 'always') wkQueue.completeSubjectsInOrder = true
         if (settings.prioritize !== 'none') wkQueue.questionOrder = `${settings.prioritize}First`
     }
@@ -90,7 +91,9 @@
                     default: 'always',
                     label: 'Behavior',
                     hover_tip:
-                        "Choose whether to:\n1. Keep repeating the same question until you get it right\n2. Only keep the item if you answered the first question correctly\n3. Make it so that you have to answer both questions correctly back to back\n4. Disable any redordering, falling back to WaniKani's default behavior",
+                        "Choose whether to:\n1. Keep repeating the same question until you get it right\n2. Disable any reordering, falling back to WaniKani's default behavior",
+                    // hover_tip:
+                    //     "Choose whether to:\n1. Keep repeating the same question until you get it right\n2. Only keep the item if you answered the first question correctly\n3. Make it so that you have to answer both questions correctly back to back\n4. Disable any reordering, falling back to WaniKani's default behavior",
                     content: {
                         always: 'Repeat until correct',
                         // correct: 'Shuffle incorrect',
