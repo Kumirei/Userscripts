@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forums: Emoter
 // @namespace    http://tampermonkey.net/
-// @version      1.2.4
+// @version      1.2.5
 // @description  Custom emote handler
 // @author       Kumirei
 // @include      https://community.wanikani.com/*
@@ -24,10 +24,11 @@
     function waitForRequire() {
         return new Promise((res, rej) => {
             const interval = setInterval(() => {
-                if (!window.require) return
-                clearInterval(interval)
                 try {
+                    if (!window.require) return
                     prettyTextEmoji = window.require('pretty-text/emoji')
+                    if (!prettyTextEmoji?.registerEmoji) return // Wait until we can register emotes, too
+                    clearInterval(interval)
                 } catch (error) {}
                 res()
             }, 100)
