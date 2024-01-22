@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.45
+// @version      1.3.46
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -108,6 +108,7 @@ declare global {
     // Globals
     const { wkof, wkQueue } = window
     let streak: Streak
+    let egg_timer: { start: number; page: string }
 
     // Constants
     const MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 }
@@ -705,11 +706,12 @@ declare global {
 
         // Displays the current duration of the sessions
         function install_egg_timer(): void {
+            if (egg_timer?.page !== page) egg_timer = { page, start: Date.now() }
             if (!['reviews', 'lessons', 'extra_study', 'self_study'].includes(page)) return
-            const egg_timer_start = Date.now()
-            const egg_timer = extra_header_row.find('#egg_timer')
+
+            const egg_timer_elem = extra_header_row.find('#egg_timer')
             setInterval((): void => {
-                egg_timer.html(`Elapsed: ${ms_to_relative_time(Date.now() - egg_timer_start)}`)
+                egg_timer_elem.html(`Elapsed: ${ms_to_relative_time(Date.now() - egg_timer.start)}`)
             }, MS.second)
         }
 
