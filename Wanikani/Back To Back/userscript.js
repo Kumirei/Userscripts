@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.3.12
+// @version      1.3.13
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -21,6 +21,9 @@
 
     // Make sure WKOF is installed
     confirm_wkof(script_name).then(start)
+
+    // Listen for page changes
+    window.addEventListener(`turbo:before-render`, start)
 
     // Startup
     function start() {
