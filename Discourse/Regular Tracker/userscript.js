@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forum: Regular Tracker
 // @namespace    http://tampermonkey.net/
-// @version      1.1.7
+// @version      1.1.8
 // @description  Tracks how regular you are
 // @author       Kumirei
 // @include      *community.wanikani.com*
@@ -43,15 +43,22 @@
         if (tracker.last_fetch < Date.now() - 1000 * 60 * settings.update_interval) {
             tracker.last_fetch = Date.now()
             save()
-            let username = $('#current-user button').attr('href')?.replace('/u/', '') || ''
+            let username = document.querySelector('#current-user button').getAttribute('href')?.replace('/u/', '') || ''
             let summary_url = 'https://community.wanikani.com/u/' + username + '/summary'
             let stats_url = 'https://community.wanikani.com/about'
-            Promise.all([fetch(summary_url), fetch(stats_url)]).then(process_data)
+            Promise.all([fetchUrl(summary_url), fetchUrl(stats_url)]).then(process_data)
         }
     }
 
-    function fetch(url) {
-        return $.ajax({ url: url, type: 'GET', dataType: 'json', cache: false })
+    async function fetchUrl(url) {
+        const data = await fetch(url, {
+            headers: {
+                accept: 'application/json, text/javascript, */*; q=0.01',
+                'x-requested-with': 'XMLHttpRequest',
+            },
+        })
+        const json = await data.json()
+        return json
     }
 
     // Updates the global variable with the new data
@@ -106,24 +113,24 @@
     function add_display() {
         // START code by rfindley
         if (is_dark_theme()) {
-            $('body').attr('theme', 'dark')
+            document.body.setAttribute('theme', 'dark')
         } else {
-            $('body').attr('theme', 'light')
+            document.body.setAttribute('theme', 'light')
         }
-        var wk_app_nav = $('.wanikani-app-nav').closest('.container')
-        if (wk_app_nav.length === 0) {
+        var wk_app_nav = document.querySelector('.wanikani-app-nav').closest('.container')
+        if (!wk_app_nav) {
             setTimeout(add_display, 200)
             return
         }
         // Attach the Dashboard menu to the stay-on-top menu.
-        var top_menu = $('.d-header')
-        var main_content = $('#main-outlet')
-        $('body').addClass('float_wkappnav')
-        wk_app_nav.addClass('wanikani-app-nav-container')
-        top_menu.find('>.wrap > .contents:eq(0)').after(wk_app_nav)
+        var top_menu = document.querySelector('.d-header')
+        var main_content = document.querySelector('#main-outlet')
+        document.body.classList.add('float_wkappnav')
+        wk_app_nav.classList.add('wanikani-app-nav-container')
+        top_menu.insertAdjacentElement('beforeend', wk_app_nav)
         // Adjust the main content's top padding, so it won't be hidden under the new taller top menu.
-        var main_content_toppad = Number(main_content.css('padding-top').match(/[0-9]*/)[0])
-        main_content.css('padding-top', main_content_toppad + 25 + 'px')
+        var main_content_toppad = Number(getComputedStyle(main_content).paddingTop.match(/[0-9]*/)[0])
+        main_content.setAttribute('padding-top', main_content_toppad + 25 + 'px')
         // Insert CSS.
         var css =
             '.float_wkappnav .d-header {padding-bottom: 2em;}' +
@@ -137,12 +144,15 @@
             'body[theme="dark"] li[data-highlight="true"] .dashboard_bubble {color:#000; background-color:#6cf;}' +
             'body[theme="dark"] .wanikani-app-nav[data-highlight-labels="true"] li[data-highlight="true"] a {color:#6cf;}' +
             'body[theme="dark"] .wanikani-app-nav ul li a {color:#999;}'
-        $('head').append('<style type="text/css">' + css + '</style>')
+        document.head.insertAdjacentHTML('beforeend', '<style type="text/css">' + css + '</style>')
         // END code by rfindley
-        if (!$('#regular_status').length) {
-            $('.wanikani-app-nav ul').append(
-                '<li id="regular_status" data-highlight="false">Regular Status:<span class="dashboard_bubble">0%</span></li>',
-            )
+        if (!document.querySelector('#regular_status')) {
+            document
+                .querySelector('.wanikani-app-nav ul')
+                .insertAdjacentHTML(
+                    'beforeend',
+                    '<li id="regular_status" data-highlight="false">Regular Status:<span class="dashboard_bubble">0%</span></li>',
+                )
             update_display()
         }
     }
@@ -151,9 +161,8 @@
     function is_dark_theme() {
         // Grab the <html> background color, average the RGB.  If less than 50% bright, it's dark theme.
         return (
-            $('html')
-                .css('background-color')
-                .match(/\((.*)\)/)[1]
+            getComputedStyle(document.querySelector('html'))
+                .backgroundColor.match(/\((.*)\)/)[1]
                 .split(',')
                 .slice(0, 3)
                 .map((str) => Number(str))
@@ -169,7 +178,7 @@
         update_tracker()
         prune_history()
         save()
-        let elem = $('#regular_status')[0]
+        let elem = document.querySelector('#regular_status')
 
         if (tracker.history.length != 0 && elem) {
             let days_visited = last100('days_visited') + 1
@@ -228,21 +237,21 @@ Visit Streak:               ${visit_streak}`
 
     // Deletes any data older than 24 hours
     function prune_history() {
-        $(tracker.history).each((i, item) => {
-            if (item.date < Date.now() - msday * 100) tracker.history.splice(0, 1)
-            else return false
-        })
+        tracker.history = tracker.history.filter((item) => item.date >= Date.now() - msday * 100)
     }
 
     // Add CSS which makes space in the header
     function add_css() {
-        $('head').append(`
+        document.head.insertAdjacentHTML(
+            'beforeend',
+            `
 <style id="WKFRTCSS">
 .wanikani-app-nav .wanikani-app-nav-list-header {display: none;}
 .wanikani-app-nav > ul {display: flex;}
 .wanikani-app-nav #regular_status {order: 4;}
 .wanikani-app-nav > ul > li:last-child {margin-right: 1em;}
-</style>`)
+</style>`,
+        )
     }
 
     function last100(key) {
