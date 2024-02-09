@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.1.2
+// @version      3.1.3
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -1036,7 +1036,7 @@
             'reviews',
             stats,
             level_ups,
-            Date.now(),
+            reviews?.[0]?.[0] || Date.now(),
             forecast.reduce((max, a) => (max > a[0] ? max : a[0]), 0),
             cooked_reviews.concat(forecast),
         )
@@ -1044,7 +1044,7 @@
             'lessons',
             stats,
             level_ups,
-            lessons[0][0] || Date.now(),
+            lessons?.[0]?.[0] || Date.now(),
             lessons.reduce((max, a) => (max > a[0] ? max : a[0]), 0),
             cooked_lessons,
         )
