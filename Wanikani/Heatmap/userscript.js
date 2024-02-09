@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.1.1
+// @version      3.1.2
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -36,7 +36,7 @@
         review_cache.subscribe(do_stuff)
 
         async function do_stuff(reviews) {
-            if (!reviews?.length) return
+            reviews ??= []
             // Fetch data
             let items = await wkof.ItemData.get_items('assignments,include_hidden')
             let [forecast, lessons] = get_forecast_and_lessons(items)
@@ -887,11 +887,13 @@
         }
         // Update averages
         done_days.push(done_day)
+        const day_start_adjust = msh * settings.general.day_start // Adjust for the user's start of day setting
+        const first_date = data?.[0]?.[0] || day_start_adjust
         stats.days =
             Math.round(
                 (Date.parse(new Date().toDateString()) -
                     Math.max(
-                        Date.parse(new Date(data[0][0]).toDateString()),
+                        Date.parse(new Date(first_date).toDateString()),
                         new Date(settings.general.start_day).getTime(),
                     )) /
                     msd,
@@ -913,8 +915,9 @@
         // Initiate dates
         let streaks = {},
             zeros = {}
+        const first_date = data?.[0]?.[0] || day_start_adjust
         for (
-            let day = new Date(Math.max(data[0][0] - day_start_adjust, new Date(settings.general.start_day).getTime()));
+            let day = new Date(Math.max(first_date - day_start_adjust, new Date(settings.general.start_day).getTime()));
             day <= new Date();
             day.setDate(day.getDate() + 1)
         ) {
@@ -943,7 +946,7 @@
         // Cumulate streaks
         let streak = 0
         for (
-            let day = new Date(Math.max(data[0][0] - day_start_adjust, new Date(settings.general.start_day).getTime()));
+            let day = new Date(Math.max(first_date - day_start_adjust, new Date(settings.general.start_day).getTime()));
             day <= new Date().setHours(24);
             day.setDate(day.getDate() + 1)
         ) {
@@ -1033,7 +1036,7 @@
             'reviews',
             stats,
             level_ups,
-            reviews[0][0],
+            Date.now(),
             forecast.reduce((max, a) => (max > a[0] ? max : a[0]), 0),
             cooked_reviews.concat(forecast),
         )
@@ -1041,7 +1044,7 @@
             'lessons',
             stats,
             level_ups,
-            lessons[0][0],
+            lessons[0][0] || Date.now(),
             lessons.reduce((max, a) => (max > a[0] ? max : a[0]), 0),
             cooked_lessons,
         )
