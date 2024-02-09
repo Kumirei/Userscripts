@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forum: Regular Tracker
 // @namespace    http://tampermonkey.net/
-// @version      1.1.8
+// @version      1.1.9
 // @description  Tracks how regular you are
 // @author       Kumirei
 // @include      *community.wanikani.com*
@@ -123,7 +123,7 @@
             return
         }
         // Attach the Dashboard menu to the stay-on-top menu.
-        var top_menu = document.querySelector('.d-header')
+        var top_menu = document.querySelector('.d-header .wrap')
         var main_content = document.querySelector('#main-outlet')
         document.body.classList.add('float_wkappnav')
         wk_app_nav.classList.add('wanikani-app-nav-container')
