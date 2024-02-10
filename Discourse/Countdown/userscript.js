@@ -17,6 +17,19 @@
 ;(function () {
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'NeoArcturus Level 60',
+            date: 'nov 13 2024',
+            user: 'NeoArcturus',
+            message0: '',
+            message1: 'Did you do it?!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'Rose takes CRCST exam',
             date: 'nov 28 2023',
