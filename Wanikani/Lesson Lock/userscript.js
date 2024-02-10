@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Lesson Lock
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.2.2
 // @description  Displays 0 lessons available when you have too much on your plate already
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?/
@@ -60,19 +60,26 @@
         ]
         let score = 0
         for (let i = 1; i < 9; i++) if (counts[i]) score += counts[i] * scores[i]
-        const lessons = Number($('.navigation-shortcut--lessons').attr('data-count'))
+        const headerButton = $('.lesson-and-review-count__item:first-child')
+        const headerCount = $('.lesson-and-review-count__item:first-child .lesson-and-review-count__count')
+        const dashboardPanel = $('.todays-lessons')
+        const dashboardCount = $('.todays-lessons__count-text .count-bubble')
+        const dashboardPanelButtons = $('.todays-lessons__buttons')
+        const dashboardPanelText = $('.todays-lessons__text .wk-text')
+        const lessons = Number(headerCount.text()) || 0
         // Lock lessons
         if (score >= s.lock) {
-            $('.navigation-shortcut--lessons span')[0].innerText = lessons === 0 ? '0' : 'locked'
-            $('.navigation-shortcut--lessons').attr('data-count', 0)
-            $('.lessons-and-reviews__lessons-button span')[0].innerText = lessons === 0 ? '0' : 'locked'
-            $('.lessons-and-reviews__lessons-button')[0].className =
-                'lessons-and-reviews__button lessons-and-reviews__lessons-button lessons-and-reviews__lessons-button--0'
+            headerCount.addClass('lesson-and-review-count__count--zero')
+            headerCount.text(lessons === 0 ? '0' : 'locked')
+            headerButton.removeAttr('href')
+            dashboardCount.text('Locked')
+            dashboardPanel.addClass('todays-lessons--complete')
+            dashboardPanelButtons.remove()
+            dashboardPanelText.text('Do more reviews to reduce your score and unlock lessons')
         } else if (s.display_lessons_left) {
-            const available = $('.navigation-shortcut--lessons span')[0].innerText
             const left = Math.ceil((s.lock - score) / s.apprentice1)
-            if (available > left) $('.navigation-shortcut--lessons span')[0].innerText = left
-            if (available > left) $('.lessons-and-reviews__lessons-button span')[0].innerText = left
+            if (lessons > left) headerCount.text(left)
+            if (lessons > left) dashboardCount.text(left)
         }
         // Display score
         if (s.display_as != 'none') {
@@ -88,11 +95,13 @@
                     score_text = Math.round((score / s.lock) * 100) + '%'
                     break
             }
-            $('.navigation-shortcut--lessons').append(
-                '<div id="lock_score" style="text-align: center; font-size: 12px;">Score: ' + score_text + '</div>',
+            headerButton.append(
+                '<div id="lock_score" style="text-align: center; font-size: 12px; position: absolute; bottom: 1px;">Score: ' +
+                    score_text +
+                    '</div>',
             )
-            $('.lessons-and-reviews__lessons-button span').before(
-                '<div id="big_lock_score" style="font-size: 12px;left:50%;position:absolute;transform:translatex(-50%);bottom:16px;">Score: ' +
+            dashboardPanel.append(
+                '<div id="big_lock_score" style="padding-top: 0.5em;color: white;font-weight: bold;">Score: ' +
                     score_text +
                     '</div>',
             )
