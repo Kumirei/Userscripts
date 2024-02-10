@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.1.3
+// @version      3.1.4
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -13,7 +13,7 @@
 // ==/UserScript==
 
 ;(function (wkof, review_cache, Heatmap) {
-    const CSS_COMMIT = 'cabbfc4dbc4cae55cd63968abf5aa006806f3c1c'
+    const CSS_COMMIT = 'e9e76198b5f1f22cef8f9af315a04fc900184719'
     let script_id = 'heatmap3'
     let script_name = 'Wanikani Heatmap'
     let msh = 60 * 60 * 1000,
@@ -327,7 +327,10 @@
             if (!date || !count) return
 
             const mspr = spr * 1000 // MS per review
-            const time = Date.parse(date + 'T00:00')
+            const dayStart = wkof.settings[script_id].general.day_start
+            const startHour = Math.floor(dayStart)
+            const startMin = Math.floor((dayStart % 1) * 60)
+            const time = Date.parse(date + `T${String(startHour).padStart(2, 0)}:${String(startMin).padStart(2, 0)}`)
             const reviews = new Array(count).fill(null).map((_, i) => [time + i * mspr, 1, 1, 0, 0])
             review_cache.insert(reviews)
         })
@@ -1071,9 +1074,10 @@
     function create_buttons() {
         let buttons = create_elem({ type: 'div', class: 'buttons' })
         add_transitions(buttons)
+        const leftButtons = create_elem({ type: 'div', class: 'left' })
         let settings_button = create_elem({
             type: 'button',
-            class: 'settings-button hover-wrapper-target',
+            class: 'settings-button hover-wrapper-target button',
             'aria-label': 'Settings',
             children: [
                 create_elem({ type: 'div', class: 'hover-wrapper above', child: 'Settings' }),
@@ -1081,9 +1085,33 @@
             ],
             onclick: open_settings,
         })
+        let helpButton = create_elem({
+            type: 'a',
+            class: 'help-button hover-wrapper-target button',
+            'aria-label': 'Settings',
+            href: 'https://community.wanikani.com/t/userscript-wanikani-heatmap',
+            target: '_blank',
+            children: [
+                create_elem({ type: 'div', class: 'hover-wrapper above', child: 'Help' }),
+                create_elem({ type: 'i', class: 'fa fa-question-circle-o' }),
+            ],
+        })
+        let infoButton = create_elem({
+            type: 'a',
+            class: 'info-button hover-wrapper-target button',
+            'aria-label': 'Settings',
+            href: 'https://community.wanikani.com/t/api-changes-get-all-reviews/61617',
+            target: '_blank',
+            children: [
+                create_elem({ type: 'div', class: 'hover-wrapper above', child: 'Why you might be missing reviews' }),
+                create_elem({ type: 'i', class: 'fa fa-exclamation' }),
+            ],
+        })
+        leftButtons.append(settings_button, helpButton, infoButton)
+
         let toggle_button = create_elem({
             type: 'button',
-            class: 'toggle-button hover-wrapper-target',
+            class: 'toggle-button hover-wrapper-target button',
             'aria-label': 'Toggle between reviews and lessons',
             children: [
                 create_elem({ type: 'div', class: 'hover-wrapper above', child: 'Toggle view' }),
@@ -1091,7 +1119,7 @@
             ],
             onclick: toggle_visible_map,
         })
-        buttons.append(settings_button, toggle_button)
+        buttons.append(leftButtons, toggle_button)
         return buttons
     }
 
