@@ -67,7 +67,11 @@
     transform: translateY(-5px);
 }
 
-#heatmap .buttons button {
+#heatmap .buttons .left {
+    display: flex;
+}
+
+#heatmap .buttons .button {
     height: 30px;
     width: 30px;
     background-color: transparent !important;
@@ -75,6 +79,13 @@
     box-shadow: none !important;
     color: var(--color);
     border: none;
+    text-align: center;
+    line-height: 30px;
+    padding: 0;
+}
+
+#heatmap .buttons .info-button {
+    color: red;
 }
 
 #heatmap .view {
