@@ -20,7 +20,15 @@
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: "NeoArcturus's Birfday",
+            date: 'feb 18 2024',
+            user: 'NeoArcturus',
+            message0: '',
+            message1: "Happy Birfday!! You're so old!",
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'NeoArcturus Level 60',
             date: 'nov 13 2024',
