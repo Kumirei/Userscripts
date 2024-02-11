@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Detailed SRS Popups
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.0.5
 // @description  Changes apprentice and guru popups to say their respective numbers. E.G. Apprentice 1 or Guru 2
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1279923
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1325980
 // @grant        none
 // @license MIT
 // ==/UserScript==

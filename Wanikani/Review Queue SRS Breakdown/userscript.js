@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Review Queue SRS Breakdown
 // @namespace    http://tampermonkey.net/
-// @version      1.0.5
+// @version      1.0.6
 // @description  Adds a display showing how many items of each SRS stage there are in your queue
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1172719
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1325980
 // @grant        none
 // ==/UserScript==
 

@@ -3,8 +3,8 @@
 // @description Randomizes the preferred voice actor
 // @match       https://www.wanikani.com/*
 // @match       https://preview.wanikani.com/*
-// @require     https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1170110
-// @version     1.2.1
+// @require     https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1325980
+// @version     1.2.2
 // @author      Kumirei
 // @license     MIT; http://opensource.org/licenses/MIT
 // @grant       none
