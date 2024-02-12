@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Review Queue Sizer
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.0.5
 // @description  Lets you choose the size of your review session
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1325980
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1326150
 // @grant        none
 // ==/UserScript==
 
