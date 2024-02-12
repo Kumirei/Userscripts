@@ -1,17 +1,17 @@
 // ==UserScript==
 // @name        WaniKani Stroke Order
 // @namespace   japanese
-// @version     1.1.21
+// @version     1.1.22
 // @description Shows a kanji's stroke order on its page and during lessons and reviews.
 // @license     GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 // @match       https://www.wanikani.com/*
 // @match       https://preview.wanikani.com/*
-// @author      Looki, maintained by Kumirei
+// @author      Looki, maintained by kind users on the forum
 // @grant       GM_xmlhttpRequest
 // @connect     jisho.org
 // @connect     cloudfront.net
 // @require     https://cdnjs.cloudflare.com/ajax/libs/snap.svg/0.5.1/snap.svg-min.js
-// @require     https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1285431
+// @require     https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1326536
 
 // ==/UserScript==
 
@@ -52,7 +52,7 @@
     function init() {
         wkItemInfo.on('lesson').forType('kanji').under('composition').append('Stroke Order', loadDiagram)
         wkItemInfo
-            .on('lessonQuiz, review,itemPage')
+            .on('lessonQuiz, review, extraStudy, itemPage')
             .forType('kanji')
             .under('composition')
             .appendAtTop('Stroke Order', loadDiagram)
