@@ -1,13 +1,10 @@
 // ==UserScript==
 // @name         Wanikani: Dashboard Apprentice
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.2.2
 // @description  Displays all your apprentice items on the dashboard
 // @author       Kumirei
-// @match        https://www.wanikani.com/
-// @match        https://www.wanikani.com/dashboard
-// @match        https://preview.wanikani.com/
-// @match        https://preview.wanikani.com/dashboard
+// @include      /^https://(www|preview).wanikani.com/(dashboard)?#?$/
 // @grant        none
 // ==/UserScript==
 /*jshint esversion: 8 */
@@ -78,7 +75,7 @@
                     multi: true,
                     hover_tip: 'Which items you want to display',
                     default: { rad: true, kan: true, voc: true },
-                    content: { rad: 'Radicals', kan: 'Kanji', voc: 'Vocabulary' },
+                    content: { rad: 'Radicals', kan: 'Kanji', voc: 'Vocabulary', kana_voc: 'Kana Vocabulary' },
                 },
             },
         }
@@ -87,7 +84,12 @@
     }
 
     function load_settings() {
-        let defaults = { theme: 0, srs_start: 1, srs_end: 4, types: { rad: true, kan: true, voc: true } }
+        let defaults = {
+            theme: 0,
+            srs_start: 1,
+            srs_end: 4,
+            types: { rad: true, kan: true, voc: true, kana_voc: true },
+        }
         return wkof.Settings.load(script_id, defaults)
     }
 
@@ -230,7 +232,7 @@
                 '#wkda_items > div {' +
                 '    margin-bottom: 10px;' +
                 '}' +
-                '#wkda_items > div > span {' +
+                '#wkda_items {' +
                 '    font-size: 16px;' +
                 '}' +
                 '#wkda_items .items {' +
@@ -262,6 +264,12 @@
                 '    order: 1;' +
                 '}' +
                 '#wkda_items .items .vocabulary {' +
+                '    background: ' +
+                ['#9800e8', '#2ecc71'][theme] +
+                ';' +
+                '    order: 3;' +
+                '}' +
+                '#wkda_items .items .kana_vocabulary {' +
                 '    background: ' +
                 ['#9800e8', '#2ecc71'][theme] +
                 ';' +
