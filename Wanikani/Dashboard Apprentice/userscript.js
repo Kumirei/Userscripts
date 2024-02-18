@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Dashboard Apprentice
 // @namespace    http://tampermonkey.net/
-// @version      1.2.2
+// @version      1.2.3
 // @description  Displays all your apprentice items on the dashboard
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?#?$/
@@ -121,7 +121,7 @@
             8: 'Enlightened',
             9: 'Burned',
         }
-        var elem = $('<div id="wkda_items"></div>')[0]
+        var elem = $('<section id="wkda_items"></section>')[0]
         if (is_dark_theme()) elem.className = 'dark'
         let settings = wkof.settings[script_id]
         for (var i = settings.srs_start; i <= settings.srs_end; i++) {
