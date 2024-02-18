@@ -1,15 +1,18 @@
 // ==UserScript==
 // @name         Wanikani: Dashboard Apprentice
 // @namespace    http://tampermonkey.net/
-// @version      1.2.3
+// @version      1.2.2
 // @description  Displays all your apprentice items on the dashboard
 // @author       Kumirei
-// @include      /^https://(www|preview).wanikani.com/(dashboard)?#?$/
+// @match        https://www.wanikani.com
+// @match        https://www.wanikani.com/dashboard*
+// @match        https://preview.wanikani.com
+// @match        https://preview.wanikani.com/dashboard*
 // @grant        none
 // ==/UserScript==
 /*jshint esversion: 8 */
 
-;(function () {
+;(function (wkof, $) {
     // Make sure WKOF is installed
     let script_id = 'dashboard_apprentice'
     if (!wkof) {
@@ -18,9 +21,10 @@
             script_name +
                 ' requires WaniKani Open Framework.\n Click "OK" to be forwarded to installation instructions.',
         )
-        if (response)
+        if (response) {
             window.location.href =
                 'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549'
+        }
         return
     }
     // Ready to go
@@ -396,4 +400,4 @@
             0.5
         )
     }
-})()
+})(window.wkof, window.$)
