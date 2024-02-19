@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Dashboard Apprentice
 // @namespace    http://tampermonkey.net/
-// @version      1.2.2
+// @version      1.2.4
 // @description  Displays all your apprentice items on the dashboard
 // @author       Kumirei
 // @match        https://www.wanikani.com
@@ -143,9 +143,7 @@
                         item.data.characters !== null
                             ? item.data.characters
                             : await wkof.load_file(
-                                  item.data.character_images.find(
-                                      (c) => c.content_type === 'image/svg+xml' && !c.metadata.inline_styles,
-                                  ).url,
+                                  item.data.character_images.find((c) => c.content_type === 'image/svg+xml').url,
                                   true,
                               ),
                     meanings: [],
@@ -224,147 +222,138 @@
     function add_css() {
         let theme = wkof.settings[script_id].theme
         $('head').append(
-            '<style id="wkda_css">' +
-                '#wkda_items {' +
-                '    background-color: #f4f4f4;' +
-                '    border-radius: 5px;' +
-                '    padding: 16px 24px 12px;' +
-                '}' +
-                '#wkda_items.dark {' +
-                '    background-color: #232629;' +
-                '}' +
-                '#wkda_items > div {' +
-                '    margin-bottom: 10px;' +
-                '}' +
-                '#wkda_items {' +
-                '    font-size: 16px;' +
-                '}' +
-                '#wkda_items .items {' +
-                '    position: relative;' +
-                '    display: flex;' +
-                '    flex-direction: row;' +
-                '    flex-wrap: wrap;' +
-                '    justify-content: flex-start;' +
-                '    margin-left: -2px;' +
-                '}' +
-                '#wkda_items .items .item {' +
-                '    display: inline-block;' +
-                '    padding: 0 3px;' +
-                '    margin: 1.5px;' +
-                '    border-radius: 3px;' +
-                '    position: relative;' +
-                '}' +
-                '#wkda_items .items .radical {' +
-                '    background: ' +
-                ['#0096e7', '#3daee9'][theme] +
-                ';' +
-                '    order: 0;' +
-                '    width: 14px;' +
-                '}' +
-                '#wkda_items .items .kanji {' +
-                '    background: ' +
-                ['#ff00aa', '#fdbc4b'][theme] +
-                ';' +
-                '    order: 1;' +
-                '}' +
-                '#wkda_items .items .vocabulary {' +
-                '    background: ' +
-                ['#9800e8', '#2ecc71'][theme] +
-                ';' +
-                '    order: 3;' +
-                '}' +
-                '#wkda_items .items .kana_vocabulary {' +
-                '    background: ' +
-                ['#9800e8', '#2ecc71'][theme] +
-                ';' +
-                '    order: 2;' +
-                '}' +
-                '#wkda_items .hover_elem {' +
-                '    visibility: hidden;' +
-                '    position: absolute;' +
-                '    background-color: rgba(0, 0, 0, 0.9);' +
-                '    z-index: 2;' +
-                '    padding: 5px;' +
-                '    border-radius: 3px;' +
-                '    width: max-content;' +
-                '    transform: translate(-50%, calc(0px - 100% - 5px));' +
-                '    left: 50%;' +
-                '}' +
-                '#wkda_items .item:hover .hover_elem {' +
-                '    visibility: visible; ' +
-                '}' +
-                '#wkda_items .hover_elem::after {' +
-                '    visibility: hidden;' +
-                '    position: absolute;' +
-                '    width: 0;' +
-                '    border-top: 5px solid rgba(0, 0, 0, 0.9);' +
-                '    border-right: 5px solid transparent;' +
-                '    border-left: 5px solid transparent;' +
-                '    content: " ";' +
-                '    font-size: 0;' +
-                '    line-height: 0;' +
-                '    left: 50%;' +
-                '    bottom: -5px;' +
-                '    transform: translateX(-50%);' +
-                '}' +
-                '#wkda_items .item:hover .hover_elem::after {' +
-                '    visibility: visible;' +
-                '}' +
-                '#wkda_items .hover_elem > div {' +
-                '    display: inline-block;' +
-                '}' +
-                '#wkda_items .item.vocabulary .hover_elem > div {' +
-                '    display: block;' +
-                '}' +
-                '#wkda_items .left {' +
-                '    vertical-align: top;' +
-                '}' +
-                '#wkda_items .item.vocabulary .hover_elem .left {' +
-                '    margin-bottom: 5px;' +
-                '}' +
-                '#wkda_items .left a {' +
-                '    font-size: 74px;' +
-                '    line-height: 73px;' +
-                '    min-width: 73px;' +
-                '    display: block;' +
-                '    padding: 5px;' +
-                '    border-radius: 3px;' +
-                '    margin: 3px 10px 0 3px;' +
-                '}' +
-                '#wkda_items .item.vocabulary .left a {' +
-                '    margin-right: 3px;' +
-                '    text-align: center;' +
-                '}' +
-                '#wkda_items .items .radical svg {' +
-                '    height: 14px;' +
-                '    stroke: currentColor;' +
-                '    fill: none;' +
-                '    stroke-linecap: square;' +
-                '    stroke-width: 68;' +
-                '}' +
-                '#wkda_items .items .radical svg g {' +
-                '    clip-path: none;' +
-                '}' +
-                '#wkda_items .items .radical .hover_elem svg {' +
-                '    height: 74px;' +
-                '    width: 1em;' +
-                '}' +
-                '#wkda_items .right table td:first-child {' +
-                '    padding-right: 10px;' +
-                '    font-weight: bold;' +
-                '}' +
-                '#wkda_items .items table td {' +
-                '    color: rgb(240, 240, 240);' +
-                '}' +
-                '#wkda_items .items > div a {' +
-                '    color: ' +
-                ['rgb(240, 240, 240)', 'black'][theme] +
-                ' !important;' +
-                '}' +
-                '#wkda_items .item.vocabulary .hover_elem {' +
-                '	max-width: 320px;' +
-                '}' +
-                '</style>',
+            `<style id="wkda_css">
+                #wkda_items {
+                    background-color: #f4f4f4;
+                    border-radius: 5px;
+                    padding: 16px 24px 12px;
+                    --color-text: ${['rgb(240, 240, 240)', 'black'][theme]} !important;
+                }
+                #wkda_items.dark {
+                    background-color: #232629;
+                }
+                #wkda_items > div {
+                    margin-bottom: 10px;
+                }
+                #wkda_items {
+                    font-size: 16px;
+                }
+                #wkda_items .items {
+                    position: relative;
+                    display: flex;
+                    flex-direction: row;
+                    flex-wrap: wrap;
+                    justify-content: flex-start;
+                    margin-left: -2px;
+                }
+                #wkda_items .items .item {
+                    display: inline-block;
+                    padding: 0 3px;
+                    margin: 1.5px;
+                    border-radius: 3px;
+                    position: relative;
+                }
+                #wkda_items .items .radical {
+                    background: ${['#0096e7', '#3daee9'][theme]};
+                    order: 0;
+                    width: 14px;
+                }
+                #wkda_items .items .kanji {
+                    background: ${['#ff00aa', '#fdbc4b'][theme]};
+                    order: 1;
+                }
+                #wkda_items .items .vocabulary {
+                    background: ${['#9800e8', '#2ecc71'][theme]};
+                    order: 3;
+                }
+                #wkda_items .items .kana_vocabulary {
+                    background: ${['#9800e8', '#2ecc71'][theme]};
+                    order: 2;
+                }
+                #wkda_items .hover_elem {
+                    visibility: hidden;
+                    position: absolute;
+                    background-color: rgba(0, 0, 0, 0.9);
+                    z-index: 2;
+                    padding: 5px;
+                    border-radius: 3px;
+                    width: max-content;
+                    transform: translate(-50%, calc(0px - 100% - 5px));
+                    left: 50%;
+                }
+                #wkda_items .item:hover .hover_elem {
+                    visibility: visible; 
+                }
+                #wkda_items .hover_elem::after {
+                    visibility: hidden;
+                    position: absolute;
+                    width: 0;
+                    border-top: 5px solid rgba(0, 0, 0, 0.9);
+                    border-right: 5px solid transparent;
+                    border-left: 5px solid transparent;
+                    content: " ";
+                    font-size: 0;
+                    line-height: 0;
+                    left: 50%;
+                    bottom: -5px;
+                    transform: translateX(-50%);
+                }
+                #wkda_items .item:hover .hover_elem::after {
+                    visibility: visible;
+                }
+                #wkda_items .hover_elem > div {
+                    display: inline-block;
+                }
+                #wkda_items .item.vocabulary .hover_elem > div {
+                    display: block;
+                }
+                #wkda_items .left {
+                    vertical-align: top;
+                }
+                #wkda_items .item.vocabulary .hover_elem .left {
+                    margin-bottom: 5px;
+                }
+                #wkda_items .left a {
+                    font-size: 74px;
+                    line-height: 73px;
+                    min-width: 73px;
+                    display: block;
+                    padding: 5px;
+                    border-radius: 3px;
+                    margin: 3px 10px 0 3px;
+                }
+                #wkda_items .item.vocabulary .left a {
+                    margin-right: 3px;
+                    text-align: center;
+                }
+                #wkda_items .items .radical svg {
+                    height: 14px;
+                    stroke: currentColor;
+                    fill: none;
+                    stroke-linecap: square;
+                    stroke-width: 68;
+                }
+                #wkda_items .items .radical svg g {
+                    clip-path: none;
+                }
+                #wkda_items .items .radical .hover_elem svg {
+                    height: 74px;
+                    width: 1em;
+                }
+                #wkda_items .right table td:first-child {
+                    padding-right: 10px;
+                    font-weight: bold;
+                }
+                #wkda_items .items table td {
+                    color: rgb(240, 240, 240);
+                }
+                #wkda_items .items > div a {
+                    color: ${['rgb(240, 240, 240)', 'black'][theme]} !important;
+                }
+                #wkda_items .item.vocabulary .hover_elem {
+                	max-width: 320px;
+                }
+                </style>`,
         )
     }
 
