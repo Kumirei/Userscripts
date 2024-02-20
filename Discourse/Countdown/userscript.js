@@ -18,7 +18,15 @@
     var countdowns = [
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: '@trickster-saf passes the N5!',
+            date: 'dec 1 2024',
+            user: 'trickster-saf',
+            message0: '@trickster-saf get your pencil ready!',
+            message1: '@trickster-saf you did it!!!!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: 'Aanhlle passes the N1',
             date: 'jul 7 2024',
