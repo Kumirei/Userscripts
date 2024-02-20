@@ -19,7 +19,15 @@
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'Aanhlle passes the N1',
+            date: 'jul 7 2024',
+            user: 'aanhlle',
+            message0: '@aanhlle Get your pencil ready!',
+            message1: '@aanhlle Did you do it?!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: "NeoArcturus's Birfday",
             date: 'feb 18 2024',
