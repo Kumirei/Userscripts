@@ -22,7 +22,7 @@
     /*-------------------------------------------------------------------------------------------------------------------------------*/
 
     // Temporary measure to track reviews while the /reviews endpoint is unavailable
-    if (/www.wanikani.com\/(dashboard)?$/.test(window.location.href)) {
+    if (/www.wanikani.com\/(dashboard)?#?$/.test(window.location.href)) {
         let reload // Function to reload the heatmap
 
         // Wait until modules are ready then initiate script
