@@ -84,8 +84,8 @@
     padding: 0;
 }
 
-#heatmap .buttons .info-button {
-    color: red;
+#heatmap .buttons .button svg {
+    height: 100%;
 }
 
 #heatmap .view {
