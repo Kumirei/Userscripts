@@ -1,23 +1,36 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.1.5
+// @version      3.1.6
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
+// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js
 // @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=1193344
 // @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=1251299
 // @grant        none
 // ==/UserScript==
 
-;(function (wkof, review_cache, Heatmap) {
-    const CSS_COMMIT = 'e9e76198b5f1f22cef8f9af315a04fc900184719'
+;(function (wkof, review_cache, Heatmap, Icons) {
+    const CSS_COMMIT = '5fc34b93ff3f34e637fc9bf0cc73fcb6fbf122b9'
     let script_id = 'heatmap3'
     let script_name = 'Wanikani Heatmap'
     let msh = 60 * 60 * 1000,
         msd = 24 * msh // Milliseconds in hour and day
+
+    Icons.addCustomIcons([
+        [
+            'trophy',
+            'M400 0H176c-26.5 0-48.1 21.8-47.1 48.2c.2 5.3 .4 10.6 .7 15.8H24C10.7 64 0 74.7 0 88c0 92.6 33.5 157 78.5 200.7c44.3 43.1 98.3 64.8 138.1 75.8c23.4 6.5 39.4 26 39.4 45.6c0 20.9-17 37.9-37.9 37.9H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H384c17.7 0 32-14.3 32-32s-14.3-32-32-32H357.9C337 448 320 431 320 410.1c0-19.6 15.9-39.2 39.4-45.6c39.9-11 93.9-32.7 138.2-75.8C542.5 245 576 180.6 576 88c0-13.3-10.7-24-24-24H446.4c.3-5.2 .5-10.4 .7-15.8C448.1 21.8 426.5 0 400 0zM48.9 112h84.4c9.1 90.1 29.2 150.3 51.9 190.6c-24.9-11-50.8-26.5-73.2-48.3c-32-31.1-58-76-63-142.3zM464.1 254.3c-22.4 21.8-48.3 37.3-73.2 48.3c22.7-40.3 42.8-100.5 51.9-190.6h84.4c-5.1 66.3-31.1 111.2-63 142.3z',
+            576,
+        ],
+        [
+            'inbox',
+            'M121 32C91.6 32 66 52 58.9 80.5L1.9 308.4C.6 313.5 0 318.7 0 323.9V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V323.9c0-5.2-.6-10.4-1.9-15.5l-57-227.9C446 52 420.4 32 391 32H121zm0 64H391l48 192H387.8c-12.1 0-23.2 6.8-28.6 17.7l-14.3 28.6c-5.4 10.8-16.5 17.7-28.6 17.7H195.8c-12.1 0-23.2-6.8-28.6-17.7l-14.3-28.6c-5.4-10.8-16.5-17.7-28.6-17.7H73L121 96z',
+        ],
+    ])
 
     /*-------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -262,7 +275,7 @@
                                         e.target.closest('.row').remove()
                                         update_color_settings()
                                     },
-                                    child: create_elem({ type: 'i', class: 'fa fa-trash' }),
+                                    child: Icons.customIcon('trash'),
                                 }),
                             }),
                         ],
@@ -1081,7 +1094,7 @@
             'aria-label': 'Settings',
             children: [
                 create_elem({ type: 'div', class: 'hover-wrapper above', child: 'Settings' }),
-                create_elem({ type: 'i', class: 'fa fa-gear' }),
+                Icons.customIcon('settings'),
             ],
             onclick: open_settings,
         })
@@ -1093,7 +1106,7 @@
             target: '_blank',
             children: [
                 create_elem({ type: 'div', class: 'hover-wrapper above', child: 'Help' }),
-                create_elem({ type: 'i', class: 'fa fa-question-circle-o' }),
+                Icons.customIcon('circle-question'),
             ],
         })
         let infoButton = create_elem({
@@ -1104,7 +1117,7 @@
             target: '_blank',
             children: [
                 create_elem({ type: 'div', class: 'hover-wrapper above', child: 'Why you might be missing reviews' }),
-                create_elem({ type: 'i', class: 'fa fa-exclamation' }),
+                Icons.customIcon('warning'),
             ],
         })
         leftButtons.append(settings_button, helpButton, infoButton)
@@ -1115,7 +1128,7 @@
             'aria-label': 'Toggle between reviews and lessons',
             children: [
                 create_elem({ type: 'div', class: 'hover-wrapper above', child: 'Toggle view' }),
-                create_elem({ type: 'i', class: 'fa fa-inbox' }),
+                Icons.customIcon('inbox'),
             ],
             onclick: toggle_visible_map,
         })
@@ -1262,7 +1275,7 @@
                                 'Click to ' + (year == new Date().getFullYear() ? 'show next' : 'hide this') + ' year',
                         }),
                     }),
-                    create_elem({ type: 'i', class: 'fa fa-chevron-up' }),
+                    Icons.customIcon('chevron-up'),
                 ],
             })
             let down = create_elem({
@@ -1281,7 +1294,7 @@
                                 ' year',
                         }),
                     }),
-                    create_elem({ type: 'i', class: 'fa fa-chevron-down' }),
+                    Icons.customIcon('chevron-down'),
                 ],
             })
             target.append(up, down)
@@ -1398,7 +1411,7 @@
                         class: 'hover-wrapper above',
                         child: 'Clear all reviews from this day',
                     }),
-                    create_elem({ type: 'button', id: 'clear_reviews', class: 'fa fa-trash' }),
+                    create_elem({ type: 'button', id: 'clear_reviews', child: Icons.customIcon('trash') }),
                 ],
             }),
             create_elem({ type: 'div', class: 'date' }),
@@ -2059,4 +2072,4 @@
         event.initEvent(event_name, true, true)
         elem.dispatchEvent(event)
     }
-})(window.wkof, window.review_cache, window.Heatmap)
+})(window.wkof, window.review_cache, window.Heatmap, window.Icons)
