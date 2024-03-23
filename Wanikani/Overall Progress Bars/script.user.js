@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Overall Progress Bars
 // @namespace    http://tampermonkey.net/
-// @version      1.4.1
+// @version      1.4.2
 // @description  Creates a progress bar on the dashboard for every level
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -170,14 +170,15 @@
         }
 
         const css = `.srs-level-graph {
-    height: 3em;
-    display: flex;
     justify-content: space-evenly;
     gap: 0.2em;
     padding: 16px 12px 12px;
     background-color: ${settings.theme === 'breeze' ? '#232629' : '#f4f4f4'};
     border-radius: 5px;
     margin: 0 0 30px 0 !important;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16px, 1fr));
+    grid-auto-rows: 3em;
 }
 
 .srs-level-graph .level {
