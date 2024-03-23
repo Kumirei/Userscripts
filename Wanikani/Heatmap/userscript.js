@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.1.4
+// @version      3.1.5
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -1638,6 +1638,7 @@
         let item_types = { rad: 0, kan: 0, voc: 0 }
         for (let id of info.lists[type + '-ids']) {
             let item = items_id[id]
+            if (!item) continue
             levels[0][Math.floor((item.data.level - 1) / 10)]++
             levels[item.data.level]++
             const type = item.object === 'kana_vocabulary' ? 'voc' : item.object.slice(0, 3)
@@ -1677,7 +1678,7 @@
         const svgs = {}
         const svgPromises = []
         for (const id of ids) {
-            if (items_id[id].data.characters) continue
+            if (!items_id[id] || items_id[id]?.data?.characters) continue
             svgPromises.push(
                 wkof
                     .load_file(
@@ -1695,6 +1696,7 @@
         await Promise.allSettled(svgPromises)
         for (let id of ids) {
             let item = items_id[id]
+            if (!item) continue
             let burn = burns.includes(id)
             const type = item.object === 'kana_vocabulary' ? 'vocabulary' : item.object
             item_elems.push(
