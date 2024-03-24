@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Review Answer Streak
 // @namespace    http://tampermonkey.net/
-// @version      1.1.6
+// @version      1.1.7
 // @description  Counts the number of times you have get review questions right in a row
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
