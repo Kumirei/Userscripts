@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.50
+// @version      1.3.51
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
+// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js
 // @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1340063
 // @grant        none
 // @run-at       document-idle
@@ -88,6 +89,11 @@ declare global {
         WaniKani: any
         wkRefreshAudio: () => void
         wkQueue: WKQueue
+        Icons: {
+            addCustomIcons: (icons: (string | number)[][]) => void
+            customIcon: (icon: string) => HTMLElement
+            customIconTxt: (icon: string) => string
+        }
     }
 
     interface JStorageOptions {
@@ -106,7 +112,7 @@ declare global {
     const wkof_version_needed = '1.1.0'
 
     // Globals
-    const { wkof, wkQueue } = window
+    const { wkof, wkQueue, Icons } = window
     let streak: Streak
     let egg_timer: { start: number; page: string }
 
@@ -123,6 +129,14 @@ declare global {
     let settings_dialog: SettingsModule.Dialog
     let burn_bell_audio = new Audio() // Burn bell audio element
     let burn_bell_audio_sources: Record<string, string>
+
+    Icons.addCustomIcons([
+        [
+            'trophy',
+            'M400 0H176c-26.5 0-48.1 21.8-47.1 48.2c.2 5.3 .4 10.6 .7 15.8H24C10.7 64 0 74.7 0 88c0 92.6 33.5 157 78.5 200.7c44.3 43.1 98.3 64.8 138.1 75.8c23.4 6.5 39.4 26 39.4 45.6c0 20.9-17 37.9-37.9 37.9H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H384c17.7 0 32-14.3 32-32s-14.3-32-32-32H357.9C337 448 320 431 320 410.1c0-19.6 15.9-39.2 39.4-45.6c39.9-11 93.9-32.7 138.2-75.8C542.5 245 576 180.6 576 88c0-13.3-10.7-24-24-24H446.4c.3-5.2 .5-10.4 .7-15.8C448.1 21.8 426.5 0 400 0zM48.9 112h84.4c9.1 90.1 29.2 150.3 51.9 190.6c-24.9-11-50.8-26.5-73.2-48.3c-32-31.1-58-76-63-142.3zM464.1 254.3c-22.4 21.8-48.3 37.3-73.2 48.3c22.7-40.3 42.8-100.5 51.9-190.6h84.4c-5.1 66.3-31.1 111.2-63 142.3z',
+            576,
+        ],
+    ])
 
     // This has to be done before WK realizes that the queue is empty and
     // redirects, thus we have to do it before initializing WKOF
@@ -724,7 +738,7 @@ declare global {
             const elem = $(
                 `
                 <div id="streak" class="quiz-statistics__item"><div class="quiz-statistics__item-count">
-                    <div class="quiz-statistics__item-count-icon"><i class="fa fa-trophy"></i></div>
+                    <div class="quiz-statistics__item-count-icon">${Icons.customIconTxt('trophy')}</div>
                     <div class="count quiz-statistics__item-count-text">${streak?.current?.streak || 0} (${
                     streak?.current?.max || 0
                 })</div>
@@ -825,6 +839,11 @@ declare global {
                 height: 25px;
                 aspect-ratio: 1;
                 padding: 0;
+            }
+
+            #wkofs_reorder_omega.wkof_settings .list_wrap .list_buttons button svg {
+                vertical-align: middle;
+                padding-left: 2px;
             }
 
             #wkofs_reorder_omega.wkof_settings .list_wrap .right { flex: 1; }
@@ -1391,10 +1410,18 @@ declare global {
         // Add buttons to the presets and actions lists
         const buttons = (type: string) =>
             `<div class="list_buttons">` +
-            `<button type="button" ref="${type}" action="new" class="ui-button ui-corner-all ui-widget" title="Create a new ${type}"><span class="fa fa-plus"></span></button>` +
-            `<button type="button" ref="${type}" action="up" class="ui-button ui-corner-all ui-widget" title="Move the selected ${type} up in the list"><span class="fa fa-arrow-up"></span></button>` +
-            `<button type="button" ref="${type}" action="down" class="ui-button ui-corner-all ui-widget" title="Move the selected ${type} down in the list"><span class="fa fa-arrow-down"></span></button>` +
-            `<button type="button" ref="${type}" action="delete" class="ui-button ui-corner-all ui-widget" title="Delete the selected ${type}"><span class="fa fa-trash"></span></button>` +
+            `<button type="button" ref="${type}" action="new" class="ui-button ui-corner-all ui-widget" title="Create a new ${type}">${Icons.customIconTxt(
+                'plus',
+            )}</button>` +
+            `<button type="button" ref="${type}" action="up" class="ui-button ui-corner-all ui-widget" title="Move the selected ${type} up in the list">${Icons.customIconTxt(
+                'arrow-up',
+            )}</button>` +
+            `<button type="button" ref="${type}" action="down" class="ui-button ui-corner-all ui-widget" title="Move the selected ${type} down in the list">${Icons.customIconTxt(
+                'arrow-down',
+            )}</button>` +
+            `<button type="button" ref="${type}" action="delete" class="ui-button ui-corner-all ui-widget" title="Delete the selected ${type}">${Icons.customIconTxt(
+                'trash',
+            )}</button>` +
             `</div>`
 
         let wrap = dialog.find(`#${script_id}_selected_preset`).closest('.row').addClass('list_wrap')
@@ -1405,7 +1432,7 @@ declare global {
 
         // Add burn bell sample button
         const burn_bell_button = document.createElement('button')
-        burn_bell_button.innerHTML = `<i class="fa-solid fa-volume"></i>`
+        burn_bell_button.innerHTML = Icons.customIconTxt('sound-on')
         burn_bell_button.title = 'Play sample'
         burn_bell_button.className = 'ui-button ui-corner-all ui-widget'
         burn_bell_button.addEventListener('click', () => {
