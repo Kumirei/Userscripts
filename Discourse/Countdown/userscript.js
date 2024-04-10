@@ -19,7 +19,15 @@
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
         //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
-        //{title: "", date: "", user: "", message0: "", message1: "", modifier: "", extra: ""},
+        {
+            title: 'PotatoDancer level 60',
+            date: 'oct 31 2024',
+            user: 'PotatoDancer',
+            message0: '',
+            message1: '@PotatoDancer Did you do it?!',
+            modifier: '',
+            extra: '',
+        },
         {
             title: "NeoArcturus's History and Latin Exams end",
             date: 'mar 21 2024',
