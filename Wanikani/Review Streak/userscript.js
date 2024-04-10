@@ -6,7 +6,7 @@
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js
+// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js?version=1350892
 // @grant        none
 // ==/UserScript==
 /*jshint esversion: 8 */
