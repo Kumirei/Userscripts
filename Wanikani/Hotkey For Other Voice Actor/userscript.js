@@ -3,7 +3,7 @@
 // @description Binds the I key to play the audio from the other voice actor
 // @match       https://www.wanikani.com/*
 // @match       https://preview.wanikani.com/*
-// @version     1.1.6
+// @version     1.2.0
 // @author      Kumirei
 // @license     MIT; http://opensource.org/licenses/MIT
 // @run-at      document-end
@@ -11,60 +11,75 @@
 // @namespace https://greasyfork.org/users/105717
 // ==/UserScript==
 
-;(function () {
+;(async function (wkof) {
+    // You can change this key to something else
     const key = 'i'
 
-    window.addEventListener('keydown', (event) => {
-        if (event.key !== key) return
+    // Script info
+    const script_id = 'hotkey_for_other_va'
+    const script_name = 'Hotkey For Other VA'
 
-        // Not a quiz page
-        const has_audio = !!document.querySelector('.additional-content__item--audio')
-        if (!has_audio) return
+    // Init
+    await confirm_wkof()
+    wkof.include('ItemData')
+    await wkof.ready('ItemData')
+    let vocab // WKOF vocab items
+    init()
 
-        // Not ready to play audio
-        let audio_disabled = !!document
-            .querySelector('.additional-content__item--audio')
-            .classList.contains('additional-content__item--disabled')
-        if (audio_disabled) return
-
-        // Currently typing
-        if (/textarea|input/i.test(event.target.tagName)) return
-
-        play_other_voice()
-    })
-
-    function play_other_voice() {
-        // Get URL of current VA (if any)
-        const quizAudioSource = document.querySelector('audio.quiz-audio__audio source:first-child')?.src
-        if (!quizAudioSource) return // Don't do anything if no audio
-
-        // Parse items, find correct item, find entered reading, find entered pronunciation, pick different pronunciation of same reading
-        const items = JSON.parse(
-            document.querySelector('#quiz-queue script[data-quiz-queue-target="subjects"]').textContent,
-        )
-        for (let item of items || []) {
-            for (let reading of item.readings || []) {
-                let isCorrectReading = false
-                let currentPronunciation = null
-                pronunciations: for (let pronunciation of reading.pronunciations || []) {
-                    for (let source of pronunciation.sources || []) {
-                        if (source.url === quizAudioSource) {
-                            isCorrectReading = true
-                            currentPronunciation = pronunciation
-                            break pronunciations
-                        }
-                    }
-                }
-                if (!isCorrectReading) continue
-
-                const pronunciation = reading.pronunciations.find(
-                    (pronunciation) => pronunciation !== currentPronunciation,
-                )
-                const source = pronunciation.sources[0].url
-                const audio = new Audio(source)
-                audio.play()
-                return
+    function confirm_wkof() {
+        if (!wkof) {
+            let response = confirm(
+                `${script_name} requires WaniKani Open Framework.\nClick "OK" to be forwarded to installation instructions.`,
+            )
+            if (response) {
+                window.location.href =
+                    'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549'
             }
         }
     }
-})()
+
+    async function init() {
+        vocab = await wkof.ItemData.get_items({ wk_items: { filters: { item_type: 'voc' } } })
+        window.addEventListener('keydown', onKeydown)
+    }
+
+    function onKeydown(event) {
+        if (event.key !== key) return
+
+        // Check if it's a quiz page
+        const audio_elem = document.querySelector('.additional-content__item--audio')
+        if (!audio_elem) return
+
+        // Check if audio is ready to play
+        let audio_disabled = !!audio_elem.classList.contains('additional-content__item--disabled')
+        if (audio_disabled) return
+
+        play_other_voice()
+    }
+
+    function play_other_voice() {
+        // Get URL of current VA (if any)
+        const defaultAudio = document.querySelector('audio.quiz-audio__audio source:first-child')?.src
+        if (!defaultAudio) return // Do nothing if no audio
+
+        const quizItem = document.querySelector('.character-header__characters')?.textContent
+        if (!quizItem) return // Do nothing if no item
+
+        const item = vocab.find((item) => item.data.characters === quizItem)
+        if (!item) return // Do nothing if no wkof item
+
+        const pronunciations = item.data.pronunciation_audios
+        const defaultPronunciation = pronunciations.find((pronunciation) => pronunciation.url === defaultAudio)
+        const defaultVA = defaultPronunciation?.metadata?.voice_actor_id
+
+        pronunciations.sort((a, b) => {
+            if (a.url === defaultAudio) return 1 // Send default audio to the back
+            if (a.metadata.voice_actor_id === defaultVA && b.url !== defaultAudio) return 1 // Send default voice actor to the back
+            return -1
+        })
+
+        const alternatePronunciation = pronunciations[0]
+        const audio = new Audio(alternatePronunciation.url)
+        audio.play()
+    }
+})(window.wkof)
