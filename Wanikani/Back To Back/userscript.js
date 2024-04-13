@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.3.17
+// @version      1.3.18
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
+// @exclude      https://www.wanikani.com/subject-lessons/*
 // @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1340063
 // @license      MIT
 // @grant        none
@@ -40,7 +41,7 @@
     function run() {
         const settings = wkof.settings[script_id]
         if (settings.behavior !== 'none') settings.behavior = 'always' // Map unavailable behavior modes to "always"
-        if (settings.behavior === 'always') wkQueue.completeSubjectsInOrder = !/lessons/.test(window.location.pathname) // Temp disabled until queue manipulator is fixed
+        if (settings.behavior === 'always') wkQueue.completeSubjectsInOrder = true
         if (settings.prioritize !== 'none') wkQueue.questionOrder = `${settings.prioritize}First`
     }
 
