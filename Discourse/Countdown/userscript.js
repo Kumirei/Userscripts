@@ -104,7 +104,7 @@
         },
         {
             title: 'NeoArcturus Level 60',
-            date: 'nov 13 2024',
+            date: 'dec 31 2025',
             user: 'NeoArcturus',
             message0: '',
             message1: 'Did you do it?!',
