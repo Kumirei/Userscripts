@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WaniKani Forums: Like counter
 // @namespace    http://tampermonkey.net/
-// @version      3.1.11
+// @version      3.1.12
 // @description  Keeps track of the likes you've used and how many you have left... supposedly.
 // @author       Kumirei
 // @include      https://community.wanikani.com*
@@ -18,7 +18,7 @@
     }
 
     function getUsername() {
-        return $('#current-user button').attr('href')?.replace('/u/', '') || ''
+        return JSON.parse(JSON.parse(document.querySelector('#data-preloaded').dataset.preloaded).currentUser).username
     }
 
     // Global variable

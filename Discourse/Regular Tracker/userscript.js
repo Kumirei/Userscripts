@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Forum: Regular Tracker
 // @namespace    http://tampermonkey.net/
-// @version      1.1.9
+// @version      1.1.10
 // @description  Tracks how regular you are
 // @author       Kumirei
 // @include      *community.wanikani.com*
@@ -43,7 +43,9 @@
         if (tracker.last_fetch < Date.now() - 1000 * 60 * settings.update_interval) {
             tracker.last_fetch = Date.now()
             save()
-            let username = document.querySelector('#current-user button').getAttribute('href')?.replace('/u/', '') || ''
+            let username = JSON.parse(
+                JSON.parse(document.querySelector('#data-preloaded').dataset.preloaded).currentUser,
+            ).username
             let summary_url = 'https://community.wanikani.com/u/' + username + '/summary'
             let stats_url = 'https://community.wanikani.com/about'
             Promise.all([fetchUrl(summary_url), fetchUrl(stats_url)]).then(process_data)
