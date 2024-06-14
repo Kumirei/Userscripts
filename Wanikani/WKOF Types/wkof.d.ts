@@ -5,11 +5,13 @@ type SubjectTypeString =
     | `${SubjectType}`
     | `${SubjectType},${SubjectType}`
     | `${SubjectType},${SubjectType},${SubjectType}`
-type SubjectTypeShort = 'voc' | 'kan' | 'rad'
+    | `${SubjectType},${SubjectType},${SubjectType},${SubjectType}`
+type SubjectTypeShort = 'voc' | 'kan' | 'rad' | 'kana_voc'
 type SubjectTypeShortString =
     | `${SubjectTypeShort}`
     | `${SubjectTypeShort},${SubjectTypeShort}`
     | `${SubjectTypeShort},${SubjectTypeShort},${SubjectTypeShort}`
+    | `${SubjectTypeShort},${SubjectTypeShort},${SubjectTypeShort},${SubjectTypeShort}`
 type IsoDateString = `${number}-${number}-${number}T${number}:${number}:${number}.${number}Z`
 
 declare namespace Core {
