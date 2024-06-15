@@ -2,12 +2,12 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.52
+// @version      1.3.53
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js?version=1350892
+// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js?version=1386034
 // @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1340063
 // @grant        none
 // @run-at       document-idle
@@ -314,18 +314,21 @@ var module = {};
     }
     // Performs the actions on the items
     function process_action(action, items) {
+        var unfreezing = false;
         switch (action.type) {
             case 'none':
                 return items;
             case 'filter':
-                var _a = process_filter(action, items.keep), keep = _a.keep, discard = _a.discard;
-                return { keep: keep, discard: items.discard.concat(discard), final: items.final };
+                unfreezing = action.filter.values.apply_to_frozen;
+                var _a = process_filter(action, unfreezing ? items.keep.concat(items.final) : items.keep), keep = _a.keep, discard = _a.discard;
+                return { keep: keep, discard: items.discard.concat(discard), final: unfreezing ? [] : items.final };
             case 'sort':
                 return { keep: process_sort_action(action, items.keep), discard: items.discard, final: items.final };
             case 'freeze & restore':
                 return { keep: items.discard, discard: [], final: items.final.concat(items.keep) };
             case 'shuffle':
-                return { keep: process_shuffle_action(action, items.keep), discard: items.discard, final: items.final };
+                unfreezing = action.shuffle.values.apply_to_frozen;
+                return { keep: process_shuffle_action(action, unfreezing ? items.keep.concat(items.final) : items.keep), discard: items.discard, final: unfreezing ? [] : items.final };
             default:
                 // ? Maybe return nothing and display a message?
                 return items; // Invalid action type
@@ -1162,8 +1165,10 @@ var module = {};
         // Set some classes
         dialog.find('[name="filter_type"]').closest('.row').addClass('filter');
         dialog.find('[name="filter_invert"]').closest('.row').addClass('filter');
+        dialog.find('[name="filter_frozen"]').closest('.row').addClass('filter');
         dialog.find('[name="sort_type"]').closest('.row').addClass('sort');
         dialog.find('[name="shuffle_type"]').closest('.row').addClass('shuffle');
+        dialog.find('[name="shuffle_frozen"]').closest('.row').addClass('shuffle');
         // Add pasting inputs
         dialog
             .find("fieldset#".concat(script_id, "_presets"))
@@ -1382,7 +1387,8 @@ var module = {};
             filter: {
                 type: 'level',
                 values: {
-                    invert: false
+                    invert: false,
+                    apply_to_frozen: false
                 }
             },
             sort: {
@@ -1394,7 +1400,8 @@ var module = {};
             shuffle: {
                 type: 'random',
                 values: {
-                    relative: 10
+                    relative: 10,
+                    apply_to_frozen: false
                 }
             }
         }; // Casting because it is still incomplete
@@ -1475,6 +1482,13 @@ var module = {};
             hover_tip: 'Check this box if you want to invert the effect of this filter.',
             path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.values.invert'
         };
+        config.content.filter_frozen = {
+            type: 'checkbox',
+            "default": false,
+            label: 'Also apply to frozen items',
+            hover_tip: 'Check this box if you want to apply this filter to all items that have been frozen by Freeze & Restore actions.',
+            path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].filter.values.apply_to_frozen'
+        };
         // Populate sort values
         var numerical_sort_config = function (type) {
             return ({
@@ -1508,6 +1522,13 @@ var module = {};
             label: 'Shuffle Distance (%)',
             hover_tip: 'The distance you want any given item to be able to move relative to its start position. Percentage of total number of items.',
             path: "@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.values.relative"
+        };
+        config.content.shuffle_frozen = {
+            type: 'checkbox',
+            "default": false,
+            label: 'Also apply to frozen items',
+            hover_tip: 'Check this box if you want to also shuffle all items that have been frozen by Freeze & Restore actions.',
+            path: '@presets[@selected_preset].actions[@presets[@selected_preset].selected_action].shuffle.values.apply_to_frozen'
         };
     }
     // -----------------------------------------------------------------------------------------------------------------

@@ -138,12 +138,14 @@ export namespace Settings {
             values: {
                 [key: string]: any
                 invert: boolean
+                apply_to_frozen: boolean
             }
         }
         shuffle: {
             type: 'random' | 'relative'
             values: {
                 relative: number
+                apply_to_frozen: boolean
             }
         }
     }

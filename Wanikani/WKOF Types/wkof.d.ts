@@ -5,11 +5,13 @@ type SubjectTypeString =
     | `${SubjectType}`
     | `${SubjectType},${SubjectType}`
     | `${SubjectType},${SubjectType},${SubjectType}`
-type SubjectTypeShort = 'voc' | 'kan' | 'rad'
+    | `${SubjectType},${SubjectType},${SubjectType},${SubjectType}`
+type SubjectTypeShort = 'voc' | 'kan' | 'rad' | 'kana_voc'
 type SubjectTypeShortString =
     | `${SubjectTypeShort}`
     | `${SubjectTypeShort},${SubjectTypeShort}`
     | `${SubjectTypeShort},${SubjectTypeShort},${SubjectTypeShort}`
+    | `${SubjectTypeShort},${SubjectTypeShort},${SubjectTypeShort},${SubjectTypeShort}`
 type IsoDateString = `${number}-${number}-${number}T${number}:${number}:${number}.${number}Z`
 
 declare namespace Core {
@@ -412,11 +414,12 @@ declare namespace ItemData {
                             type: 'multi'
                             default: []
                             label: 'Item type'
-                            hover_tip: 'Filter by item type (radical, kanji, vocabulary)'
+                            hover_tip: 'Filter by item type (radical, kanji, vocabulary, kana_vocabulary)'
                             content: {
                                 radical: 'Radicals'
                                 kanji: 'Kanji'
                                 vocabulary: 'Vocabulary'
+                                kana_vocabulary: 'Kana Vocabulary'
                             }
                             filter_value_map: (filter_value: SubjectTypeShort[] | SubjectTypeShortString) => {
                                 [key: string]: boolean
