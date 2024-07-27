@@ -2,13 +2,13 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.53
+// @version      1.3.54
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js?version=1386034
-// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1340063
+// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js?version=1417568
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1386112
 // @grant        none
 // @run-at       document-idle
 // @license      MIT
@@ -553,10 +553,10 @@ var module = {};
     function add_to_extra_study_section() {
         var _a, _b;
         var type = (_b = (_a = document
-            .querySelector('.extra-study-button a:not([disabled])')) === null || _a === void 0 ? void 0 : _a.getAttribute('href')) === null || _b === void 0 ? void 0 : _b.split('=').at(-1);
+            .querySelector('.extra-study__button-container a:not(.wk-button--disabled)')) === null || _a === void 0 ? void 0 : _a.getAttribute('href')) === null || _b === void 0 ? void 0 : _b.split('=').at(-1);
         if (!type)
             return;
-        var button = $("\n            <div class=\" border border-blue-300 border-solid rounded flex flex-row \">\n                <a href=\"/subjects/extra_study?".concat(script_name, "&queue_type=").concat(type, "\" class=\"py-3 px-3 w-full border-0\"data-test=\"extra-study-button\">\n                    Self Study\n                </a>\n            </div>"));
+        var button = $("\n            <div class=\"extra-study__button-container\">\n                <div class=\"extra-study__button-info\">Self Study from a preset</div>\n                <a href=\"/subjects/extra_study?".concat(script_name, "&queue_type=").concat(type, "\" class=\"wk-button wk-button--default\">\n                    <span class=\"wk-button__text\">Self Study</span>\n                    <span class=\"wk-button__icon wk-button__icon--after\">\n                        ").concat(Icons.customIconTxt('chevron-right'), "\n                    </span>\n                </a>\n            </div>"));
         $('.extra-study .extra-study__buttons').append(button);
     }
     // Installs the dropdown for selecting the active preset

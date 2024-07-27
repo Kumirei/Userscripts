@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.53
+// @version      1.3.54
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js?version=1386034
-// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1340063
+// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js?version=1417568
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1386112
 // @grant        none
 // @run-at       document-idle
 // @license      MIT
@@ -21,6 +21,19 @@ export = null
 // Import types
 import { WKOF, ItemData, Menu, Settings as SettingsModule, SubjectType, Apiv2 } from '../WKOF Types/wkof'
 import { Review, Settings, SortOrder } from './reorder'
+
+declare class _Icons {
+    static readonly SCRIPT_VER: string;
+    static readonly VERSION_NUM: number;
+    static readonly scriptVersion: string;
+    static readonly iconsVersion: number;
+    static isNewerThan(otherVersion: string): boolean;
+    static customIconTxt(icon: string): string;
+    static customIcon(icon: string): SVGElement;
+    static addCustomIcons(icons: [string, string, (number | number[])?][]): void;
+    static setupSVGElements(): void;
+    static #setupCustomElements(): void;
+}
 
 interface WKQItem {
     id: number
@@ -89,11 +102,7 @@ declare global {
         WaniKani: any
         wkRefreshAudio: () => void
         wkQueue: WKQueue
-        Icons: {
-            addCustomIcons: (icons: (string | number)[][]) => void
-            customIcon: (icon: string) => HTMLElement
-            customIconTxt: (icon: string) => string
-        }
+        Icons: typeof _Icons
     }
 
     interface JStorageOptions {
@@ -646,15 +655,19 @@ declare global {
     // On the dashboard, adds a button to take you to the extra study page for the script
     function add_to_extra_study_section(): void {
         const type = document
-            .querySelector('.extra-study-button a:not([disabled])')
+            .querySelector('.extra-study__button-container a:not(.wk-button--disabled)')
             ?.getAttribute('href')
             ?.split('=')
             .at(-1)
         if (!type) return
         const button = $(`
-            <div class=" border border-blue-300 border-solid rounded flex flex-row ">
-                <a href="/subjects/extra_study?${script_name}&queue_type=${type}" class="py-3 px-3 w-full border-0"data-test="extra-study-button">
-                    Self Study
+            <div class="extra-study__button-container">
+                <div class="extra-study__button-info">Self Study from a preset</div>
+                <a href="/subjects/extra_study?${script_name}&queue_type=${type}" class="wk-button wk-button--default">
+                    <span class="wk-button__text">Self Study</span>
+                    <span class="wk-button__icon wk-button__icon--after">
+                        ${Icons.customIconTxt('chevron-right')}
+                    </span>
                 </a>
             </div>`)
         $('.extra-study .extra-study__buttons').append(button)
