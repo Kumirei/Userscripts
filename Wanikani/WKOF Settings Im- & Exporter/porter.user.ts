@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Wanikani: Settings Exporter & Importer
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3
+// @version      1.1.4
 // @description  Imports and exports your WKOF settings
 // @author       Kumirei
-// @include      /^https://(www|preview).wanikani.com/(dashboard)?/
+// @match        https://www.wanikani.com/*
+// @match        https://preview.wanikani.com/*
 // @grant        none
 // @license      MIT
 // ==/UserScript==
@@ -39,8 +40,17 @@ declare global {
 
     // Init
     confirm_wkof()
-    wkof.include('Menu,Settings,Jquery')
-    wkof.ready('Menu,Settings').then(install_menu).then(install_css)
+
+    window.addEventListener('turbo:load', () => {
+        setTimeout(init, 0)
+    })
+
+    async function init(): Promise<void> {
+        wkof.include('Menu,Settings,Jquery')
+        wkof.ready('Jquery,Menu,Settings').then(install_menu).then(install_css)
+    }
+
+    wkof.include('Jquery')
     await wkof.ready('Jquery')
 
     const porter = {
@@ -106,7 +116,7 @@ declare global {
                                 `<div class="row full">` +
                                 `   <div class="left"><label>Settings string</label></div>` +
                                 `   <div class="right">` +
-                                `       <textarea disabled id="exported_script_settings" placeholder="Your exported settings will appear here"/>` +
+                                `       <textarea disabled id="exported_script_settings" placeholder="Your exported settings will appear here"></textarea>` +
                                 `   </div>` +
                                 `</div>`,
                         },
@@ -114,8 +124,8 @@ declare global {
                             type: 'html',
                             html:
                                 `<div class="porter_buttons">` +
-                                `<button type="button" action="copy" class="ui-button ui-corner-all ui-widget" title="Copy the settings string to your clipboard">COPY</button>` +
-                                `<button type="button" action="save" class="ui-button ui-corner-all ui-widget" title="Save the settings to a file">SAVE</button>` +
+                                `    <button type="button" action="copy" class="ui-button ui-corner-all ui-widget" title="Copy the settings string to your clipboard">COPY</button>` +
+                                `    <button type="button" action="save" class="ui-button ui-corner-all ui-widget" title="Save the settings to a file">SAVE</button>` +
                                 `</div>`,
                         },
                     },
@@ -130,7 +140,7 @@ declare global {
                                 `<div class="row full">` +
                                 `   <div class="left"><label>Settings string</label></div>` +
                                 `   <div class="right">` +
-                                `       <textarea id="import_script_settings" placeholder="Paste your exported settings here or load settings from a file below"/>` +
+                                `       <textarea id="import_script_settings" placeholder="Paste your exported settings here or load settings from a file below"></textarea>` +
                                 `   </div>` +
                                 `</div>`,
                         },
