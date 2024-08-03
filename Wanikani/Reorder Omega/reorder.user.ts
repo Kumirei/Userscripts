@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.54
+// @version      1.3.55
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -155,12 +155,17 @@ declare global {
     loading_screen(true) // Hide session until script has loaded
 
     await confirm_wkof()
-    wkof.include('Settings,Menu,ItemData,Apiv2,Jquery') // Apiv2 purely for the user module
-    wkof.ready('ItemData.registry').then(install_filters)
 
-    await wkof.ready('Settings,Menu,Jquery').then(load_settings).then(install_menu)
+    async function load_wkof() {
+        wkof.include('Settings,Menu,ItemData,Apiv2,Jquery') // Apiv2 purely for the user module
+        wkof.ready('ItemData.registry').then(install_filters)
 
-    await wkof.ready('ItemData,Apiv2')
+        await wkof.ready('Settings,Menu,Jquery').then(load_settings).then(install_menu)
+
+        await wkof.ready('ItemData,Apiv2')
+    }
+
+    await load_wkof()
 
     // Install css
     install_css()
@@ -187,8 +192,9 @@ declare global {
 
         function install_initializer() {
             // Listen for page changes
-            window.addEventListener(`turbo:before-render`, (e: any) => {
+            window.addEventListener(`turbo:before-render`, async (e: any) => {
                 body = e.detail.newBody
+                await load_wkof()
                 init()
             })
         }
