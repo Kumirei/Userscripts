@@ -3,31 +3,31 @@
 /*--------------------------------------------------------------------------------------------
 */
 #heatmap {
-    background-color: var(--background-color);
     border-radius: 5px;
     padding: 10px 0;
-    color: var(--color);
-    --radical-color: #00aaff;
-    --kanji-color: #ff00aa;
-    --vocab-color: #9800e8;
-    --color: rgb(240, 240, 240);
-    --items-color: rgb(240, 240, 240);
-    --background-color: #232629;
+    color: var(--color-heatmap-text);
+    background-color: var(--color-heatmap-background);
 }
 
 #heatmap[theme='light'] {
-    --background-color: #d5d5d5;
-    --color: #333;
+    --color-heatmap-background: var(--color-wk-panel-background, #d5d5d5);
+    --color-heatmap-text: var(--color-text, #333);
+    --color-character-text: #f0f0f0;
 }
 
 #heatmap[theme='dark'] {
+    --color-heatmap-background: var(--color-wk-panel-background, #232629);
+    --color-heatmap-text: #f0f0f0;
+    --color-character-text: var(--color-text, #f0f0f0);
 }
 
 #heatmap[theme='breeze-dark'] {
     --radical-color: #53b5ee;
     --kanji-color: #fac445;
     --vocab-color: #43d473;
-    --items-color: black;
+    --color-heatmap-background: var(--color-wk-panel-background, #232629);
+    --color-heatmap-text: var(--color-text, #f0f0f0);
+    --color-character-text: var(--color-text-dark, #333);
 }
 
 /*--------------------------------------------------------------------------------------------
@@ -304,7 +304,7 @@
 }
 
 #heatmap #popper .items .characters {
-    color: var(--items-color) !important;
+    color: var(--color-character-text) !important;
 }
 
 #heatmap #popper .items .burn {
@@ -359,21 +359,21 @@
 
 #heatmap #popper .items .radical,
 #heatmap #popper .items .radical .hover-wrapper .characters {
-    background-color: var(--radical-color);
+    background-color: var(--radical-color, --color-radical, #00aaff);
     order: 0;
     z-index: 100;
 }
 
 #heatmap #popper .items .kanji,
 #heatmap #popper .items .kanji .hover-wrapper .characters {
-    background-color: var(--kanji-color);
+    background-color: var(--kanji-color, --color-kanji, #ff00aa);
     order: 1;
     z-index: 200;
 }
 
 #heatmap #popper .items .vocabulary,
 #heatmap #popper .items .vocabulary .hover-wrapper .characters {
-    background-color: var(--vocab-color);
+    background-color: var(--vocab-color, --color-vocabulary, #aa00ff);
     order: 2;
     z-index: 300;
 }
