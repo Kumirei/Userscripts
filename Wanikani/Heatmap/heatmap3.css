@@ -3,37 +3,38 @@
 /*--------------------------------------------------------------------------------------------
 */
 #heatmap {
-    background-color: var(--background-color);
     border-radius: 5px;
     padding: 10px 0;
-    color: var(--color);
-    --radical-color: #00aaff;
-    --kanji-color: #ff00aa;
-    --vocab-color: #9800e8;
-    --color: rgb(240, 240, 240);
-    --items-color: rgb(240, 240, 240);
-    --background-color: #232629;
+    color: var(--color-heatmap-text);
+    background-color: var(--color-heatmap-background);
 }
 
 #heatmap[theme='light'] {
-    --background-color: #d5d5d5;
-    --color: #333;
+    --color-heatmap-background: var(--color-wk-panel-background, #d5d5d5);
+    --color-heatmap-text: var(--color-text, #333);
+    --color-heatmap-character-text: var(--color-character-text, #f0f0f0);
 }
 
 #heatmap[theme='dark'] {
+    --color-heatmap-background: var(--color-wk-panel-background, #232629);
+    --color-heatmap-text: var(--color-text, #f0f0f0);
+    --color-heatmap-character-text: var(--color-character-text, #f0f0f0);
 }
 
 #heatmap[theme='breeze-dark'] {
-    --radical-color: #53b5ee;
-    --kanji-color: #fac445;
-    --vocab-color: #43d473;
-    --items-color: black;
+    --color-heatmap-background: var(--color-wk-panel-background, #232629);
+    --color-heatmap-text: var(--color-text, #f0f0f0);
+    --color-heatmap-character-text: var(--color-text-dark, #333);
 }
 
 /*--------------------------------------------------------------------------------------------
 /*	Basics
 /*--------------------------------------------------------------------------------------------
 */
+
+#heatmap a {
+    text-decoration: none;
+}
 
 #heatmap .title {
     text-align: center;
@@ -82,6 +83,7 @@
     text-align: center;
     line-height: 30px;
     padding: 0;
+    cursor: pointer;
 }
 
 #heatmap .buttons .button svg {
@@ -104,7 +106,7 @@
 */
 
 #heatmap #popper {
-    background-color: rgba(0, 0, 0, 0.9);
+    background-color: #222e;
     width: fit-content;
     border-radius: 5px;
     display: none;
@@ -147,6 +149,7 @@
     border: 0;
     background-color: transparent;
     color: currentColor;
+    cursor: pointer;
 }
 
 #heatmap #popper .header .score {
@@ -297,14 +300,14 @@
 
 #heatmap #popper .item {
     display: inline-block;
-    padding: 0 4px;
+    padding: 2px 4px;
     margin: 1.5px;
     border-radius: 3px;
     position: relative;
 }
 
 #heatmap #popper .items .characters {
-    color: var(--items-color) !important;
+    color: var(--color-heatmap-character-text) !important;
 }
 
 #heatmap #popper .items .burn {
@@ -359,21 +362,21 @@
 
 #heatmap #popper .items .radical,
 #heatmap #popper .items .radical .hover-wrapper .characters {
-    background-color: var(--radical-color);
+    background-color: var(--radical-color, var(--color-radical, #00aaff));
     order: 0;
     z-index: 100;
 }
 
 #heatmap #popper .items .kanji,
 #heatmap #popper .items .kanji .hover-wrapper .characters {
-    background-color: var(--kanji-color);
+    background-color: var(--kanji-color, var(--color-kanji, #ff00aa));
     order: 1;
     z-index: 200;
 }
 
 #heatmap #popper .items .vocabulary,
 #heatmap #popper .items .vocabulary .hover-wrapper .characters {
-    background-color: var(--vocab-color);
+    background-color: var(--vocab-color, var(--color-vocabulary, #aa00ff));
     order: 2;
     z-index: 300;
 }
