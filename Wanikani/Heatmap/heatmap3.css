@@ -32,6 +32,10 @@
 /*--------------------------------------------------------------------------------------------
 */
 
+#heatmap a {
+    text-decoration: none;
+}
+
 #heatmap .title {
     text-align: center;
     font-size: 18px;
