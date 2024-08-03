@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.54
+// @version      1.3.55
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
@@ -66,6 +66,24 @@ var module = {};
 // Actual script
 ;
 (function () { return __awaiter(void 0, void 0, void 0, function () {
+    function load_wkof() {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        wkof.include('Settings,Menu,ItemData,Apiv2,Jquery'); // Apiv2 purely for the user module
+                        wkof.ready('ItemData.registry').then(install_filters);
+                        return [4 /*yield*/, wkof.ready('Settings,Menu,Jquery').then(load_settings).then(install_menu)];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, wkof.ready('ItemData,Apiv2')];
+                    case 2:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
     function init_once() {
         install_initializer();
         install_queue_manipulation();
@@ -75,11 +93,21 @@ var module = {};
         install_burn_bell();
         install_streak_tracker();
         function install_initializer() {
+            var _this = this;
             // Listen for page changes
-            window.addEventListener("turbo:before-render", function (e) {
-                body = e.detail.newBody;
-                init();
-            });
+            window.addEventListener("turbo:before-render", function (e) { return __awaiter(_this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            body = e.detail.newBody;
+                            return [4 /*yield*/, load_wkof()];
+                        case 1:
+                            _a.sent();
+                            init();
+                            return [2 /*return*/];
+                    }
+                });
+            }); });
         }
         function install_queue_manipulation() {
             // Set up queue manipulation
@@ -1775,15 +1803,10 @@ var module = {};
                 return [4 /*yield*/, confirm_wkof()];
             case 1:
                 _a.sent();
-                wkof.include('Settings,Menu,ItemData,Apiv2,Jquery'); // Apiv2 purely for the user module
-                wkof.ready('ItemData.registry').then(install_filters);
-                return [4 /*yield*/, wkof.ready('Settings,Menu,Jquery').then(load_settings).then(install_menu)];
-            case 2:
-                _a.sent();
-                return [4 /*yield*/, wkof.ready('ItemData,Apiv2')
+                return [4 /*yield*/, load_wkof()
                     // Install css
                 ];
-            case 3:
+            case 2:
                 _a.sent();
                 // Install css
                 install_css();
