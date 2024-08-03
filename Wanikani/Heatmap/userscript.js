@@ -14,7 +14,7 @@
 // ==/UserScript==
 
 ;(function (wkof, review_cache, Heatmap, Icons) {
-    const CSS_COMMIT = 'ed6c00a3a3f27af0c0b0398440d2f0a3f9f54ff1'
+    const CSS_COMMIT = 'b8e4dd0c11d74ff144554076a35c8d5a5f0ed55a'
     let script_id = 'heatmap3'
     let script_name = 'Wanikani Heatmap'
     let msh = 60 * 60 * 1000,
