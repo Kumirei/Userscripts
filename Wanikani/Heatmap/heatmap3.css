@@ -358,21 +358,21 @@
 
 #heatmap #popper .items .radical,
 #heatmap #popper .items .radical .hover-wrapper .characters {
-    background-color: var(--radical-color, --color-radical, #00aaff);
+    background-color: var(--radical-color, var(--color-radical, #00aaff));
     order: 0;
     z-index: 100;
 }
 
 #heatmap #popper .items .kanji,
 #heatmap #popper .items .kanji .hover-wrapper .characters {
-    background-color: var(--kanji-color, --color-kanji, #ff00aa);
+    background-color: var(--kanji-color, var(--color-kanji, #ff00aa));
     order: 1;
     z-index: 200;
 }
 
 #heatmap #popper .items .vocabulary,
 #heatmap #popper .items .vocabulary .hover-wrapper .characters {
-    background-color: var(--vocab-color, --color-vocabulary, #aa00ff);
+    background-color: var(--vocab-color, var(--color-vocabulary, #aa00ff));
     order: 2;
     z-index: 300;
 }
