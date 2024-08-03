@@ -1,31 +1,35 @@
 // ==UserScript==
 // @name         Wanikani: Woah Burns
 // @namespace    http://tampermonkey.net/
-// @version      1.0.6
+// @version      1.0.7
 // @description  Adds a Kanna Woah emote to your burns count
 // @author       Kumirei
-// @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
-// @require      https://greasyfork.org/scripts/432418-wait-for-selector/code/Wait%20For%20Selector.js?version=974318
+// @match        https://www.wanikani.com/*
+// @match        https://preview.wanikani.com/*
 // @grant        none
 // ==/UserScript==
 
-(function($, wfs) {
+(function() {
     // Does the thing!
-    wfs.wait('#burned span', function(e) {
-        console.log('WOAH');
-        $('#burned').append('<img src="https://cdn.discordapp.com/emojis/295269590219489290.png?v=1" class="WoahBurns">');
-        $('head').append('<style id="WoahBurnsCSS">'+
-                         '    .WoahBurns {'+
-                         '        display: block;'+
-                         '        height: 40px;'+
-                         '        position: absolute;'+
-                         '        bottom: 0;'+
-                         '        right: 0;'+
-                         '        margin-right: 10px;'+
-                         '    }'+
-                         '    .srs-progress #burned {'+
-                         '        position: relative;'+
-                         '    }'+
-                         '</style>');
+    document.head.insertAdjacentHTML('beforeend','<style id="WoahBurnsCSS">'+
+         '    div.WoahBurns {'+
+         '        flex: 1 0 auto;'+
+         '    }'+
+         '    .WoahBurns img {'+
+         '        display: block;'+
+         '        height: 40px;'+
+         '        position: relative;'+
+         '        margin-top: calc(var(--spacing-tight) * -1);'+
+         '        margin-bottom: calc(var(--spacing-xtight) * -1);'+
+         '    }'+
+         '</style>');
+    document.documentElement.addEventListener("turbo:load", () => {
+        setTimeout(() => {
+            const burnedSrsProgress = document.querySelector('li.srs-progress__stage--burned .srs-progress__stage-title');
+            if (burnedSrsProgress) {
+                console.log('WOAH');
+                burnedSrsProgress.insertAdjacentHTML('afterend','<div class="WoahBurns"><img src="https://cdn.discordapp.com/emojis/295269590219489290.png?v=1"></div>');
+            }
+        }, 0);
     });
-})(window.jQuery, window.wfs);
+})();
