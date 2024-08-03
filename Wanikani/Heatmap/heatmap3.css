@@ -12,13 +12,13 @@
 #heatmap[theme='light'] {
     --color-heatmap-background: var(--color-wk-panel-background, #d5d5d5);
     --color-heatmap-text: var(--color-text, #333);
-    --color-character-text: #f0f0f0;
+    --color-character-text: var(--color-character-text, #f0f0f0);
 }
 
 #heatmap[theme='dark'] {
     --color-heatmap-background: var(--color-wk-panel-background, #232629);
     --color-heatmap-text: #f0f0f0;
-    --color-character-text: var(--color-text, #f0f0f0);
+    --color-character-text: var(--color-character-text, #f0f0f0);
 }
 
 #heatmap[theme='breeze-dark'] {
