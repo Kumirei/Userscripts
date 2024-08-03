@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.1.7
+// @version      3.1.8
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -14,7 +14,7 @@
 // ==/UserScript==
 
 ;(function (wkof, review_cache, Heatmap, Icons) {
-    const CSS_COMMIT = '5fc34b93ff3f34e637fc9bf0cc73fcb6fbf122b9'
+    const CSS_COMMIT = 'ed6c00a3a3f27af0c0b0398440d2f0a3f9f54ff1'
     let script_id = 'heatmap3'
     let script_name = 'Wanikani Heatmap'
     let msh = 60 * 60 * 1000,
@@ -33,16 +33,23 @@
     ])
 
     /*-------------------------------------------------------------------------------------------------------------------------------*/
-
+    
+    var reload // Function to reload the heatmap
     // Temporary measure to track reviews while the /reviews endpoint is unavailable
-    if (/www.wanikani.com\/(dashboard)?#?$/.test(window.location.href)) {
-        let reload // Function to reload the heatmap
+    function main() {
+        if (/www.wanikani.com\/(dashboard)?#?$/.test(window.location.href)) {
+            // Wait until modules are ready then initiate script
+            confirm_wkof()
+            wkof.include('Menu,Settings,ItemData,Apiv2')
+            wkof.ready('Menu,Settings,ItemData,Apiv2').then(load_settings).then(load_css).then(install_menu).then(initiate)
 
-        // Wait until modules are ready then initiate script
-        confirm_wkof()
-        wkof.include('Menu,Settings,ItemData,Apiv2')
-        wkof.ready('Menu,Settings,ItemData,Apiv2').then(load_settings).then(load_css).then(install_menu).then(initiate)
+            window.addEventListener("turbo:load", async e => {
+                setTimeout(main, 0);
+            })
+        }
     }
+
+    main()
 
     // Fetch necessary data then install the heatmap
     async function initiate() {
@@ -755,9 +762,10 @@
     function get_forecast_and_lessons(data) {
         let forecast = [],
             lessons = []
-        let vacation_offset = Date.now() - new Date(wkof.user.current_vacation_started_at || Date.now())
+        let time_now = Date.now()
+        let vacation_offset = time_now - new Date(wkof.user.current_vacation_started_at || time_now)
         for (let item of data) {
-            if (item.assignments && item.assignments.started_at !== null) {
+            if (item.assignments?.started_at && item.assignments.unlocked_at) {
                 // If the assignment has been started add a lesson containing staring date, id, level, and unlock date
                 lessons.push([
                     Date.parse(item.assignments.started_at),
@@ -766,7 +774,7 @@
                     Date.parse(item.assignments.unlocked_at),
                 ])
                 // If item is in the future and it is not hidden by Wanikani, add the item to the forecast array
-                if (Date.parse(item.assignments.available_at) > Date.now() && item.data.hidden_at === null) {
+                if (item.assignments.available_at && Date.parse(item.assignments.available_at) > time_now && item.data.hidden_at === null) {
                     // If the assignment is scheduled add a forecast item ready for sending to the heatmap module
                     let forecast_item = [
                         Date.parse(item.assignments.available_at) + vacation_offset,
@@ -1070,11 +1078,11 @@
         heatmap.innerHTML = ''
         heatmap.append(buttons, views)
         let position = [
-            ['.progress-and-forecast', 'beforebegin'],
-            ['.progress-and-forecast', 'afterend'],
+            ['.dashboard__content', 'beforebegin'],
+            ['.dashboard__srs-progress', 'beforebegin'],
             ['.srs-progress', 'afterend'],
-            ['.span12 .row:not(#leaderboard)', 'afterend'],
-            ['.span12 .row:last-of-type', 'afterend'],
+            ['.dashboard__item-lists', 'afterend'],
+            ['.dashboard__content', 'afterend'],
         ][settings.general.position]
         if (!document.getElementById('heatmap') || heatmap.getAttribute('position') != settings.general.position)
             document.querySelector(position[0]).insertAdjacentElement(position[1], heatmap)
