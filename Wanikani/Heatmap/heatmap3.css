@@ -12,19 +12,19 @@
 #heatmap[theme='light'] {
     --color-heatmap-background: var(--color-wk-panel-background, #d5d5d5);
     --color-heatmap-text: var(--color-text, #333);
-    --color-character-text: var(--color-character-text, #f0f0f0);
+    --color-heatmap-character-text: var(--color-character-text, #f0f0f0);
 }
 
 #heatmap[theme='dark'] {
     --color-heatmap-background: var(--color-wk-panel-background, #232629);
     --color-heatmap-text: #f0f0f0;
-    --color-character-text: var(--color-character-text, #f0f0f0);
+    --color-heatmap-character-text: var(--color-character-text, #f0f0f0);
 }
 
 #heatmap[theme='breeze-dark'] {
     --color-heatmap-background: var(--color-wk-panel-background, #232629);
     --color-heatmap-text: var(--color-text, #f0f0f0);
-    --color-character-text: var(--color-text-dark, #333);
+    --color-heatmap-character-text: var(--color-text-dark, #333);
 }
 
 /*--------------------------------------------------------------------------------------------
@@ -307,7 +307,7 @@
 }
 
 #heatmap #popper .items .characters {
-    color: var(--color-character-text) !important;
+    color: var(--color-heatmap-character-text) !important;
 }
 
 #heatmap #popper .items .burn {
