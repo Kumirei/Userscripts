@@ -7,6 +7,9 @@
     padding: 10px 0;
     color: var(--color-heatmap-text);
     background-color: var(--color-heatmap-background);
+    grid-column: 1 / span 6;
+    margin-block: var(--spacing-xloose);
+    width: 100%;
 }
 
 #heatmap[theme='light'] {
@@ -687,4 +690,17 @@
 .ui-datepicker * {
     box-shadow: none;
     text-align: center !important;
+}
+
+#heatmap[position='1'] {
+    margin-top: 0;
+}
+
+#heatmap[position='2'] {
+    margin-top: var(--spacing-xloose);
+    margin-bottom: 0;
+}
+
+#heatmap[position='3'] {
+    margin-block: 0;
 }
