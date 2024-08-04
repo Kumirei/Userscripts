@@ -150,7 +150,7 @@
         }
         return wkof.Settings.load(script_id, defaults).then((settings) => {
             // Workaround for defaults modifying existing settings
-            if (!settings.reviews.colors)
+            if (!settings.reviews.colors?.length)
                 settings.reviews.colors = [
                     [0, '#747474'],
                     [1, '#ade4ff'],
@@ -159,7 +159,7 @@
                     [300, '#2b86b3'],
                     [400, '#006699'],
                 ]
-            if (!settings.lessons.colors)
+            if (!settings.lessons.colors?.length)
                 settings.lessons.colors = [
                     [0, '#747474'],
                     [1, '#ff8aa1'],
@@ -168,7 +168,7 @@
                     [300, '#ad3797'],
                     [400, '#911b93'],
                 ]
-            if (!settings.forecast.colors)
+            if (!settings.forecast.colors?.length)
                 settings.forecast.colors = [
                     [0, '#747474'],
                     [1, '#aaaaaa'],
@@ -248,7 +248,7 @@
                 // Update the settings object with data from the settings dialog
                 let update_color_settings = (_) => {
                     wkof.settings[script_id][type].colors = []
-                    elem.nextElementSibling.children[1].children.forEach((child, i) => {
+                    Array.from(elem.nextElementSibling.children[1].children).forEach((child, i) => {
                         wkof.settings[script_id][type].colors.push([
                             child.children[0].children[0].value,
                             child.children[1].children[0].value,
@@ -256,8 +256,8 @@
                     })
                 }
                 // Creates a new interval setting
-                let create_row = (value, color) =>
-                    create_elem({
+                let create_row = (value, color) => {
+                    return create_elem({
                         type: 'div',
                         class: 'row',
                         children: [
@@ -291,6 +291,7 @@
                             }),
                         ],
                     })
+                }
                 // Creates the interface for color settings
                 let panel = create_elem({
                     type: 'div',
@@ -1447,7 +1448,6 @@
             }),
         )
         header.querySelector('#clear_reviews').addEventListener('click', async () => {
-            console.log('CLICK', header)
             let [start, end] = header
                 .querySelector('.date')
                 .textContent.split('-')
@@ -1561,8 +1561,10 @@
             1,
             ...Array((length < 2 ? 2 : length) - 2)
                 .fill(null)
-                .map((_, i) =>
-                    Math.round(ifcdf(((gradient ? 0.9 : 1) * (i + 1)) / (length - (gradient ? 1 : 0)), mean, sd)),
+                .map(
+                    (_, i) =>
+                        Math.round(ifcdf(((gradient ? 0.9 : 1) * (i + 1)) / (length - (gradient ? 1 : 0)), mean, sd)) ||
+                        1,
                 ),
         ]
         let reviews = range(
