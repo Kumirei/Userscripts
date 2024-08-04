@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.1.8
+// @version      3.1.9
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -14,7 +14,7 @@
 // ==/UserScript==
 
 ;(function (wkof, review_cache, Heatmap, Icons) {
-    const CSS_COMMIT = 'b860a22fd0fc1cd2e463f66e9c157e029ca95b83'
+    const CSS_COMMIT = '8b1314d643f0f96602db385967d923772a2767bd'
     let script_id = 'heatmap3'
     let script_name = 'Wanikani Heatmap'
     let msh = 60 * 60 * 1000,
@@ -33,7 +33,7 @@
     ])
 
     /*-------------------------------------------------------------------------------------------------------------------------------*/
-    
+
     var reload // Function to reload the heatmap
     // Temporary measure to track reviews while the /reviews endpoint is unavailable
     function main() {
@@ -41,10 +41,14 @@
             // Wait until modules are ready then initiate script
             confirm_wkof()
             wkof.include('Menu,Settings,ItemData,Apiv2')
-            wkof.ready('Menu,Settings,ItemData,Apiv2').then(load_settings).then(load_css).then(install_menu).then(initiate)
+            wkof.ready('Menu,Settings,ItemData,Apiv2')
+                .then(load_settings)
+                .then(load_css)
+                .then(install_menu)
+                .then(initiate)
 
-            window.addEventListener("turbo:load", async e => {
-                setTimeout(main, 0);
+            window.addEventListener('turbo:load', async (e) => {
+                setTimeout(main, 0)
             })
         }
     }
@@ -774,7 +778,11 @@
                     Date.parse(item.assignments.unlocked_at),
                 ])
                 // If item is in the future and it is not hidden by Wanikani, add the item to the forecast array
-                if (item.assignments.available_at && Date.parse(item.assignments.available_at) > time_now && item.data.hidden_at === null) {
+                if (
+                    item.assignments.available_at &&
+                    Date.parse(item.assignments.available_at) > time_now &&
+                    item.data.hidden_at === null
+                ) {
                     // If the assignment is scheduled add a forecast item ready for sending to the heatmap module
                     let forecast_item = [
                         Date.parse(item.assignments.available_at) + vacation_offset,
@@ -1079,9 +1087,9 @@
         heatmap.append(buttons, views)
         let position = [
             ['.dashboard__content', 'beforebegin'],
-            ['.dashboard__srs-progress', 'beforebegin'],
+            ['.dashboard__srs-progress', 'afterbegin'],
             ['.srs-progress', 'afterend'],
-            ['.dashboard__item-lists', 'afterend'],
+            ['.dashboard__item-lists', 'beforeend'],
             ['.dashboard__content', 'afterend'],
         ][settings.general.position]
         if (!document.getElementById('heatmap') || heatmap.getAttribute('position') != settings.general.position)
@@ -1203,18 +1211,19 @@
                     } on ${
                         new Date(time).toDateString().replace(/... /, '') + ' ' + kanji_day(new Date(time).getDay())
                     }`
-                    if (time >= new Date(settings.general.start_day).getTime() && time > first_date)
+                    if (time >= new Date(settings.general.start_day).getTime() && time > first_date) {
                         string += `\nDay ${(
                             Math.round(
                                 (time -
                                     Date.parse(
                                         new Date(
-                                            Math.max(data[0][0], new Date(settings.general.start_day).getTime()),
+                                            Math.max(data[0]?.[0] || 0, new Date(settings.general.start_day).getTime()),
                                         ).toDateString(),
                                     )) /
                                     msd,
                             ) + 1
                         ).toLocaleString()}`
+                    }
                     if (
                         time < Date.now() &&
                         time >= new Date(settings.general.start_day).getTime() &&
