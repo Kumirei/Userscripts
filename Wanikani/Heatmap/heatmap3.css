@@ -19,8 +19,11 @@
 }
 
 #heatmap[theme='dark'] {
-    --color-heatmap-background: var(--color-wk-panel-background, #232629);
-    --color-heatmap-text: var(--color-text, #f0f0f0);
+    --color-wk-panel-background: #232629;
+    --color-text: #f0f0f0;
+    --color-character-text: #f0f0f0;
+    --color-heatmap-background: var(--color-wk-panel-background);
+    --color-heatmap-text: var(--color-text);
     --color-heatmap-character-text: var(--color-character-text, #f0f0f0);
 }
 
