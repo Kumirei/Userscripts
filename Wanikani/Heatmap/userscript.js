@@ -1,20 +1,20 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.1.10
+// @version      3.1.11
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
-// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js?version=1350892
+// @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js?version=1417568
 // @require      https://greasyfork.org/scripts/410909-wanikani-review-cache/code/Wanikani:%20Review%20Cache.js?version=1193344
 // @require      https://greasyfork.org/scripts/410910-heatmap/code/Heatmap.js?version=1251299
 // @grant        none
 // ==/UserScript==
 
 ;(function (wkof, review_cache, Heatmap, Icons) {
-    const CSS_COMMIT = '8b1314d643f0f96602db385967d923772a2767bd'
+    const CSS_COMMIT = '61a780cee6f08eb3a4f8f37068c1e6ce29762e96'
     let script_id = 'heatmap3'
     let script_name = 'Wanikani Heatmap'
     let msh = 60 * 60 * 1000,
