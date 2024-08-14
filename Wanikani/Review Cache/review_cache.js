@@ -17,9 +17,6 @@
     // Update interval for subscriptions
     const update_interval = 10 // minutes
 
-    // Hide popup_delay messages in the console
-    const silent = true
-
     // Reveal functions to window
     if (!window.review_cache?.version || window.review_cache.version < version) {
         const _subscribers = window.review_cache?._subscribers ? window.review_cache?._subscribers : new Set()
@@ -32,6 +29,7 @@
             subscribe,
             unsubscribe,
             insert,
+            silent: true, // Hide popup_delay messages in the console
             version: version,
             _subscribers,
             _fetching,
@@ -163,12 +161,12 @@
 
     // Fetches any new reviews from the API
     async function fetch_new_reviews(last_fetch, disable_popup = false) {
-        if (disable_popup) wkof.Progress.popup_delay(-1, silent)
+        if (disable_popup) wkof.Progress.popup_delay(-1, window.review_cache.silent === true)
         let updated_reviews = await wkof.Apiv2.fetch_endpoint('reviews', {
             filters: { updated_after: last_fetch },
             disable_progress_dialog: true,
         }).catch(fetch_error)
-        if (disable_popup) wkof.Progress.popup_delay('default', silent)
+        if (disable_popup) wkof.Progress.popup_delay('default', window.review_cache.silent === true)
         if (updated_reviews.error) return [null, []] // no new reviews
         let new_reviews = updated_reviews.data.filter((item) => last_fetch < item.data.created_at)
         new_reviews = new_reviews.map((item) => [
