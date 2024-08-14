@@ -133,7 +133,7 @@
     }
 
     // Compress and decompress the dates for better use of storage space.
-    // Dates are stored as time elapesed between items, but are returned as absolute dates
+    // Dates are stored as time elapsed between items, but are returned as absolute dates
     function compress(data) {
         return press(true, data)
     }
