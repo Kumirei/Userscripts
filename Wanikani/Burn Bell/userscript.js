@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani: Burn Bell
 // @namespace    http://tampermonkey.net/
-// @version      1.1.3
+// @version      1.1.4
 // @description  Plays a bell sound when you burn an item
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
