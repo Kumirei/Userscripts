@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wanikani: Review Cache
-// @version      1.2.8
+// @version      1.2.9
 // @description  Manages a cache of all the user's reviews
 // @author       Kumirei
 // @include      *wanikani.com*
@@ -12,7 +12,7 @@
     const cache_version = 1
 
     // Script version. Starts with q to make it larger than numerical versions
-    const version = 'q1.2.8'
+    const version = 'q1.2.9'
 
     // Update interval for subscriptions
     const update_interval = 10 // minutes
@@ -29,6 +29,7 @@
             subscribe,
             unsubscribe,
             insert,
+            silent: true, // Hide popup_delay messages in the console
             version: version,
             _subscribers,
             _fetching,
@@ -130,7 +131,7 @@
     }
 
     // Compress and decompress the dates for better use of storage space.
-    // Dates are stored as time elapesed between items, but are returned as absolute dates
+    // Dates are stored as time elapsed between items, but are returned as absolute dates
     function compress(data) {
         return press(true, data)
     }
@@ -160,12 +161,12 @@
 
     // Fetches any new reviews from the API
     async function fetch_new_reviews(last_fetch, disable_popup = false) {
-        if (disable_popup) wkof.Progress.popup_delay(-1)
+        if (disable_popup) wkof.Progress.popup_delay(-1, window.review_cache.silent === true)
         let updated_reviews = await wkof.Apiv2.fetch_endpoint('reviews', {
             filters: { updated_after: last_fetch },
             disable_progress_dialog: true,
         }).catch(fetch_error)
-        if (disable_popup) wkof.Progress.popup_delay('default')
+        if (disable_popup) wkof.Progress.popup_delay('default', window.review_cache.silent === true)
         if (updated_reviews.error) return [null, []] // no new reviews
         let new_reviews = updated_reviews.data.filter((item) => last_fetch < item.data.created_at)
         new_reviews = new_reviews.map((item) => [
