@@ -111,7 +111,7 @@
             window.addEventListener('didFinalAnswer', () => {
                 window.removeEventListener('didChangeSRS', onDidChangeSRS, listenerOptions)
                 setTimeout(addSRSListener, 0)
-            })
+            }, listenerOptions)
         }
     }
 })(window.jQuery, window.wkof)
