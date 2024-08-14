@@ -23,7 +23,7 @@
     // Initiate WKOF
     await confirm_wkof()
     wkof.include('Menu,Settings')
-    wkof.ready('Settings,Menu').then(load_settings).then(install_menu).then(setBellSources).then(updateBellSound)
+    wkof.ready('Settings,Menu').then(load_settings).then(install_menu).then(setBellSources).then(updateBellSound).then(setListeners)
 
     // Makes sure that WKOF is installed
     async function confirm_wkof() {
@@ -80,8 +80,6 @@
         }
         new wkof.Settings(config).open()
     }
-
-    setListeners()
 
     function addSRSListener() {
         window.addEventListener('didChangeSRS', onDidChangeSRS, listenerOptions)
