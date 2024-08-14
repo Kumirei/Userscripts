@@ -12,7 +12,7 @@
     const cache_version = 1
 
     // Script version. Starts with q to make it larger than numerical versions
-    const version = 'q1.2.8'
+    const version = 'q1.2.9'
 
     // Update interval for subscriptions
     const update_interval = 10 // minutes
