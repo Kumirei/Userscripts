@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Wanikani: Reorder Omega
 // @namespace    http://tampermonkey.net/
-// @version      1.3.55
+// @version      1.3.57
 // @description  Reorders n stuff
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
 // @require      https://greasyfork.org/scripts/489759-wk-custom-icons/code/CustomIcons.js?version=1417568
-// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1386112
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1426722
 // @grant        none
 // @run-at       document-idle
 // @license      MIT
@@ -15,7 +15,7 @@
 
 // These lines are necessary to make sure that TSC does not put any exports in the
 // compiled js, which causes the script to crash
-const module = {}
+var module = {}
 export = null
 
 // Import types
@@ -154,7 +154,7 @@ declare global {
     // Initiate WKOF
     loading_screen(true) // Hide session until script has loaded
 
-    await confirm_wkof()
+    confirm_wkof()
 
     async function load_wkof() {
         wkof.include('Settings,Menu,ItemData,Apiv2,Jquery') // Apiv2 purely for the user module
@@ -192,10 +192,9 @@ declare global {
 
         function install_initializer() {
             // Listen for page changes
-            window.addEventListener(`turbo:before-render`, async (e: any) => {
-                body = e.detail.newBody
-                await load_wkof()
-                init()
+            window.addEventListener(`turbo:load`, async () => {
+                // timeout of 0 used to delay execution to next tick of event loop to allow turbo events time to settle
+                setTimeout(async () => { await load_wkof(); init(); }, 0);
             })
         }
 
@@ -332,10 +331,10 @@ declare global {
         const self_study_url = window.location.search.startsWith(`?${encodeURIComponent(script_name)}`)
 
         if (/^\/(DASHBOARD)?$/i.test(path)) page = 'dashboard'
-        else if (/REVIEW(\/session)?/i.test(path)) page = 'reviews'
-        else if (/LESSON(\/session)?/i.test(path)) page = 'lessons'
-        else if (/RECENT-MISTAKES\/-?\d+\/quiz/i.test(path)) page = 'extra_study'
-        else if (/EXTRA_STUDY(\/session)?/i.test(path)) page = self_study_url ? 'self_study' : 'extra_study'
+        else if (/SUBJECTS\/REVIEW/i.test(path)) page = 'reviews'
+        else if (/SUBJECT-LESSONS/i.test(path)) page = 'lessons'
+        else if (/RECENT-MISTAKES\/.*quiz/i.test(path)) page = 'extra_study'
+        else if (/EXTRA_STUDY/i.test(path)) page = self_study_url ? 'self_study' : 'extra_study'
         else page = 'other'
 
         if (page === 'self_study') {
@@ -847,6 +846,8 @@ declare global {
 
     // Installs the CSS
     function install_css() {
+        if (document.getElementById(script_id)) return
+
         const css = `
             body.reorder_omega_loading > #loading { display: block !important; opacity: 1 !important  }
 
@@ -995,7 +996,7 @@ declare global {
     // -----------------------------------------------------------------------------------------------------------------
 
     // Makes sure that WKOF is installed
-    async function confirm_wkof(): Promise<void> {
+    function confirm_wkof() {
         if (!wkof) {
             let response = confirm(
                 `${script_name} requires WaniKani Open Framework.\nClick "OK" to be forwarded to installation instructions.`,

@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Wanikani: Back to back
 // @namespace    http://tampermonkey.net/
-// @version      1.3.18
+// @version      1.3.19
 // @description  Makes reading and meaning appear back to back in reviews and lessons
 // @author       Kumirei
 // @match        https://www.wanikani.com/*
 // @match        https://preview.wanikani.com/*
 // @exclude      https://www.wanikani.com/subject-lessons/*
-// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1340063
+// @require      https://greasyfork.org/scripts/462049-wanikani-queue-manipulator/code/WaniKani%20Queue%20Manipulator.user.js?version=1426722
 // @license      MIT
 // @grant        none
 // ==/UserScript==

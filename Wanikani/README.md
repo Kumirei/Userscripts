@@ -1,4 +1,4 @@
 Minor features
 
-### Build Note
-`cd` into the Reorder Omega directory first if not already there and run `npx tsc reorder.user.ts` to generate/overwrite the `user.js` file. This will ignore the `tsconfig.json` in the project root; the root config has `noEmit: true` so if you try to use it then you will get no output. As a result, the `user.js` is actually being compiled to es5, not es2015/es6.
+### Typescript Build Note
+`cd` into the directory of the script you are going to compile first if not already there and run `npx tsc -t es6 -m commonjs <name>.user.ts` to generate/overwrite the `user.js` file (replacing `<name>` with the part of the file name for the script). This will ignore the `tsconfig.json` in the project root; the root config has `noEmit: true` so if you try to use it then you will get no output. When doing this, the default settings of `tsc` are used, namely that the target is `es3`. To specifically get `es6` we specificy that with the option `-t es6` and to avoid it defaulting to esModules we also tell it to use CommonJS modules. So, using Reorder Omega as an example, we would type `npx tsc -t es6 -m commonjs reorder.user.js` in the Reorder Omega directory.
