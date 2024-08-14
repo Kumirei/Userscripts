@@ -82,7 +82,7 @@
 
     window.addEventListener('didChangeSRS', (e) => {
         const srs = e.detail.newLevelText
-        if (/burn/i.test(srs) && settings.bell !== 'disabled') bellSound.play()
+        if (/burn/i.test(srs) && settings.bell !== 'disabled') bellSound.pause() || (bellSound.currentTime = 0) || bellSound.play()
     })
 
     function updateBellSound(play) {
