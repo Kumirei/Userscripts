@@ -87,7 +87,10 @@
 
     function onDidChangeSRS(e) {
         const srs = e.detail.newLevelText
-        if (/burn/i.test(srs) && settings.bell !== 'disabled') bellSound.pause() || (bellSound.currentTime = 0) || bellSound.play()
+        if (!/burn/i.test(srs) || settings.bell === 'disabled') return
+        bellSound.pause() // Stop if already playing
+        bellSound.currentTime = 0 // Seek to the start
+        bellSound.play()
     }
 
     function updateBellSound(play) {
