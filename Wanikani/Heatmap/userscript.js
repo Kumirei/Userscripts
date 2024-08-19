@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Heatmap
 // @namespace    http://tampermonkey.net/
-// @version      3.1.11
+// @version      3.1.12
 // @description  Adds review and lesson heatmaps to the dashboard.
 // @author       Kumirei
 // @include      /^https://(www|preview).wanikani.com/(dashboard)?$/
@@ -868,56 +868,80 @@
         let done_day = 0 // Total done on the date of the item
         let done_days = [] // List of total done on each day
         let start_date = new Date(settings.general.start_day) // User's start date
+        
+        let todayDateString = today.toDateString();
+        let lastDayDateString;
+
         for (let item of data) {
-            let day = new Date(item[0] - msh * settings.general.day_start)
-            if (day < start_date) continue // If item is before start, discard it
-            // If it's a new day
-            if (last_day.toDateString() != day.toDateString()) {
-                stats.days_studied[0]++
-                done_days.push(done_day)
-                done_day = 0
+            let itemTime = item[0];
+            let day = new Date(itemTime - msh * settings.general.day_start);
+            if (day < start_date) continue; // If item is before start, discard it
+            
+            let dayDateString = day.toDateString();
+
+            if (!lastDayDateString) {
+                lastDayDateString = last_day.toDateString()
             }
+
+            // If it's a new day
+            if (lastDayDateString !== dayDateString) {
+                stats.days_studied[0]++;
+                done_days.push(done_day);
+                done_day = 0;
+            }
+
             // Update done this day
-            done_day++
-            if (done_day > stats.max_done[0]) stats.max_done = [done_day, day.toDateString().replace(/... /, '')]
-            let minutes = (item[0] - last_time) / 60000
+            done_day++;
+            if (done_day > stats.max_done[0]) {
+                stats.max_done = [done_day, dayDateString.substring(4)]; // Substring is more efficient than replace
+            }
+
+            let minutes = (itemTime - last_time) / 60000;
+
             // Update sessions
             if (minutes > settings.general.session_limit) {
-                stats.sessions++
-                minutes = 0
+                stats.sessions++;
+                minutes = 0;
             }
+
             // Update totals
-            stats.total[0]++
-            stats.time[0] += minutes
-            // Done in the last year
-            if (year < day) {
-                stats.total[1]++
-                stats.time[1] += minutes
+            stats.total[0]++;
+            stats.time[0] += minutes;
+
+            let isWithinYear = year < day;
+            let isWithinMonth = month < day;
+            let isWithinWeek = week < day;
+            let isWithinDay = d < day;
+
+            if (isWithinYear) {
+                stats.total[1]++;
+                stats.time[1] += minutes;
             }
-            // Done in the last month
-            if (month < day) {
-                stats.total[2]++
-                stats.time[2] += minutes
+            if (isWithinMonth) {
+                stats.total[2]++;
+                stats.time[2] += minutes;
             }
-            // Done in the last week
-            if (week < day) {
-                stats.total[3]++
-                stats.time[3] += minutes
+            if (isWithinWeek) {
+                stats.total[3]++;
+                stats.time[3] += minutes;
             }
-            // Done in the last 24 hours
-            if (d < day) {
-                stats.total[4]++
-                stats.time[4] += minutes
+            if (isWithinDay) {
+                stats.total[4]++;
+                stats.time[4] += minutes;
             }
+
             // Done today
-            if (today.toDateString() == day.toDateString()) {
-                stats.total[5]++
-                stats.time[5] += minutes
+            if (dayDateString === todayDateString) {
+                stats.total[5]++;
+                stats.time[5] += minutes;
             }
+
             // Store values for next item
-            last_day = day
-            last_time = item[0]
+            last_day = day;
+            lastDayDateString = dayDateString;
+            last_time = itemTime;
         }
+
         // Update averages
         done_days.push(done_day)
         const day_start_adjust = msh * settings.general.day_start // Adjust for the user's start of day setting
@@ -958,9 +982,11 @@
             zeros[day.toDateString()] = true
         }
         // For all dates where something was done, set streak to 1
-        for (let [date] of data)
-            if (new Date(date) > new Date(settings.general.start_day))
+        for (let [date] of data) {
+            if (date > settings.general.start_day) {
                 streaks[new Date(date - day_start_adjust).toDateString()] = 1
+            }
+        }
         // If user wants to count days where no lessons were available, set those streaks to 1 as well
         if (type === 'lessons' && settings.lessons.count_zeros) {
             // Delete dates where lessons were available
